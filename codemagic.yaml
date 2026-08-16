@@ -1,0 +1,37 @@
+workflows:
+  ios-release:
+    name: Pulpo iOS Release
+
+    integrations:
+      app_store_connect: CODEMAGIC PULPO
+
+    environment:
+      flutter: stable
+      xcode: latest
+
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+
+      - name: Build IPA
+        script: |
+          flutter build ipa --release
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+
+        submit_to_app_store: true
+
+        cancel_previous_submissions: true
+
+        release_type: AFTER_APPROVAL
