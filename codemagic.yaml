@@ -3,7 +3,7 @@ workflows:
     name: Pulpo iOS Release
 
     integrations:
-      app_store_connect: CODEMAGIC PULPO
+      app_store_connect: PULPO CODEMAGIC
 
     environment:
       flutter: stable
