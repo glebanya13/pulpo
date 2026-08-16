@@ -1,6 +1,4 @@
 PODS:
-  - file_picker (0.0.1):
-    - Flutter
   - Flutter (1.0.0)
   - share_plus (0.0.1):
     - Flutter
@@ -36,7 +34,6 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
-  - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -48,8 +45,6 @@ SPEC REPOS:
     - sqlite3
 
 EXTERNAL SOURCES:
-  file_picker:
-    :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
     :path: Flutter
   share_plus:
@@ -62,7 +57,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
-  file_picker: fb04e739ae6239a76ce1f571863a196a922c87d4
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
@@ -70,6 +64,6 @@ SPEC CHECKSUMS:
   sqlite3_flutter_libs: b3e120efe9a82017e5552a620f696589ed4f62ab
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
 
-PODFILE CHECKSUM: 5931cb0302ca01740062ab799d5e5e673329d7c0
+PODFILE CHECKSUM: f79e1872da79a29354b04cf03619f8f3d69fe58e
 
 COCOAPODS: 1.16.2

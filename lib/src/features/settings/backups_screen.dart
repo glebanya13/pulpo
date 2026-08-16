@@ -12,7 +12,6 @@ import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/repositories/backup_service.dart';
 import '../../widgets/common.dart';
-import 'backup_import.dart';
 
 class BackupsScreen extends ConsumerStatefulWidget {
   const BackupsScreen({super.key});
@@ -93,37 +92,19 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _Action(
-                    icon: LucideIcons.plus,
-                    label: tr.createNow,
-                    filled: true,
-                    onTap: () async {
-                      await ref.read(backupServiceProvider).writeBackup();
-                      await _loadBackups();
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(tr.backupCreated)),
-                        );
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _Action(
-                    icon: LucideIcons.upload,
-                    label: tr.importBtn,
-                    filled: false,
-                    onTap: () => restoreBackupFromPicker(
-                      context: context,
-                      ref: ref,
-                    ),
-                  ),
-                ),
-              ],
+            _Action(
+              icon: LucideIcons.plus,
+              label: tr.createNow,
+              filled: true,
+              onTap: () async {
+                await ref.read(backupServiceProvider).writeBackup();
+                await _loadBackups();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(tr.backupCreated)),
+                  );
+                }
+              },
             ),
             const SizedBox(height: 20),
             Padding(

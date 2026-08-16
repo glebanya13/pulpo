@@ -114,7 +114,6 @@ class Tr {
   String get privacyPolicy => _get('privacy_policy');
   String get termsOfUse => _get('terms_of_use');
   String get contactSupport => _get('contact_support');
-  String get restoreFailed => _get('restore_failed');
   String get couldNotOpenLink => _get('could_not_open_link');
   String get enterName => _get('enter_name');
   String get yourName => _get('your_name');
@@ -125,7 +124,6 @@ class Tr {
   String get finance => _get('finance');
   String get onboardingSubtitle => _get('onboarding_subtitle');
   String get getStarted => _get('get_started');
-  String get restoreFromBackup => _get('restore_from_backup');
   String get pleaseEnterName => _get('please_enter_name');
   String get setupTitle => _get('setup_title');
   String get setupSubtitle => _get('setup_subtitle');
@@ -293,11 +291,9 @@ class Tr {
   String get addAccountFirst => _get('add_account_first');
   String get accountNotFound => _get('account_not_found');
   String get backupCreated => _get('backup_created');
-  String get dataRestored => _get('data_restored');
   String get autoBackup => _get('auto_backup');
   String get autoBackupDesc => _get('auto_backup_desc');
   String get createNow => _get('create_now');
-  String get importBtn => _get('import_btn');
   String get localBackupsUpper => _get('local_backups_upper');
   String get noBackupsTitle => _get('no_backups_title');
   String get noBackupsDesc => _get('no_backups_desc');
@@ -419,7 +415,6 @@ class Tr {
       'privacy_policy': 'Política de privacidad',
       'terms_of_use': 'Términos de uso',
       'contact_support': 'Soporte',
-      'restore_failed': 'No se pudo restaurar la copia',
       'could_not_open_link': 'No se pudo abrir el enlace',
       'enter_name': 'Introduce tu nombre',
       'your_name': 'Tu nombre',
@@ -430,7 +425,6 @@ class Tr {
       'onboarding_subtitle':
           'Controla gastos, planifica presupuestos y alcanza metas. Todo sin conexión.',
       'get_started': 'Comenzar →',
-      'restore_from_backup': 'Restaurar desde copia',
       'please_enter_name': 'Por favor, introduce tu nombre',
       'setup_title': 'Un poco sobre ti',
       'setup_subtitle':
@@ -606,11 +600,9 @@ class Tr {
       'add_account_first': 'Añade primero una cuenta',
       'account_not_found': 'Cuenta no encontrada',
       'backup_created': 'Copia creada',
-      'data_restored': 'Datos restaurados',
       'auto_backup': 'Automático',
       'auto_backup_desc': 'Copia local diaria',
       'create_now': 'Crear ahora',
-      'import_btn': 'Importar',
       'local_backups_upper': 'COPIAS LOCALES',
       'no_backups_title': 'Sin copias',
       'no_backups_desc': 'Crea la primera copia\npara guardar tus datos.',
@@ -706,7 +698,6 @@ class Tr {
       'privacy_policy': 'Политика конфиденциальности',
       'terms_of_use': 'Условия использования',
       'contact_support': 'Поддержка',
-      'restore_failed': 'Не удалось восстановить копию',
       'could_not_open_link': 'Не удалось открыть ссылку',
       'enter_name': 'Введите имя',
       'your_name': 'Ваше имя',
@@ -717,7 +708,6 @@ class Tr {
       'onboarding_subtitle':
           'Учёт расходов, бюджеты и цели. Всё работает офлайн.',
       'get_started': 'Начать →',
-      'restore_from_backup': 'Восстановить из бэкапа',
       'please_enter_name': 'Пожалуйста, введите имя',
       'setup_title': 'Немного о вас',
       'setup_subtitle':
@@ -893,11 +883,9 @@ class Tr {
       'add_account_first': 'Сначала добавьте счёт',
       'account_not_found': 'Счёт не найден',
       'backup_created': 'Бэкап создан',
-      'data_restored': 'Данные восстановлены',
       'auto_backup': 'Автоматически',
       'auto_backup_desc': 'Ежедневный локальный бэкап',
       'create_now': 'Создать сейчас',
-      'import_btn': 'Импорт',
       'local_backups_upper': 'ЛОКАЛЬНЫЕ БЭКАПЫ',
       'no_backups_title': 'Бэкапов нет',
       'no_backups_desc': 'Создайте первый бэкап,\nчтобы сохранить данные.',
@@ -993,7 +981,6 @@ class Tr {
       'privacy_policy': 'Privacy Policy',
       'terms_of_use': 'Terms of Use',
       'contact_support': 'Support',
-      'restore_failed': 'Could not restore the backup',
       'could_not_open_link': 'Could not open the link',
       'enter_name': 'Enter your name',
       'your_name': 'Your name',
@@ -1004,7 +991,6 @@ class Tr {
       'onboarding_subtitle':
           'Track expenses, plan budgets, and reach goals. Fully offline.',
       'get_started': 'Get Started →',
-      'restore_from_backup': 'Restore from backup',
       'please_enter_name': 'Please enter your name',
       'setup_title': 'A bit about you',
       'setup_subtitle':
@@ -1180,11 +1166,9 @@ class Tr {
       'add_account_first': 'Add an account first',
       'account_not_found': 'Account not found',
       'backup_created': 'Backup created',
-      'data_restored': 'Data restored',
       'auto_backup': 'Automatic',
       'auto_backup_desc': 'Daily local backup',
       'create_now': 'Create now',
-      'import_btn': 'Import',
       'local_backups_upper': 'LOCAL BACKUPS',
       'no_backups_title': 'No backups',
       'no_backups_desc': 'Create your first backup\nto save your data.',

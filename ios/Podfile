@@ -4,12 +4,6 @@ platform :ios, '13.0'
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
-# Restore uses FileType.custom (.json) only. Keep document picker and skip
-# photo/camera/music so App Store does not require unused privacy strings
-# (ITMS-90683: NSPhotoLibrary / NSCamera / NSLocationWhenInUse).
-Pod::PICKER_MEDIA = false
-Pod::PICKER_AUDIO = false
-
 project 'Runner', {
   'Debug' => :debug,
   'Profile' => :release,

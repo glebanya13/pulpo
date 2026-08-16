@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
-import '../settings/backup_import.dart';
 
-class OnboardingScreen extends ConsumerWidget {
+class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final tr = Tr.of(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -97,32 +95,6 @@ class OnboardingScreen extends ConsumerWidget {
                             color: AppColors.ink,
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Secondary
-                  GestureDetector(
-                    onTap: () async {
-                      final ok = await restoreBackupFromPicker(
-                        context: context,
-                        ref: ref,
-                        completeOnboarding: true,
-                      );
-                      if (ok && context.mounted) context.go('/');
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: Center(
-                        child: Text(
-                          tr.restoreFromBackup,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),

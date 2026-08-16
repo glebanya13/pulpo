@@ -1,7 +1,7 @@
 name: pulpo
 description: "Pulpo — personal offline-first budget tracker for Android and iOS."
 publish_to: 'none'
-version: 1.0.0+4
+version: 1.0.0+5
 
 environment:
   sdk: ^3.10.0
@@ -26,7 +26,6 @@ dependencies:
   uuid: ^4.5.1
   collection: ^1.19.0
   share_plus: ^10.1.2
-  file_picker: ^8.1.6
   shared_preferences: ^2.3.3
   url_launcher: ^6.3.2
 
