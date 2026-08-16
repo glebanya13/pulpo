@@ -6,7 +6,7 @@ workflows:
       app_store_connect: PULPO CODEMAGIC
 
     environment:
-      flutter: 3.38.0
+      flutter: 3.47.0
       xcode: latest
 
       ios_signing:
