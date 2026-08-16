@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../settings/backup_import.dart';
 
 class OnboardingScreen extends ConsumerWidget {
   const OnboardingScreen({super.key});
@@ -31,33 +32,22 @@ class OnboardingScreen extends ConsumerWidget {
             ),
           ),
           child: SafeArea(
-            child: Padding(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Padding(
               padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo
-                  Row(
-                    children: [
-                      const Text(
-                        'Budget',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 20,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: AppColors.lime,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ],
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Image.asset(
+                      'assets/logo.png',
+                      height: 88,
+                      filterQuality: FilterQuality.high,
+                    ),
                   ),
 
                   // Cards (flex:1 — растягиваются в оставшуюся высоту)
@@ -116,7 +106,14 @@ class OnboardingScreen extends ConsumerWidget {
 
                   // Secondary
                   GestureDetector(
-                    onTap: () {},
+                    onTap: () async {
+                      final ok = await restoreBackupFromPicker(
+                        context: context,
+                        ref: ref,
+                        completeOnboarding: true,
+                      );
+                      if (ok && context.mounted) context.go('/');
+                    },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Center(
@@ -132,6 +129,8 @@ class OnboardingScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+                ),
               ),
             ),
           ),

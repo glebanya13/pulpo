@@ -105,6 +105,11 @@ class SettingsController extends Notifier<SettingsState> {
     );
   }
 
+  Future<void> markOnboardingDone() async {
+    await ref.read(settingsServiceProvider).setOnboardingDone(true);
+    state = state.copyWith(onboardingDone: true);
+  }
+
   Future<void> setTheme(String mode) async {
     await ref.read(settingsServiceProvider).setThemeMode(mode);
     state = state.copyWith(themeMode: mode);

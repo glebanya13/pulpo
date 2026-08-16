@@ -4,30 +4,32 @@ import 'package:go_router/go_router.dart';
 import '../widgets/bottom_nav.dart';
 
 class AppShell extends StatelessWidget {
-  const AppShell({super.key, required this.child});
+  const AppShell({super.key, required this.navigationShell});
 
-  final Widget child;
-
-  int _indexFor(String location) {
-    if (location.startsWith('/transactions')) return 1;
-    if (location.startsWith('/reports')) return 2;
-    if (location.startsWith('/profile')) return 3;
-    return 0;
-  }
-
-  static const _routes = ['/', '/transactions', '/reports', '/profile'];
+  final StatefulNavigationShell navigationShell;
 
   @override
   Widget build(BuildContext context) {
-    final location = GoRouterState.of(context).uri.path;
-    final index = _indexFor(location);
-
     return Scaffold(
       extendBody: true,
-      body: child,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 700) return navigationShell;
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 700),
+              child: navigationShell,
+            ),
+          );
+        },
+      ),
       bottomNavigationBar: BudgetBottomNav(
-        currentIndex: index,
-        onTap: (i) => context.go(_routes[i]),
+        currentIndex: navigationShell.currentIndex,
+        onTap: (i) => navigationShell.goBranch(
+          i,
+          initialLocation: i == navigationShell.currentIndex,
+        ),
         onFabTap: () => context.push('/add'),
       ),
     );

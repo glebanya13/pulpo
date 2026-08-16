@@ -104,6 +104,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
 
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _DaySheet(day: day, txs: dayTxs),
@@ -388,7 +389,12 @@ class _DaySheet extends StatelessWidget {
         color: context.scaffoldBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        24 + MediaQuery.paddingOf(context).bottom,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

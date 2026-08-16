@@ -163,6 +163,34 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     if (picked != null) setState(() => _date = picked);
   }
 
+  Future<void> _confirmDelete(Tr tr) async {
+    final id = widget.editId;
+    if (id == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tr.deleteTxTitle),
+        content: Text(tr.deleteTxBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(tr.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFE53E3E),
+            ),
+            child: Text(tr.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(transactionRepositoryProvider).delete(id);
+    if (mounted) context.go('/');
+  }
+
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
@@ -206,7 +234,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       color: context.primaryText,
                     ),
                   ),
-                  _IconBtn(icon: LucideIcons.moreHorizontal, onTap: () {}),
+                  widget.editId != null
+                      ? _IconBtn(
+                          icon: LucideIcons.trash2,
+                          onTap: () => _confirmDelete(tr),
+                        )
+                      : const SizedBox(width: 42),
                 ],
               ),
               const SizedBox(height: 12),

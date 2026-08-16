@@ -32,12 +32,11 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>NSCameraUsageDescription</key>
-	<string>Pulpo includes a file picker that may use the camera if you choose it as a source when importing a backup.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Pulpo includes a file picker that may read location attached to a photo you select. Pulpo does not track your location.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Pulpo needs access to your photo library so you can select a backup file to restore your budget data.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>mailto</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>

@@ -111,6 +111,11 @@ class Tr {
   String get importBackup => _get('import_backup');
   String get about => _get('about');
   String get version => _get('version');
+  String get privacyPolicy => _get('privacy_policy');
+  String get termsOfUse => _get('terms_of_use');
+  String get contactSupport => _get('contact_support');
+  String get restoreFailed => _get('restore_failed');
+  String get couldNotOpenLink => _get('could_not_open_link');
   String get enterName => _get('enter_name');
   String get yourName => _get('your_name');
   String get howToCall => _get('how_to_call');
@@ -411,6 +416,11 @@ class Tr {
       'import_backup': 'Importar copia',
       'about': 'Acerca de',
       'version': 'Versión',
+      'privacy_policy': 'Política de privacidad',
+      'terms_of_use': 'Términos de uso',
+      'contact_support': 'Soporte',
+      'restore_failed': 'No se pudo restaurar la copia',
+      'could_not_open_link': 'No se pudo abrir el enlace',
       'enter_name': 'Introduce tu nombre',
       'your_name': 'Tu nombre',
       'how_to_call': '¿Cómo debemos llamarte?',
@@ -693,6 +703,11 @@ class Tr {
       'import_backup': 'Импорт из бэкапа',
       'about': 'О приложении',
       'version': 'Версия',
+      'privacy_policy': 'Политика конфиденциальности',
+      'terms_of_use': 'Условия использования',
+      'contact_support': 'Поддержка',
+      'restore_failed': 'Не удалось восстановить копию',
+      'could_not_open_link': 'Не удалось открыть ссылку',
       'enter_name': 'Введите имя',
       'your_name': 'Ваше имя',
       'how_to_call': 'Как к вам обращаться?',
@@ -975,6 +990,11 @@ class Tr {
       'import_backup': 'Import from backup',
       'about': 'About',
       'version': 'Version',
+      'privacy_policy': 'Privacy Policy',
+      'terms_of_use': 'Terms of Use',
+      'contact_support': 'Support',
+      'restore_failed': 'Could not restore the backup',
+      'could_not_open_link': 'Could not open the link',
       'enter_name': 'Enter your name',
       'your_name': 'Your name',
       'how_to_call': 'How should we address you?',

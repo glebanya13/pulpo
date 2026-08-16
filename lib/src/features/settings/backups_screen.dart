@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +12,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/repositories/backup_service.dart';
 import '../../widgets/common.dart';
+import 'backup_import.dart';
 
 class BackupsScreen extends ConsumerStatefulWidget {
   const BackupsScreen({super.key});
@@ -117,22 +117,10 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                     icon: LucideIcons.upload,
                     label: tr.importBtn,
                     filled: false,
-                    onTap: () async {
-                      final res = await FilePicker.platform.pickFiles(
-                        type: FileType.custom,
-                        allowedExtensions: ['json'],
-                      );
-                      if (res != null && res.files.single.path != null) {
-                        await ref
-                            .read(backupServiceProvider)
-                            .restoreFromFile(File(res.files.single.path!));
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(tr.dataRestored)),
-                          );
-                        }
-                      }
-                    },
+                    onTap: () => restoreBackupFromPicker(
+                      context: context,
+                      ref: ref,
+                    ),
                   ),
                 ),
               ],

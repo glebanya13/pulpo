@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
+import '../../core/open_link.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/providers.dart';
@@ -99,6 +101,12 @@ class SettingsScreen extends ConsumerWidget {
                   title: tr.debts,
                   onTap: () => context.push('/debts'),
                 ),
+                _SettingsRow(
+                  icon: LucideIcons.database,
+                  iconBg: const Color(0xFFF2F2F2),
+                  title: tr.dataBackups,
+                  onTap: () => context.push('/settings/backups'),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -109,8 +117,26 @@ class SettingsScreen extends ConsumerWidget {
                   icon: LucideIcons.info,
                   iconBg: const Color(0xFFF2F2F2),
                   title: tr.about,
-                  subtitle: '${tr.version} 0.1',
-                  onTap: () {},
+                  subtitle: '${tr.version} ${AppInfo.version}',
+                  onTap: () => context.push('/settings/about'),
+                ),
+                _SettingsRow(
+                  icon: LucideIcons.shield,
+                  iconBg: const Color(0xFFE0F2FE),
+                  title: tr.privacyPolicy,
+                  onTap: () => openAppLink(context, AppInfo.privacyUri),
+                ),
+                _SettingsRow(
+                  icon: LucideIcons.fileText,
+                  iconBg: const Color(0xFFFFF3D6),
+                  title: tr.termsOfUse,
+                  onTap: () => openAppLink(context, AppInfo.termsUri),
+                ),
+                _SettingsRow(
+                  icon: LucideIcons.lifeBuoy,
+                  iconBg: const Color(0xFFD4F5E0),
+                  title: tr.contactSupport,
+                  onTap: () => openAppLink(context, AppInfo.supportUri),
                 ),
               ],
             ),
