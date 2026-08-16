@@ -1,0 +1,1020 @@
+import 'dart:math' as math;
+
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+import '../../core/l10n/tr.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/utils/lucide_icon_map.dart';
+import '../../core/utils/money_format.dart';
+import '../../data/db/app_database.dart' as db;
+import '../../data/db/enums.dart';
+import '../../data/repositories/providers.dart';
+import '../../data/repositories/settings_service.dart';
+
+class ReportsScreen extends ConsumerStatefulWidget {
+  const ReportsScreen({super.key});
+
+  @override
+  ConsumerState<ReportsScreen> createState() => _ReportsScreenState();
+}
+
+class _ReportsScreenState extends ConsumerState<ReportsScreen> {
+  int _tab = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = Tr.of(context);
+    final tabs = [tr.tabOverview, tr.tabCategories, tr.tabTrends, tr.tabFlows];
+    final currency = ref.watch(settingsControllerProvider).baseCurrency;
+    final now = DateTime.now();
+    final sixMonthsAgo = DateTime(now.year, now.month - 5, 1);
+    final txs = ref
+            .watch(transactionsInRangeProvider(
+                (start: sixMonthsAgo, end: DateTime(now.year, now.month + 1, 1))))
+            .valueOrNull ??
+        const [];
+    final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 120),
+      children: [
+        Text(
+          tr.analytics,
+          style: const TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -1,
+            color: AppColors.ink,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          tr.analyticsSubtitle,
+          style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          height: 34,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: tabs.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, i) {
+              final active = _tab == i;
+              return GestureDetector(
+                onTap: () => setState(() => _tab = i),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: active ? AppColors.ink : Colors.white,
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    tabs[i],
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: active ? Colors.white : AppColors.textMuted,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 20),
+        ..._buildTabContent(
+          txs: txs,
+          cats: cats,
+          now: now,
+          sixMonthsAgo: sixMonthsAgo,
+          currency: currency,
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildTabContent({
+    required List<db.Transaction> txs,
+    required List<db.Category> cats,
+    required DateTime now,
+    required DateTime sixMonthsAgo,
+    required String currency,
+  }) {
+    switch (_tab) {
+      case 1:
+        return _categoriesView(txs, cats, now, currency);
+      case 2:
+        return _trendsView(txs, now, sixMonthsAgo, currency);
+      case 3:
+        return _flowsView(txs, cats, now, currency);
+      default:
+        return _overviewView(txs, cats, now, sixMonthsAgo, currency);
+    }
+  }
+
+  // ─────────────────────── Overview ───────────────────────
+  List<Widget> _overviewView(
+    List<db.Transaction> txs,
+    List<db.Category> cats,
+    DateTime now,
+    DateTime sixMonthsAgo,
+    String currency,
+  ) {
+    final monthly = List<double>.filled(6, 0);
+    for (final t in txs) {
+      if (TxType.values[t.type] != TxType.expense) continue;
+      final monthIdx = (t.date.year - sixMonthsAgo.year) * 12 +
+          (t.date.month - sixMonthsAgo.month);
+      if (monthIdx >= 0 && monthIdx < 6) monthly[monthIdx] += t.amount;
+    }
+    final total6m = monthly.fold<double>(0, (a, b) => a + b);
+    final maxMonthly = monthly.reduce(math.max);
+
+    final monthStart = DateTime(now.year, now.month, 1);
+    final byCat = <int, double>{};
+    var monthTotal = 0.0;
+    for (final t in txs) {
+      if (TxType.values[t.type] != TxType.expense) continue;
+      if (t.date.isBefore(monthStart)) continue;
+      byCat.update(t.categoryId ?? -1, (v) => v + t.amount,
+          ifAbsent: () => t.amount);
+      monthTotal += t.amount;
+    }
+    final donutData = byCat.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return [
+      _ChartCard(
+        title: Tr.of(context).expenses6Months,
+        value: formatMoney(total6m, currency),
+        child: SizedBox(
+          height: 140,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              borderData: FlBorderData(show: false),
+              gridData: const FlGridData(show: false),
+              titlesData: FlTitlesData(
+                leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (v, meta) {
+                      final month = DateTime(sixMonthsAgo.year,
+                          sixMonthsAgo.month + v.toInt(), 1);
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          DateFormat('MMM', Localizations.localeOf(context).languageCode).format(month),
+                          style: TextStyle(
+                            color: v.toInt() == 5
+                                ? AppColors.limeAccent
+                                : AppColors.textFaint,
+                            fontSize: 10,
+                            fontWeight: v.toInt() == 5
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              maxY: maxMonthly * 1.2 + 1,
+              barGroups: [
+                for (var i = 0; i < 6; i++)
+                  BarChartGroupData(
+                    x: i,
+                    barRods: [
+                      BarChartRodData(
+                        toY: monthly[i],
+                        color: i == 5
+                            ? AppColors.lime
+                            : const Color(0xFFECECEC),
+                        width: 20,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(6),
+                          topRight: Radius.circular(6),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 16),
+      _ChartCard(
+        title:
+            '${Tr.of(context).byCategoriesMonthPrefix}${DateFormat('MMMM', Localizations.localeOf(context).languageCode).format(now)}',
+        value: '',
+        child: SizedBox(
+          height: 160,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 130,
+                height: 130,
+                child: donutData.isEmpty
+                    ? Center(
+                        child: Text(Tr.of(context).empty,
+                            style: const TextStyle(color: AppColors.textMuted)),
+                      )
+                    : PieChart(
+                        PieChartData(
+                          sectionsSpace: 2,
+                          centerSpaceRadius: 40,
+                          sections: [
+                            for (var i = 0; i < donutData.length; i++)
+                              PieChartSectionData(
+                                value: donutData[i].value,
+                                color: _palette[i % _palette.length],
+                                radius: 24,
+                                showTitle: false,
+                              ),
+                          ],
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      formatMoney(monthTotal, currency),
+                      style: const TextStyle(
+                        color: AppColors.ink,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(Tr.of(context).totalWord,
+                        style: const TextStyle(
+                            color: AppColors.textFaint, fontSize: 11)),
+                    const SizedBox(height: 10),
+                    for (var i = 0;
+                        i < donutData.length && i < 5;
+                        i++) ...[
+                      _legendItem(
+                        color: _palette[i % _palette.length],
+                        name: cats
+                                .where((c) => c.id == donutData[i].key)
+                                .map((c) => Tr.of(context).categoryName(c.name))
+                                .firstOrNull ??
+                            Tr.of(context).other,
+                        percent: monthTotal > 0
+                            ? (donutData[i].value / monthTotal * 100).round()
+                            : 0,
+                      ),
+                      const SizedBox(height: 6),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ];
+  }
+
+  // ─────────────────────── Categories ───────────────────────
+  List<Widget> _categoriesView(
+    List<db.Transaction> txs,
+    List<db.Category> cats,
+    DateTime now,
+    String currency,
+  ) {
+    final monthStart = DateTime(now.year, now.month, 1);
+    final byCat = <int, double>{};
+    for (final t in txs) {
+      if (TxType.values[t.type] != TxType.expense) continue;
+      if (t.date.isBefore(monthStart)) continue;
+      byCat.update(t.categoryId ?? -1, (v) => v + t.amount,
+          ifAbsent: () => t.amount);
+    }
+    final sorted = byCat.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final maxVal = sorted.isEmpty ? 1.0 : sorted.first.value;
+
+    if (sorted.isEmpty) {
+      return [
+        Container(
+          padding: const EdgeInsets.all(30),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Center(
+            child: Text(Tr.of(context).noExpensesThisMonth,
+                style: const TextStyle(color: AppColors.textMuted)),
+          ),
+        ),
+      ];
+    }
+
+    return [
+      _ChartCard(
+        title:
+            '${Tr.of(context).expensesByCategoriesMonthPrefix}${DateFormat('MMMM', Localizations.localeOf(context).languageCode).format(now)}',
+        value: '',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final e in sorted) ...[
+              _CategoryRow(
+                category: cats.where((c) => c.id == e.key).firstOrNull,
+                amount: e.value,
+                fraction: e.value / maxVal,
+                total: byCat.values.fold(0.0, (a, b) => a + b),
+                currency: currency,
+              ),
+              const SizedBox(height: 14),
+            ],
+          ],
+        ),
+      ),
+    ];
+  }
+
+  // ─────────────────────── Trends ───────────────────────
+  List<Widget> _trendsView(
+    List<db.Transaction> txs,
+    DateTime now,
+    DateTime sixMonthsAgo,
+    String currency,
+  ) {
+    final incomes = List<double>.filled(6, 0);
+    final expenses = List<double>.filled(6, 0);
+    for (final t in txs) {
+      final monthIdx = (t.date.year - sixMonthsAgo.year) * 12 +
+          (t.date.month - sixMonthsAgo.month);
+      if (monthIdx < 0 || monthIdx >= 6) continue;
+      final ty = TxType.values[t.type];
+      if (ty == TxType.income) incomes[monthIdx] += t.amount;
+      if (ty == TxType.expense) expenses[monthIdx] += t.amount;
+    }
+    final maxVal =
+        math.max(incomes.reduce(math.max), expenses.reduce(math.max));
+
+    final currentExpense = expenses[5];
+    final prevExpense = expenses.length > 1 ? expenses[4] : 0;
+    final deltaPct = prevExpense > 0
+        ? ((currentExpense - prevExpense) / prevExpense * 100).round()
+        : 0;
+
+    return [
+      _ChartCard(
+        title: Tr.of(context).incomeVsExpenses,
+        value: '',
+        child: SizedBox(
+          height: 180,
+          child: LineChart(
+            LineChartData(
+              minY: 0,
+              maxY: maxVal * 1.2 + 1,
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                getDrawingHorizontalLine: (v) => const FlLine(
+                  color: Color(0xFFECECEC),
+                  strokeWidth: 1,
+                ),
+              ),
+              borderData: FlBorderData(show: false),
+              titlesData: FlTitlesData(
+                leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (v, meta) {
+                      final month = DateTime(sixMonthsAgo.year,
+                          sixMonthsAgo.month + v.toInt(), 1);
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          DateFormat('MMM', Localizations.localeOf(context).languageCode).format(month),
+                          style: const TextStyle(
+                              color: AppColors.textFaint, fontSize: 10),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: [
+                    for (var i = 0; i < 6; i++)
+                      FlSpot(i.toDouble(), incomes[i]),
+                  ],
+                  color: AppColors.limeAccent,
+                  isCurved: true,
+                  barWidth: 3,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                      radius: 4,
+                      color: AppColors.limeAccent,
+                      strokeWidth: 0,
+                    ),
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: AppColors.lime.withValues(alpha: 0.2),
+                  ),
+                ),
+                LineChartBarData(
+                  spots: [
+                    for (var i = 0; i < 6; i++)
+                      FlSpot(i.toDouble(), expenses[i]),
+                  ],
+                  color: AppColors.danger,
+                  isCurved: true,
+                  barWidth: 3,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                      radius: 4,
+                      color: AppColors.danger,
+                      strokeWidth: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.lime.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.circle, size: 8, color: AppColors.limeAccent),
+                const SizedBox(width: 6),
+                Text(Tr.of(context).income,
+                    style: const TextStyle(
+                        color: AppColors.ink,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFE4E1),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.circle, size: 8, color: AppColors.danger),
+                const SizedBox(width: 6),
+                Text(Tr.of(context).expense,
+                    style: const TextStyle(
+                        color: AppColors.ink,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      Row(
+        children: [
+          Expanded(
+            child: _TrendStat(
+              label: Tr.of(context).expenseThisMonth,
+              value: formatMoney(currentExpense, currency),
+              accent: AppColors.danger,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _TrendStat(
+              label: Tr.of(context).vsPrevMonth,
+              value: '${deltaPct >= 0 ? '+' : ''}$deltaPct%',
+              accent: deltaPct > 0 ? AppColors.danger : AppColors.limeAccent,
+            ),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  // ─────────────────────── Flows ───────────────────────
+  List<Widget> _flowsView(
+    List<db.Transaction> txs,
+    List<db.Category> cats,
+    DateTime now,
+    String currency,
+  ) {
+    final monthStart = DateTime(now.year, now.month, 1);
+
+    final incomeByCat = <int, double>{};
+    final expenseByCat = <int, double>{};
+    var totalIncome = 0.0;
+    var totalExpense = 0.0;
+
+    for (final t in txs) {
+      if (t.date.isBefore(monthStart)) continue;
+      final ty = TxType.values[t.type];
+      if (ty == TxType.income) {
+        incomeByCat.update(t.categoryId ?? -1, (v) => v + t.amount,
+            ifAbsent: () => t.amount);
+        totalIncome += t.amount;
+      } else if (ty == TxType.expense) {
+        expenseByCat.update(t.categoryId ?? -1, (v) => v + t.amount,
+            ifAbsent: () => t.amount);
+        totalExpense += t.amount;
+      }
+    }
+
+    final incomeSorted = incomeByCat.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final expenseSorted = expenseByCat.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final net = totalIncome - totalExpense;
+
+    return [
+      _ChartCard(
+        title:
+            '${Tr.of(context).cashFlowMonthPrefix}${DateFormat('MMMM', Localizations.localeOf(context).languageCode).format(now)}',
+        value: '',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _FlowSide(
+                    label: Tr.of(context).incomeUpper,
+                    total: formatMoney(totalIncome, currency),
+                    color: AppColors.limeAccent,
+                    alignEnd: false,
+                  ),
+                ),
+                const SizedBox(
+                  width: 40,
+                  child: Icon(Icons.arrow_forward,
+                      color: AppColors.textFaint, size: 20),
+                ),
+                Expanded(
+                  child: _FlowSide(
+                    label: Tr.of(context).expenseUpper,
+                    total: formatMoney(totalExpense, currency),
+                    color: AppColors.danger,
+                    alignEnd: true,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: net >= 0
+                    ? AppColors.lime.withValues(alpha: 0.2)
+                    : const Color(0xFFFFE4E1),
+                border: Border.all(
+                  color: (net >= 0
+                          ? AppColors.limeAccent
+                          : AppColors.danger)
+                      .withValues(alpha: 0.4),
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Text(Tr.of(context).netUpper,
+                      style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1)),
+                  const Spacer(),
+                  Text(
+                    (net >= 0 ? '+' : '−') + formatMoney(net, currency),
+                    style: TextStyle(
+                      color: net >= 0
+                          ? AppColors.limeAccent
+                          : AppColors.danger,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 16),
+      if (incomeSorted.isNotEmpty)
+        _ChartCard(
+          title: Tr.of(context).topIncomeSources,
+          value: '',
+          child: Column(
+            children: [
+              for (final e in incomeSorted.take(5))
+                _FlowRow(
+                  name: cats
+                          .where((c) => c.id == e.key)
+                          .map((c) => Tr.of(context).categoryName(c.name))
+                          .firstOrNull ??
+                      Tr.of(context).other,
+                  amount: e.value,
+                  currency: currency,
+                  isIncome: true,
+                  fraction:
+                      totalIncome > 0 ? e.value / totalIncome : 0,
+                ),
+            ],
+          ),
+        ),
+      const SizedBox(height: 16),
+      if (expenseSorted.isNotEmpty)
+        _ChartCard(
+          title: Tr.of(context).topExpenses,
+          value: '',
+          child: Column(
+            children: [
+              for (final e in expenseSorted.take(5))
+                _FlowRow(
+                  name: cats
+                          .where((c) => c.id == e.key)
+                          .map((c) => Tr.of(context).categoryName(c.name))
+                          .firstOrNull ??
+                      Tr.of(context).other,
+                  amount: e.value,
+                  currency: currency,
+                  isIncome: false,
+                  fraction:
+                      totalExpense > 0 ? e.value / totalExpense : 0,
+                ),
+            ],
+          ),
+        ),
+    ];
+  }
+
+  Widget _legendItem({
+    required Color color,
+    required String name,
+    required int percent,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            name,
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          '$percent%',
+          style: const TextStyle(
+              color: AppColors.ink,
+              fontSize: 11,
+              fontWeight: FontWeight.w700),
+        ),
+      ],
+    );
+  }
+
+  static const _palette = [
+    AppColors.lime,
+    AppColors.danger,
+    AppColors.info,
+    AppColors.warning,
+    AppColors.violet,
+  ];
+}
+
+class _ChartCard extends StatelessWidget {
+  const _ChartCard({
+    required this.title,
+    required this.value,
+    required this.child,
+  });
+  final String title;
+  final String value;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 13,
+                fontWeight: FontWeight.w600),
+          ),
+          if (value.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.ink,
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow({
+    required this.category,
+    required this.amount,
+    required this.fraction,
+    required this.total,
+    required this.currency,
+  });
+
+  final db.Category? category;
+  final double amount;
+  final double fraction;
+  final double total;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = total > 0 ? (amount / total * 100).round() : 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: category != null
+                    ? Color(category!.color)
+                    : const Color(0xFFF2F2F2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                category != null ? lucideByKey(category!.icon) : Icons.circle,
+                color: AppColors.ink,
+                size: 14,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                category != null
+                    ? Tr.of(context).categoryName(category!.name)
+                    : Tr.of(context).other,
+                style: const TextStyle(
+                    color: AppColors.ink,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600),
+              ),
+            ),
+            Text(
+              formatMoney(amount, currency),
+              style: const TextStyle(
+                color: AppColors.ink,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 36,
+              child: Text(
+                '$percent%',
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                    color: AppColors.textFaint, fontSize: 11),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 6,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF2F2F2),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: fraction.clamp(0, 1),
+            child: Container(
+              decoration: BoxDecoration(
+                color: category != null
+                    ? Color(category!.color)
+                    : AppColors.lime,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TrendStat extends StatelessWidget {
+  const _TrendStat({
+    required this.label,
+    required this.value,
+    required this.accent,
+  });
+  final String label;
+  final String value;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  color: AppColors.textMuted, fontSize: 11)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: accent,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FlowSide extends StatelessWidget {
+  const _FlowSide({
+    required this.label,
+    required this.total,
+    required this.color,
+    required this.alignEnd,
+  });
+  final String label;
+  final String total;
+  final Color color;
+  final bool alignEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment:
+          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: TextStyle(
+                color: color,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1)),
+        const SizedBox(height: 4),
+        Text(
+          total,
+          style: TextStyle(
+            color: color,
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FlowRow extends StatelessWidget {
+  const _FlowRow({
+    required this.name,
+    required this.amount,
+    required this.currency,
+    required this.isIncome,
+    required this.fraction,
+  });
+  final String name;
+  final double amount;
+  final String currency;
+  final bool isIncome;
+  final double fraction;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isIncome ? AppColors.limeAccent : AppColors.danger;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                      color: AppColors.ink,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600),
+                ),
+              ),
+              Text(
+                (isIncome ? '+' : '−') + formatMoney(amount, currency),
+                style: TextStyle(
+                  color: color,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Container(
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2F2F2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: fraction.clamp(0, 1),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
