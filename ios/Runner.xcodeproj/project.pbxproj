@@ -18,6 +18,13 @@
 		A31F8C2B2C6E4A1A00B4C002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A31F8C2A2C6E4A1A00B4C001 /* PrivacyInfo.xcprivacy */; };
 		C94C11062ABB3A2072FCD5E3 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 74359D04076FCBDED790EE8B /* GoogleService-Info.plist */; };
 		FC07FEE44DF1FADBF47D1B0D /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F1A8E6D85EB787415D8AF3E /* Pods_RunnerTests.framework */; };
+
+		E7A100010000000000000001 /* PulpoWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A100110000000000000001 /* PulpoWidget.swift */; };
+		E7A100020000000000000001 /* PulpoWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A100120000000000000001 /* PulpoWidgetBundle.swift */; };
+		E7A100030000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E7A100130000000000000001 /* Assets.xcassets */; };
+		E7A100040000000000000001 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E7A100140000000000000001 /* WidgetKit.framework */; };
+		E7A100050000000000000001 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E7A100150000000000000001 /* SwiftUI.framework */; };
+		E7A100060000000000000001 /* PulpoWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E7A100160000000000000001 /* PulpoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -27,6 +34,14 @@
 			proxyType = 1;
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
+		};
+
+		E7A100200000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E7A100300000000000000001;
+			remoteInfo = PulpoWidgetExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -39,6 +54,18 @@
 			files = (
 			);
 			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+
+		E7A100210000000000000001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E7A100060000000000000001 /* PulpoWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -70,6 +97,15 @@
 		B1EE1402D52D109DBCF93B67 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		DF9E722BC2E98211894E64B2 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F273AA76C5C38F11488638FE /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
+
+		E7A100110000000000000001 /* PulpoWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulpoWidget.swift; sourceTree = "<group>"; };
+		E7A100120000000000000001 /* PulpoWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulpoWidgetBundle.swift; sourceTree = "<group>"; };
+		E7A100130000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E7A100140000000000000001 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		E7A100150000000000000001 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		E7A100160000000000000001 /* PulpoWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PulpoWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E7A100170000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E7A100180000000000000001 /* PulpoWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PulpoWidget.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +122,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				0587ABD31595EF8F0DF3A32B /* Pods_Runner.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+
+		E7A100220000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E7A100040000000000000001 /* WidgetKit.framework in Frameworks */,
+				E7A100050000000000000001 /* SwiftUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -129,6 +175,7 @@
 			children = (
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
+				E7A100230000000000000001 /* PulpoWidget */,
 				97C146EF1CF9000F007C117D /* Products */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
 				48B70A03304DA35B4D8FA83C /* Pods */,
@@ -142,6 +189,7 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
+				E7A100160000000000000001 /* PulpoWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -166,10 +214,25 @@
 		D77F187F5FB1B502AA775170 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E7A100140000000000000001 /* WidgetKit.framework */,
+				E7A100150000000000000001 /* SwiftUI.framework */,
 				DF9E722BC2E98211894E64B2 /* Pods_Runner.framework */,
 				5F1A8E6D85EB787415D8AF3E /* Pods_RunnerTests.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+
+		E7A100230000000000000001 /* PulpoWidget */ = {
+			isa = PBXGroup;
+			children = (
+				E7A100110000000000000001 /* PulpoWidget.swift */,
+				E7A100120000000000000001 /* PulpoWidgetBundle.swift */,
+				E7A100130000000000000001 /* Assets.xcassets */,
+				E7A100170000000000000001 /* Info.plist */,
+				E7A100180000000000000001 /* PulpoWidget.entitlements */,
+			);
+			path = PulpoWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -204,6 +267,7 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
+				E7A100210000000000000001 /* Embed Foundation Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				60D5A4BBF50B6B2391E44742 /* [CP] Embed Pods Frameworks */,
 				2A44015D4012EBC57C374E92 /* [CP] Copy Pods Resources */,
@@ -211,11 +275,30 @@
 			buildRules = (
 			);
 			dependencies = (
+				E7A100330000000000000001 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
+		};
+
+		E7A100300000000000000001 /* PulpoWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E7A100500000000000000001 /* Build configuration list for PBXNativeTarget "PulpoWidgetExtension" */;
+			buildPhases = (
+				E7A100310000000000000001 /* Sources */,
+				E7A100220000000000000001 /* Frameworks */,
+				E7A100320000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PulpoWidgetExtension;
+			productName = PulpoWidgetExtension;
+			productReference = E7A100160000000000000001 /* PulpoWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -227,6 +310,9 @@
 				LastUpgradeCheck = 1510;
 				ORGANIZATIONNAME = "";
 				TargetAttributes = {
+					E7A100300000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
 					331C8080294A63A400263BE5 = {
 						CreatedOnToolsVersion = 14.0;
 						TestTargetID = 97C146ED1CF9000F007C117D;
@@ -254,6 +340,7 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
+				E7A100300000000000000001 /* PulpoWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -276,6 +363,15 @@
 				A31F8C2B2C6E4A1A00B4C002 /* PrivacyInfo.xcprivacy in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				C94C11062ABB3A2072FCD5E3 /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+
+		E7A100320000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E7A100030000000000000001 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -411,6 +507,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+
+		E7A100310000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E7A100010000000000000001 /* PulpoWidget.swift in Sources */,
+				E7A100020000000000000001 /* PulpoWidgetBundle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -418,6 +524,12 @@
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
+		};
+
+		E7A100330000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E7A100300000000000000001 /* PulpoWidgetExtension */;
+			targetProxy = E7A100200000000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -754,6 +866,100 @@
 			};
 			name = Release;
 		};
+
+		E7A100400000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PulpoWidget/PulpoWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = VWYGQ2Z5FJ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PulpoWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.pulpo.app.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E7A100410000000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PulpoWidget/PulpoWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = VWYGQ2Z5FJ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PulpoWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.pulpo.app.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E7A100420000000000000001 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PulpoWidget/PulpoWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = VWYGQ2Z5FJ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PulpoWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.pulpo.app.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Profile;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -783,6 +989,17 @@
 				97C147061CF9000F007C117D /* Debug */,
 				97C147071CF9000F007C117D /* Release */,
 				249021D4217E4FDB00AE95B9 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+
+		E7A100500000000000000001 /* Build configuration list for PBXNativeTarget "PulpoWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E7A100400000000000000001 /* Debug */,
+				E7A100410000000000000001 /* Release */,
+				E7A100420000000000000001 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -7,6 +7,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
@@ -46,7 +47,7 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
             PageHeader(
               first: tr.recurringOps,
               subtitle:
-                  '${active.length} ${tr.activePlural} · ${paused.length} ${tr.pausedPlural}',
+                  '${tr.activeCount(active.length)} · ${tr.pausedCount(paused.length)}',
               onBack: () => context.pop(),
               action: RoundIconButton(
                 icon: LucideIcons.plus,
@@ -298,22 +299,16 @@ class _RuleCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: template.type == TxType.income
-                      ? AppColors.bgFood
-                      : const Color(0xFFE8E4FF),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                    child: Icon(
-                  template.type == TxType.income
-                      ? LucideIcons.trendingUp
-                      : LucideIcons.repeat,
-                  size: 18,
-                  color: context.primaryText,
-                ),
+              ColorWellIcon(
+                size: 40,
+                iconSize: 18,
+                radius: 14,
+                color: template.type == TxType.income
+                    ? AppColors.bgFood
+                    : const Color(0xFFE8E4FF),
+                icon: template.type == TxType.income
+                    ? LucideIcons.trendingUp
+                    : LucideIcons.repeat,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -361,7 +356,7 @@ class _RuleCard extends ConsumerWidget {
                   const SizedBox(width: 6),
                   if (daysUntil >= 0)
                     BudgetBadge(
-                      text: tr.inDaysShort.replaceFirst('{n}', '$daysUntil'),
+                      text: tr.inDays(daysUntil),
                       tone:
                           daysUntil <= 3 ? BadgeTone.red : BadgeTone.orange,
                     ),

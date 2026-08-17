@@ -55,7 +55,7 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
           children: [
             PageHeader(
               first: tr.debts,
-              subtitle: '${debts.length} ${tr.activePlural}',
+              subtitle: tr.activeCount(debts.length),
               onBack: () => context.pop(),
               action: RoundIconButton(
                 icon: LucideIcons.plus,
@@ -70,7 +70,7 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                     label: tr.iOwe,
                     value: formatMoney(iOweSum, currency),
                     color: AppColors.danger,
-                    subtitle: '${iOwe.length} ${tr.personsWord}',
+                    subtitle: tr.peopleCount(iOwe.length),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -79,7 +79,7 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                     label: tr.owedToMe,
                     value: formatMoney(owedToMeSum, currency),
                     color: AppColors.limeAccent,
-                    subtitle: '${owedToMe.length} ${tr.personsWord}',
+                    subtitle: tr.peopleCount(owedToMe.length),
                   ),
                 ),
               ],

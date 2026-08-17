@@ -8,6 +8,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/open_link.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/seed/seed_categories.dart';
@@ -258,11 +259,11 @@ Future<void> openNameSheet(
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD4F5E0),
+                      color: ctx.wellBg(const Color(0xFFD4F5E0)),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(LucideIcons.user,
-                        color: Theme.of(ctx).colorScheme.onSurface),
+                        color: ctx.wellFg(const Color(0xFFD4F5E0))),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -446,14 +447,10 @@ class _SettingsRow extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: iconBg,
+                color: context.wellBg(iconBg),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon,
-                  size: 18,
-                  color: danger
-                      ? const Color(0xFFE53E3E)
-                      : context.primaryText),
+              child: Icon(icon, size: 18, color: context.wellFg(iconBg)),
             ),
             const SizedBox(width: 14),
             Expanded(

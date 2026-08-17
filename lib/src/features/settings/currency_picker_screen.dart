@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/currencies.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
@@ -20,58 +21,21 @@ class CurrencyPickerScreen extends ConsumerStatefulWidget {
 class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
   String _query = '';
 
-  static const _popular = [
-    ('EUR', 'Euro', '€', '🇪🇺'),
-    ('USD', 'US Dollar', '\$', '🇺🇸'),
-    ('GBP', 'British Pound', '£', '🇬🇧'),
-    ('MXN', 'Peso mexicano', '\$', '🇲🇽'),
-    ('BRL', 'Real brasileiro', 'R\$', '🇧🇷'),
-    ('ARS', 'Peso argentino', '\$', '🇦🇷'),
-    ('COP', 'Peso colombiano', '\$', '🇨🇴'),
-    ('CLP', 'Peso chileno', '\$', '🇨🇱'),
-    ('PEN', 'Sol peruano', 'S/', '🇵🇪'),
-    ('CAD', 'Canadian Dollar', '\$', '🇨🇦'),
-    ('CHF', 'Swiss Franc', 'Fr', '🇨🇭'),
-    ('PLN', 'Złoty', 'zł', '🇵🇱'),
-    ('CZK', 'Koruna', 'Kč', '🇨🇿'),
-    ('SEK', 'Swedish Krona', 'kr', '🇸🇪'),
-    ('NOK', 'Norwegian Krone', 'kr', '🇳🇴'),
-    ('DKK', 'Danish Krone', 'kr', '🇩🇰'),
-    ('JPY', 'Yen', '¥', '🇯🇵'),
-    ('CNY', 'Yuan', '¥', '🇨🇳'),
-    ('INR', 'Rupee', '₹', '🇮🇳'),
-    ('AUD', 'Australian Dollar', '\$', '🇦🇺'),
-    ('NZD', 'New Zealand Dollar', '\$', '🇳🇿'),
-    ('KRW', 'Won', '₩', '🇰🇷'),
-    ('TRY', 'Lira', '₺', '🇹🇷'),
-    ('RUB', 'Ruble', '₽', '🇷🇺'),
-    ('UYU', 'Peso uruguayo', '\$', '🇺🇾'),
-    ('PYG', 'Guaraní paraguayo', '₲', '🇵🇾'),
-    ('BOB', 'Boliviano', 'Bs', '🇧🇴'),
-    ('VES', 'Bolívar venezolano', 'Bs.', '🇻🇪'),
-    ('CRC', 'Colón costarricense', '₡', '🇨🇷'),
-    ('DOP', 'Peso dominicano', '\$', '🇩🇴'),
-    ('GTQ', 'Quetzal guatemalteco', 'Q', '🇬🇹'),
-    ('HNL', 'Lempira hondureño', 'L', '🇭🇳'),
-    ('NIO', 'Córdoba nicaragüense', 'C\$', '🇳🇮'),
-    ('CUP', 'Peso cubano', '\$', '🇨🇺'),
-    ('XAF', 'Franco CFA', 'FCFA', '🇬🇶'),
-  ];
-
-  bool _match(String code, String name) {
+  bool _match(AppCurrency c) {
     if (_query.isEmpty) return true;
     final q = _query.toLowerCase();
-    return code.toLowerCase().contains(q) || name.toLowerCase().contains(q);
+    return c.country.toLowerCase().contains(q) ||
+        c.code.toLowerCase().contains(q) ||
+        c.symbol.toLowerCase().contains(q) ||
+        c.title.toLowerCase().contains(q);
   }
 
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final current = ref.watch(settingsControllerProvider).baseCurrency;
-
-    final popular = _popular
-        .where((c) => _match(c.$1, c.$2))
-        .toList(growable: false);
+    final items =
+        appCurrencies.where(_match).toList(growable: false);
 
     return Scaffold(
       body: SafeArea(
@@ -118,70 +82,34 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            if (popular.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8, left: 4),
-                child: Text(tr.popularUpper,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      color: context.mutedText,
-                    )),
-              ),
-              _List(
-                items: popular,
-                current: current,
-                onPick: (code) async {
-                  await ref
-                      .read(settingsServiceProvider)
-                      .setBaseCurrency(code);
-                  ref.invalidate(settingsControllerProvider);
-                  if (context.mounted) context.pop();
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _List extends StatelessWidget {
-  const _List({
-    required this.items,
-    required this.current,
-    required this.onPick,
-  });
-  final List<(String, String, String, String)> items;
-  final String current;
-  final ValueChanged<String> onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        color: context.surface,
-        child: Column(
-          children: [
-            for (var i = 0; i < items.length; i++) ...[
-              _Row(
-                code: items[i].$1,
-                name: items[i].$2,
-                symbol: items[i].$3,
-                flag: items[i].$4,
-                selected: items[i].$1 == current,
-                onTap: () => onPick(items[i].$1),
-              ),
-              if (i != items.length - 1)
-                const Padding(
-                  padding: EdgeInsets.only(left: 66, right: 16),
-                  child: Divider(height: 1, color: AppColors.divider),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                color: context.surface,
+                child: Column(
+                  children: [
+                    for (var i = 0; i < items.length; i++) ...[
+                      _Row(
+                        item: items[i],
+                        selected: items[i].code == current,
+                        onTap: () async {
+                          await ref
+                              .read(settingsServiceProvider)
+                              .setBaseCurrency(items[i].code);
+                          ref.invalidate(settingsControllerProvider);
+                          if (context.mounted) context.pop();
+                        },
+                      ),
+                      if (i != items.length - 1)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 66, right: 16),
+                          child: Divider(height: 1, color: AppColors.divider),
+                        ),
+                    ],
+                  ],
                 ),
-            ],
+              ),
+            ),
           ],
         ),
       ),
@@ -191,17 +119,11 @@ class _List extends StatelessWidget {
 
 class _Row extends StatelessWidget {
   const _Row({
-    required this.code,
-    required this.name,
-    required this.symbol,
-    required this.flag,
+    required this.item,
     required this.selected,
     required this.onTap,
   });
-  final String code;
-  final String name;
-  final String symbol;
-  final String flag;
+  final AppCurrency item;
   final bool selected;
   final VoidCallback onTap;
 
@@ -226,20 +148,15 @@ class _Row extends StatelessWidget {
           children: [
             SizedBox(
               width: 36,
-              child: Center(child: Text(flag, style: const TextStyle(fontSize: 22))),
+              child: Center(
+                  child: Text(item.flag, style: const TextStyle(fontSize: 22))),
             ),
             const SizedBox(width: 14),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name,
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w600)),
-                  Text('$code · $symbol',
-                      style: TextStyle(
-                          fontSize: 11, color: context.faintText)),
-                ],
+              child: Text(
+                item.title,
+                style: const TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ),
             if (selected)

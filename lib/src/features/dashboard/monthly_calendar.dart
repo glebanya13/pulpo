@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/currencies.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
@@ -131,7 +132,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
-    final title = DateFormat('MMMM y', locale).format(month);
+    final title = DateFormat('LLLL y', locale).format(month);
     final titleCapitalized =
         title.isEmpty ? title : title[0].toUpperCase() + title.substring(1);
     return Row(
@@ -563,36 +564,12 @@ String _trimZero(String s) {
 
 String _shortSymbol(String code) {
   switch (code.toUpperCase()) {
-    case 'EUR':
-      return '€';
-    case 'USD':
-    case 'MXN':
-    case 'ARS':
-    case 'COP':
-    case 'CLP':
-    case 'UYU':
-    case 'DOP':
-    case 'CUP':
-      return '\$';
-    case 'PEN':
-      return 'S/';
-    case 'PYG':
-      return '₲';
-    case 'BOB':
-      return 'Bs';
-    case 'VES':
-      return 'Bs.';
-    case 'CRC':
-      return '₡';
-    case 'GTQ':
-      return 'Q';
-    case 'HNL':
-      return 'L';
-    case 'NIO':
-      return 'C\$';
     case 'XAF':
       return '';
+    case 'DOP':
+    case 'UYU':
+      return r'$';
     default:
-      return '';
+      return symbolForCode(code);
   }
 }

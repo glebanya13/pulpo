@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'plural.dart';
+
 /// Простой словарь переводов. Использование: `Tr.of(context).transactions`.
 ///
 /// Локаль берётся из MaterialApp.locale через Localizations.localeOf.
@@ -11,6 +13,9 @@ class Tr {
     final code = Localizations.localeOf(context).languageCode;
     return Tr(_dict.containsKey(code) ? code : 'es');
   }
+
+  static Tr fromLang(String code) =>
+      Tr(_dict.containsKey(code) ? code : 'es');
 
   String _get(String key) =>
       _dict[_lang]?[key] ?? _dict['es']![key] ?? key;
@@ -178,6 +183,92 @@ class Tr {
   String get addToGoal => _get('add_to_goal');
   String get allSettings => _get('all_settings');
   String get accountsCountLabel => _get('accounts_count_label');
+  String accountsCount(int n) => countPhrase(
+        lang: _lang,
+        n: n,
+        esOne: 'cuenta',
+        esMany: 'cuentas',
+        enOne: 'account',
+        enMany: 'accounts',
+        ruOne: 'счёт',
+        ruFew: 'счёта',
+        ruMany: 'счетов',
+      );
+  String currenciesCount(int n) => countPhrase(
+        lang: _lang,
+        n: n,
+        esOne: 'moneda',
+        esMany: 'monedas',
+        enOne: 'currency',
+        enMany: 'currencies',
+        ruOne: 'валюта',
+        ruFew: 'валюты',
+        ruMany: 'валют',
+      );
+  String peopleCount(int n) => countPhrase(
+        lang: _lang,
+        n: n,
+        esOne: 'persona',
+        esMany: 'personas',
+        enOne: 'person',
+        enMany: 'people',
+        ruOne: 'человек',
+        ruFew: 'человека',
+        ruMany: 'человек',
+      );
+  String activeCount(int n) => countPhrase(
+        lang: _lang,
+        n: n,
+        esOne: 'activo',
+        esMany: 'activos',
+        enOne: 'active',
+        enMany: 'active',
+        ruOne: 'активный',
+        ruFew: 'активных',
+        ruMany: 'активных',
+      );
+  String pausedCount(int n) => countPhrase(
+        lang: _lang,
+        n: n,
+        esOne: 'en pausa',
+        esMany: 'en pausa',
+        enOne: 'paused',
+        enMany: 'paused',
+        ruOne: 'на паузе',
+        ruFew: 'на паузе',
+        ruMany: 'на паузе',
+      );
+  String daysLeftLabel(int n) => countPhrase(
+        lang: _lang,
+        n: n,
+        esOne: 'día',
+        esMany: 'días',
+        enOne: 'day',
+        enMany: 'days',
+        ruOne: 'день',
+        ruFew: 'дня',
+        ruMany: 'дней',
+      );
+  String inDays(int n) {
+    switch (_lang) {
+      case 'ru':
+        return 'через ${daysLeftLabel(n)}';
+      case 'en':
+        return 'in ${daysLeftLabel(n)}';
+      default:
+        return 'en ${daysLeftLabel(n)}';
+    }
+  }
+  String percentUsed(int pct) {
+    switch (_lang) {
+      case 'ru':
+        return '$pct% использовано';
+      case 'en':
+        return '$pct% used';
+      default:
+        return '$pct% usado';
+    }
+  }
   String get transactionsCount => _get('transactions_count');
   String get monthLabel => _get('month_label');
   String get baseCurrencyLabel => _get('base_currency_label');
@@ -782,7 +873,7 @@ class Tr {
       'sync_devices': 'Sincronizar dispositivos',
       'security': 'Seguridad',
       'pin_code': 'Código PIN',
-      'pin_code_hint': 'Código de respaldo si Face ID no funciona',
+      'pin_code_hint': 'Opcional. Para entrar si Face ID no funciona',
       'use_biometrics': 'Bloqueo biométrico',
       'biometric_lock_hint': 'Pide Face ID o huella al abrir la app',
       'auto_lock': 'Bloqueo automático',
@@ -1156,7 +1247,7 @@ class Tr {
       'sync_devices': 'Синхронизация устройств',
       'security': 'Безопасность',
       'pin_code': 'PIN-код',
-      'pin_code_hint': 'Запасной код, если Face ID не сработает',
+      'pin_code_hint': 'Необязательно. Если Face ID не сработает',
       'use_biometrics': 'Биометрический замок',
       'biometric_lock_hint': 'Спрашивать Face ID или отпечаток при входе',
       'auto_lock': 'Автоблокировка',
@@ -1530,7 +1621,7 @@ class Tr {
       'sync_devices': 'Sync devices',
       'security': 'Security',
       'pin_code': 'PIN code',
-      'pin_code_hint': 'Backup code if Face ID is unavailable',
+      'pin_code_hint': 'Optional. Use if Face ID is unavailable',
       'use_biometrics': 'Biometric lock',
       'biometric_lock_hint': 'Require Face ID or fingerprint when opening the app',
       'auto_lock': 'Auto-lock',

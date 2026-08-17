@@ -8,6 +8,7 @@ import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../export/export_sheet.dart';
 import '../settings/settings_screen.dart' show openNameSheet;
 import '../../data/repositories/providers.dart';
@@ -72,7 +73,7 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Text(
                       authUser?.email ??
-                          '${accounts.length} ${tr.accountsCountLabel} · $currency',
+                          '${tr.accountsCount(accounts.length)} · $currency',
                       style: TextStyle(
                         fontSize: 12,
                         color: context.mutedText,
@@ -393,14 +394,12 @@ class _MenuRow extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: iconBg,
+                color: context.wellBg(iconBg),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon,
                   size: 18,
-                  color: danger
-                      ? const Color(0xFFE53E3E)
-                      : context.primaryText),
+                  color: context.wellFg(iconBg)),
             ),
             const SizedBox(width: 14),
             Expanded(

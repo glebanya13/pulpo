@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Balance and spending this month</string>
+    <string name="widget_balance">TOTAL BALANCE</string>
+    <string name="widget_spent">SPENT THIS MONTH</string>
+</resources>

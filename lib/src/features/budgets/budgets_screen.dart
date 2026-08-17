@@ -107,7 +107,7 @@ class BudgetsScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(left: 54),
               child: Text(
-                DateFormat('MMMM yyyy',
+                DateFormat('LLLL yyyy',
                         Localizations.localeOf(context).languageCode)
                     .format(now),
                 style: TextStyle(color: context.mutedText),
@@ -221,11 +221,11 @@ class _Summary extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${(progress * 100).round()}% использовано',
+                Tr.of(context).percentUsed((progress * 100).round()),
                 style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
               Text(
-                '${formatMoney(leftAmount, currency)} · $daysLeft дн.',
+                '${formatMoney(leftAmount, currency)} · ${Tr.of(context).daysLeftLabel(daysLeft)}',
                 style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
             ],

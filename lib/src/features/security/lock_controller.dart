@@ -17,26 +17,36 @@ class LockState {
     required this.biometricsEnabled,
     required this.autoLock,
     required this.unlocked,
+    required this.pinLength,
+    required this.pinLengthKnown,
   });
 
   final bool pinEnabled;
   final bool biometricsEnabled;
   final bool autoLock;
   final bool unlocked;
+  final int pinLength;
+  final bool pinLengthKnown;
 
-  bool get needsLock => pinEnabled && !unlocked;
+  bool get hasLock => pinEnabled || biometricsEnabled;
+
+  bool get needsLock => hasLock && !unlocked;
 
   LockState copyWith({
     bool? pinEnabled,
     bool? biometricsEnabled,
     bool? autoLock,
     bool? unlocked,
+    int? pinLength,
+    bool? pinLengthKnown,
   }) {
     return LockState(
       pinEnabled: pinEnabled ?? this.pinEnabled,
       biometricsEnabled: biometricsEnabled ?? this.biometricsEnabled,
       autoLock: autoLock ?? this.autoLock,
       unlocked: unlocked ?? this.unlocked,
+      pinLength: pinLength ?? this.pinLength,
+      pinLengthKnown: pinLengthKnown ?? this.pinLengthKnown,
     );
   }
 }
@@ -44,6 +54,7 @@ class LockState {
 class LockController extends Notifier<LockState> {
   static const _kPinHash = 'lock_pin_hash';
   static const _kBio = 'lock_biometrics';
+  static const _kPinLen = 'lock_pin_len';
   static const _kAuto = 'lock_autolock';
 
   SharedPreferences get _prefs => ref.read(sharedPreferencesProvider);
@@ -52,11 +63,15 @@ class LockController extends Notifier<LockState> {
   @override
   LockState build() {
     final hash = _prefs.getString(_kPinHash);
+    final pinOn = hash != null && hash.isNotEmpty;
+    final bioOn = _prefs.getBool(_kBio) ?? false;
     return LockState(
-      pinEnabled: hash != null && hash.isNotEmpty,
-      biometricsEnabled: _prefs.getBool(_kBio) ?? false,
+      pinEnabled: pinOn,
+      biometricsEnabled: bioOn,
       autoLock: _prefs.getBool(_kAuto) ?? true,
-      unlocked: hash == null || hash.isEmpty,
+      unlocked: !(pinOn || bioOn),
+      pinLength: _prefs.getInt(_kPinLen) ?? 4,
+      pinLengthKnown: _prefs.containsKey(_kPinLen),
     );
   }
 
@@ -64,16 +79,22 @@ class LockController extends Notifier<LockState> {
 
   Future<void> setPin(String pin) async {
     await _prefs.setString(_kPinHash, _hash(pin));
-    state = state.copyWith(pinEnabled: true, unlocked: true);
+    await _prefs.setInt(_kPinLen, pin.length);
+    state = state.copyWith(
+      pinEnabled: true,
+      unlocked: true,
+      pinLength: pin.length,
+      pinLengthKnown: true,
+    );
   }
 
   Future<void> clearPin() async {
     await _prefs.remove(_kPinHash);
-    await _prefs.setBool(_kBio, false);
+    await _prefs.remove(_kPinLen);
     state = state.copyWith(
       pinEnabled: false,
-      biometricsEnabled: false,
-      unlocked: true,
+      unlocked: state.biometricsEnabled ? state.unlocked : true,
+      pinLengthKnown: false,
     );
   }
 
@@ -122,7 +143,10 @@ class LockController extends Notifier<LockState> {
       return;
     }
     await _prefs.setBool(_kBio, false);
-    state = state.copyWith(biometricsEnabled: false);
+    state = state.copyWith(
+      biometricsEnabled: false,
+      unlocked: state.pinEnabled ? state.unlocked : true,
+    );
   }
 
   Future<void> setAutoLock(bool v) async {
@@ -131,7 +155,7 @@ class LockController extends Notifier<LockState> {
   }
 
   void lock() {
-    if (state.pinEnabled) state = state.copyWith(unlocked: false);
+    if (state.hasLock) state = state.copyWith(unlocked: false);
   }
 
   void onAppPaused() {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/l10n/tr.dart';
@@ -7,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/scheduled_posting.dart';
 import 'lock_controller.dart';
+import 'pin_pad.dart';
 
 class LockScreen extends ConsumerStatefulWidget {
   const LockScreen({super.key});
@@ -16,7 +16,7 @@ class LockScreen extends ConsumerStatefulWidget {
 }
 
 class _LockScreenState extends ConsumerState<LockScreen> {
-  final _ctrl = TextEditingController();
+  String _pin = '';
   String? _error;
 
   @override
@@ -30,28 +30,57 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
+  void _onPin(String next) {
+    final lock = ref.read(lockControllerProvider);
+      final knownLen = lock.pinLength;
+      final hasStoredLen = lock.pinLengthKnown;
+    setState(() {
+      _pin = next;
+      _error = null;
+    });
+    if (hasStoredLen) {
+      if (next.length == knownLen) _tryPin(next, showError: true);
+      return;
+    }
+    if (next.length >= 4) {
+      final ok = ref.read(lockControllerProvider.notifier).checkPin(next);
+      if (ok) return;
+      if (next.length >= 8) {
+        setState(() {
+          _error = Tr.of(context).pinWrong;
+          _pin = '';
+        });
+      }
+    }
+  }
+
+  void _tryPin(String pin, {required bool showError}) {
+    final ok = ref.read(lockControllerProvider.notifier).checkPin(pin);
+    if (!ok && showError) {
+      setState(() {
+        _error = Tr.of(context).pinWrong;
+        _pin = '';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
+    final lock = ref.watch(lockControllerProvider);
+    final showPin = lock.pinEnabled;
     return Scaffold(
       backgroundColor: AppColors.ink,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(28),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
-              Image.asset('assets/logo.png', height: 72),
-              const SizedBox(height: 28),
+              const SizedBox(height: 36),
+              Image.asset('assets/logo.png', height: 64),
+              const SizedBox(height: 24),
               Text(
-                tr.enterPin,
+                showPin ? tr.enterPin : tr.useBiometrics,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
@@ -59,43 +88,29 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _ctrl,
-                obscureText: true,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                maxLength: 8,
-                style: const TextStyle(color: Colors.white, letterSpacing: 8),
-                decoration: InputDecoration(
-                  counterText: '',
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.08),
-                  errorText: _error,
-                ),
-                onSubmitted: _tryPin,
-              ),
-              const SizedBox(height: 16),
-              GestureDetector(
-                onTap: () => _tryPin(_ctrl.text),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.lime,
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    tr.unlock,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.ink,
-                    ),
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _error!,
+                  style: const TextStyle(
+                    color: Color(0xFFFF6B6B),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              if (ref.watch(lockControllerProvider).biometricsEnabled)
+              ],
+              if (showPin) ...[
+                const Spacer(),
+                PinPad(
+                  length: lock.pinLengthKnown ? lock.pinLength : 8,
+                  value: _pin,
+                  onChanged: _onPin,
+                  dark: true,
+                ),
+                const Spacer(),
+              ] else
+                const Spacer(),
+              if (lock.biometricsEnabled)
                 TextButton.icon(
                   onPressed: () =>
                       ref.read(lockControllerProvider.notifier).tryBiometrics(),
@@ -105,16 +120,12 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     style: const TextStyle(color: Colors.white70),
                   ),
                 ),
+              const SizedBox(height: 12),
             ],
           ),
         ),
       ),
     );
-  }
-
-  void _tryPin(String pin) {
-    final ok = ref.read(lockControllerProvider.notifier).checkPin(pin);
-    setState(() => _error = ok ? null : Tr.of(context).pinWrong);
   }
 }
 

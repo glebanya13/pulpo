@@ -14,6 +14,14 @@
 				<string>com.googleusercontent.apps.734611302573-omvrbm7oeducoterbh8imq6u63qab21o</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>pulpo</string>
+			</array>
+		</dict>
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
@@ -51,7 +59,7 @@
 		<string>mailto</string>
 	</array>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Pulpo usa Face ID para desbloquear la app cuando activas el código PIN.</string>
+	<string>Pulpo usa Face ID para desbloquear la app.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>

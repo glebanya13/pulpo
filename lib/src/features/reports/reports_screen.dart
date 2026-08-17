@@ -261,7 +261,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               padding: const EdgeInsets.only(top: 6),
                               child: Text(
                                 DateFormat(
-                                        'MMM',
+                                        'LLL',
                                         Localizations.localeOf(context)
                                             .languageCode)
                                     .format(month),
@@ -307,7 +307,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       const SizedBox(height: 16),
       _ChartCard(
         title:
-            '${Tr.of(context).byCategoriesMonthPrefix}${DateFormat('MMMM', Localizations.localeOf(context).languageCode).format(now)}',
+            '${Tr.of(context).byCategoriesMonthPrefix}${DateFormat('LLLL', Localizations.localeOf(context).languageCode).format(now)}',
         value: '',
         child: donutData.isEmpty
             ? Padding(
@@ -523,7 +523,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       return Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
-                          DateFormat('MMM', Localizations.localeOf(context).languageCode).format(month),
+                          DateFormat('LLL', Localizations.localeOf(context).languageCode).format(month),
                           style: TextStyle(
                               color: context.faintText, fontSize: 10),
                         ),

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Баланс и расходы за месяц</string>
+    <string name="widget_balance">ОБЩИЙ БАЛАНС</string>
+    <string name="widget_spent">ПОТРАЧЕНО В ЭТОМ МЕСЯЦЕ</string>
+</resources>

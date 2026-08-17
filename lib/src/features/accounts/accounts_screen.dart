@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/currencies.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
@@ -51,7 +52,7 @@ class AccountsScreen extends ConsumerWidget {
             PageHeader(
               first: tr.myAccounts,
               subtitle:
-                  '${accounts.length} ${tr.accountsCountLabel} · $currencies ${tr.currency.toLowerCase()}',
+                  '${tr.accountsCount(accounts.length)} · ${tr.currenciesCount(currencies)}',
               onBack: () => context.pop(),
               action: RoundIconButton(
                 icon: LucideIcons.plus,
@@ -151,13 +152,16 @@ class AccountsScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        initialValue: currency,
-                        items: const [
-                          DropdownMenuItem(value: 'EUR', child: Text('EUR')),
-                          DropdownMenuItem(value: 'MXN', child: Text('MXN')),
-                          DropdownMenuItem(value: 'ARS', child: Text('ARS')),
-                          DropdownMenuItem(value: 'COP', child: Text('COP')),
-                          DropdownMenuItem(value: 'USD', child: Text('USD')),
+                        initialValue: uniqueAppCurrencies()
+                                .any((c) => c.code == currency)
+                            ? currency
+                            : uniqueAppCurrencies().first.code,
+                        items: [
+                          for (final c in uniqueAppCurrencies())
+                            DropdownMenuItem(
+                              value: c.code,
+                              child: Text('${c.flag} ${c.code}'),
+                            ),
                         ],
                         decoration:
                             InputDecoration(labelText: Tr.of(context).currency),

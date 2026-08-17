@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:pulpo/src/core/l10n/plural.dart';
 import 'package:pulpo/src/data/db/app_database.dart';
 import 'package:pulpo/src/data/db/enums.dart';
 import 'package:pulpo/src/data/repositories/backup_service.dart';
@@ -19,6 +20,42 @@ void main() {
   test('hashLockPin is stable and distinguishes PINs', () {
     expect(hashLockPin('1234'), hashLockPin('1234'));
     expect(hashLockPin('1234'), isNot(hashLockPin('0000')));
+  });
+
+  test('ruPlural and countPhrase', () {
+    expect(ruPlural(1, 'счёт', 'счёта', 'счетов'), 'счёт');
+    expect(ruPlural(2, 'счёт', 'счёта', 'счетов'), 'счёта');
+    expect(ruPlural(5, 'счёт', 'счёта', 'счетов'), 'счетов');
+    expect(ruPlural(11, 'счёт', 'счёта', 'счетов'), 'счетов');
+    expect(ruPlural(21, 'счёт', 'счёта', 'счетов'), 'счёт');
+    expect(
+      countPhrase(
+        lang: 'ru',
+        n: 3,
+        esOne: 'cuenta',
+        esMany: 'cuentas',
+        enOne: 'account',
+        enMany: 'accounts',
+        ruOne: 'счёт',
+        ruFew: 'счёта',
+        ruMany: 'счетов',
+      ),
+      '3 счёта',
+    );
+    expect(
+      countPhrase(
+        lang: 'es',
+        n: 1,
+        esOne: 'cuenta',
+        esMany: 'cuentas',
+        enOne: 'account',
+        enMany: 'accounts',
+        ruOne: 'счёт',
+        ruFew: 'счёта',
+        ruMany: 'счетов',
+      ),
+      '1 cuenta',
+    );
   });
 
   test('LockController checkPin', () async {

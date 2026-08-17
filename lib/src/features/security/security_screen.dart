@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -8,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../../widgets/common.dart';
 import 'lock_controller.dart';
+import 'pin_pad.dart';
 
 class SecurityScreen extends ConsumerStatefulWidget {
   const SecurityScreen({super.key});
@@ -17,17 +17,6 @@ class SecurityScreen extends ConsumerStatefulWidget {
 }
 
 class _SecurityScreenState extends ConsumerState<SecurityScreen> {
-  final _pin = TextEditingController();
-  final _pin2 = TextEditingController();
-  String? _error;
-
-  @override
-  void dispose() {
-    _pin.dispose();
-    _pin2.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
@@ -75,8 +64,8 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                     color: const Color(0xFF2EB5FF),
                     title: tr.autoLock,
                     subtitle: tr.autoLockHint,
-                    value: lock.autoLock && lock.pinEnabled,
-                    onChanged: lock.pinEnabled
+                    value: lock.autoLock && lock.hasLock,
+                    onChanged: lock.hasLock
                         ? (v) => ref
                             .read(lockControllerProvider.notifier)
                             .setAutoLock(v)
@@ -93,7 +82,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
 
   Future<void> _togglePin(bool on, Tr tr) async {
     if (on) {
-      await _askPin(tr);
+      await _askPin();
       return;
     }
     await ref.read(lockControllerProvider.notifier).clearPin();
@@ -113,10 +102,6 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       );
       return;
     }
-    if (!ref.read(lockControllerProvider).pinEnabled) {
-      final set = await _askPin(tr);
-      if (set != true) return;
-    }
     final ok = await ctrl.enableBiometrics();
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -125,10 +110,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
     }
   }
 
-  Future<bool?> _askPin(Tr tr) async {
-    _error = null;
-    _pin.clear();
-    _pin2.clear();
+  Future<bool?> _askPin() async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -136,27 +118,10 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: StatefulBuilder(
-          builder: (ctx, setSt) => _PinSetup(
-            pin: _pin,
-            pin2: _pin2,
-            error: _error,
-            onSave: () async {
-              if (_pin.text.length < 4 || _pin.text != _pin2.text) {
-                setSt(() => _error = tr.pinMismatch);
-                return;
-              }
-              await ref.read(lockControllerProvider.notifier).setPin(_pin.text);
-              _pin.clear();
-              _pin2.clear();
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-          ),
-        ),
+      builder: (_) => _PinSetup(
+        onSave: (pin) async {
+          await ref.read(lockControllerProvider.notifier).setPin(pin);
+        },
       ),
     );
     return ref.read(lockControllerProvider).pinEnabled;
@@ -225,69 +190,94 @@ class _LockRow extends StatelessWidget {
   }
 }
 
-class _PinSetup extends StatelessWidget {
-  const _PinSetup({
-    required this.pin,
-    required this.pin2,
-    required this.onSave,
-    this.error,
-  });
-  final TextEditingController pin;
-  final TextEditingController pin2;
-  final VoidCallback onSave;
-  final String? error;
+class _PinSetup extends StatefulWidget {
+  const _PinSetup({required this.onSave});
+  final Future<void> Function(String pin) onSave;
+
+  @override
+  State<_PinSetup> createState() => _PinSetupState();
+}
+
+class _PinSetupState extends State<_PinSetup> {
+  String _first = '';
+  String _confirm = '';
+  bool _repeat = false;
+  String? _error;
+
+  static const _len = 4;
+
+  Future<void> _onChanged(String next) async {
+    setState(() => _error = null);
+    if (!_repeat) {
+      setState(() => _first = next);
+      if (next.length == _len) {
+        await Future<void>.delayed(const Duration(milliseconds: 120));
+        if (!mounted) return;
+        setState(() {
+          _repeat = true;
+          _confirm = '';
+        });
+      }
+      return;
+    }
+    setState(() => _confirm = next);
+    if (next.length != _len) return;
+    if (next != _first) {
+      setState(() {
+        _error = Tr.of(context).pinMismatch;
+        _confirm = '';
+      });
+      return;
+    }
+    await widget.onSave(next);
+    if (mounted) Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.handleBar,
-                borderRadius: BorderRadius.circular(2),
-              ),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: context.handleBar,
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            tr.setPin,
+            _repeat ? tr.confirmPin : tr.setPin,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
               color: context.primaryText,
             ),
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: pin,
-            obscureText: true,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(hintText: tr.setPin),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: pin2,
-            obscureText: true,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(
-              hintText: tr.confirmPin,
-              errorText: error,
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: const TextStyle(
+                color: Color(0xFFE53E3E),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
+          ],
+          const SizedBox(height: 20),
+          PinPad(
+            length: _len,
+            value: _repeat ? _confirm : _first,
+            onChanged: _onChanged,
           ),
-          const SizedBox(height: 12),
-          FilledButton(onPressed: onSave, child: Text(tr.save)),
         ],
       ),
     );
   }
 }
+

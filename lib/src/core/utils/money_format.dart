@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import '../currencies.dart';
+
 String formatMoney(num amount, String currency, {bool showSign = false}) {
   final formatter = NumberFormat.currency(
     locale: 'es_ES',
@@ -16,38 +18,4 @@ String formatAmountBare(num amount) {
   return f.format(amount.abs());
 }
 
-String _symbolFor(String code) {
-  switch (code.toUpperCase()) {
-    case 'EUR':
-      return '€';
-    case 'USD':
-    case 'MXN':
-    case 'ARS':
-    case 'COP':
-    case 'CLP':
-    case 'UYU':
-    case 'DOP':
-    case 'CUP':
-      return '\$';
-    case 'PEN':
-      return 'S/';
-    case 'PYG':
-      return '₲';
-    case 'BOB':
-      return 'Bs';
-    case 'VES':
-      return 'Bs.';
-    case 'CRC':
-      return '₡';
-    case 'GTQ':
-      return 'Q';
-    case 'HNL':
-      return 'L';
-    case 'NIO':
-      return 'C\$';
-    case 'XAF':
-      return 'FCFA ';
-    default:
-      return '$code ';
-  }
-}
+String _symbolFor(String code) => symbolForCode(code);

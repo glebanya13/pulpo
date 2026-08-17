@@ -29,7 +29,7 @@ class SubscriptionsScreen extends ConsumerWidget {
           children: [
             PageHeader(
               first: tr.subscriptions,
-              subtitle: '${active.length} ${tr.activePlural}',
+              subtitle: tr.activeCount(active.length),
               onBack: () => context.pop(),
               action: RoundIconButton(
                 icon: LucideIcons.plus,
@@ -397,7 +397,7 @@ class _SubCard extends ConsumerWidget {
                               '${sub.cycle == 'yearly' ? tr.yearlyLabel : tr.monthlyLabel} · '),
                       TextSpan(
                         text: highlighted && daysUntil <= 7
-                            ? tr.inDaysShort.replaceFirst('{n}', '$daysUntil')
+                            ? tr.inDays(daysUntil)
                             : DateFormat('d MMM', locale)
                                 .format(sub.nextPayment),
                         style: highlighted

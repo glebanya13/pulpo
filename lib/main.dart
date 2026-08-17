@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'firebase_options.dart';
+import 'src/core/home_widget_sync.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/data/repositories/providers.dart';
 import 'src/data/repositories/settings_service.dart';
@@ -43,6 +44,7 @@ Future<void> main() async {
   ));
 
   await initializeDateFormatting();
+  await configureHomeWidget();
 
   final prefs = await SharedPreferences.getInstance();
 
@@ -76,7 +78,9 @@ class BudgetTrackerApp extends ConsumerWidget {
       darkTheme: AppTheme.dark(),
       themeMode: settings.materialThemeMode,
       locale: Locale(settings.locale),
-      routerConfig: router,
+      routerDelegate: router.routerDelegate,
+      routeInformationParser: router.routeInformationParser,
+      routeInformationProvider: router.routeInformationProvider,
       builder: (context, child) {
         final dark = Theme.of(context).brightness == Brightness.dark;
         return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -96,7 +100,9 @@ class BudgetTrackerApp extends ConsumerWidget {
               final focus = FocusManager.instance.primaryFocus;
               if (focus != null && focus.hasFocus) focus.unfocus();
             },
-            child: LockGate(child: child ?? const SizedBox.shrink()),
+            child: HomeWidgetBinder(
+              child: LockGate(child: child ?? const SizedBox.shrink()),
+            ),
           ),
         );
       },

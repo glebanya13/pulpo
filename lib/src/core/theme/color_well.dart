@@ -48,14 +48,21 @@ extension VividColorX on Color {
 extension ColorWellX on BuildContext {
   Color wellBg(Color stored) {
     final v = stored.asVivid;
-    if (isDark) return v.withValues(alpha: 0.32);
+    if (isDark) {
+      return Color.lerp(const Color(0xFF1C1C1C), v, 0.16)!;
+    }
     return Color.lerp(Colors.white, v, 0.34)!;
   }
 
   Color wellFg(Color stored) {
     final v = stored.asVivid;
-    if (isDark) return Color.lerp(v, Colors.white, 0.18)!;
     final hsl = HSLColor.fromColor(v);
+    if (isDark) {
+      return hsl
+          .withSaturation((hsl.saturation * 0.55).clamp(0.25, 0.7))
+          .withLightness((hsl.lightness * 0.55).clamp(0.38, 0.55))
+          .toColor();
+    }
     return hsl.withLightness((hsl.lightness * 0.42).clamp(0.18, 0.38)).toColor();
   }
 }

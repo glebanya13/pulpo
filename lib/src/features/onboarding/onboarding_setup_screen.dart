@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/currencies.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/db/enums.dart';
@@ -24,26 +25,8 @@ class _OnboardingSetupScreenState
     extends ConsumerState<OnboardingSetupScreen> {
   final _nameCtrl = TextEditingController();
   final _balanceCtrl = TextEditingController();
+  String _country = 'España';
   String _currency = 'EUR';
-  static const _currencies = [
-    'EUR',
-    'USD',
-    'GBP',
-    'MXN',
-    'BRL',
-    'ARS',
-    'COP',
-    'CLP',
-    'PEN',
-    'CAD',
-    'CHF',
-    'PLN',
-    'JPY',
-    'CNY',
-    'INR',
-    'AUD',
-    'RUB',
-  ];
   bool _nameError = false;
 
   @override
@@ -210,7 +193,7 @@ class _OnboardingSetupScreenState
                         alignment: Alignment.center,
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _currency,
+                            value: _country,
                             isExpanded: true,
                             dropdownColor: AppColors.ink2,
                             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -219,11 +202,25 @@ class _OnboardingSetupScreenState
                               fontWeight: FontWeight.w600,
                             ),
                             items: [
-                              for (final c in _currencies)
-                                DropdownMenuItem(value: c, child: Text(c)),
+                              for (final c in appCurrencies)
+                                DropdownMenuItem(
+                                  value: c.country,
+                                  child: Text(
+                                    '${c.flag} ${c.code}',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                             ],
-                            onChanged: (v) =>
-                                setState(() => _currency = v ?? 'EUR'),
+                            onChanged: (v) {
+                              final picked = appCurrencies.firstWhere(
+                                (c) => c.country == v,
+                                orElse: () => appCurrencies[2],
+                              );
+                              setState(() {
+                                _country = picked.country;
+                                _currency = picked.code;
+                              });
+                            },
                           ),
                         ),
                       ),

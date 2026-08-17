@@ -46,16 +46,24 @@ CustomTransitionPage<void> _fadePage(GoRouterState state, Widget child) {
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final settings = ref.watch(settingsControllerProvider);
+  final refresh = ValueNotifier<int>(0);
+  ref.listen<bool>(
+    settingsControllerProvider.select((s) => s.onboardingDone),
+    (_, _) => refresh.value++,
+  );
+  ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    initialLocation: settings.onboardingDone ? '/' : '/onboarding',
+    refreshListenable: refresh,
+    initialLocation:
+        ref.read(settingsControllerProvider).onboardingDone ? '/' : '/onboarding',
     redirect: (context, state) {
       final path = state.uri.path;
-      if (!settings.onboardingDone && !path.startsWith('/onboarding')) {
+      final done = ref.read(settingsControllerProvider).onboardingDone;
+      if (!done && !path.startsWith('/onboarding')) {
         return '/onboarding';
       }
-      if (settings.onboardingDone && path.startsWith('/onboarding')) {
+      if (done && path.startsWith('/onboarding')) {
         return '/';
       }
       return null;
