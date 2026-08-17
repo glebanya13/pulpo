@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../core/l10n/tr.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
+import '../core/theme/color_well.dart';
 import '../core/utils/lucide_icon_map.dart';
 import '../core/utils/money_format.dart';
 import '../data/db/app_database.dart' as db;
@@ -25,10 +26,10 @@ class TransactionTile extends ConsumerWidget {
       tx.currency,
       showSign: true,
     );
-    final iconBg = category != null
-        ? Color(category.color)
-        : (isIncome ? AppColors.bgFood : AppColors.bg);
     final icon = category != null ? lucideByKey(category.icon) : Icons.paid;
+    final wellColor = category != null
+        ? Color(category.color)
+        : (isIncome ? const Color(0xFF8BD44A) : const Color(0xFFFF5C5C));
 
     final dateStr = _humanDate(tx.date, context);
 
@@ -41,17 +42,7 @@ class TransactionTile extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon,
-                size: 20,
-                color: context.isDark ? Colors.white : AppColors.ink),
-          ),
+          ColorWellIcon(color: wellColor, icon: icon),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -89,7 +80,9 @@ class TransactionTile extends ConsumerWidget {
                   ? (context.isDark
                       ? AppColors.lime
                       : AppColors.limeAccent)
-                  : context.primaryText,
+                  : type == TxType.expense
+                      ? AppColors.danger
+                      : context.primaryText,
             ),
           ),
         ],

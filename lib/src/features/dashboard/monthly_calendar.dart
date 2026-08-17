@@ -7,6 +7,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
@@ -48,17 +49,22 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
             .valueOrNull ??
         const <db.Transaction>[];
 
+    var income = 0.0;
+    var expense = 0.0;
     final byDay = <int, ({double income, double expense})>{};
     for (final t in monthTxs) {
       final key = t.date.day;
       final prev = byDay[key] ?? (income: 0.0, expense: 0.0);
       final type = TxType.values[t.type];
       if (type == TxType.income) {
+        income += t.amount;
         byDay[key] = (income: prev.income + t.amount, expense: prev.expense);
       } else if (type == TxType.expense) {
+        expense += t.amount;
         byDay[key] = (income: prev.income, expense: prev.expense + t.amount);
       }
     }
+    final net = income - expense;
 
     // Понедельник = 1 … воскресенье = 7 (DateTime.weekday).
     final firstWeekday = monthStart.weekday; // 1..7 (Mon..Sun)
@@ -75,7 +81,14 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _Header(month: _month, onShift: _shiftMonth),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
+          _MonthTotals(
+            income: income,
+            expense: expense,
+            net: net,
+            currency: currency,
+          ),
+          const SizedBox(height: 8),
           _MonthTable(
             month: _month,
             leading: leading,
@@ -138,6 +151,80 @@ class _Header extends StatelessWidget {
         ),
         _NavBtn(icon: LucideIcons.chevronRight, onTap: () => onShift(1)),
       ],
+    );
+  }
+}
+
+class _MonthTotals extends StatelessWidget {
+  const _MonthTotals({
+    required this.income,
+    required this.expense,
+    required this.net,
+    required this.currency,
+  });
+  final double income;
+  final double expense;
+  final double net;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = Tr.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: context.scaffoldBg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          _Mini(
+              label: tr.income,
+              value: formatMoney(income, currency),
+              color: AppColors.limeAccent),
+          Container(width: 1, height: 28, color: context.divider),
+          _Mini(
+              label: tr.expense,
+              value: formatMoney(expense, currency),
+              color: AppColors.danger),
+          Container(width: 1, height: 28, color: context.divider),
+          _Mini(
+              label: tr.monthNet,
+              value: formatMoney(net, currency),
+              color: context.primaryText),
+        ],
+      ),
+    );
+  }
+}
+
+class _Mini extends StatelessWidget {
+  const _Mini({required this.label, required this.value, required this.color});
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style: TextStyle(fontSize: 11, color: context.mutedText)),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w800, color: color),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

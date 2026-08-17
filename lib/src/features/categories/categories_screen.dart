@@ -7,6 +7,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
@@ -106,15 +107,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
   }
 }
 
-const _palette = [
-  0x40CDFF3A,
-  0xFFFFE4E1,
-  0xFFE8E4FF,
-  0xFFFFF3D6,
-  0xFFD4F5E0,
-  0xFFE0F2FE,
-  0xFFF2F2F2,
-];
+const _palette = categoryPalette;
 
 const _iconKeys = [
   'utensils', 'car', 'home', 'heart-pulse', 'clapperboard', 'shirt',
@@ -131,7 +124,7 @@ Future<void> _openCategoryEditor(
 }) async {
   final nameCtrl = TextEditingController(
       text: existing == null ? '' : Tr.of(context).categoryName(existing.name));
-  var color = existing?.color ?? 0x40CDFF3A;
+  var color = existing?.color ?? 0xFF8BD44A;
   var icon = existing?.icon ?? 'circle';
   final isEdit = existing != null;
 
@@ -172,10 +165,10 @@ Future<void> _openCategoryEditor(
             ),
             const SizedBox(height: 16),
             Text(Tr.of(ctx).colorLabel,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textMuted)),
+                    color: ctx.mutedText)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 10,
@@ -190,7 +183,10 @@ Future<void> _openCategoryEditor(
                             shape: BoxShape.circle,
                             border: color == c
                                 ? Border.all(
-                                    color: AppColors.ink, width: 2)
+                                    color: ctx.isDark
+                                        ? Colors.white
+                                        : AppColors.ink,
+                                    width: 2)
                                 : null,
                           ),
                         ),
@@ -199,10 +195,10 @@ Future<void> _openCategoryEditor(
             ),
             const SizedBox(height: 16),
             Text(Tr.of(ctx).iconLabel,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textMuted)),
+                    color: ctx.mutedText)),
             const SizedBox(height: 8),
             GridView.count(
               shrinkWrap: true,
@@ -318,20 +314,17 @@ class _CatRow extends StatelessWidget {
       padding: EdgeInsets.only(left: indent ? 30 : 16, right: 16),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.divider)),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: context.divider)),
         ),
         child: Row(
           children: [
-            Container(
-              width: indent ? 30 : 36,
-              height: indent ? 30 : 36,
-              decoration: BoxDecoration(
-                color: Color(category.color),
-                borderRadius: BorderRadius.circular(indent ? 10 : 12),
-              ),
-              child: Icon(lucideByKey(category.icon),
-                  size: indent ? 14 : 16, color: AppColors.ink),
+            ColorWellIcon(
+              color: Color(category.color),
+              icon: lucideByKey(category.icon),
+              size: indent ? 30 : 36,
+              iconSize: indent ? 14 : 16,
+              radius: indent ? 10 : 12,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -340,19 +333,21 @@ class _CatRow extends StatelessWidget {
                 style: TextStyle(
                     fontSize: indent ? 13 : 14,
                     fontWeight: FontWeight.w600,
-                    color: category.isHidden ? AppColors.textFaint : AppColors.ink),
+                    color: category.isHidden
+                        ? context.faintText
+                        : context.primaryText),
               ),
             ),
             Text(
               '$count',
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textFaint,
+                  color: context.faintText,
                   fontWeight: FontWeight.w500),
             ),
             const SizedBox(width: 8),
-            const Icon(LucideIcons.chevronRight,
-                size: 14, color: AppColors.textFaint),
+            Icon(LucideIcons.chevronRight,
+                size: 14, color: context.faintText),
           ],
         ),
       ),

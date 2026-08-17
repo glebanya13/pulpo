@@ -5,7 +5,6 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/open_link.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common.dart';
 
@@ -36,7 +35,6 @@ class AboutScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.ink,
                 ),
               ),
             ),
@@ -128,10 +126,12 @@ class _LinkRow extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFFF2F2F2),
+                color: context.isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : const Color(0xFFF2F2F2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 18, color: AppColors.ink),
+              child: Icon(icon, size: 18, color: context.primaryText),
             ),
             const SizedBox(width: 14),
             Expanded(

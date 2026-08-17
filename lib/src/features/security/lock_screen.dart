@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../data/repositories/providers.dart';
+import '../../data/repositories/scheduled_posting.dart';
 import 'lock_controller.dart';
 
 class LockScreen extends ConsumerStatefulWidget {
@@ -112,7 +114,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
 
   void _tryPin(String pin) {
     final ok = ref.read(lockControllerProvider.notifier).checkPin(pin);
-    setState(() => _error = ok ? null : Tr.of(context).pinMismatch);
+    setState(() => _error = ok ? null : Tr.of(context).pinWrong);
   }
 }
 
@@ -129,6 +131,9 @@ class _LockGateState extends ConsumerState<LockGate> with WidgetsBindingObserver
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      postDueScheduledItems(ref.read(databaseProvider));
+    });
   }
 
   @override
@@ -142,6 +147,9 @@ class _LockGateState extends ConsumerState<LockGate> with WidgetsBindingObserver
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
       ref.read(lockControllerProvider.notifier).onAppPaused();
+    }
+    if (state == AppLifecycleState.resumed) {
+      postDueScheduledItems(ref.read(databaseProvider));
     }
   }
 

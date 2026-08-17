@@ -8,6 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/repositories/settings_service.dart';
 
+String hashLockPin(String pin) =>
+    sha256.convert(utf8.encode('pulpo:$pin')).toString();
+
 class LockState {
   const LockState({
     required this.pinEnabled,
@@ -57,7 +60,7 @@ class LockController extends Notifier<LockState> {
     );
   }
 
-  String _hash(String pin) => sha256.convert(utf8.encode('pulpo:$pin')).toString();
+  String _hash(String pin) => hashLockPin(pin);
 
   Future<void> setPin(String pin) async {
     await _prefs.setString(_kPinHash, _hash(pin));
@@ -82,9 +85,44 @@ class LockController extends Notifier<LockState> {
     return ok;
   }
 
+  Future<bool> deviceHasBiometrics() async {
+    try {
+      final supported = await _auth.isDeviceSupported();
+      final can = await _auth.canCheckBiometrics;
+      if (!supported && !can) return false;
+      final types = await _auth.getAvailableBiometrics();
+      return types.isNotEmpty || can;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> enableBiometrics() async {
+    try {
+      final ok = await _auth.authenticate(
+        localizedReason: 'Pulpo',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+      if (!ok) return false;
+      await _prefs.setBool(_kBio, true);
+      state = state.copyWith(biometricsEnabled: true);
+      return true;
+    } catch (e, st) {
+      debugPrint('enable biometrics: $e\n$st');
+      return false;
+    }
+  }
+
   Future<void> setBiometrics(bool v) async {
-    await _prefs.setBool(_kBio, v);
-    state = state.copyWith(biometricsEnabled: v);
+    if (v) {
+      await enableBiometrics();
+      return;
+    }
+    await _prefs.setBool(_kBio, false);
+    state = state.copyWith(biometricsEnabled: false);
   }
 
   Future<void> setAutoLock(bool v) async {

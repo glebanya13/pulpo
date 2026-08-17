@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/repositories/backup_service.dart';
 import '../../widgets/common.dart';
 import '../auth/cloud_auth.dart';
@@ -75,14 +76,14 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(tr.autoBackup,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.ink)),
+                                color: context.primaryText)),
                         const SizedBox(height: 2),
                         Text(tr.autoBackupDesc,
-                            style: const TextStyle(
-                                fontSize: 11, color: AppColors.textFaint)),
+                            style: TextStyle(
+                                fontSize: 11, color: context.faintText)),
                       ],
                     ),
                   ),
@@ -184,11 +185,11 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 10),
               child: Text(tr.localBackupsUpper,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
-                    color: AppColors.textMuted,
+                    color: context.mutedText,
                   )),
             ),
             if (_backups.isEmpty)
@@ -245,7 +246,7 @@ class _Action extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: filled ? AppColors.lime : Colors.white,
+          color: filled ? AppColors.lime : context.surface,
           borderRadius: BorderRadius.circular(100),
         ),
         alignment: Alignment.center,
@@ -253,13 +254,14 @@ class _Action extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: AppColors.ink),
+            Icon(icon,
+                size: 16, color: filled ? AppColors.ink : context.primaryText),
             const SizedBox(width: 6),
             Text(label,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.ink)),
+                    color: filled ? AppColors.ink : context.primaryText)),
           ],
         ),
       ),
@@ -308,7 +310,7 @@ class _BackupRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surface,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -320,8 +322,8 @@ class _BackupRow extends StatelessWidget {
               color: AppColors.bg,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(LucideIcons.fileJson,
-                size: 16, color: AppColors.ink),
+            child: Icon(LucideIcons.fileJson,
+                size: 16, color: context.primaryText),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -329,17 +331,19 @@ class _BackupRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_prettyDate(context),
-                    style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w600)),
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: context.primaryText)),
                 Text(_size(),
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textFaint)),
+                    style: TextStyle(
+                        fontSize: 11, color: context.faintText)),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(LucideIcons.rotateCcw,
-                size: 16, color: AppColors.ink),
+            icon: Icon(LucideIcons.rotateCcw,
+                size: 16, color: context.primaryText),
             onPressed: onRestore,
           ),
           IconButton(

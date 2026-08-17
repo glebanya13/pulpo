@@ -4,7 +4,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 
-/// Тёмный pill bottom nav из design.html: 4 иконки + FAB в центре.
+/// Тёмный pill bottom nav: 4 иконки + FAB в центре.
 class BudgetBottomNav extends StatelessWidget {
   const BudgetBottomNav({
     super.key,
@@ -19,52 +19,55 @@ class BudgetBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: Container(
-          decoration: BoxDecoration(
-            color: context.emphasized,
-            borderRadius: BorderRadius.circular(100),
-            border: Border.all(color: context.emphasizedBorder, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: context.isDark
-                    ? Colors.black.withValues(alpha: 0.4)
-                    : Colors.black.withValues(alpha: 0.15),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: LucideIcons.layoutDashboard,
-                active: currentIndex == 0,
-                onTap: () => onTap(0),
-              ),
-              _NavItem(
-                icon: LucideIcons.arrowLeftRight,
-                active: currentIndex == 1,
-                onTap: () => onTap(1),
-              ),
-              _Fab(onTap: onFabTap),
-              _NavItem(
-                icon: LucideIcons.pieChart,
-                active: currentIndex == 2,
-                onTap: () => onTap(2),
-              ),
-              _NavItem(
-                icon: LucideIcons.user,
-                active: currentIndex == 3,
-                onTap: () => onTap(3),
-              ),
-            ],
-          ),
+    final homeInset = MediaQuery.paddingOf(context).bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        0,
+        20,
+        (homeInset * 0.4).clamp(8, 14),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.emphasized,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(color: context.emphasizedBorder, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: context.isDark
+                  ? Colors.black.withValues(alpha: 0.4)
+                  : Colors.black.withValues(alpha: 0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _NavItem(
+              icon: LucideIcons.layoutDashboard,
+              active: currentIndex == 0,
+              onTap: () => onTap(0),
+            ),
+            _NavItem(
+              icon: LucideIcons.arrowLeftRight,
+              active: currentIndex == 1,
+              onTap: () => onTap(1),
+            ),
+            _Fab(onTap: onFabTap),
+            _NavItem(
+              icon: LucideIcons.pieChart,
+              active: currentIndex == 2,
+              onTap: () => onTap(2),
+            ),
+            _NavItem(
+              icon: LucideIcons.user,
+              active: currentIndex == 3,
+              onTap: () => onTap(3),
+            ),
+          ],
         ),
       ),
     );
@@ -86,17 +89,17 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkResponse(
       onTap: onTap,
-      radius: 24,
+      radius: 20,
       child: Container(
-        width: 44,
-        height: 44,
+        width: 38,
+        height: 38,
         decoration: BoxDecoration(
           color: active ? AppColors.lime : Colors.transparent,
           shape: BoxShape.circle,
         ),
         child: Icon(
           icon,
-          size: 22,
+          size: 20,
           color: active ? AppColors.ink : Colors.white.withValues(alpha: 0.5),
         ),
       ),
@@ -113,20 +116,20 @@ class _Fab extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 56,
-        height: 56,
+        width: 46,
+        height: 46,
         decoration: BoxDecoration(
           color: AppColors.lime,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
               color: AppColors.lime.withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: const Icon(Icons.add, color: AppColors.ink, size: 26),
+        child: const Icon(Icons.add, color: AppColors.ink, size: 22),
       ),
     );
   }

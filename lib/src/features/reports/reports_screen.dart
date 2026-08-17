@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
@@ -62,7 +63,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 52, 20, 120),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.paddingOf(context).top + 16,
+        20,
+        140,
+      ),
       children: [
         Text(
           tr.analytics,
@@ -105,7 +111,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: context.primaryText,
+                          color: range.kind == k
+                              ? AppColors.ink
+                              : context.primaryText,
                         ),
                       ),
                     ),
@@ -260,7 +268,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                 style: TextStyle(
                                   color: v.toInt() == monthCount - 1
                                       ? AppColors.limeAccent
-                                      : AppColors.textFaint,
+                                      : context.faintText,
                                   fontSize: 11,
                                   fontWeight: v.toInt() == monthCount - 1
                                       ? FontWeight.w700
@@ -419,12 +427,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         Container(
           padding: const EdgeInsets.all(30),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.surface,
             borderRadius: BorderRadius.circular(24),
           ),
           child: Center(
             child: Text(Tr.of(context).noExpensesThisMonth,
-                style: const TextStyle(color: AppColors.textMuted)),
+                style: TextStyle(color: context.mutedText)),
           ),
         ),
       ];
@@ -516,8 +524,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
                           DateFormat('MMM', Localizations.localeOf(context).languageCode).format(month),
-                          style: const TextStyle(
-                              color: AppColors.textFaint, fontSize: 10),
+                          style: TextStyle(
+                              color: context.faintText, fontSize: 10),
                         ),
                       );
                     },
@@ -583,8 +591,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 const Icon(Icons.circle, size: 8, color: AppColors.limeAccent),
                 const SizedBox(width: 6),
                 Text(Tr.of(context).income,
-                    style: const TextStyle(
-                        color: AppColors.ink,
+                    style: TextStyle(
+                        color: context.primaryText,
                         fontSize: 11,
                         fontWeight: FontWeight.w600)),
               ],
@@ -594,7 +602,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFE4E1),
+              color: AppColors.danger.withValues(alpha: 0.22),
               borderRadius: BorderRadius.circular(100),
             ),
             child: Row(
@@ -603,8 +611,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 const Icon(Icons.circle, size: 8, color: AppColors.danger),
                 const SizedBox(width: 6),
                 Text(Tr.of(context).expense,
-                    style: const TextStyle(
-                        color: AppColors.ink,
+                    style: TextStyle(
+                        color: context.primaryText,
                         fontSize: 11,
                         fontWeight: FontWeight.w600)),
               ],
@@ -683,10 +691,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     alignEnd: false,
                   ),
                 ),
-                const SizedBox(
+                SizedBox(
                   width: 40,
                   child: Icon(Icons.arrow_forward,
-                      color: AppColors.textFaint, size: 20),
+                      color: context.faintText, size: 20),
                 ),
                 Expanded(
                   child: _FlowSide(
@@ -704,7 +712,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               decoration: BoxDecoration(
                 color: net >= 0
                     ? AppColors.lime.withValues(alpha: 0.2)
-                    : const Color(0xFFFFE4E1),
+                    : AppColors.danger.withValues(alpha: 0.22),
                 border: Border.all(
                   color: (net >= 0
                           ? AppColors.limeAccent
@@ -716,8 +724,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               child: Row(
                 children: [
                   Text(Tr.of(context).netUpper,
-                      style: const TextStyle(
-                          color: AppColors.textMuted,
+                      style: TextStyle(
+                          color: context.mutedText,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1)),
@@ -804,14 +812,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         Expanded(
           child: Text(
             name,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+            style: TextStyle(color: context.mutedText, fontSize: 11),
             overflow: TextOverflow.ellipsis,
           ),
         ),
         Text(
           '$percent%',
-          style: const TextStyle(
-              color: AppColors.ink,
+          style: TextStyle(
+              color: context.primaryText,
               fontSize: 11,
               fontWeight: FontWeight.w700),
         ),
@@ -899,20 +907,16 @@ class _CategoryRow extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: category != null
-                    ? Color(category!.color)
-                    : const Color(0xFFF2F2F2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                category != null ? lucideByKey(category!.icon) : Icons.circle,
-                color: AppColors.ink,
-                size: 14,
-              ),
+            ColorWellIcon(
+              color: category != null
+                  ? Color(category!.color)
+                  : const Color(0xFF8A94A6),
+              icon: category != null
+                  ? lucideByKey(category!.icon)
+                  : Icons.circle,
+              size: 30,
+              iconSize: 14,
+              radius: 10,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -920,16 +924,16 @@ class _CategoryRow extends StatelessWidget {
                 category != null
                     ? Tr.of(context).categoryName(category!.name)
                     : Tr.of(context).other,
-                style: const TextStyle(
-                    color: AppColors.ink,
+                style: TextStyle(
+                    color: context.primaryText,
                     fontSize: 13,
                     fontWeight: FontWeight.w600),
               ),
             ),
             Text(
               formatMoney(amount, currency),
-              style: const TextStyle(
-                color: AppColors.ink,
+              style: TextStyle(
+                color: context.primaryText,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
@@ -940,8 +944,8 @@ class _CategoryRow extends StatelessWidget {
               child: Text(
                 '$percent%',
                 textAlign: TextAlign.right,
-                style: const TextStyle(
-                    color: AppColors.textFaint, fontSize: 11),
+                style: TextStyle(
+                    color: context.faintText, fontSize: 11),
               ),
             ),
           ],
@@ -950,7 +954,7 @@ class _CategoryRow extends StatelessWidget {
         Container(
           height: 6,
           decoration: BoxDecoration(
-            color: const Color(0xFFF2F2F2),
+            color: context.progressTrack,
             borderRadius: BorderRadius.circular(3),
           ),
           child: FractionallySizedBox(
@@ -959,7 +963,7 @@ class _CategoryRow extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: category != null
-                    ? Color(category!.color)
+                    ? Color(category!.color).asVivid
                     : AppColors.lime,
                 borderRadius: BorderRadius.circular(3),
               ),
@@ -986,15 +990,15 @@ class _TrendStat extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label,
-              style: const TextStyle(
-                  color: AppColors.textMuted, fontSize: 11)),
+              style: TextStyle(
+                  color: context.mutedText, fontSize: 11)),
           const SizedBox(height: 4),
           Text(
             value,
@@ -1077,8 +1081,8 @@ class _FlowRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   name,
-                  style: const TextStyle(
-                      color: AppColors.ink,
+                  style: TextStyle(
+                      color: context.primaryText,
                       fontSize: 13,
                       fontWeight: FontWeight.w600),
                 ),
@@ -1097,7 +1101,7 @@ class _FlowRow extends StatelessWidget {
           Container(
             height: 4,
             decoration: BoxDecoration(
-              color: const Color(0xFFF2F2F2),
+              color: context.progressTrack,
               borderRadius: BorderRadius.circular(2),
             ),
             child: FractionallySizedBox(

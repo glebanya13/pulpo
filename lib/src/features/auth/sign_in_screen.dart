@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../core/l10n/tr.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/common.dart';
 import 'cloud_auth.dart';
 
@@ -139,6 +139,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       ),
               child: Text(tr.register),
             ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _busy ? null : () => context.pop(),
+              child: Text(tr.continueWithoutAccount),
+            ),
             if (_busy) ...[
               const SizedBox(height: 16),
               const Center(child: CircularProgressIndicator()),
@@ -165,16 +170,18 @@ class _Btn extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.surface,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
             children: [
-              Icon(icon, color: AppColors.ink),
+              Icon(icon, color: context.primaryText),
               const SizedBox(width: 12),
               Text(label,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w700, fontSize: 15)),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: context.primaryText)),
             ],
           ),
         ),

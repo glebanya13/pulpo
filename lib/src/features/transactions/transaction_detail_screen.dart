@@ -7,6 +7,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/enums.dart';
@@ -64,7 +65,11 @@ class TransactionDetailScreen extends ConsumerWidget {
                   fontSize: 52,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -2,
-                  color: isIncome ? context.accent : context.primaryText,
+                  color: isIncome
+                      ? context.accent
+                      : type == TxType.expense
+                          ? AppColors.danger
+                          : context.primaryText,
                 ),
               ),
             ),
@@ -83,9 +88,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   icon: category != null
                       ? lucideByKey(category.icon)
                       : LucideIcons.tag,
-                  bg: category != null
-                      ? Color(category.color)
-                      : context.scaffoldBg,
+                  well: category != null ? Color(category.color) : null,
                   label: tr.category,
                   value: category != null
                       ? tr.categoryName(category.name)
@@ -94,14 +97,12 @@ class TransactionDetailScreen extends ConsumerWidget {
                 _row(
                   context,
                   icon: LucideIcons.creditCard,
-                  bg: context.scaffoldBg,
                   label: tr.account,
                   value: account?.name ?? '—',
                 ),
                 _row(
                   context,
                   icon: LucideIcons.calendar,
-                  bg: context.scaffoldBg,
                   label: tr.date,
                   value: DateFormat('d MMMM y · HH:mm',
                           Localizations.localeOf(context).languageCode)
@@ -111,14 +112,12 @@ class TransactionDetailScreen extends ConsumerWidget {
                   _row(
                     context,
                     icon: LucideIcons.mapPin,
-                    bg: context.scaffoldBg,
                     label: tr.txLocation,
                     value: tx.counterparty!,
                   ),
                 _row(
                   context,
                   icon: LucideIcons.pencil,
-                  bg: context.scaffoldBg,
                   label: tr.note,
                   value: tx.note?.isNotEmpty == true ? tx.note! : '—',
                 ),
@@ -207,26 +206,24 @@ class TransactionDetailScreen extends ConsumerWidget {
 Widget _row(
   BuildContext context, {
   required IconData icon,
-  required Color bg,
+  Color? well,
   required String label,
   required String value,
 }) {
-  final iconOnScaffold = bg == context.scaffoldBg;
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
     child: Row(
       children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon,
-              size: 14,
-              color: iconOnScaffold ? context.primaryText : AppColors.ink),
-        ),
+        if (well != null)
+          ColorWellIcon(
+            color: well,
+            icon: icon,
+            size: 32,
+            iconSize: 14,
+            radius: 10,
+          )
+        else
+          NeutralWellIcon(icon: icon),
         const SizedBox(width: 12),
         Text(label,
             style: TextStyle(fontSize: 13, color: context.mutedText)),
@@ -288,10 +285,14 @@ class _ActionBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: danger ? const Color(0xFFFFE4E1) : Colors.transparent,
+          color: danger ? AppColors.danger : Colors.transparent,
           border: danger
               ? null
-              : Border.all(color: context.divider, width: 1.5),
+              : Border.all(
+                  color: context.isDark
+                      ? Colors.white.withValues(alpha: 0.18)
+                      : const Color(0xFFDDDDDD),
+                  width: 1.5),
           borderRadius: BorderRadius.circular(100),
         ),
         alignment: Alignment.center,
@@ -300,7 +301,7 @@ class _ActionBtn extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: danger ? const Color(0xFFE53E3E) : context.primaryText,
+            color: danger ? Colors.white : context.primaryText,
           ),
         ),
       ),

@@ -9,6 +9,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
@@ -61,12 +62,12 @@ class BudgetsScreen extends ConsumerWidget {
                   child: Container(
                     width: 42,
                     height: 42,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: context.surface,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(LucideIcons.arrowLeft,
-                        size: 18, color: AppColors.ink),
+                    child: Icon(LucideIcons.arrowLeft,
+                        size: 18, color: context.primaryText),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -76,11 +77,11 @@ class BudgetsScreen extends ConsumerWidget {
                     children: [
                       Text(
                         tr.budgets,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -1,
-                          color: AppColors.ink,
+                          color: context.primaryText,
                         ),
                       ),
                     ],
@@ -92,12 +93,12 @@ class BudgetsScreen extends ConsumerWidget {
                   child: Container(
                     width: 42,
                     height: 42,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: context.surface,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(LucideIcons.plus,
-                        size: 18, color: AppColors.ink),
+                    child: Icon(LucideIcons.plus,
+                        size: 18, color: context.primaryText),
                   ),
                 ),
               ],
@@ -109,7 +110,7 @@ class BudgetsScreen extends ConsumerWidget {
                 DateFormat('MMMM yyyy',
                         Localizations.localeOf(context).languageCode)
                     .format(now),
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.mutedText),
               ),
             ),
             const SizedBox(height: 20),
@@ -126,12 +127,12 @@ class BudgetsScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.surface,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Center(
                   child: Text(tr.emptyBudgetsTitle,
-                      style: const TextStyle(color: AppColors.textMuted)),
+                      style: TextStyle(color: context.mutedText)),
                 ),
               )
             else
@@ -268,16 +269,12 @@ class _BudgetItem extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Color(budget.color).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(LucideIcons.pieChart,
-                    size: 16,
-                    color: context.isDark ? Colors.white : AppColors.ink),
+              ColorWellIcon(
+                color: Color(budget.color),
+                icon: LucideIcons.pieChart,
+                size: 36,
+                iconSize: 16,
+                radius: 12,
               ),
               const SizedBox(width: 10),
               Expanded(

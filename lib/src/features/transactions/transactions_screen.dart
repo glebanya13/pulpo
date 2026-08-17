@@ -25,17 +25,22 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   String _query = '';
   TxType? _filterType;
+  int? _accountId;
+  int? _categoryId;
 
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final txs = ref.watch(allTransactionsProvider).valueOrNull ?? const [];
     final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
+    final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
 
     final filtered = txs.where((t) {
       if (_filterType != null && TxType.values[t.type] != _filterType) {
         return false;
       }
+      if (_accountId != null && t.accountId != _accountId) return false;
+      if (_categoryId != null && t.categoryId != _categoryId) return false;
       if (_query.isEmpty) return true;
       final q = _query.toLowerCase();
       final cat = cats.firstWhereOrNull((c) => c.id == t.categoryId);
@@ -50,7 +55,12 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 120),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.paddingOf(context).top + 16,
+        20,
+        140,
+      ),
       children: [
         Row(
           children: [
@@ -134,6 +144,46 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 active: _filterType == TxType.transfer,
                 onTap: () => setState(() => _filterType = TxType.transfer),
               ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 34,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _Chip(
+                label: tr.filterAccount,
+                active: _accountId == null,
+                onTap: () => setState(() => _accountId = null),
+              ),
+              for (final a in accounts)
+                _Chip(
+                  label: a.name,
+                  active: _accountId == a.id,
+                  onTap: () => setState(() => _accountId = a.id),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 34,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _Chip(
+                label: tr.filterCategory,
+                active: _categoryId == null,
+                onTap: () => setState(() => _categoryId = null),
+              ),
+              for (final c in cats)
+                _Chip(
+                  label: tr.categoryName(c.name),
+                  active: _categoryId == c.id,
+                  onTap: () => setState(() => _categoryId = c.id),
+                ),
             ],
           ),
         ),

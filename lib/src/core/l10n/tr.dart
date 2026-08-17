@@ -49,7 +49,9 @@ class Tr {
   String get expense => _get('expense');
   String get transfer => _get('transfer');
   String get transferBetweenAccounts => _get('transfer_between');
+  String get transferBetweenTitle => _get('transfer_between_title');
   String get transferExternal => _get('transfer_external');
+  String get transferBetweenShort => _get('transfer_between_short');
   String get transferBetweenHint => _get('transfer_between_hint');
   String get transferExternalHint => _get('transfer_external_hint');
   String get monthBalance => _get('month_balance');
@@ -61,6 +63,11 @@ class Tr {
   String get register => _get('register');
   String get signOut => _get('sign_out');
   String get signedInAs => _get('signed_in_as');
+  String get deleteCloudAccount => _get('delete_cloud_account');
+  String get deleteCloudAccountTitle => _get('delete_cloud_account_title');
+  String get deleteCloudAccountBody => _get('delete_cloud_account_body');
+  String get deleteCloudAccountRelogin => _get('delete_cloud_account_relogin');
+  String get deleteCloudAccountFailed => _get('delete_cloud_account_failed');
   String get authFailed => _get('auth_failed');
   String get authInvalidEmail => _get('auth_invalid_email');
   String get authWeakPassword => _get('auth_weak_password');
@@ -80,12 +87,18 @@ class Tr {
   String get syncDevices => _get('sync_devices');
   String get security => _get('security');
   String get pinCode => _get('pin_code');
+  String get pinCodeHint => _get('pin_code_hint');
   String get useBiometrics => _get('use_biometrics');
+  String get biometricLockHint => _get('biometric_lock_hint');
   String get autoLock => _get('auto_lock');
+  String get autoLockHint => _get('auto_lock_hint');
+  String get biometricsUnavailable => _get('biometrics_unavailable');
+  String get biometricsFailed => _get('biometrics_failed');
   String get enterPin => _get('enter_pin');
   String get setPin => _get('set_pin');
   String get confirmPin => _get('confirm_pin');
   String get pinMismatch => _get('pin_mismatch');
+  String get pinWrong => _get('pin_wrong');
   String get unlock => _get('unlock');
   String get exportCsv => _get('export_csv');
   String get exportExcel => _get('export_excel');
@@ -111,6 +124,16 @@ class Tr {
 
   // ─────────────────────── DASHBOARD ───────────────────────
   String get greetingMorning => _get('greeting_morning');
+  String get greetingAfternoon => _get('greeting_afternoon');
+  String get greetingEvening => _get('greeting_evening');
+  String get greetingNight => _get('greeting_night');
+
+  String greetingForHour(int hour) {
+    if (hour >= 5 && hour < 12) return greetingMorning;
+    if (hour >= 12 && hour < 18) return greetingAfternoon;
+    if (hour >= 18 && hour < 23) return greetingEvening;
+    return greetingNight;
+  }
   String get totalBalance => _get('total_balance');
   String get recentTransactions => _get('recent_transactions');
   String get seeAll => _get('see_all');
@@ -144,6 +167,15 @@ class Tr {
   String get recurringOps => _get('recurring_ops');
   String get subscriptions => _get('subscriptions');
   String get debts => _get('debts');
+  String get goals => _get('goals');
+  String get newGoal => _get('new_goal');
+  String get editGoal => _get('edit_goal');
+  String get goalName => _get('goal_name');
+  String get goalTarget => _get('goal_target');
+  String get goalSaved => _get('goal_saved');
+  String get goalsEmptyTitle => _get('goals_empty_title');
+  String get goalsEmptyDesc => _get('goals_empty_desc');
+  String get addToGoal => _get('add_to_goal');
   String get allSettings => _get('all_settings');
   String get accountsCountLabel => _get('accounts_count_label');
   String get transactionsCount => _get('transactions_count');
@@ -156,6 +188,8 @@ class Tr {
   String get language => _get('language');
   String get interfaceLanguage => _get('interface_language');
   String get theme => _get('theme');
+  String get themeDarkMode => _get('theme_dark_mode');
+  String get themeDarkHint => _get('theme_dark_hint');
   String get themeLight => _get('theme_light');
   String get themeDark => _get('theme_dark');
   String get themeSystem => _get('theme_system');
@@ -192,6 +226,8 @@ class Tr {
   String get finance => _get('finance');
   String get onboardingSubtitle => _get('onboarding_subtitle');
   String get getStarted => _get('get_started');
+  String get tryDemo => _get('try_demo');
+  String get continueWithoutAccount => _get('continue_without_account');
   String get pleaseEnterName => _get('please_enter_name');
   String get setupTitle => _get('setup_title');
   String get setupSubtitle => _get('setup_subtitle');
@@ -251,6 +287,8 @@ class Tr {
 
   // ─────────────────────── TRANSACTION LIST ───────────────────────
   String get filterAll => _get('filter_all');
+  String get filterAccount => _get('filter_account');
+  String get filterCategory => _get('filter_category');
 
   // ─────────────────────── ONBOARDING BUTTONS ───────────────────────
   String get skip => _get('skip');
@@ -432,6 +470,9 @@ class Tr {
       'profile': 'Perfil',
       // dashboard
       'greeting_morning': 'Buenos días 👋',
+      'greeting_afternoon': 'Buenas tardes 👋',
+      'greeting_evening': 'Buenas noches 👋',
+      'greeting_night': 'Buenas noches 🌙',
       'total_balance': 'SALDO TOTAL',
       'recent_transactions': 'Transacciones recientes',
       'see_all': 'Ver todo →',
@@ -460,6 +501,15 @@ class Tr {
       'recurring_ops': 'Operaciones recurrentes',
       'subscriptions': 'Suscripciones',
       'debts': 'Deudas',
+      'goals': 'Metas',
+      'new_goal': 'Nueva meta',
+      'edit_goal': 'Editar meta',
+      'goal_name': 'Nombre',
+      'goal_target': 'Objetivo',
+      'goal_saved': 'Ahorrado',
+      'goals_empty_title': 'Sin metas',
+      'goals_empty_desc': 'Crea una meta de ahorro y sigue el progreso.',
+      'add_to_goal': 'Añadir ahorro',
       'all_settings': 'Todos los ajustes',
       'accounts_count_label': 'cuentas',
       'transactions_count': 'transacciones',
@@ -471,6 +521,8 @@ class Tr {
       'language': 'Idioma',
       'interface_language': 'Idioma de la interfaz',
       'theme': 'Tema',
+      'theme_dark_mode': 'Modo oscuro',
+      'theme_dark_hint': 'Activar tema nocturno',
       'theme_light': 'Claro',
       'theme_dark': 'Oscuro',
       'theme_system': 'Como el sistema',
@@ -497,6 +549,8 @@ class Tr {
       'onboarding_subtitle':
           'Controla gastos, planifica presupuestos y alcanza metas. Todo sin conexión.',
       'get_started': 'Comenzar →',
+      'try_demo': 'Probar sin cuenta',
+      'continue_without_account': 'Continuar sin iniciar sesión',
       'please_enter_name': 'Por favor, introduce tu nombre',
       'setup_title': 'Un poco sobre ti',
       'setup_subtitle':
@@ -546,16 +600,18 @@ class Tr {
           'Se eliminarán todas las transacciones de esta cuenta. Esta acción no se puede deshacer.',
       'account_name': 'Nombre',
       'include_in_total': 'Incluir en el total',
-      'reset_all_data': 'Restablecer todos los datos',
+      'reset_all_data': 'Restablecer datos locales',
       'reset_all_data_subtitle':
-          'Elimina cuentas, transacciones, categorías y más',
-      'reset_all_data_title': '¿Restablecer todos los datos?',
+          'Borra cuentas y operaciones en este dispositivo. No elimina la cuenta en la nube.',
+      'reset_all_data_title': '¿Borrar datos de este dispositivo?',
       'reset_all_data_body':
-          'Se eliminarán todas las cuentas, transacciones, categorías, presupuestos, deudas y suscripciones. Los ajustes se conservan. Esta acción no se puede deshacer.',
+          'Se eliminarán cuentas, transacciones, categorías, presupuestos, deudas, metas y suscripciones en este teléfono. Ajustes y la cuenta en la nube no se tocan. No se puede deshacer.',
       'reset_success': 'Datos eliminados',
       'account_type': 'Tipo',
       // filters
       'filter_all': 'Todos',
+      'filter_account': 'Cuenta',
+      'filter_category': 'Categoría',
       // onboarding buttons
       'skip': 'Omitir',
       'finish_setup': 'Listo',
@@ -686,6 +742,8 @@ class Tr {
       'enter_note_hint': 'Escribe una nota...',
       'backups_short': 'Copias',
       'transfer_between': 'Entre cuentas',
+      'transfer_between_title': 'Transferencia entre cuentas',
+      'transfer_between_short': 'Entre',
       'transfer_external': 'Fuera',
       'transfer_between_hint': 'Mueve dinero entre tus cuentas. No es ingreso ni gasto.',
       'transfer_external_hint': 'Envías dinero fuera de tus cuentas. Cuenta como gasto.',
@@ -698,6 +756,13 @@ class Tr {
       'register': 'Crear cuenta',
       'sign_out': 'Cerrar sesión',
       'signed_in_as': 'Sesión iniciada',
+      'delete_cloud_account': 'Eliminar cuenta en la nube',
+      'delete_cloud_account_title': '¿Eliminar cuenta en la nube?',
+      'delete_cloud_account_body':
+          'Se borrará el login (Apple, Google o email) en nuestros servidores. Los datos locales en este dispositivo se quedan. Esto no restablece el presupuesto en el teléfono. No se puede deshacer.',
+      'delete_cloud_account_relogin':
+          'Por seguridad, inicia sesión otra vez y vuelve a intentar. Apple y Google piden una sesión reciente.',
+      'delete_cloud_account_failed': 'No se pudo eliminar la cuenta',
       'auth_failed': 'No se pudo iniciar sesión',
       'auth_invalid_email': 'Email no válido',
       'auth_weak_password': 'La contraseña es demasiado corta',
@@ -717,12 +782,18 @@ class Tr {
       'sync_devices': 'Sincronizar dispositivos',
       'security': 'Seguridad',
       'pin_code': 'Código PIN',
-      'use_biometrics': 'Face ID / huella',
+      'pin_code_hint': 'Código de respaldo si Face ID no funciona',
+      'use_biometrics': 'Bloqueo biométrico',
+      'biometric_lock_hint': 'Pide Face ID o huella al abrir la app',
       'auto_lock': 'Bloqueo automático',
+      'auto_lock_hint': 'Bloquear al salir de la app',
+      'biometrics_unavailable': 'La biometría no está disponible en este dispositivo',
+      'biometrics_failed': 'No se pudo activar la biometría',
       'enter_pin': 'Introduce el PIN',
       'set_pin': 'Crear PIN',
       'confirm_pin': 'Confirma el PIN',
       'pin_mismatch': 'Los PIN no coinciden',
+      'pin_wrong': 'PIN incorrecto',
       'unlock': 'Desbloquear',
       'export_csv': 'Exportar CSV',
       'export_excel': 'Exportar Excel',
@@ -773,6 +844,9 @@ class Tr {
       'profile': 'Профиль',
       // dashboard
       'greeting_morning': 'Доброе утро 👋',
+      'greeting_afternoon': 'Добрый день 👋',
+      'greeting_evening': 'Добрый вечер 👋',
+      'greeting_night': 'Доброй ночи 🌙',
       'total_balance': 'ОБЩИЙ БАЛАНС',
       'recent_transactions': 'Недавние транзакции',
       'see_all': 'Все →',
@@ -799,6 +873,15 @@ class Tr {
       'delete_budget_title': 'Удалить бюджет?',
       'budget_name': 'Название бюджета',
       'recurring_ops': 'Регулярные операции',
+      'goals': 'Цели',
+      'new_goal': 'Новая цель',
+      'edit_goal': 'Изменить цель',
+      'goal_name': 'Название',
+      'goal_target': 'Сумма цели',
+      'goal_saved': 'Накоплено',
+      'goals_empty_title': 'Нет целей',
+      'goals_empty_desc': 'Создай цель накопления и следи за прогрессом.',
+      'add_to_goal': 'Пополнить',
       'subscriptions': 'Подписки',
       'debts': 'Долги',
       'all_settings': 'Все настройки',
@@ -812,6 +895,8 @@ class Tr {
       'language': 'Язык',
       'interface_language': 'Язык интерфейса',
       'theme': 'Тема',
+      'theme_dark_mode': 'Тёмный режим',
+      'theme_dark_hint': 'Включить ночную тему',
       'theme_light': 'Светлая',
       'theme_dark': 'Тёмная',
       'theme_system': 'Как в системе',
@@ -838,6 +923,8 @@ class Tr {
       'onboarding_subtitle':
           'Учёт расходов, бюджеты и цели. Всё работает офлайн.',
       'get_started': 'Начать →',
+      'try_demo': 'Открыть без аккаунта',
+      'continue_without_account': 'Продолжить без входа',
       'please_enter_name': 'Пожалуйста, введите имя',
       'setup_title': 'Немного о вас',
       'setup_subtitle':
@@ -887,16 +974,18 @@ class Tr {
           'Все транзакции по этому счёту будут удалены. Это действие нельзя отменить.',
       'account_name': 'Название',
       'include_in_total': 'Учитывать в общем балансе',
-      'reset_all_data': 'Сбросить все данные',
+      'reset_all_data': 'Сбросить данные на устройстве',
       'reset_all_data_subtitle':
-          'Удалить счета, транзакции, категории и остальное',
-      'reset_all_data_title': 'Сбросить все данные?',
+          'Удалит счета и операции на этом телефоне. Облачный аккаунт не удаляется.',
+      'reset_all_data_title': 'Удалить данные с устройства?',
       'reset_all_data_body':
-          'Будут удалены все счета, транзакции, категории, бюджеты, долги и подписки. Настройки сохранятся. Это действие нельзя отменить.',
+          'На этом телефоне будут удалены счета, транзакции, категории, бюджеты, долги, цели и подписки. Настройки и облачный аккаунт останутся. Это нельзя отменить.',
       'reset_success': 'Данные удалены',
       'account_type': 'Тип',
       // filters
       'filter_all': 'Все',
+      'filter_account': 'Счёт',
+      'filter_category': 'Категория',
       // onboarding buttons
       'skip': 'Пропустить',
       'finish_setup': 'Готово',
@@ -1027,6 +1116,8 @@ class Tr {
       'enter_note_hint': 'Введите заметку...',
       'backups_short': 'Бэкапы',
       'transfer_between': 'Между счетами',
+      'transfer_between_title': 'Перевод между счетами',
+      'transfer_between_short': 'Между',
       'transfer_external': 'Внешний',
       'transfer_between_hint': 'Перевод между своими счетами. Это не доход и не расход.',
       'transfer_external_hint': 'Деньги уходят вовне. Считается расходом.',
@@ -1039,6 +1130,13 @@ class Tr {
       'register': 'Создать аккаунт',
       'sign_out': 'Выйти',
       'signed_in_as': 'Вы вошли',
+      'delete_cloud_account': 'Удалить облачный аккаунт',
+      'delete_cloud_account_title': 'Удалить облачный аккаунт?',
+      'delete_cloud_account_body':
+          'Логин (Apple, Google или email) будет удалён на наших серверах. Данные на этом телефоне останутся. Локальный бюджет не сбрасывается. Это нельзя отменить.',
+      'delete_cloud_account_relogin':
+          'Из соображений безопасности войдите ещё раз и повторите. Apple и Google требуют недавний вход.',
+      'delete_cloud_account_failed': 'Не удалось удалить аккаунт',
       'auth_failed': 'Не удалось войти',
       'auth_invalid_email': 'Некорректный email',
       'auth_weak_password': 'Пароль слишком короткий',
@@ -1058,12 +1156,18 @@ class Tr {
       'sync_devices': 'Синхронизация устройств',
       'security': 'Безопасность',
       'pin_code': 'PIN-код',
-      'use_biometrics': 'Face ID / отпечаток',
+      'pin_code_hint': 'Запасной код, если Face ID не сработает',
+      'use_biometrics': 'Биометрический замок',
+      'biometric_lock_hint': 'Спрашивать Face ID или отпечаток при входе',
       'auto_lock': 'Автоблокировка',
+      'auto_lock_hint': 'Блокировать при выходе из приложения',
+      'biometrics_unavailable': 'Биометрия на этом устройстве недоступна',
+      'biometrics_failed': 'Не удалось включить биометрию',
       'enter_pin': 'Введите PIN',
       'set_pin': 'Создать PIN',
       'confirm_pin': 'Повторите PIN',
       'pin_mismatch': 'PIN не совпадает',
+      'pin_wrong': 'Неверный PIN',
       'unlock': 'Разблокировать',
       'export_csv': 'Экспорт CSV',
       'export_excel': 'Экспорт Excel',
@@ -1114,6 +1218,9 @@ class Tr {
       'profile': 'Profile',
       // dashboard
       'greeting_morning': 'Good morning 👋',
+      'greeting_afternoon': 'Good afternoon 👋',
+      'greeting_evening': 'Good evening 👋',
+      'greeting_night': 'Good night 🌙',
       'total_balance': 'TOTAL BALANCE',
       'recent_transactions': 'Recent transactions',
       'see_all': 'See all →',
@@ -1140,6 +1247,15 @@ class Tr {
       'delete_budget_title': 'Delete budget?',
       'budget_name': 'Budget name',
       'recurring_ops': 'Recurring operations',
+      'goals': 'Goals',
+      'new_goal': 'New goal',
+      'edit_goal': 'Edit goal',
+      'goal_name': 'Name',
+      'goal_target': 'Target',
+      'goal_saved': 'Saved',
+      'goals_empty_title': 'No goals yet',
+      'goals_empty_desc': 'Create a savings goal and track progress.',
+      'add_to_goal': 'Add savings',
       'subscriptions': 'Subscriptions',
       'debts': 'Debts',
       'all_settings': 'All settings',
@@ -1153,6 +1269,8 @@ class Tr {
       'language': 'Language',
       'interface_language': 'Interface language',
       'theme': 'Theme',
+      'theme_dark_mode': 'Dark mode',
+      'theme_dark_hint': 'Enable night theme',
       'theme_light': 'Light',
       'theme_dark': 'Dark',
       'theme_system': 'Match system',
@@ -1179,6 +1297,8 @@ class Tr {
       'onboarding_subtitle':
           'Track expenses, plan budgets, and reach goals. Fully offline.',
       'get_started': 'Get Started →',
+      'try_demo': 'Try without an account',
+      'continue_without_account': 'Continue without signing in',
       'please_enter_name': 'Please enter your name',
       'setup_title': 'A bit about you',
       'setup_subtitle':
@@ -1228,16 +1348,18 @@ class Tr {
           'All transactions for this account will be deleted. This action cannot be undone.',
       'account_name': 'Name',
       'include_in_total': 'Include in total',
-      'reset_all_data': 'Reset all data',
+      'reset_all_data': 'Reset data on this device',
       'reset_all_data_subtitle':
-          'Erase accounts, transactions, categories, and more',
-      'reset_all_data_title': 'Reset all data?',
+          'Erases accounts and transactions here. Does not delete the cloud account.',
+      'reset_all_data_title': 'Erase data on this device?',
       'reset_all_data_body':
-          'All accounts, transactions, categories, budgets, debts and subscriptions will be deleted. Settings are preserved. This action cannot be undone.',
+          'Accounts, transactions, categories, budgets, debts, goals and subscriptions on this phone will be deleted. Settings and the cloud account stay. This cannot be undone.',
       'reset_success': 'All data cleared',
       'account_type': 'Type',
       // filters
       'filter_all': 'All',
+      'filter_account': 'Account',
+      'filter_category': 'Category',
       // onboarding buttons
       'skip': 'Skip',
       'finish_setup': 'Done',
@@ -1368,6 +1490,8 @@ class Tr {
       'enter_note_hint': 'Enter a note...',
       'backups_short': 'Backups',
       'transfer_between': 'Between accounts',
+      'transfer_between_title': 'Transfer between accounts',
+      'transfer_between_short': 'Between',
       'transfer_external': 'External',
       'transfer_between_hint': 'Move money between your own accounts. Not income or expense.',
       'transfer_external_hint': 'Send money outside your accounts. Counts as an expense.',
@@ -1380,6 +1504,13 @@ class Tr {
       'register': 'Create account',
       'sign_out': 'Sign out',
       'signed_in_as': 'Signed in',
+      'delete_cloud_account': 'Delete cloud account',
+      'delete_cloud_account_title': 'Delete cloud account?',
+      'delete_cloud_account_body':
+          'Your Apple, Google or email login will be removed from our servers. Data on this device stays. This does not reset the local budget. This cannot be undone.',
+      'delete_cloud_account_relogin':
+          'For security, sign in again and retry. Apple and Google require a recent login.',
+      'delete_cloud_account_failed': 'Could not delete account',
       'auth_failed': 'Could not sign in',
       'auth_invalid_email': 'Invalid email',
       'auth_weak_password': 'Password is too short',
@@ -1399,12 +1530,18 @@ class Tr {
       'sync_devices': 'Sync devices',
       'security': 'Security',
       'pin_code': 'PIN code',
-      'use_biometrics': 'Face ID / fingerprint',
+      'pin_code_hint': 'Backup code if Face ID is unavailable',
+      'use_biometrics': 'Biometric lock',
+      'biometric_lock_hint': 'Require Face ID or fingerprint when opening the app',
       'auto_lock': 'Auto-lock',
+      'auto_lock_hint': 'Lock when you leave the app',
+      'biometrics_unavailable': 'Biometrics are not available on this device',
+      'biometrics_failed': 'Could not enable biometrics',
       'enter_pin': 'Enter PIN',
       'set_pin': 'Create PIN',
       'confirm_pin': 'Confirm PIN',
       'pin_mismatch': 'PINs do not match',
+      'pin_wrong': 'Wrong PIN',
       'unlock': 'Unlock',
       'export_csv': 'Export CSV',
       'export_excel': 'Export Excel',

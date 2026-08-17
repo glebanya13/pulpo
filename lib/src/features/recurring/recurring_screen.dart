@@ -307,12 +307,12 @@ class _RuleCard extends ConsumerWidget {
                       : const Color(0xFFE8E4FF),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
+                    child: Icon(
                   template.type == TxType.income
                       ? LucideIcons.trendingUp
                       : LucideIcons.repeat,
                   size: 18,
-                  color: AppColors.ink,
+                  color: context.primaryText,
                 ),
               ),
               const SizedBox(width: 12),
@@ -321,15 +321,15 @@ class _RuleCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(template.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.ink)),
+                            color: context.primaryText)),
                     const SizedBox(height: 2),
                     Text(
                       _freqLabel(rule.frequency, tr),
-                      style: const TextStyle(
-                          fontSize: 11, color: AppColors.textFaint),
+                      style: TextStyle(
+                          fontSize: 11, color: context.faintText),
                     ),
                   ],
                 ),
@@ -342,7 +342,7 @@ class _RuleCard extends ConsumerWidget {
                   fontWeight: FontWeight.w800,
                   color: template.type == TxType.income
                       ? AppColors.limeAccent
-                      : AppColors.ink,
+                      : AppColors.danger,
                 ),
               ),
             ],
@@ -355,8 +355,8 @@ class _RuleCard extends ConsumerWidget {
                 children: [
                   Text(
                     '${tr.nextRunPrefix}${DateFormat('d MMM', locale).format(rule.nextRunAt)}',
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textFaint),
+                    style: TextStyle(
+                        fontSize: 11, color: context.faintText),
                   ),
                   const SizedBox(width: 6),
                   if (daysUntil >= 0)
@@ -374,7 +374,7 @@ class _RuleCard extends ConsumerWidget {
                 child: Icon(
                   rule.isPaused ? LucideIcons.play : LucideIcons.pause,
                   size: 16,
-                  color: AppColors.textFaint,
+                  color: context.faintText,
                 ),
               ),
             ],

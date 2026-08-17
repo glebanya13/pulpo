@@ -3,7 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/l10n/tr.dart';
-import '../core/theme/app_colors.dart';
+import '../core/theme/app_theme.dart';
+import '../core/theme/color_well.dart';
 
 Future<void> showQuickActionsSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -21,9 +22,9 @@ class _QuickActionsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.fromLTRB(
         20,
@@ -39,7 +40,7 @@ class _QuickActionsSheet extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFFDDDDDD),
+              color: context.handleBar,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -48,7 +49,7 @@ class _QuickActionsSheet extends StatelessWidget {
               Expanded(
                 child: _Action(
                   icon: LucideIcons.arrowDownRight,
-                  color: AppColors.bgFood,
+                  color: const Color(0xFF8BD44A),
                   label: tr.income,
                   onTap: () {
                     Navigator.pop(context);
@@ -60,7 +61,7 @@ class _QuickActionsSheet extends StatelessWidget {
               Expanded(
                 child: _Action(
                   icon: LucideIcons.arrowUpRight,
-                  color: const Color(0xFFFFE4E1),
+                  color: const Color(0xFFFF5C5C),
                   label: tr.expense,
                   onTap: () {
                     Navigator.pop(context);
@@ -76,7 +77,7 @@ class _QuickActionsSheet extends StatelessWidget {
               Expanded(
                 child: _Action(
                   icon: LucideIcons.arrowLeftRight,
-                  color: const Color(0xFFE0F2FE),
+                  color: const Color(0xFF7C6CFF),
                   label: tr.transferBetweenAccounts,
                   hint: tr.transferBetweenHint,
                   onTap: () {
@@ -89,7 +90,7 @@ class _QuickActionsSheet extends StatelessWidget {
               Expanded(
                 child: _Action(
                   icon: LucideIcons.send,
-                  color: const Color(0xFFFFF3D6),
+                  color: const Color(0xFFFFB020),
                   label: tr.transferExternal,
                   hint: tr.transferExternalHint,
                   onTap: () {
@@ -128,7 +129,7 @@ class _Action extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.bg,
+          color: context.scaffoldBg,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
@@ -138,28 +139,28 @@ class _Action extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: color,
+                color: context.wellBg(color),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 18, color: AppColors.ink),
+              child: Icon(icon, size: 18, color: context.wellFg(color)),
             ),
             const SizedBox(height: 10),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
-                color: AppColors.ink,
+                color: context.primaryText,
               ),
             ),
             if (hint != null) ...[
               const SizedBox(height: 4),
               Text(
                 hint!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   height: 1.3,
-                  color: AppColors.textMuted,
+                  color: context.mutedText,
                 ),
               ),
             ],

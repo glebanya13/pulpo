@@ -1,7 +1,7 @@
 name: pulpo
 description: "Pulpo — personal offline-first budget tracker for Android and iOS."
 publish_to: 'none'
-version: 1.0.0+6
+version: 1.0.1+7
 
 environment:
   sdk: ^3.10.0
@@ -31,6 +31,7 @@ dependencies:
   local_auth: ^2.3.0
   crypto: ^3.0.6
   pdf: ^3.11.3
+  archive: ^4.0.0
   firebase_core: ^3.15.2
   firebase_auth: ^5.7.0
   cloud_firestore: ^5.6.12
@@ -50,7 +51,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/icon.png
-  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_background: "#9FC0F3"
   adaptive_icon_foreground: assets/icon_foreground.png
   remove_alpha_ios: true
 
@@ -59,3 +60,4 @@ flutter:
 
   assets:
     - assets/
+    - assets/fonts/

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../reports/stats_period.dart';
@@ -12,7 +13,7 @@ Future<void> showExportSheet(BuildContext context, WidgetRef ref) {
   return showModalBottomSheet<void>(
     context: context,
     useRootNavigator: true,
-    backgroundColor: Colors.white,
+    backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
@@ -20,11 +21,18 @@ Future<void> showExportSheet(BuildContext context, WidgetRef ref) {
   );
 }
 
-class _ExportSheet extends ConsumerWidget {
+class _ExportSheet extends ConsumerStatefulWidget {
   const _ExportSheet();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ExportSheet> createState() => _ExportSheetState();
+}
+
+class _ExportSheetState extends ConsumerState<_ExportSheet> {
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final range = ref.watch(statsPeriodProvider);
     return Padding(
@@ -39,8 +47,16 @@ class _ExportSheet extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(tr.exportPeriod,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: context.primaryText,
+              )),
           const SizedBox(height: 12),
+          if (_busy) ...[
+            const LinearProgressIndicator(minHeight: 2),
+            const SizedBox(height: 12),
+          ],
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -50,24 +66,26 @@ class _ExportSheet extends ConsumerWidget {
                   _Chip(
                     label: _label(tr, k),
                     active: range.kind == k,
-                    onTap: () =>
-                        ref.read(statsPeriodProvider.notifier).setKind(k),
+                    onTap: _busy
+                        ? null
+                        : () =>
+                            ref.read(statsPeriodProvider.notifier).setKind(k),
                   ),
             ],
           ),
           const SizedBox(height: 16),
           FilledButton(
-            onPressed: () => _go(context, ref, ExportFormat.csv),
+            onPressed: _busy ? null : () => _go(ExportFormat.csv),
             child: Text(tr.exportCsv),
           ),
           const SizedBox(height: 8),
           OutlinedButton(
-            onPressed: () => _go(context, ref, ExportFormat.excel),
+            onPressed: _busy ? null : () => _go(ExportFormat.excel),
             child: Text(tr.exportExcel),
           ),
           const SizedBox(height: 8),
           OutlinedButton(
-            onPressed: () => _go(context, ref, ExportFormat.pdf),
+            onPressed: _busy ? null : () => _go(ExportFormat.pdf),
             child: Text(tr.exportPdf),
           ),
         ],
@@ -75,52 +93,65 @@ class _ExportSheet extends ConsumerWidget {
     );
   }
 
-  Future<void> _go(
-    BuildContext context,
-    WidgetRef ref,
-    ExportFormat format,
-  ) async {
-    final range = ref.read(statsPeriodProvider);
-    final txs = ref
-            .read(transactionsInRangeProvider(
-                (start: range.start, end: range.end)))
-            .valueOrNull ??
-        const [];
-    final filtered = txs
-        .where((t) => TxType.values[t.type] != TxType.transfer)
-        .toList();
-    await exportService.shareTransactions(
-      txs: filtered,
-      format: format,
-      start: range.start,
-      end: range.end,
-    );
-    if (context.mounted) Navigator.pop(context);
+  Future<void> _go(ExportFormat format) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final range = ref.read(statsPeriodProvider);
+      final txs = await ref.read(
+        transactionsInRangeProvider((start: range.start, end: range.end))
+            .future,
+      );
+      final filtered = txs
+          .where((t) => TxType.values[t.type] != TxType.transfer)
+          .toList();
+      final box = context.findRenderObject() as RenderBox?;
+      final origin = box == null
+          ? null
+          : box.localToGlobal(Offset.zero) & box.size;
+      await exportService.shareTransactions(
+        txs: filtered,
+        format: format,
+        start: range.start,
+        end: range.end,
+        shareOrigin: origin,
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.active, required this.onTap});
+  const _Chip({required this.label, required this.active, this.onTap});
   final String label;
   final bool active;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: active ? AppColors.ink : AppColors.bg,
+          color: active
+              ? (context.isDark ? AppColors.ink3 : AppColors.ink)
+              : context.scaffoldBg,
           borderRadius: BorderRadius.circular(100),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: active ? Colors.white : AppColors.ink,
+            color: active ? Colors.white : context.primaryText,
           ),
         ),
       ),

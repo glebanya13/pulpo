@@ -7,6 +7,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
@@ -94,15 +95,12 @@ class AccountDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Center(
-              child: Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Color(account.color).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(lucideByKey(account.icon),
-                    size: 28, color: AppColors.lime),
+              child: ColorWellIcon(
+                color: Color(account.color),
+                icon: lucideByKey(account.icon),
+                size: 64,
+                iconSize: 28,
+                radius: 20,
               ),
             ),
             const SizedBox(height: 12),
@@ -490,7 +488,11 @@ class _DarkTxRow extends ConsumerWidget {
           Text(
             (isIncome ? '+' : '−') + formatMoney(tx.amount, tx.currency),
             style: TextStyle(
-              color: isIncome ? AppColors.lime : Colors.white,
+              color: isIncome
+                  ? AppColors.lime
+                  : type == TxType.expense
+                      ? AppColors.danger
+                      : Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),

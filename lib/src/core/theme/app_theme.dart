@@ -91,6 +91,14 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.all(Colors.white),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.ink;
+          return const Color(0xFFDDDDDD);
+        }),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+      ),
     );
   }
 
@@ -109,6 +117,10 @@ class AppTheme {
       onSecondary: AppColors.ink,
       surface: surface,
       onSurface: onSurface,
+      surfaceContainerLowest: bg,
+      surfaceContainerLow: surface,
+      surfaceContainer: surface2,
+      surfaceContainerHigh: surface2,
       surfaceContainerHighest: surface2,
       error: AppColors.danger,
     );
@@ -223,6 +235,21 @@ class AppTheme {
           space: 1,
       ),
       iconTheme: const IconThemeData(color: Colors.white),
+      listTileTheme: const ListTileThemeData(
+        tileColor: Colors.transparent,
+        textColor: Colors.white,
+        iconColor: Colors.white,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          return Colors.white;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.lime;
+          return Colors.white.withValues(alpha: 0.22);
+        }),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+      ),
     );
   }
 }

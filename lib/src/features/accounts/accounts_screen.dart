@@ -6,6 +6,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
@@ -227,19 +228,19 @@ class AccountsScreen extends ConsumerWidget {
   static int _colorFor(AccountType t) {
     switch (t) {
       case AccountType.cash:
-        return 0xFFD4F5E0;
+        return 0xFF3DDC84;
       case AccountType.card:
-        return 0xFFE8E4FF;
+        return 0xFF7C6CFF;
       case AccountType.bankAccount:
-        return 0x40CDFF3A;
+        return 0xFF8BD44A;
       case AccountType.eWallet:
-        return 0xFFE0F2FE;
+        return 0xFF2EB5FF;
       case AccountType.crypto:
-        return 0xFFFFF3D6;
+        return 0xFFFFB020;
       case AccountType.investment:
-        return 0x40CDFF3A;
+        return 0xFF3DDC84;
       case AccountType.loan:
-        return 0xFFFFE4E1;
+        return 0xFFFF5C5C;
     }
   }
 }
@@ -323,15 +324,12 @@ class _AccountCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Color(account.color),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(lucideByKey(account.icon),
-                    size: 22, color: AppColors.ink),
+              ColorWellIcon(
+                color: Color(account.color),
+                icon: lucideByKey(account.icon),
+                size: 48,
+                iconSize: 22,
+                radius: 16,
               ),
               const SizedBox(width: 14),
               Expanded(

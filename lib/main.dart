@@ -11,6 +11,7 @@ import 'firebase_options.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/data/repositories/providers.dart';
 import 'src/data/repositories/settings_service.dart';
+import 'src/data/repositories/scheduled_posting.dart';
 import 'src/data/seed/seed_categories.dart';
 import 'src/features/security/lock_screen.dart';
 import 'src/router.dart';
@@ -53,6 +54,7 @@ Future<void> main() async {
 
   final db = container.read(databaseProvider);
   await seedCategoriesIfEmpty(db);
+  await postDueScheduledItems(db);
 
   runApp(UncontrolledProviderScope(
     container: container,

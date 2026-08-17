@@ -6,6 +6,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
@@ -52,26 +53,29 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
           children: [
             Text(
               from ? tr.transferFrom : tr.transferTo,
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: context.primaryText,
+              ),
             ),
             const SizedBox(height: 12),
             for (final a in accs)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Color(a.color).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(lucideByKey(a.icon), color: AppColors.ink),
+                leading: ColorWellIcon(
+                  color: Color(a.color),
+                  icon: lucideByKey(a.icon),
+                  size: 42,
+                  iconSize: 18,
+                  radius: 14,
                 ),
                 title: Text(a.name,
-                    style:
-                        const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text(a.currency),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: context.primaryText)),
+                subtitle: Text(a.currency,
+                    style: TextStyle(color: context.mutedText)),
                 onTap: () => Navigator.pop(ctx, a),
               ),
           ],
@@ -135,12 +139,17 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                           size: 18, color: context.primaryText),
                     ),
                   ),
-                  Text(
-                    tr.transfer,
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: context.primaryText),
+                  Flexible(
+                    child: Text(
+                      tr.transferBetweenTitle,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: context.primaryText),
+                    ),
                   ),
                   const SizedBox(width: 42),
                 ],
@@ -241,10 +250,10 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                       const SizedBox(height: 4),
                       Text(
                         formatMoney(_received, _to!.currency),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.limeAccent,
+                          color: context.accent,
                         ),
                       ),
                     ],
@@ -255,7 +264,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.surface,
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: InkWell(
@@ -376,20 +385,16 @@ class _AccountRow extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: account != null
-                    ? Color(account!.color).withValues(alpha: 0.15)
-                    : context.scaffoldBg,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                account != null ? lucideByKey(account!.icon) : LucideIcons.wallet,
-                size: 18,
-                color: account != null ? AppColors.ink : context.primaryText,
-              ),
+            ColorWellIcon(
+              color: account != null
+                  ? Color(account!.color)
+                  : const Color(0xFF8A94A6),
+              icon: account != null
+                  ? lucideByKey(account!.icon)
+                  : LucideIcons.wallet,
+              size: 42,
+              iconSize: 18,
+              radius: 14,
             ),
             const SizedBox(width: 12),
             Expanded(

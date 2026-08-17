@@ -5,6 +5,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
 
@@ -20,13 +21,30 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
   String _query = '';
 
   static const _popular = [
-    ('EUR', 'Euro', '€', '🇪🇸'),
+    ('EUR', 'Euro', '€', '🇪🇺'),
+    ('USD', 'US Dollar', '\$', '🇺🇸'),
+    ('GBP', 'British Pound', '£', '🇬🇧'),
     ('MXN', 'Peso mexicano', '\$', '🇲🇽'),
+    ('BRL', 'Real brasileiro', 'R\$', '🇧🇷'),
     ('ARS', 'Peso argentino', '\$', '🇦🇷'),
     ('COP', 'Peso colombiano', '\$', '🇨🇴'),
     ('CLP', 'Peso chileno', '\$', '🇨🇱'),
     ('PEN', 'Sol peruano', 'S/', '🇵🇪'),
-    ('USD', 'Dólar estadounidense', '\$', '🇺🇸'),
+    ('CAD', 'Canadian Dollar', '\$', '🇨🇦'),
+    ('CHF', 'Swiss Franc', 'Fr', '🇨🇭'),
+    ('PLN', 'Złoty', 'zł', '🇵🇱'),
+    ('CZK', 'Koruna', 'Kč', '🇨🇿'),
+    ('SEK', 'Swedish Krona', 'kr', '🇸🇪'),
+    ('NOK', 'Norwegian Krone', 'kr', '🇳🇴'),
+    ('DKK', 'Danish Krone', 'kr', '🇩🇰'),
+    ('JPY', 'Yen', '¥', '🇯🇵'),
+    ('CNY', 'Yuan', '¥', '🇨🇳'),
+    ('INR', 'Rupee', '₹', '🇮🇳'),
+    ('AUD', 'Australian Dollar', '\$', '🇦🇺'),
+    ('NZD', 'New Zealand Dollar', '\$', '🇳🇿'),
+    ('KRW', 'Won', '₩', '🇰🇷'),
+    ('TRY', 'Lira', '₺', '🇹🇷'),
+    ('RUB', 'Ruble', '₽', '🇷🇺'),
     ('UYU', 'Peso uruguayo', '\$', '🇺🇾'),
     ('PYG', 'Guaraní paraguayo', '₲', '🇵🇾'),
     ('BOB', 'Boliviano', 'Bs', '🇧🇴'),
@@ -77,13 +95,13 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.surface,
                 borderRadius: BorderRadius.circular(100),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.search,
-                      size: 18, color: AppColors.textFaint),
+                  Icon(LucideIcons.search,
+                      size: 18, color: context.faintText),
                   const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
@@ -104,11 +122,11 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 8, left: 4),
                 child: Text(tr.popularUpper,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
-                      color: AppColors.textMuted,
+                      color: context.mutedText,
                     )),
               ),
               _List(
@@ -146,7 +164,7 @@ class _List extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        color: Colors.white,
+        color: context.surface,
         child: Column(
           children: [
             for (var i = 0; i < items.length; i++) ...[
@@ -219,8 +237,8 @@ class _Row extends StatelessWidget {
                       style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.w600)),
                   Text('$code · $symbol',
-                      style: const TextStyle(
-                          fontSize: 11, color: AppColors.textFaint)),
+                      style: TextStyle(
+                          fontSize: 11, color: context.faintText)),
                 ],
               ),
             ),

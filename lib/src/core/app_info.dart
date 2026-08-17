@@ -1,5 +1,5 @@
 class AppInfo {
-  static const version = '1.0.0';
+  static const version = '1.0.1';
   /// Flip when the client provides google-services.json / GoogleService-Info.plist.
   static const firebaseConfigured = true;
   static const firebaseProjectId = 'pulpo-mobi';

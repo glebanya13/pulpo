@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
+import '../../core/theme/color_well.dart' show pastelColorRemap;
 import '../seed/seed_categories.dart' show legacyRuNameToSlug;
 import 'tables.dart';
 
@@ -35,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// Wipes every user-facing table. Keeps schema and settings intact.
   Future<void> resetAllData() async {
@@ -70,6 +71,19 @@ class AppDatabase extends _$AppDatabase {
                 'UPDATE categories SET name = ? WHERE name = ?',
                 [entry.value, entry.key],
               );
+            }
+          }
+          if (from < 4) {
+            for (final entry in pastelColorRemap.entries) {
+              await (update(categories)
+                    ..where((c) => c.color.equals(entry.key)))
+                  .write(CategoriesCompanion(color: Value(entry.value)));
+              await (update(accounts)
+                    ..where((a) => a.color.equals(entry.key)))
+                  .write(AccountsCompanion(color: Value(entry.value)));
+              await (update(budgets)
+                    ..where((b) => b.color.equals(entry.key)))
+                  .write(BudgetsCompanion(color: Value(entry.value)));
             }
           }
         },

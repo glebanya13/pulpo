@@ -7,25 +7,25 @@ import '../db/enums.dart';
 /// UI переводит через Tr.categoryByKey. Кастомные категории хранят
 /// произвольное имя.
 const expenseSeed = <_Cat>[
-  _Cat('food', 'utensils', 0x40CDFF3A),
-  _Cat('transport', 'car', 0xFFFFE4E1),
-  _Cat('housing', 'home', 0xFFE8E4FF),
-  _Cat('health', 'heart-pulse', 0xFFFFE4E1),
-  _Cat('entertainment', 'clapperboard', 0xFFE8E4FF),
-  _Cat('clothing', 'shirt', 0xFFFFF3D6),
-  _Cat('communication', 'wifi', 0xFFF2F2F2),
-  _Cat('education', 'graduation-cap', 0xFFF2F2F2),
-  _Cat('gifts', 'gift', 0xFFFFF3D6),
-  _Cat('beauty', 'sparkles', 0xFFFFE4E1),
-  _Cat('other_expense', 'circle', 0xFFF2F2F2),
+  _Cat('food', 'utensils', 0xFF8BD44A),
+  _Cat('transport', 'car', 0xFFFF7A45),
+  _Cat('housing', 'home', 0xFF7C6CFF),
+  _Cat('health', 'heart-pulse', 0xFFFF5CA8),
+  _Cat('entertainment', 'clapperboard', 0xFF5B8CFF),
+  _Cat('clothing', 'shirt', 0xFFFFB020),
+  _Cat('communication', 'wifi', 0xFF2EB5FF),
+  _Cat('education', 'graduation-cap', 0xFF3DDC84),
+  _Cat('gifts', 'gift', 0xFFFF7A9C),
+  _Cat('beauty', 'sparkles', 0xFFE85DFF),
+  _Cat('other_expense', 'circle', 0xFF8A94A6),
 ];
 
 const incomeSeed = <_Cat>[
-  _Cat('salary', 'briefcase', 0x40CDFF3A),
-  _Cat('freelance', 'laptop', 0x40CDFF3A),
-  _Cat('gift_income', 'gift', 0xFFFFF3D6),
-  _Cat('investments', 'trending-up', 0x40CDFF3A),
-  _Cat('other_income', 'circle', 0xFFF2F2F2),
+  _Cat('salary', 'briefcase', 0xFFCDFF3A),
+  _Cat('freelance', 'laptop', 0xFF2ECF9A),
+  _Cat('gift_income', 'gift', 0xFFFFB020),
+  _Cat('investments', 'trending-up', 0xFF3DDC84),
+  _Cat('other_income', 'circle', 0xFF8A94A6),
 ];
 
 /// Идемпотентно добавляет системные категории по slug.

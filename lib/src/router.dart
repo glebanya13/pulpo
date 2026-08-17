@@ -9,6 +9,7 @@ import 'features/budgets/budgets_screen.dart';
 import 'features/categories/categories_screen.dart';
 import 'features/dashboard/dashboard_screen.dart';
 import 'features/debts/debts_screen.dart';
+import 'features/goals/goals_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/onboarding/onboarding_setup_screen.dart';
 import 'features/profile/profile_screen.dart';
@@ -114,7 +115,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/add',
         pageBuilder: (context, state) => _fadePage(
           state,
-          AddTransactionScreen(initialType: state.uri.queryParameters['type']),
+          AddTransactionScreen(
+            initialType: state.uri.queryParameters['type'],
+            initialMode: state.uri.queryParameters['mode'],
+          ),
         ),
       ),
       GoRoute(
@@ -169,6 +173,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/debts',
         pageBuilder: (context, state) => _fadePage(state, const DebtsScreen()),
+      ),
+      GoRoute(
+        path: '/goals',
+        pageBuilder: (context, state) => _fadePage(state, const GoalsScreen()),
       ),
       GoRoute(
         path: '/subscriptions',

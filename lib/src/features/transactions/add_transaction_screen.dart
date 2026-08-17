@@ -7,6 +7,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
@@ -15,9 +16,15 @@ import '../../data/repositories/settings_service.dart';
 import '../../data/repositories/transaction_repository.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
-  const AddTransactionScreen({super.key, this.initialType, this.editId});
+  const AddTransactionScreen({
+    super.key,
+    this.initialType,
+    this.initialMode,
+    this.editId,
+  });
 
   final String? initialType;
+  final String? initialMode;
   final int? editId;
 
   @override
@@ -27,18 +34,22 @@ class AddTransactionScreen extends ConsumerStatefulWidget {
 
 class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   late TxType _type;
+  bool _external = false;
   final _amountCtrl = TextEditingController();
   bool _hydrated = false;
 
   @override
   void initState() {
     super.initState();
+    _external = widget.initialMode == 'external';
     switch (widget.initialType) {
       case 'income':
         _type = TxType.income;
+        _external = false;
         break;
       case 'transfer':
         _type = TxType.transfer;
+        _external = false;
         break;
       default:
         _type = TxType.expense;
@@ -246,10 +257,18 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               if (widget.editId == null)
                 _TypeTabs(
                   type: _type,
-                  onChanged: (t) => setState(() {
-                    _type = t;
-                    _category = null;
-                  }),
+                  external: _external,
+                  onSelect: (t, {required bool external}) {
+                    if (t == TxType.transfer) {
+                      context.push('/transfer');
+                      return;
+                    }
+                    setState(() {
+                      _type = t;
+                      _external = external;
+                      _category = null;
+                    });
+                  },
                 ),
               Expanded(
                 child: SingleChildScrollView(
@@ -268,9 +287,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             icon: _category != null
                                 ? lucideByKey(_category!.icon)
                                 : LucideIcons.tag,
-                            iconBg: _category != null
+                            well: _category != null
                                 ? Color(_category!.color)
-                                : context.scaffoldBg,
+                                : null,
                             label: tr.category,
                             value: _category != null
                                 ? tr.categoryName(_category!.name)
@@ -279,7 +298,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           ),
                           _FormRow(
                             icon: LucideIcons.creditCard,
-                            iconBg: context.scaffoldBg,
                             label: tr.account,
                             value: _account?.name ??
                                 (ref
@@ -292,7 +310,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           ),
                           _FormRow(
                             icon: LucideIcons.calendar,
-                            iconBg: context.scaffoldBg,
                             label: tr.date,
                             value: DateFormat('d MMM, HH:mm',
                                     Localizations.localeOf(context).languageCode)
@@ -301,7 +318,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           ),
                           _FormRow(
                             icon: LucideIcons.pencil,
-                            iconBg: context.scaffoldBg,
                             label: tr.note,
                             value: _noteCtrl.text.isEmpty
                                 ? tr.add
@@ -387,19 +403,28 @@ class _IconBtn extends StatelessWidget {
 }
 
 class _TypeTabs extends StatelessWidget {
-  const _TypeTabs({required this.type, required this.onChanged});
+  const _TypeTabs({
+    required this.type,
+    required this.external,
+    required this.onSelect,
+  });
   final TxType type;
-  final ValueChanged<TxType> onChanged;
+  final bool external;
+  final void Function(TxType type, {required bool external}) onSelect;
 
   @override
   Widget build(BuildContext context) {
-    Widget tab(String label, TxType t) {
-      final active = type == t;
+    final tr = Tr.of(context);
+    Widget tab({
+      required String label,
+      required bool active,
+      required VoidCallback onTap,
+    }) {
       return Expanded(
         child: GestureDetector(
-          onTap: () => onChanged(t),
+          onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
             decoration: BoxDecoration(
               color: active
                   ? (context.isDark ? AppColors.ink3 : AppColors.ink)
@@ -409,9 +434,12 @@ class _TypeTabs extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
                 color: active ? Colors.white : context.mutedText,
               ),
             ),
@@ -420,18 +448,34 @@ class _TypeTabs extends StatelessWidget {
       );
     }
 
-    final tr = Tr.of(context);
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: context.surface,
         borderRadius: BorderRadius.circular(100),
       ),
       child: Row(
         children: [
-          tab(tr.income, TxType.income),
-          tab(tr.expense, TxType.expense),
-          tab(tr.transfer, TxType.transfer),
+          tab(
+            label: tr.income,
+            active: type == TxType.income,
+            onTap: () => onSelect(TxType.income, external: false),
+          ),
+          tab(
+            label: tr.expense,
+            active: type == TxType.expense && !external,
+            onTap: () => onSelect(TxType.expense, external: false),
+          ),
+          tab(
+            label: tr.transferBetweenShort,
+            active: type == TxType.transfer,
+            onTap: () => onSelect(TxType.transfer, external: false),
+          ),
+          tab(
+            label: tr.transferExternal,
+            active: type == TxType.expense && external,
+            onTap: () => onSelect(TxType.expense, external: true),
+          ),
         ],
       ),
     );
@@ -526,14 +570,14 @@ class _FormBlock extends StatelessWidget {
 class _FormRow extends StatelessWidget {
   const _FormRow({
     required this.icon,
-    required this.iconBg,
+    this.well,
     required this.label,
     required this.value,
     required this.onTap,
   });
 
   final IconData icon;
-  final Color iconBg;
+  final Color? well;
   final String label;
   final String value;
   final VoidCallback onTap;
@@ -547,21 +591,16 @@ class _FormRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Row(
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                size: 14,
-                color: iconBg == context.scaffoldBg
-                    ? context.primaryText
-                    : AppColors.ink,
-              ),
-            ),
+            if (well != null)
+              ColorWellIcon(
+                color: well!,
+                icon: icon,
+                size: 32,
+                iconSize: 14,
+                radius: 10,
+              )
+            else
+              NeutralWellIcon(icon: icon),
             const SizedBox(width: 12),
             Text(label,
                 style: TextStyle(fontSize: 13, color: context.mutedText)),
@@ -631,14 +670,12 @@ class _CategoryPicker extends StatelessWidget {
                     onTap: () => Navigator.pop(context, c),
                     child: Column(
                       children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: Color(c.color),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Icon(lucideByKey(c.icon), color: AppColors.ink),
+                        ColorWellIcon(
+                          color: Color(c.color),
+                          icon: lucideByKey(c.icon),
+                          size: 52,
+                          iconSize: 22,
+                          radius: 16,
                         ),
                         const SizedBox(height: 6),
                         Text(
@@ -694,18 +731,19 @@ class _AccountPicker extends StatelessWidget {
           for (final a in accounts)
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Color(a.color).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(lucideByKey(a.icon), color: AppColors.ink),
+              leading: ColorWellIcon(
+                color: Color(a.color),
+                icon: lucideByKey(a.icon),
+                size: 40,
+                iconSize: 18,
+                radius: 12,
               ),
               title: Text(a.name,
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text(a.currency),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: context.primaryText)),
+              subtitle: Text(a.currency,
+                  style: TextStyle(color: context.mutedText)),
               onTap: () => Navigator.pop(context, a),
             ),
         ],

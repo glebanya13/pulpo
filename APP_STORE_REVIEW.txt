@@ -1,0 +1,20 @@
+App Review notes (App Store / Google Play)
+==========================================
+
+Login is optional. Reviewers can use the app without an Apple, Google, or email account.
+
+How to try without an account
+1. Launch Pulpo.
+2. Tap “Try without an account” / “Открыть без аккаунта” / “Probar sin cuenta” on the first screen
+   (or the same action on the setup screen / “Continue without signing in” on Sign in).
+3. The app opens with sample local data (cash, card, salary, expenses). No cloud account is created.
+
+Sign in with Apple
+Sign in with Apple is implemented in the app. Enable the Sign In with Apple capability
+for bundle id com.pulpo.app in Apple Developer and in Codemagic.
+
+Legal / support
+Privacy: https://pulpo.mobi/privacy
+Terms:   https://pulpo.mobi/terms
+Support: https://pulpo.mobi/support
+Email:   support@pulpo.mobi

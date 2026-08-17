@@ -28,7 +28,7 @@ class CloudAuth {
 
   User? get currentUser => _auth.currentUser;
 
-  Stream<User?> authChanges() => _auth.authStateChanges();
+  Stream<User?> authChanges() => _auth.userChanges();
 
   DocumentReference<Map<String, dynamic>> _profileRef(String uid) =>
       _db.collection('users').doc(uid);
@@ -82,6 +82,7 @@ class CloudAuth {
     await _afterSignIn(
       userCred,
       providerName: account.displayName,
+      photoUrl: account.photoUrl,
     );
   }
 
@@ -134,6 +135,26 @@ class CloudAuth {
       ).signOut();
     } catch (_) {}
     await _auth.signOut();
+  }
+
+  Future<void> deleteCloudAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(code: 'no-current-user');
+    }
+    final uid = user.uid;
+    try {
+      await _moneyRef(uid).delete();
+    } catch (_) {}
+    try {
+      await _profileRef(uid).delete();
+    } catch (_) {}
+    await user.delete();
+    try {
+      await GoogleSignIn(
+        serverClientId: AppInfo.googleServerClientId,
+      ).signOut();
+    } catch (_) {}
   }
 
   Future<void> updateDisplayName(String name) async {
@@ -213,6 +234,7 @@ class CloudAuth {
   Future<void> _afterSignIn(
     UserCredential cred, {
     String? providerName,
+    String? photoUrl,
   }) async {
     final user = cred.user;
     if (user == null) return;
@@ -235,15 +257,17 @@ class CloudAuth {
       chosen = local;
     }
 
+    final picture = _hiResPhoto(
+      photoUrl ??
+          cred.additionalUserInfo?.profile?['picture'] as String? ??
+          user.photoURL,
+    );
+
     if (chosen != null) {
       await _ref.read(settingsControllerProvider.notifier).setUserName(chosen);
       if (user.displayName != chosen) {
         await user.updateDisplayName(chosen);
       }
-      await _profileRef(user.uid).set({
-        'displayName': chosen,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
     } else {
       final existing = await _profileRef(user.uid).get();
       final remoteName = existing.data()?['displayName'] as String?;
@@ -254,7 +278,25 @@ class CloudAuth {
       }
     }
 
+    if (picture != null && user.photoURL != picture) {
+      await user.updatePhotoURL(picture);
+    }
+
+    await _profileRef(user.uid).set({
+      if (chosen != null) 'displayName': chosen,
+      if (picture != null) 'photoUrl': picture,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await user.reload();
     await syncOnLogin();
+  }
+
+  static String? _hiResPhoto(String? url) {
+    if (url == null || url.trim().isEmpty) return null;
+    return url
+        .replaceAll(RegExp(r'=s\d+-c\b'), '=s256-c')
+        .replaceAll(RegExp(r'/s\d+-c/'), '/s256-c/');
   }
 
   static String? _joinName(String? given, String? family) {

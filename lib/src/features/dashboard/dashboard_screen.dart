@@ -6,8 +6,8 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import '../../core/utils/money_format.dart';
-import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import 'monthly_calendar.dart';
@@ -22,38 +22,22 @@ class DashboardScreen extends ConsumerWidget {
     final total = ref.watch(totalBalanceProvider);
     final currency = settings.baseCurrency;
 
-    final now = DateTime.now();
-    final monthStart = DateTime(now.year, now.month, 1);
-    final monthEnd = DateTime(now.year, now.month + 1, 1);
-    final monthTxs = ref
-            .watch(transactionsInRangeProvider(
-                (start: monthStart, end: monthEnd)))
-            .valueOrNull ??
-        const [];
-
-    var income = 0.0;
-    var expense = 0.0;
-    for (final t in monthTxs) {
-      final type = TxType.values[t.type];
-      if (type == TxType.income) income += t.amount;
-      if (type == TxType.expense) expense += t.amount;
-    }
-    final net = income - expense;
-
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 44, 20, 130),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.paddingOf(context).top + 16,
+        20,
+        150 + MediaQuery.paddingOf(context).bottom,
+      ),
       children: [
         Row(
           children: [
-            Image.asset('assets/logo.png',
-                height: 32, filterQuality: FilterQuality.high),
-            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    tr.greetingMorning,
+                    tr.greetingForHour(DateTime.now().hour),
                     style: TextStyle(fontSize: 13, color: context.mutedText),
                   ),
                   Text(
@@ -68,6 +52,9 @@ class DashboardScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            const SizedBox(width: 10),
+            Image.asset('assets/logo.png',
+                height: 32, filterQuality: FilterQuality.high),
           ],
         ),
         const SizedBox(height: 10),
@@ -99,13 +86,6 @@ class DashboardScreen extends ConsumerWidget {
               onTap: () => context.push('/add?type=expense&mode=external'),
             ),
           ],
-        ),
-        const SizedBox(height: 6),
-        _MonthBalance(
-          income: income,
-          expense: expense,
-          net: net,
-          currency: currency,
         ),
         const SizedBox(height: 6),
         _HomeLinks(),
@@ -230,90 +210,17 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
-class _MonthBalance extends StatelessWidget {
-  const _MonthBalance({
-    required this.income,
-    required this.expense,
-    required this.net,
-    required this.currency,
-  });
-  final double income;
-  final double expense;
-  final double net;
-  final String currency;
-
-  @override
-  Widget build(BuildContext context) {
-    final tr = Tr.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          _Mini(
-              label: tr.income,
-              value: formatMoney(income, currency),
-              color: AppColors.limeAccent),
-          Container(width: 1, height: 28, color: context.divider),
-          _Mini(
-              label: tr.expense,
-              value: formatMoney(expense, currency),
-              color: AppColors.danger),
-          Container(width: 1, height: 28, color: context.divider),
-          _Mini(
-              label: tr.monthNet,
-              value: formatMoney(net, currency),
-              color: context.primaryText),
-        ],
-      ),
-    );
-  }
-}
-
-class _Mini extends StatelessWidget {
-  const _Mini({required this.label, required this.value, required this.color});
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label,
-                style: TextStyle(fontSize: 11, color: context.mutedText)),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w800, color: color),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _HomeLinks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final items = [
-      (LucideIcons.wallet, tr.accounts, '/accounts', AppColors.bgFood),
-      (LucideIcons.pieChart, tr.budgets, '/budgets', const Color(0xFFFFF3D6)),
-      (LucideIcons.repeat, tr.recurringOps, '/recurring', const Color(0xFFE0F2FE)),
-      (LucideIcons.tv, tr.subscriptions, '/subscriptions', const Color(0xFFE8E4FF)),
-      (LucideIcons.users, tr.debts, '/debts', const Color(0xFFFFE4E1)),
+      (LucideIcons.wallet, tr.accounts, '/accounts', const Color(0xFF8BD44A)),
+      (LucideIcons.pieChart, tr.budgets, '/budgets', const Color(0xFFFFB020)),
+      (LucideIcons.users, tr.debts, '/debts', const Color(0xFFFF5C5C)),
+      (LucideIcons.tv, tr.subscriptions, '/subscriptions', const Color(0xFF7C6CFF)),
+      (LucideIcons.repeat, tr.recurringOps, '/recurring', const Color(0xFF2EB5FF)),
+      (LucideIcons.target, tr.goals, '/goals', const Color(0xFFCDFF3A)),
     ];
     Widget tile((IconData, String, String, Color) i) {
       return GestureDetector(
@@ -327,14 +234,12 @@ class _HomeLinks extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: i.$4,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(i.$1, size: 14, color: AppColors.ink),
+              ColorWellIcon(
+                color: i.$4,
+                icon: i.$1,
+                size: 26,
+                iconSize: 14,
+                radius: 8,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -374,7 +279,13 @@ class _HomeLinks extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        tile(items[4]),
+        Row(
+          children: [
+            Expanded(child: tile(items[4])),
+            const SizedBox(width: 6),
+            Expanded(child: tile(items[5])),
+          ],
+        ),
       ],
     );
   }

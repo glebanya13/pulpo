@@ -306,9 +306,9 @@ class _StatCard extends StatelessWidget {
         children: [
           Text(
             label.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: AppColors.textMuted,
+              color: context.mutedText,
               letterSpacing: 0.5,
               fontWeight: FontWeight.w600,
             ),
@@ -325,7 +325,7 @@ class _StatCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(subtitle,
-              style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+              style: TextStyle(fontSize: 11, color: context.faintText)),
         ],
       ),
     );
@@ -345,7 +345,7 @@ class _DebtCard extends ConsumerWidget {
     final remaining = debt.amount - debt.paidAmount;
 
     String dueLabel;
-    Color dueColor = AppColors.textFaint;
+    Color dueColor = context.faintText;
     if (debt.dueDate != null) {
       final days = debt.dueDate!.difference(DateTime.now()).inDays;
       dueLabel =
@@ -398,16 +398,16 @@ class _DebtCard extends ConsumerWidget {
                       children: [
                         Text(
                           debt.counterparty,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.ink),
+                              color: context.primaryText),
                         ),
                         const SizedBox(height: 2),
                         RichText(
                           text: TextSpan(
-                            style: const TextStyle(
-                                fontSize: 11, color: AppColors.textFaint),
+                            style: TextStyle(
+                                fontSize: 11, color: context.faintText),
                             children: [
                               TextSpan(
                                 text: dueLabel,
@@ -462,12 +462,12 @@ class _DebtCard extends ConsumerWidget {
                             '{p}', formatMoney(debt.paidAmount, debt.currency))
                         .replaceFirst(
                             '{t}', formatMoney(debt.amount, debt.currency)),
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textFaint),
+                    style: TextStyle(
+                        fontSize: 11, color: context.faintText),
                   ),
                   Text('${(progress * 100).round()}%',
-                      style: const TextStyle(
-                          fontSize: 11, color: AppColors.textFaint)),
+                      style: TextStyle(
+                          fontSize: 11, color: context.faintText)),
                 ],
               ),
             ],

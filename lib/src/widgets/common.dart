@@ -438,20 +438,28 @@ class BudgetBadge extends StatelessWidget {
         fg = AppColors.ink;
         break;
       case BadgeTone.red:
-        bg = const Color(0xFFFFE4E1);
-        fg = const Color(0xFFE53E3E);
+        bg = context.isDark
+            ? AppColors.danger.withValues(alpha: 0.28)
+            : AppColors.danger;
+        fg = context.isDark ? const Color(0xFFFF8A8A) : Colors.white;
         break;
       case BadgeTone.green:
-        bg = const Color(0x40CDFF3A);
-        fg = const Color(0xFF5A7A12);
+        bg = context.isDark
+            ? AppColors.lime.withValues(alpha: 0.28)
+            : AppColors.lime;
+        fg = context.isDark ? AppColors.lime : AppColors.ink;
         break;
       case BadgeTone.orange:
-        bg = const Color(0xFFFFF3D6);
-        fg = const Color(0xFFD69E2E);
+        bg = context.isDark
+            ? AppColors.warning.withValues(alpha: 0.28)
+            : AppColors.warning;
+        fg = context.isDark ? const Color(0xFFFFD08A) : AppColors.ink;
         break;
       case BadgeTone.gray:
-        bg = const Color(0xFFF2F2F2);
-        fg = AppColors.textSecondary;
+        bg = context.isDark
+            ? Colors.white.withValues(alpha: 0.12)
+            : const Color(0xFFE8E8E8);
+        fg = context.primaryText;
         break;
     }
     return Container(

@@ -44,6 +44,12 @@ class SettingsScreen extends ConsumerWidget {
                   onTap: () => _openEditName(context, ref, tr),
                 ),
                 _SettingsRow(
+                  icon: LucideIcons.shield,
+                  iconBg: const Color(0xFFE0F2FE),
+                  title: tr.security,
+                  onTap: () => context.push('/settings/security'),
+                ),
+                _SettingsRow(
                   icon: LucideIcons.dollarSign,
                   iconBg: AppColors.bgFood,
                   title: tr.baseCurrency,
@@ -62,9 +68,15 @@ class SettingsScreen extends ConsumerWidget {
                 _SettingsRow(
                   icon: LucideIcons.moon,
                   iconBg: const Color(0xFFE8E4FF),
-                  title: tr.theme,
-                  trailing: tr.themeLabel(settings.themeMode),
-                  onTap: () => context.push('/settings/theme'),
+                  title: tr.themeDarkMode,
+                  subtitle: tr.themeDarkHint,
+                  trailingWidget: Switch.adaptive(
+                    value: context.isDark,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    onChanged: (v) => ref
+                        .read(settingsControllerProvider.notifier)
+                        .setTheme(v ? 'dark' : 'light'),
+                  ),
                 ),
               ],
             ),
@@ -136,7 +148,7 @@ class SettingsScreen extends ConsumerWidget {
               child: Text(
                 'Pulpo · offline-first',
                 style: TextStyle(
-                  color: AppColors.textFaint,
+                  color: context.faintText,
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
@@ -218,9 +230,9 @@ Future<void> openNameSheet(
           bottom: MediaQuery.of(ctx).viewInsets.bottom,
         ),
         child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: Theme.of(ctx).cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
           child: Column(
@@ -232,7 +244,9 @@ Future<void> openNameSheet(
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDDDDDD),
+                    color: Theme.of(ctx).brightness == Brightness.dark
+                        ? Colors.white.withValues(alpha: 0.24)
+                        : const Color(0xFFDDDDDD),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -247,8 +261,8 @@ Future<void> openNameSheet(
                       color: const Color(0xFFD4F5E0),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(LucideIcons.user,
-                        color: AppColors.ink),
+                    child: Icon(LucideIcons.user,
+                        color: Theme.of(ctx).colorScheme.onSurface),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -257,17 +271,18 @@ Future<void> openNameSheet(
                       children: [
                         Text(
                           tr.yourName,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.ink),
+                              color: Theme.of(ctx).colorScheme.onSurface),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           tr.howToCall,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textMuted),
+                              color: Theme.of(ctx).colorScheme.onSurface
+                                  .withValues(alpha: 0.6)),
                         ),
                       ],
                     ),
@@ -277,7 +292,7 @@ Future<void> openNameSheet(
               const SizedBox(height: 20),
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.bg,
+                  color: Theme.of(ctx).scaffoldBackgroundColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -285,17 +300,21 @@ Future<void> openNameSheet(
                   controller: ctrl,
                   autofocus: true,
                   textCapitalization: TextCapitalization.words,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.ink,
+                    color: Theme.of(ctx).colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     filled: false,
                     hintText: tr.enterName,
-                    hintStyle: const TextStyle(
-                        color: AppColors.textFaint, fontSize: 15),
+                    hintStyle: TextStyle(
+                        color: Theme.of(ctx)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.4),
+                        fontSize: 15),
                     isCollapsed: true,
                     contentPadding:
                         const EdgeInsets.symmetric(vertical: 18),
@@ -312,15 +331,15 @@ Future<void> openNameSheet(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
                           border: Border.all(
-                              color: const Color(0xFFDDDDDD), width: 1.5),
+                              color: Theme.of(ctx).dividerColor, width: 1.5),
                           borderRadius: BorderRadius.circular(100),
                         ),
                         alignment: Alignment.center,
                         child: Text(
                           tr.cancel,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: AppColors.ink),
+                              color: Theme.of(ctx).colorScheme.onSurface),
                         ),
                       ),
                     ),
@@ -400,6 +419,7 @@ class _SettingsRow extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.trailing,
+    this.trailingWidget,
     this.onTap,
     this.danger = false,
   });
@@ -408,6 +428,7 @@ class _SettingsRow extends StatelessWidget {
   final String title;
   final String? subtitle;
   final String? trailing;
+  final Widget? trailingWidget;
   final VoidCallback? onTap;
   final bool danger;
 
@@ -430,7 +451,9 @@ class _SettingsRow extends StatelessWidget {
               ),
               child: Icon(icon,
                   size: 18,
-                  color: danger ? const Color(0xFFE53E3E) : AppColors.ink),
+                  color: danger
+                      ? const Color(0xFFE53E3E)
+                      : context.primaryText),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -458,6 +481,7 @@ class _SettingsRow extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 13, color: context.mutedText)),
               ),
+            if (trailingWidget != null) trailingWidget!,
             if (onTap != null && !danger)
               Icon(LucideIcons.chevronRight,
                   size: 16, color: context.faintText),

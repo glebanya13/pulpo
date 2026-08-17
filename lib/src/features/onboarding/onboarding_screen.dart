@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../data/seed/seed_demo.dart';
 
-class OnboardingScreen extends StatelessWidget {
+class OnboardingScreen extends ConsumerWidget {
   const OnboardingScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -100,6 +102,23 @@ class OnboardingScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () => startLocalDemo(context, ref),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Center(
+                        child: Text(
+                          tr.tryDemo,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.75),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
                 ),
@@ -184,9 +203,9 @@ class _HeroCards extends StatelessWidget {
             child: Transform.rotate(
               angle: -0.14, // ≈ -8deg
               child: _Card(
-                label: 'Salary',
-                amount: '\$3,200',
-                sub: '+ Aug 1',
+                label: Tr.of(context).categoryName('salary'),
+                amount: '€3,200',
+                sub: '+ 1',
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -203,9 +222,9 @@ class _HeroCards extends StatelessWidget {
             child: Transform.rotate(
               angle: -0.035,
               child: _Card(
-                label: 'Food',
-                amount: '\$420',
-                sub: '- this week',
+                label: Tr.of(context).categoryName('food'),
+                amount: '€420',
+                sub: Tr.of(context).periodThisMonth,
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -222,9 +241,9 @@ class _HeroCards extends StatelessWidget {
             child: Transform.rotate(
               angle: 0.105,
               child: _Card(
-                label: 'Savings',
-                amount: '\$8,750',
-                sub: 'Goal 68%',
+                label: Tr.of(context).goals,
+                amount: '€8,750',
+                sub: '68%',
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,

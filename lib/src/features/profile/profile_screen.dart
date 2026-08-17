@@ -1,17 +1,15 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/utils/money_format.dart';
 import '../export/export_sheet.dart';
 import '../settings/settings_screen.dart' show openNameSheet;
-import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../auth/cloud_auth.dart';
@@ -24,29 +22,17 @@ class ProfileScreen extends ConsumerWidget {
     final tr = Tr.of(context);
     final settings = ref.watch(settingsControllerProvider);
     final authUser = ref.watch(authUserProvider).valueOrNull;
-    final total = ref.watch(totalBalanceProvider);
     final currency = settings.baseCurrency;
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
-    final txs = ref.watch(allTransactionsProvider).valueOrNull ?? const [];
-
-    // подсчёт статистики
-    final now = DateTime.now();
-    final monthStart = DateTime(now.year, now.month, 1);
-    var monthIncome = 0.0;
-    var monthExpense = 0.0;
-    var monthCount = 0;
-    for (final t in txs) {
-      if (t.date.isBefore(monthStart)) continue;
-      final ty = TxType.values[t.type];
-      if (ty == TxType.income) monthIncome += t.amount;
-      if (ty == TxType.expense) monthExpense += t.amount;
-      monthCount++;
-    }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 48, 20, 120),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.paddingOf(context).top + 16,
+        20,
+        140,
+      ),
       children: [
-        // Заголовок
         Text(
           tr.profile,
           style: TextStyle(
@@ -58,7 +44,6 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
 
-        // Аватар + имя
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -67,26 +52,9 @@ class ProfileScreen extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [AppColors.lime, AppColors.limeAccent],
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  settings.userName.isNotEmpty
-                      ? settings.userName[0].toUpperCase()
-                      : 'U',
-                  style: const TextStyle(
-                    color: AppColors.ink,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+              _ProfileAvatar(
+                name: settings.userName,
+                photoUrl: authUser?.photoURL,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -129,113 +97,9 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 12),
-
-        // Общий баланс
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          decoration: BoxDecoration(
-            color: context.emphasized,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: context.emphasizedBorder),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                tr.totalBalance,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                  letterSpacing: 0.8,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                formatMoney(total, currency),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  height: 1.1,
-                  letterSpacing: -1,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Статы этого месяца
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                label: tr.income.toUpperCase(),
-                value: formatMoney(monthIncome, currency),
-                color: AppColors.limeAccent,
-                icon: LucideIcons.arrowDownRight,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatCard(
-                label: tr.expense.toUpperCase(),
-                value: formatMoney(monthExpense, currency),
-                color: AppColors.danger,
-                icon: LucideIcons.arrowUpRight,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: context.surface,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.bgFood,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(LucideIcons.calendar,
-                    size: 18, color: AppColors.ink),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      DateFormat('LLLL yyyy',
-                              Localizations.localeOf(context).languageCode)
-                          .format(now),
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: context.primaryText),
-                    ),
-                    Text(
-                      '$monthCount ${tr.transactionsCount}',
-                      style: TextStyle(
-                          fontSize: 11, color: context.faintText),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
         const SizedBox(height: 20),
 
-        _SectionLabel(tr.accountSection),
+        _SectionLabel(tr.sectionSettings),
         _MenuGroup(
           children: [
             _MenuRow(
@@ -244,26 +108,12 @@ class ProfileScreen extends ConsumerWidget {
               label: authUser != null ? tr.signedInAs : tr.signIn,
               onTap: () => context.push('/settings/account'),
             ),
-            if (authUser != null)
-              _MenuRow(
-                icon: LucideIcons.logOut,
-                iconBg: const Color(0xFFFFE4E6),
-                label: tr.signOut,
-                onTap: () => ref.read(cloudAuthProvider).signOut(),
-              ),
             _MenuRow(
               icon: LucideIcons.shield,
               iconBg: const Color(0xFFD4F5E0),
               label: tr.security,
               onTap: () => context.push('/settings/security'),
             ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        _SectionLabel(tr.sectionSettings),
-        _MenuGroup(
-          children: [
             _MenuRow(
               icon: LucideIcons.layers,
               iconBg: const Color(0xFFD4F5E0),
@@ -286,9 +136,15 @@ class ProfileScreen extends ConsumerWidget {
             _MenuRow(
               icon: LucideIcons.moon,
               iconBg: const Color(0xFFE8E4FF),
-              label: tr.theme,
-              trailing: tr.themeLabel(settings.themeMode),
-              onTap: () => context.push('/settings/theme'),
+              label: tr.themeDarkMode,
+              subtitle: tr.themeDarkHint,
+              trailingWidget: Switch.adaptive(
+                value: context.isDark,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                onChanged: (v) => ref
+                    .read(settingsControllerProvider.notifier)
+                    .setTheme(v ? 'dark' : 'light'),
+              ),
             ),
             _MenuRow(
               icon: LucideIcons.database,
@@ -310,7 +166,43 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 48),
+        if (authUser != null) ...[
+          const SizedBox(height: 28),
+          _MenuGroup(
+            children: [
+              _MenuRow(
+                icon: LucideIcons.trash2,
+                iconBg: const Color(0xFFFFE4E1),
+                label: tr.deleteCloudAccount,
+                danger: true,
+                onTap: () => _confirmDeleteAccount(context, ref, tr),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () => ref.read(cloudAuthProvider).signOut(),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: context.emphasized,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: context.emphasizedBorder),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                tr.signOut,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 32),
         Center(
           child: Text(
             'Pulpo · v${AppInfo.version}',
@@ -325,67 +217,97 @@ class ProfileScreen extends ConsumerWidget {
       ],
     );
   }
-
 }
 
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.icon,
-  });
-  final String label;
-  final String value;
-  final Color color;
-  final IconData icon;
+Future<void> _confirmDeleteAccount(
+  BuildContext context,
+  WidgetRef ref,
+  Tr tr,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dctx) => AlertDialog(
+      title: Text(tr.deleteCloudAccountTitle),
+      content: Text(tr.deleteCloudAccountBody),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dctx, false),
+          child: Text(tr.cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(dctx, true),
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFFE53E3E),
+          ),
+          child: Text(tr.delete),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+  try {
+    await ref.read(cloudAuthProvider).deleteCloudAccount();
+  } on FirebaseAuthException catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          e.code == 'requires-recent-login'
+              ? tr.deleteCloudAccountRelogin
+              : tr.deleteCloudAccountFailed,
+        ),
+      ),
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(tr.deleteCloudAccountFailed)),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({required this.name, this.photoUrl});
+  final String name;
+  final String? photoUrl;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 14, color: color),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: context.mutedText,
-                      letterSpacing: 0.4,
-                    )),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
-                    color: color,
-                    height: 1.2,
-                  ),
-                ),
-              ],
+    final letter = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+    Widget fallback() => Container(
+          width: 48,
+          height: 48,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [AppColors.lime, AppColors.limeAccent],
             ),
           ),
-        ],
+          alignment: Alignment.center,
+          child: Text(
+            letter,
+            style: const TextStyle(
+              color: AppColors.ink,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        );
+
+    final url = photoUrl?.trim();
+    if (url == null || url.isEmpty) return fallback();
+
+    return ClipOval(
+      child: Image.network(
+        url,
+        width: 48,
+        height: 48,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => fallback(),
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return fallback();
+        },
       ),
     );
   }
@@ -444,14 +366,20 @@ class _MenuRow extends StatelessWidget {
     required this.icon,
     required this.iconBg,
     required this.label,
+    this.subtitle,
     this.trailing,
-    required this.onTap,
+    this.trailingWidget,
+    this.onTap,
+    this.danger = false,
   });
   final IconData icon;
   final Color iconBg;
   final String label;
+  final String? subtitle;
   final String? trailing;
-  final VoidCallback onTap;
+  final Widget? trailingWidget;
+  final VoidCallback? onTap;
+  final bool danger;
 
   @override
   Widget build(BuildContext context) {
@@ -468,16 +396,35 @@ class _MenuRow extends StatelessWidget {
                 color: iconBg,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 18, color: AppColors.ink),
+              child: Icon(icon,
+                  size: 18,
+                  color: danger
+                      ? const Color(0xFFE53E3E)
+                      : context.primaryText),
             ),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: context.primaryText),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: danger
+                            ? const Color(0xFFE53E3E)
+                            : context.primaryText),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: TextStyle(
+                          fontSize: 11, color: context.faintText),
+                    ),
+                  ],
+                ],
               ),
             ),
             if (trailing != null)
@@ -492,8 +439,10 @@ class _MenuRow extends StatelessWidget {
                   ),
                 ),
               ),
-            Icon(LucideIcons.chevronRight,
-                size: 16, color: context.faintText),
+            if (trailingWidget != null) trailingWidget!,
+            if (onTap != null && !danger)
+              Icon(LucideIcons.chevronRight,
+                  size: 16, color: context.faintText),
           ],
         ),
       ),

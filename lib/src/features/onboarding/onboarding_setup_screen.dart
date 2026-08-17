@@ -8,7 +8,9 @@ import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/account_repository.dart';
+import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../data/seed/seed_demo.dart';
 
 class OnboardingSetupScreen extends ConsumerStatefulWidget {
   const OnboardingSetupScreen({super.key});
@@ -23,7 +25,25 @@ class _OnboardingSetupScreenState
   final _nameCtrl = TextEditingController();
   final _balanceCtrl = TextEditingController();
   String _currency = 'EUR';
-  static const _currencies = ['EUR', 'MXN', 'ARS', 'COP', 'USD'];
+  static const _currencies = [
+    'EUR',
+    'USD',
+    'GBP',
+    'MXN',
+    'BRL',
+    'ARS',
+    'COP',
+    'CLP',
+    'PEN',
+    'CAD',
+    'CHF',
+    'PLN',
+    'JPY',
+    'CNY',
+    'INR',
+    'AUD',
+    'RUB',
+  ];
   bool _nameError = false;
 
   @override
@@ -52,7 +72,7 @@ class _OnboardingSetupScreenState
           currency: _currency,
           initialBalance: double.tryParse(_balanceCtrl.text) ?? 0,
           icon: 'wallet',
-          color: 0xFFD4F5E0,
+          color: 0xFF3DDC84,
         );
     if (mounted) context.go('/');
   }
@@ -226,6 +246,23 @@ class _OnboardingSetupScreenState
                             color: AppColors.ink,
                             fontSize: 15,
                             fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () => startLocalDemo(context, ref),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Center(
+                      child: Text(
+                        tr.tryDemo,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
