@@ -77,7 +77,7 @@ class DashboardScreen extends ConsumerWidget {
             _QuickChip(
               icon: LucideIcons.arrowLeftRight,
               label: tr.transferBetweenAccounts,
-              onTap: () => context.push('/transfer'),
+              onTap: () => context.push('/add?type=transfer'),
             ),
             const SizedBox(width: 6),
             _QuickChip(

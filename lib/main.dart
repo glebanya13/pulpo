@@ -9,6 +9,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'firebase_options.dart';
 import 'src/core/home_widget_sync.dart';
+import 'src/core/notifications/daily_reminder.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/data/repositories/providers.dart';
 import 'src/data/repositories/settings_service.dart';
@@ -45,6 +46,7 @@ Future<void> main() async {
 
   await initializeDateFormatting();
   await configureHomeWidget();
+  await initDailyReminder();
 
   final prefs = await SharedPreferences.getInstance();
 
@@ -57,6 +59,7 @@ Future<void> main() async {
   final db = container.read(databaseProvider);
   await seedCategoriesIfEmpty(db);
   await postDueScheduledItems(db);
+  await syncDailyReminder(container.read(settingsControllerProvider));
 
   runApp(UncontrolledProviderScope(
     container: container,
@@ -71,6 +74,10 @@ class BudgetTrackerApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final settings = ref.watch(settingsControllerProvider);
+    ref.listen<SettingsState>(settingsControllerProvider, (prev, next) {
+      if (prev == next) return;
+      syncDailyReminder(next);
+    });
     return MaterialApp.router(
       title: 'Pulpo',
       debugShowCheckedModeBanner: false,
@@ -89,8 +96,9 @@ class BudgetTrackerApp extends ConsumerWidget {
             statusBarIconBrightness:
                 dark ? Brightness.light : Brightness.dark,
             statusBarBrightness: dark ? Brightness.dark : Brightness.light,
-            systemNavigationBarColor:
-                dark ? const Color(0xFF0F0F0F) : const Color(0xFFF2F2F2),
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarDividerColor: Colors.transparent,
+            systemNavigationBarContrastEnforced: false,
             systemNavigationBarIconBrightness:
                 dark ? Brightness.light : Brightness.dark,
           ),

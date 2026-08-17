@@ -12,6 +12,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/transaction_repository.dart';
+import '../../widgets/common.dart';
 import '../../widgets/transaction_tile.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -45,7 +46,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       final q = _query.toLowerCase();
       final cat = cats.firstWhereOrNull((c) => c.id == t.categoryId);
       return (t.note ?? '').toLowerCase().contains(q) ||
-          (cat?.name ?? '').toLowerCase().contains(q);
+          (cat != null && tr.categoryName(cat.name).toLowerCase().contains(q));
     }).toList();
 
     final grouped = groupBy<db.Transaction, DateTime>(
@@ -118,74 +119,56 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 34,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _Chip(
-                label: tr.all,
-                active: _filterType == null,
-                onTap: () => setState(() => _filterType = null),
-              ),
-              _Chip(
-                label: tr.income,
-                active: _filterType == TxType.income,
-                onTap: () => setState(() => _filterType = TxType.income),
-              ),
-              _Chip(
-                label: tr.expense,
-                active: _filterType == TxType.expense,
-                onTap: () => setState(() => _filterType = TxType.expense),
-              ),
-              _Chip(
-                label: tr.transfer,
-                active: _filterType == TxType.transfer,
-                onTap: () => setState(() => _filterType = TxType.transfer),
-              ),
-            ],
-          ),
+        const SizedBox(height: 16),
+        TabsPill(
+          tabs: [tr.all, tr.income, tr.expense, tr.transfer],
+          index: _filterType == null
+              ? 0
+              : _filterType == TxType.income
+                  ? 1
+                  : _filterType == TxType.expense
+                      ? 2
+                      : 3,
+          onChanged: (i) => setState(() {
+            _filterType = switch (i) {
+              1 => TxType.income,
+              2 => TxType.expense,
+              3 => TxType.transfer,
+              _ => null,
+            };
+          }),
         ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 34,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _Chip(
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _FilterPick(
                 label: tr.filterAccount,
-                active: _accountId == null,
-                onTap: () => setState(() => _accountId = null),
+                value: accounts
+                    .where((a) => a.id == _accountId)
+                    .map((a) => a.name)
+                    .firstOrNull,
+                onTap: () => _pickAccount(context, tr, accounts),
+                onClear: _accountId == null
+                    ? null
+                    : () => setState(() => _accountId = null),
               ),
-              for (final a in accounts)
-                _Chip(
-                  label: a.name,
-                  active: _accountId == a.id,
-                  onTap: () => setState(() => _accountId = a.id),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 34,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _Chip(
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _FilterPick(
                 label: tr.filterCategory,
-                active: _categoryId == null,
-                onTap: () => setState(() => _categoryId = null),
+                value: cats
+                    .where((c) => c.id == _categoryId)
+                    .map((c) => tr.categoryName(c.name))
+                    .firstOrNull,
+                onTap: () => _pickCategory(context, tr, cats),
+                onClear: _categoryId == null
+                    ? null
+                    : () => setState(() => _categoryId = null),
               ),
-              for (final c in cats)
-                _Chip(
-                  label: tr.categoryName(c.name),
-                  active: _categoryId == c.id,
-                  onTap: () => setState(() => _categoryId = c.id),
-                ),
-            ],
-          ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         if (filtered.isEmpty)
@@ -252,41 +235,185 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final code = Localizations.localeOf(ctx).languageCode;
     return DateFormat('d MMMM', code).format(d).toUpperCase();
   }
+
+  Future<void> _pickAccount(
+    BuildContext context,
+    Tr tr,
+    List<db.Account> accounts,
+  ) async {
+    final picked = await _openPickSheet<int?>(
+      context,
+      title: tr.filterAccount,
+      items: [
+        (null, tr.all),
+        for (final a in accounts) (a.id, a.name),
+      ],
+      selected: _accountId,
+    );
+    if (!picked.didPick) return;
+    setState(() => _accountId = picked.value);
+  }
+
+  Future<void> _pickCategory(
+    BuildContext context,
+    Tr tr,
+    List<db.Category> cats,
+  ) async {
+    final picked = await _openPickSheet<int?>(
+      context,
+      title: tr.filterCategory,
+      items: [
+        (null, tr.all),
+        for (final c in cats) (c.id, tr.categoryName(c.name)),
+      ],
+      selected: _categoryId,
+    );
+    if (!picked.didPick) return;
+    setState(() => _categoryId = picked.value);
+  }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({
+class _SheetPick<T> {
+  const _SheetPick.cancelled() : didPick = false, value = null;
+  const _SheetPick.ok(this.value) : didPick = true;
+  final bool didPick;
+  final T? value;
+}
+
+Future<_SheetPick<T>> _openPickSheet<T>(
+  BuildContext context, {
+  required String title,
+  required List<(T, String)> items,
+  required T selected,
+}) async {
+  final picked = await showModalBottomSheet<_SheetPick<T>>(
+    context: context,
+    backgroundColor: Theme.of(context).cardColor,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (ctx) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: ctx.handleBar,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: ctx.primaryText,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(ctx).height * 0.5,
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: items.length,
+                  separatorBuilder: (_, _) => Divider(
+                    height: 1,
+                    color: ctx.divider,
+                  ),
+                  itemBuilder: (_, i) {
+                    final item = items[i];
+                    final active = item.$1 == selected;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        item.$2,
+                        style: TextStyle(
+                          fontWeight:
+                              active ? FontWeight.w700 : FontWeight.w500,
+                          color: ctx.primaryText,
+                        ),
+                      ),
+                      trailing: active
+                          ? const Icon(LucideIcons.check,
+                              color: AppColors.limeAccent, size: 20)
+                          : null,
+                      onTap: () => Navigator.pop(ctx, _SheetPick.ok(item.$1)),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+  return picked ?? _SheetPick<T>.cancelled();
+}
+
+class _FilterPick extends StatelessWidget {
+  const _FilterPick({
     required this.label,
-    required this.active,
+    required this.value,
     required this.onTap,
+    this.onClear,
   });
+
   final String label;
-  final bool active;
+  final String? value;
   final VoidCallback onTap;
+  final VoidCallback? onClear;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: active
-                ? (context.isDark ? AppColors.ink3 : AppColors.ink)
-                : context.surface,
-            borderRadius: BorderRadius.circular(100),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: active ? Colors.white : context.mutedText,
+    final selected = value != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 42,
+        padding: const EdgeInsets.only(left: 14, right: 8),
+        decoration: BoxDecoration(
+          color: context.surface,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                selected ? value! : label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? context.primaryText : context.mutedText,
+                ),
+              ),
             ),
-          ),
+            if (selected && onClear != null)
+              GestureDetector(
+                onTap: onClear,
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Icon(LucideIcons.x,
+                      size: 14, color: context.mutedText),
+                ),
+              )
+            else
+              Icon(LucideIcons.chevronDown,
+                  size: 16, color: context.faintText),
+          ],
         ),
       ),
     );

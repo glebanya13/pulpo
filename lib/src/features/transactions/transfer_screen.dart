@@ -14,7 +14,9 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/transaction_repository.dart';
 
 class TransferScreen extends ConsumerStatefulWidget {
-  const TransferScreen({super.key});
+  const TransferScreen({super.key, this.embedded = false});
+
+  final bool embedded;
 
   @override
   ConsumerState<TransferScreen> createState() => _TransferScreenState();
@@ -116,6 +118,196 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
         _from != null && _to != null && _from!.currency == _to!.currency;
     if (sameCurrency && _rate != 1) _rate = 1;
 
+    final form = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Label(tr.transferFrom),
+        _AccountRow(account: _from, onTap: () => _pickAccount(from: true)),
+        const SizedBox(height: 8),
+        Center(
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: context.emphasized,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(LucideIcons.arrowDown,
+                size: 16, color: AppColors.lime),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _Label(tr.transferTo),
+        _AccountRow(account: _to, onTap: () => _pickAccount(from: false)),
+        const SizedBox(height: 20),
+        Center(
+          child: Text(tr.transferSending,
+              style: TextStyle(fontSize: 13, color: context.faintText)),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _amountCtrl,
+          textAlign: TextAlign.center,
+          keyboardType:
+              const TextInputType.numberWithOptions(decimal: true),
+          style: TextStyle(
+            fontSize: 44,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -2,
+            color: context.primaryText,
+          ),
+          decoration: InputDecoration(
+            hintText: '0.00',
+            border: InputBorder.none,
+            filled: false,
+            contentPadding: EdgeInsets.zero,
+            hintStyle: TextStyle(
+              color: context.primaryText.withValues(alpha: 0.4),
+            ),
+          ),
+          onChanged: (v) =>
+              setState(() => _amount = double.tryParse(v) ?? 0),
+        ),
+        if (!sameCurrency && _from != null && _to != null) ...[
+          const SizedBox(height: 12),
+          _RateCard(
+            from: _from!.currency,
+            to: _to!.currency,
+            rate: _rate,
+            onEdit: () async {
+              final ctrl =
+                  TextEditingController(text: _rate.toStringAsFixed(4));
+              final result = await showDialog<double>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(
+                      '${tr.ratePrefix}${_from!.currency} = ? ${_to!.currency}'),
+                  content: TextField(
+                    controller: ctrl,
+                    autofocus: true,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text(tr.cancel)),
+                    TextButton(
+                      onPressed: () => Navigator.pop(
+                          ctx, double.tryParse(ctrl.text) ?? 1),
+                      child: Text(tr.ok),
+                    ),
+                  ],
+                ),
+              );
+              if (result != null) setState(() => _rate = result);
+            },
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Column(
+              children: [
+                Text(tr.transferRecipientGets,
+                    style: TextStyle(
+                        fontSize: 12, color: context.faintText)),
+                const SizedBox(height: 4),
+                Text(
+                  formatMoney(_received, _to!.currency),
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: context.accent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: context.surface,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: InkWell(
+            onTap: () async {
+              final ctrl =
+                  TextEditingController(text: _fee.toStringAsFixed(2));
+              final result = await showDialog<double>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(tr.fee),
+                  content: TextField(
+                    controller: ctrl,
+                    autofocus: true,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text(tr.cancel)),
+                    TextButton(
+                      onPressed: () => Navigator.pop(
+                          ctx, double.tryParse(ctrl.text) ?? 0),
+                      child: Text(tr.ok),
+                    ),
+                  ],
+                ),
+              );
+              if (result != null) setState(() => _fee = result);
+            },
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: context.scaffoldBg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(LucideIcons.percent,
+                        size: 14, color: context.primaryText),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(tr.fee,
+                        style: TextStyle(
+                            fontSize: 13, color: context.mutedText)),
+                  ),
+                  Text(
+                    _to != null
+                        ? formatMoney(_fee, _to!.currency)
+                        : _fee.toStringAsFixed(2),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: context.primaryText),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        ElevatedButton(
+          onPressed: _submit,
+          child: Text(tr.confirm),
+        ),
+      ],
+    );
+
+    if (widget.embedded) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.only(top: 20, bottom: 20),
+        child: form,
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -155,188 +347,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              _Label(tr.transferFrom),
-              _AccountRow(account: _from, onTap: () => _pickAccount(from: true)),
-              const SizedBox(height: 8),
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: context.emphasized,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(LucideIcons.arrowDown,
-                      size: 16, color: AppColors.lime),
-                ),
-              ),
-              const SizedBox(height: 8),
-              _Label(tr.transferTo),
-              _AccountRow(account: _to, onTap: () => _pickAccount(from: false)),
-              const SizedBox(height: 20),
-              Center(
-                child: Text(tr.transferSending,
-                    style: TextStyle(
-                        fontSize: 13, color: context.faintText)),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _amountCtrl,
-                textAlign: TextAlign.center,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                style: TextStyle(
-                  fontSize: 44,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -2,
-                  color: context.primaryText,
-                ),
-                decoration: InputDecoration(
-                  hintText: '0.00',
-                  border: InputBorder.none,
-                  filled: false,
-                  contentPadding: EdgeInsets.zero,
-                  hintStyle: TextStyle(
-                    color: context.primaryText.withValues(alpha: 0.4),
-                  ),
-                ),
-                onChanged: (v) =>
-                    setState(() => _amount = double.tryParse(v) ?? 0),
-              ),
-              if (!sameCurrency && _from != null && _to != null) ...[
-                const SizedBox(height: 12),
-                _RateCard(
-                  from: _from!.currency,
-                  to: _to!.currency,
-                  rate: _rate,
-                  onEdit: () async {
-                    final ctrl = TextEditingController(
-                        text: _rate.toStringAsFixed(4));
-                    final result = await showDialog<double>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: Text(
-                            '${tr.ratePrefix}${_from!.currency} = ? ${_to!.currency}'),
-                        content: TextField(
-                          controller: ctrl,
-                          autofocus: true,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(
-                                  decimal: true),
-                        ),
-                        actions: [
-                          TextButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              child: Text(tr.cancel)),
-                          TextButton(
-                            onPressed: () => Navigator.pop(
-                                ctx, double.tryParse(ctrl.text) ?? 1),
-                            child: Text(tr.ok),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (result != null) setState(() => _rate = result);
-                  },
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Column(
-                    children: [
-                      Text(tr.transferRecipientGets,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: context.faintText)),
-                      const SizedBox(height: 4),
-                      Text(
-                        formatMoney(_received, _to!.currency),
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: context.accent,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: context.surface,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: InkWell(
-                  onTap: () async {
-                    final ctrl = TextEditingController(
-                        text: _fee.toStringAsFixed(2));
-                    final result = await showDialog<double>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: Text(tr.fee),
-                        content: TextField(
-                          controller: ctrl,
-                          autofocus: true,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(
-                                  decimal: true),
-                        ),
-                        actions: [
-                          TextButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              child: Text(tr.cancel)),
-                          TextButton(
-                            onPressed: () => Navigator.pop(
-                                ctx, double.tryParse(ctrl.text) ?? 0),
-                            child: Text(tr.ok),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (result != null) setState(() => _fee = result);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 14),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: context.scaffoldBg,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(LucideIcons.percent,
-                              size: 14, color: context.primaryText),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(tr.fee,
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  color: context.mutedText)),
-                        ),
-                        Text(
-                          _to != null
-                              ? formatMoney(_fee, _to!.currency)
-                              : _fee.toStringAsFixed(2),
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: context.primaryText),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submit,
-                child: Text(tr.confirm),
-              ),
+              form,
             ],
           ),
         ),

@@ -9,7 +9,6 @@ import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/account_repository.dart';
-import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/seed/seed_demo.dart';
 

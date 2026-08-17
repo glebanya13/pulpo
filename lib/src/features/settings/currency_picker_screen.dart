@@ -94,9 +94,8 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
                         selected: items[i].code == current,
                         onTap: () async {
                           await ref
-                              .read(settingsServiceProvider)
+                              .read(settingsControllerProvider.notifier)
                               .setBaseCurrency(items[i].code);
-                          ref.invalidate(settingsControllerProvider);
                           if (context.mounted) context.pop();
                         },
                       ),

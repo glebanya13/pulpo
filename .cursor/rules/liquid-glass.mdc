@@ -1,0 +1,24 @@
+---
+description: Where to apply iOS 26 Liquid Glass in Pulpo UI
+alwaysApply: true
+---
+
+# Liquid Glass
+
+Pulpo uses a custom `LiquidGlass` widget (`lib/src/core/theme/liquid_glass.dart`): BackdropFilter blur + translucent gradient + hairline specular edge. It is **floating chrome**, not a new app theme.
+
+## Use it
+
+- Bottom navigation pill (`BudgetBottomNav`)
+- Modal bottom sheets that float over content (quick actions, pickers)
+- Overlay chips / floating headers that sit on scrolling content
+
+## Do not use it
+
+- Dense lists, transaction tiles, form fields, settings rows
+- Data cards (balance, budgets, reports) — keep solid `surface` / `emphasized`
+- Full-screen backgrounds (lock, onboarding)
+
+Glass only works if content **scrolls behind** it (`Scaffold.extendBody`, extra list bottom padding). Do not replace solid fills with glass on screens that have a flat background and no overlay.
+
+When Flutter ships official Cupertino Liquid Glass, wrap through `LiquidGlass` so call sites stay one widget.

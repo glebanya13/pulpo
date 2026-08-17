@@ -5,6 +5,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
+import '../../core/notifications/daily_reminder.dart';
 import '../../core/open_link.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
@@ -78,6 +79,23 @@ class SettingsScreen extends ConsumerWidget {
                         .read(settingsControllerProvider.notifier)
                         .setTheme(v ? 'dark' : 'light'),
                   ),
+                ),
+                _SettingsRow(
+                  icon: LucideIcons.bell,
+                  iconBg: const Color(0xFFFFE0C2),
+                  title: tr.dailyReminder,
+                  subtitle: tr.dailyReminderAt(_hhmm(
+                    settings.dailyReminderHour,
+                    settings.dailyReminderMinute,
+                  )),
+                  trailingWidget: Switch.adaptive(
+                    value: settings.dailyReminderEnabled,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    onChanged: (v) =>
+                        _toggleReminder(context, ref, tr, v),
+                  ),
+                  onTap: () => _pickReminderTime(context, ref, settings),
+                  showChevron: false,
                 ),
               ],
             ),
@@ -159,6 +177,49 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _hhmm(int hour, int minute) =>
+      '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+
+  Future<void> _toggleReminder(
+    BuildContext context,
+    WidgetRef ref,
+    Tr tr,
+    bool enabled,
+  ) async {
+    if (enabled) {
+      await initDailyReminder();
+      final ok = await requestReminderPermission();
+      if (!ok) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(tr.reminderPermissionDenied)));
+        }
+        return;
+      }
+    }
+    await ref
+        .read(settingsControllerProvider.notifier)
+        .setDailyReminderEnabled(enabled);
+  }
+
+  Future<void> _pickReminderTime(
+    BuildContext context,
+    WidgetRef ref,
+    SettingsState settings,
+  ) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: settings.dailyReminderHour,
+        minute: settings.dailyReminderMinute,
+      ),
+    );
+    if (picked == null) return;
+    await ref
+        .read(settingsControllerProvider.notifier)
+        .setDailyReminderTime(picked.hour, picked.minute);
   }
 
   String _langLabel(String code) {
@@ -423,6 +484,7 @@ class _SettingsRow extends StatelessWidget {
     this.trailingWidget,
     this.onTap,
     this.danger = false,
+    this.showChevron = true,
   });
   final IconData icon;
   final Color iconBg;
@@ -432,6 +494,7 @@ class _SettingsRow extends StatelessWidget {
   final Widget? trailingWidget;
   final VoidCallback? onTap;
   final bool danger;
+  final bool showChevron;
 
   @override
   Widget build(BuildContext context) {
@@ -479,7 +542,7 @@ class _SettingsRow extends StatelessWidget {
                         fontSize: 13, color: context.mutedText)),
               ),
             if (trailingWidget != null) trailingWidget!,
-            if (onTap != null && !danger)
+            if (onTap != null && !danger && showChevron)
               Icon(LucideIcons.chevronRight,
                   size: 16, color: context.faintText),
           ],

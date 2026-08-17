@@ -5,6 +5,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../core/l10n/tr.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/color_well.dart';
+import '../core/theme/liquid_glass.dart';
 
 Future<void> showQuickActionsSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -21,11 +22,8 @@ class _QuickActionsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+    return LiquidGlass(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       padding: EdgeInsets.fromLTRB(
         20,
         12,
@@ -82,7 +80,7 @@ class _QuickActionsSheet extends StatelessWidget {
                   hint: tr.transferBetweenHint,
                   onTap: () {
                     Navigator.pop(context);
-                    context.push('/transfer');
+                    context.push('/add?type=transfer');
                   },
                 ),
               ),

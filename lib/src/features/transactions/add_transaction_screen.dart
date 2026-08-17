@@ -14,6 +14,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/repositories/transaction_repository.dart';
+import 'transfer_screen.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   const AddTransactionScreen({
@@ -259,90 +260,120 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   type: _type,
                   external: _external,
                   onSelect: (t, {required bool external}) {
-                    if (t == TxType.transfer) {
-                      context.push('/transfer');
-                      return;
-                    }
                     setState(() {
                       _type = t;
                       _external = external;
-                      _category = null;
+                      if (t != TxType.transfer) _category = null;
                     });
                   },
                 ),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(top: 20, bottom: 20),
-                  child: Column(
-                    children: [
-                      _AmountInput(
-                        controller: _amountCtrl,
-                        sign: sign,
-                        currency: currency,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeOutCubic,
+                  transitionBuilder: (child, anim) {
+                    return FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.03),
+                          end: Offset.zero,
+                        ).animate(anim),
+                        child: child,
                       ),
-                      const SizedBox(height: 20),
-                      _FormBlock(
-                        rows: [
-                          _FormRow(
-                            icon: _category != null
-                                ? lucideByKey(_category!.icon)
-                                : LucideIcons.tag,
-                            well: _category != null
-                                ? Color(_category!.color)
-                                : null,
-                            label: tr.category,
-                            value: _category != null
-                                ? tr.categoryName(_category!.name)
-                                : tr.select,
-                            onTap: _pickCategory,
-                          ),
-                          _FormRow(
-                            icon: LucideIcons.creditCard,
-                            label: tr.account,
-                            value: _account?.name ??
-                                (ref
-                                        .watch(accountsProvider)
-                                        .valueOrNull
-                                        ?.firstOrNull
-                                        ?.name ??
-                                    tr.selectShort),
-                            onTap: _pickAccount,
-                          ),
-                          _FormRow(
-                            icon: LucideIcons.calendar,
-                            label: tr.date,
-                            value: DateFormat('d MMM, HH:mm',
-                                    Localizations.localeOf(context).languageCode)
-                                .format(_date),
-                            onTap: _pickDate,
-                          ),
-                          _FormRow(
-                            icon: LucideIcons.pencil,
-                            label: tr.note,
-                            value: _noteCtrl.text.isEmpty
-                                ? tr.add
-                                : _noteCtrl.text,
-                            onTap: _openNote,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    );
+                  },
+                  child: _type == TxType.transfer
+                      ? const TransferScreen(
+                          key: ValueKey('transfer'),
+                          embedded: true,
+                        )
+                      : _txForm(
+                          key: const ValueKey('tx'),
+                          tr: tr,
+                          currency: currency,
+                          sign: sign,
+                        ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _save,
-                    child: Text(tr.save),
+              if (_type != TxType.transfer)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _save,
+                      child: Text(tr.save),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _txForm({
+    required Key key,
+    required Tr tr,
+    required String currency,
+    required String sign,
+  }) {
+    return SingleChildScrollView(
+      key: key,
+      padding: const EdgeInsets.only(top: 20, bottom: 20),
+      child: Column(
+        children: [
+          _AmountInput(
+            controller: _amountCtrl,
+            sign: sign,
+            currency: currency,
+          ),
+          const SizedBox(height: 20),
+          _FormBlock(
+            rows: [
+              _FormRow(
+                icon: _category != null
+                    ? lucideByKey(_category!.icon)
+                    : LucideIcons.tag,
+                well: _category != null ? Color(_category!.color) : null,
+                label: tr.category,
+                value: _category != null
+                    ? tr.categoryName(_category!.name)
+                    : tr.select,
+                onTap: _pickCategory,
+              ),
+              _FormRow(
+                icon: LucideIcons.creditCard,
+                label: tr.account,
+                value: _account?.name ??
+                    (ref
+                            .watch(accountsProvider)
+                            .valueOrNull
+                            ?.firstOrNull
+                            ?.name ??
+                        tr.selectShort),
+                onTap: _pickAccount,
+              ),
+              _FormRow(
+                icon: LucideIcons.calendar,
+                label: tr.date,
+                value: DateFormat('d MMM, HH:mm',
+                        Localizations.localeOf(context).languageCode)
+                    .format(_date),
+                onTap: _pickDate,
+              ),
+              _FormRow(
+                icon: LucideIcons.pencil,
+                label: tr.note,
+                value: _noteCtrl.text.isEmpty ? tr.add : _noteCtrl.text,
+                onTap: _openNote,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -415,6 +446,14 @@ class _TypeTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
+    final index = type == TxType.income
+        ? 0
+        : (type == TxType.expense && !external)
+            ? 1
+            : type == TxType.transfer
+                ? 2
+                : 3;
+
     Widget tab({
       required String label,
       required bool active,
@@ -422,25 +461,22 @@ class _TypeTabs extends StatelessWidget {
     }) {
       return Expanded(
         child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: onTap,
-          child: Container(
+          child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
-            decoration: BoxDecoration(
-              color: active
-                  ? (context.isDark ? AppColors.ink3 : AppColors.ink)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(100),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
+            child: AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: active ? Colors.white : context.mutedText,
+              ),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
             ),
           ),
@@ -454,29 +490,55 @@ class _TypeTabs extends StatelessWidget {
         color: context.surface,
         borderRadius: BorderRadius.circular(100),
       ),
-      child: Row(
-        children: [
-          tab(
-            label: tr.income,
-            active: type == TxType.income,
-            onTap: () => onSelect(TxType.income, external: false),
-          ),
-          tab(
-            label: tr.expense,
-            active: type == TxType.expense && !external,
-            onTap: () => onSelect(TxType.expense, external: false),
-          ),
-          tab(
-            label: tr.transferBetweenShort,
-            active: type == TxType.transfer,
-            onTap: () => onSelect(TxType.transfer, external: false),
-          ),
-          tab(
-            label: tr.transferExternal,
-            active: type == TxType.expense && external,
-            onTap: () => onSelect(TxType.expense, external: true),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final seg = constraints.maxWidth / 4;
+          return Stack(
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+                left: index * seg,
+                width: seg,
+                top: 0,
+                bottom: 0,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: context.isDark ? AppColors.ink3 : AppColors.ink,
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  tab(
+                    label: tr.income,
+                    active: index == 0,
+                    onTap: () => onSelect(TxType.income, external: false),
+                  ),
+                  tab(
+                    label: tr.expense,
+                    active: index == 1,
+                    onTap: () =>
+                        onSelect(TxType.expense, external: false),
+                  ),
+                  tab(
+                    label: tr.transferBetweenShort,
+                    active: index == 2,
+                    onTap: () =>
+                        onSelect(TxType.transfer, external: false),
+                  ),
+                  tab(
+                    label: tr.transferExternal,
+                    active: index == 3,
+                    onTap: () =>
+                        onSelect(TxType.expense, external: true),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }

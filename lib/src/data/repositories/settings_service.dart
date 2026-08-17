@@ -12,6 +12,9 @@ class SettingsService {
   static const _kBaseCurrency = 'base_currency';
   static const _kThemeMode = 'theme_mode';
   static const _kLocale = 'locale';
+  static const _kDailyReminder = 'daily_reminder';
+  static const _kDailyReminderHour = 'daily_reminder_hour';
+  static const _kDailyReminderMinute = 'daily_reminder_minute';
 
   bool get onboardingDone => _prefs.getBool(_kOnboardingDone) ?? false;
   Future<void> setOnboardingDone(bool v) =>
@@ -29,6 +32,18 @@ class SettingsService {
 
   String get locale => _prefs.getString(_kLocale) ?? 'es';
   Future<void> setLocale(String v) => _prefs.setString(_kLocale, v);
+
+  bool get dailyReminderEnabled => _prefs.getBool(_kDailyReminder) ?? true;
+  Future<void> setDailyReminderEnabled(bool v) =>
+      _prefs.setBool(_kDailyReminder, v);
+
+  int get dailyReminderHour => _prefs.getInt(_kDailyReminderHour) ?? 21;
+  Future<void> setDailyReminderHour(int v) =>
+      _prefs.setInt(_kDailyReminderHour, v);
+
+  int get dailyReminderMinute => _prefs.getInt(_kDailyReminderMinute) ?? 0;
+  Future<void> setDailyReminderMinute(int v) =>
+      _prefs.setInt(_kDailyReminderMinute, v);
 }
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(
@@ -47,6 +62,9 @@ class SettingsState {
     required this.baseCurrency,
     required this.themeMode,
     required this.locale,
+    required this.dailyReminderEnabled,
+    required this.dailyReminderHour,
+    required this.dailyReminderMinute,
   });
 
   final bool onboardingDone;
@@ -54,6 +72,9 @@ class SettingsState {
   final String baseCurrency;
   final String themeMode;
   final String locale;
+  final bool dailyReminderEnabled;
+  final int dailyReminderHour;
+  final int dailyReminderMinute;
 
   ThemeMode get materialThemeMode {
     switch (themeMode) {
@@ -72,6 +93,9 @@ class SettingsState {
     String? baseCurrency,
     String? themeMode,
     String? locale,
+    bool? dailyReminderEnabled,
+    int? dailyReminderHour,
+    int? dailyReminderMinute,
   }) {
     return SettingsState(
       onboardingDone: onboardingDone ?? this.onboardingDone,
@@ -79,6 +103,9 @@ class SettingsState {
       baseCurrency: baseCurrency ?? this.baseCurrency,
       themeMode: themeMode ?? this.themeMode,
       locale: locale ?? this.locale,
+      dailyReminderEnabled: dailyReminderEnabled ?? this.dailyReminderEnabled,
+      dailyReminderHour: dailyReminderHour ?? this.dailyReminderHour,
+      dailyReminderMinute: dailyReminderMinute ?? this.dailyReminderMinute,
     );
   }
 }
@@ -93,6 +120,9 @@ class SettingsController extends Notifier<SettingsState> {
       baseCurrency: s.baseCurrency,
       themeMode: s.themeMode,
       locale: s.locale,
+      dailyReminderEnabled: s.dailyReminderEnabled,
+      dailyReminderHour: s.dailyReminderHour,
+      dailyReminderMinute: s.dailyReminderMinute,
     );
   }
 
@@ -127,9 +157,34 @@ class SettingsController extends Notifier<SettingsState> {
     state = state.copyWith(themeMode: mode);
   }
 
+  Future<void> setBaseCurrency(String currency) async {
+    await ref.read(settingsServiceProvider).setBaseCurrency(currency);
+    state = state.copyWith(baseCurrency: currency);
+  }
+
+  Future<void> setLocale(String locale) async {
+    await ref.read(settingsServiceProvider).setLocale(locale);
+    state = state.copyWith(locale: locale);
+  }
+
   Future<void> setUserName(String name) async {
     await ref.read(settingsServiceProvider).setUserName(name);
     state = state.copyWith(userName: name);
+  }
+
+  Future<void> setDailyReminderEnabled(bool enabled) async {
+    await ref.read(settingsServiceProvider).setDailyReminderEnabled(enabled);
+    state = state.copyWith(dailyReminderEnabled: enabled);
+  }
+
+  Future<void> setDailyReminderTime(int hour, int minute) async {
+    final s = ref.read(settingsServiceProvider);
+    await s.setDailyReminderHour(hour);
+    await s.setDailyReminderMinute(minute);
+    state = state.copyWith(
+      dailyReminderHour: hour,
+      dailyReminderMinute: minute,
+    );
   }
 }
 

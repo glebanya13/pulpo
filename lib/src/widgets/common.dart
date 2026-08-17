@@ -184,39 +184,60 @@ class TabsPill extends StatelessWidget {
         color: context.surface,
         borderRadius: BorderRadius.circular(100),
       ),
-      child: Row(
-        children: [
-          for (var i = 0; i < tabs.length; i++)
-            Expanded(
-              child: GestureDetector(
-                onTap: () => onChanged(i),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final seg = constraints.maxWidth / tabs.length;
+          return Stack(
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+                left: index * seg,
+                width: seg,
+                top: 0,
+                bottom: 0,
+                child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: index == i
-                        ? (limeActive
-                            ? AppColors.lime
-                            : (context.isDark
-                                ? AppColors.ink3
-                                : AppColors.ink))
-                        : Colors.transparent,
+                    color: limeActive
+                        ? AppColors.lime
+                        : (context.isDark ? AppColors.ink3 : AppColors.ink),
                     borderRadius: BorderRadius.circular(100),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    tabs[i],
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: index == i
-                          ? (limeActive ? AppColors.ink : Colors.white)
-                          : context.mutedText,
-                    ),
                   ),
                 ),
               ),
-            ),
-        ],
+              Row(
+                children: [
+                  for (var i = 0; i < tabs.length; i++)
+                    Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => onChanged(i),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 200),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: index == i
+                                    ? (limeActive
+                                        ? AppColors.ink
+                                        : Colors.white)
+                                    : context.mutedText,
+                              ),
+                              child: Text(tabs[i], maxLines: 1),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }

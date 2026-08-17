@@ -3,8 +3,9 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
+import '../core/theme/liquid_glass.dart';
 
-/// Тёмный pill bottom nav: 4 иконки + FAB в центре.
+/// Pill bottom nav: glass bar, 4 icons + FAB in the center.
 class BudgetBottomNav extends StatelessWidget {
   const BudgetBottomNav({
     super.key,
@@ -27,21 +28,7 @@ class BudgetBottomNav extends StatelessWidget {
         20,
         (homeInset * 0.4).clamp(8, 14),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.emphasized,
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: context.emphasizedBorder, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: context.isDark
-                  ? Colors.black.withValues(alpha: 0.4)
-                  : Colors.black.withValues(alpha: 0.15),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
+      child: LiquidGlass(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -87,6 +74,9 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final idle = context.isDark
+        ? Colors.white.withValues(alpha: 0.55)
+        : AppColors.ink.withValues(alpha: 0.42);
     return InkResponse(
       onTap: onTap,
       radius: 20,
@@ -100,7 +90,7 @@ class _NavItem extends StatelessWidget {
         child: Icon(
           icon,
           size: 20,
-          color: active ? AppColors.ink : Colors.white.withValues(alpha: 0.5),
+          color: active ? AppColors.ink : idle,
         ),
       ),
     );

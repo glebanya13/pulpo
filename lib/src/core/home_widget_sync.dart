@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,17 +11,10 @@ import '../data/repositories/settings_service.dart';
 import 'l10n/tr.dart';
 import 'utils/money_format.dart';
 
-const kHomeWidgetAppGroup = 'group.com.pulpo.app';
-const kHomeWidgetIosName = 'PulpoWidget';
 const kHomeWidgetAndroidName = 'PulpoWidgetProvider';
 
 Future<void> configureHomeWidget() async {
-  if (kIsWeb) return;
-  try {
-    await HomeWidget.setAppGroupId(kHomeWidgetAppGroup);
-  } catch (e, st) {
-    debugPrint('home widget group: $e\n$st');
-  }
+  // iOS WidgetKit + App Groups are off until the Pulpo profile includes them.
 }
 
 class HomeWidgetBinder extends ConsumerStatefulWidget {
@@ -79,6 +74,7 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
     required String balanceLabel,
     required String spentLabel,
   }) async {
+    if (kIsWeb || Platform.isIOS) return;
     try {
       await HomeWidget.saveWidgetData<String>('balance', balance);
       await HomeWidget.saveWidgetData<String>('spent', spent);
@@ -87,7 +83,6 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
       await HomeWidget.updateWidget(
         name: kHomeWidgetAndroidName,
         androidName: kHomeWidgetAndroidName,
-        iOSName: kHomeWidgetIosName,
         qualifiedAndroidName: 'com.pulpo.android.$kHomeWidgetAndroidName',
       );
     } catch (e, st) {

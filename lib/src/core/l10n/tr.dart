@@ -21,10 +21,31 @@ class Tr {
       _dict[_lang]?[key] ?? _dict['es']![key] ?? key;
 
   /// Возвращает переведённое название категории по slug ('food', 'transport'...).
-  /// Если slug не в словаре — возвращает переданное имя (для кастомных категорий).
-  String categoryName(String slug) {
+  /// Старые записи с именем «Comida» / «Еда» тоже находятся.
+  String categoryName(String slugOrName) {
+    final slug = _resolveCategorySlug(slugOrName);
     final key = 'cat_$slug';
-    return _dict[_lang]?[key] ?? _dict['es']?[key] ?? slug;
+    return _dict[_lang]?[key] ?? _dict['es']?[key] ?? slugOrName;
+  }
+
+  String _resolveCategorySlug(String raw) {
+    if (_dict['es']?['cat_$raw'] != null) return raw;
+    return _categoryNameToSlug[raw.toLowerCase()] ?? raw;
+  }
+
+  static Map<String, String>? _nameToSlugCache;
+
+  static Map<String, String> get _categoryNameToSlug {
+    final cached = _nameToSlugCache;
+    if (cached != null) return cached;
+    final map = <String, String>{};
+    for (final lang in _dict.values) {
+      for (final e in lang.entries) {
+        if (!e.key.startsWith('cat_')) continue;
+        map[e.value.toLowerCase()] = e.key.substring(4);
+      }
+    }
+    return _nameToSlugCache = map;
   }
 
   // ─────────────────────── COMMON ───────────────────────
@@ -281,6 +302,12 @@ class Tr {
   String get theme => _get('theme');
   String get themeDarkMode => _get('theme_dark_mode');
   String get themeDarkHint => _get('theme_dark_hint');
+  String get dailyReminder => _get('daily_reminder');
+  String dailyReminderAt(String time) =>
+      _get('daily_reminder_at').replaceAll('{}', time);
+  String get dailyReminderTitle => _get('daily_reminder_title');
+  String get dailyReminderBody => _get('daily_reminder_body');
+  String get reminderPermissionDenied => _get('reminder_permission_denied');
   String get themeLight => _get('theme_light');
   String get themeDark => _get('theme_dark');
   String get themeSystem => _get('theme_system');
@@ -614,6 +641,13 @@ class Tr {
       'theme': 'Tema',
       'theme_dark_mode': 'Modo oscuro',
       'theme_dark_hint': 'Activar tema nocturno',
+      'daily_reminder': 'Recordatorios diarios automáticos',
+      'daily_reminder_at': 'Aviso a las {} para anotar ingresos y gastos',
+      'daily_reminder_title': 'Recordatorio diario ⏰',
+      'daily_reminder_body':
+          'Mantén tus finanzas bajo control registrando tus transacciones del día.',
+      'reminder_permission_denied':
+          'Activa las notificaciones en Ajustes para recibir el recordatorio.',
       'theme_light': 'Claro',
       'theme_dark': 'Oscuro',
       'theme_system': 'Como el sistema',
@@ -988,6 +1022,13 @@ class Tr {
       'theme': 'Тема',
       'theme_dark_mode': 'Тёмный режим',
       'theme_dark_hint': 'Включить ночную тему',
+      'daily_reminder': 'Автоматические ежедневные напоминания',
+      'daily_reminder_at': 'Напоминание в {} записать доходы и расходы',
+      'daily_reminder_title': 'Ежедневное напоминание ⏰',
+      'daily_reminder_body':
+          'Запиши доходы и расходы за сегодня — так проще держать финансы под контролем.',
+      'reminder_permission_denied':
+          'Разреши уведомления в настройках системы, чтобы получать напоминание.',
       'theme_light': 'Светлая',
       'theme_dark': 'Тёмная',
       'theme_system': 'Как в системе',
@@ -1362,6 +1403,13 @@ class Tr {
       'theme': 'Theme',
       'theme_dark_mode': 'Dark mode',
       'theme_dark_hint': 'Enable night theme',
+      'daily_reminder': 'Automated daily reminders',
+      'daily_reminder_at': 'Reminder at {} to log income and expenses',
+      'daily_reminder_title': 'Daily reminder ⏰',
+      'daily_reminder_body':
+          "Keep your finances in check by logging today's transactions.",
+      'reminder_permission_denied':
+          'Allow notifications in system settings to receive the reminder.',
       'theme_light': 'Light',
       'theme_dark': 'Dark',
       'theme_system': 'Match system',

@@ -52,9 +52,8 @@ class LanguagePickerScreen extends ConsumerWidget {
                       InkWell(
                         onTap: () async {
                           await ref
-                              .read(settingsServiceProvider)
+                              .read(settingsControllerProvider.notifier)
                               .setLocale(_langs[i].$1);
-                          ref.invalidate(settingsControllerProvider);
                           if (context.mounted) context.pop();
                         },
                         child: Container(

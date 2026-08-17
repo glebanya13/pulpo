@@ -372,14 +372,15 @@ class _DayCell extends StatelessWidget {
     final numberColor = !inMonth
         ? context.faintText
         : (isToday ? AppColors.ink : context.primaryText);
+    final showIncome = inMonth && income > 0;
     final showExpense = inMonth && expense > 0;
-    final showIncome = inMonth && income > 0 && expense <= 0;
+    final both = showIncome && showExpense;
 
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 2),
+        padding: const EdgeInsets.only(bottom: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -404,14 +405,28 @@ class _DayCell extends StatelessWidget {
                 ),
               ),
             ),
-            if (showExpense)
-              _Pill(
-                  text: _shortMoney(expense, currency),
-                  color: AppColors.danger),
-            if (showIncome)
-              _Pill(
-                  text: _shortMoney(income, currency),
-                  color: AppColors.limeAccent),
+            if (showIncome || showExpense)
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (showIncome)
+                      _Pill(
+                        text: _shortMoney(income, currency),
+                        color: AppColors.limeAccent,
+                        compact: both,
+                      ),
+                    if (both) const SizedBox(height: 2),
+                    if (showExpense)
+                      _Pill(
+                        text: _shortMoney(expense, currency),
+                        color: AppColors.danger,
+                        compact: both,
+                      ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -420,14 +435,22 @@ class _DayCell extends StatelessWidget {
 }
 
 class _Pill extends StatelessWidget {
-  const _Pill({required this.text, required this.color});
+  const _Pill({
+    required this.text,
+    required this.color,
+    this.compact = false,
+  });
   final String text;
   final Color color;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 3 : 4,
+        vertical: compact ? 0.5 : 1,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
@@ -438,7 +461,7 @@ class _Pill extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: 9,
+          fontSize: compact ? 8 : 9,
           fontWeight: FontWeight.w700,
           color: color,
           height: 1.1,
