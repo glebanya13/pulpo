@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -53,6 +54,17 @@ class SettingsState {
   final String baseCurrency;
   final String themeMode;
   final String locale;
+
+  ThemeMode get materialThemeMode {
+    switch (themeMode) {
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+        return ThemeMode.system;
+      default:
+        return ThemeMode.light;
+    }
+  }
 
   SettingsState copyWith({
     bool? onboardingDone,
@@ -113,6 +125,11 @@ class SettingsController extends Notifier<SettingsState> {
   Future<void> setTheme(String mode) async {
     await ref.read(settingsServiceProvider).setThemeMode(mode);
     state = state.copyWith(themeMode: mode);
+  }
+
+  Future<void> setUserName(String name) async {
+    await ref.read(settingsServiceProvider).setUserName(name);
+    state = state.copyWith(userName: name);
   }
 }
 

@@ -96,7 +96,7 @@ class _NavItem extends StatelessWidget {
         ),
         child: Icon(
           icon,
-          size: 20,
+          size: 22,
           color: active ? AppColors.ink : Colors.white.withValues(alpha: 0.5),
         ),
       ),
@@ -113,8 +113,8 @@ class _Fab extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 52,
-        height: 52,
+        width: 56,
+        height: 56,
         decoration: BoxDecoration(
           color: AppColors.lime,
           shape: BoxShape.circle,

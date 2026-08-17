@@ -48,6 +48,60 @@ class Tr {
   String get income => _get('income');
   String get expense => _get('expense');
   String get transfer => _get('transfer');
+  String get transferBetweenAccounts => _get('transfer_between');
+  String get transferExternal => _get('transfer_external');
+  String get transferBetweenHint => _get('transfer_between_hint');
+  String get transferExternalHint => _get('transfer_external_hint');
+  String get monthBalance => _get('month_balance');
+  String get monthNet => _get('month_net');
+  String get signIn => _get('sign_in');
+  String get signInApple => _get('sign_in_apple');
+  String get signInGoogle => _get('sign_in_google');
+  String get signInEmail => _get('sign_in_email');
+  String get register => _get('register');
+  String get signOut => _get('sign_out');
+  String get signedInAs => _get('signed_in_as');
+  String get authFailed => _get('auth_failed');
+  String get authInvalidEmail => _get('auth_invalid_email');
+  String get authWeakPassword => _get('auth_weak_password');
+  String get authWrongPassword => _get('auth_wrong_password');
+  String get authUserDisabled => _get('auth_user_disabled');
+  String get authTooMany => _get('auth_too_many');
+  String get authCanceled => _get('auth_canceled');
+  String get cloudBackupOk => _get('cloud_backup_ok');
+  String get cloudRestoreOk => _get('cloud_restore_ok');
+  String get cloudEmpty => _get('cloud_empty');
+  String get signInToSync => _get('sign_in_to_sync');
+  String get email => _get('email');
+  String get password => _get('password');
+  String get firebaseNotReady => _get('firebase_not_ready');
+  String get cloudBackup => _get('cloud_backup');
+  String get cloudRestore => _get('cloud_restore');
+  String get syncDevices => _get('sync_devices');
+  String get security => _get('security');
+  String get pinCode => _get('pin_code');
+  String get useBiometrics => _get('use_biometrics');
+  String get autoLock => _get('auto_lock');
+  String get enterPin => _get('enter_pin');
+  String get setPin => _get('set_pin');
+  String get confirmPin => _get('confirm_pin');
+  String get pinMismatch => _get('pin_mismatch');
+  String get unlock => _get('unlock');
+  String get exportCsv => _get('export_csv');
+  String get exportExcel => _get('export_excel');
+  String get exportPdf => _get('export_pdf');
+  String get exportPeriod => _get('export_period');
+  String get periodThisMonth => _get('period_this_month');
+  String get periodLastMonth => _get('period_last_month');
+  String get period3m => _get('period_3m');
+  String get period6m => _get('period_6m');
+  String get periodThisYear => _get('period_this_year');
+  String get periodLastYear => _get('period_last_year');
+  String get periodCustom => _get('period_custom');
+  String get restoreLocal => _get('restore_local');
+  String get dataRestored => _get('data_restored');
+  String get restoreFailed => _get('restore_failed');
+  String get accountSection => _get('account_section');
 
   // ─────────────────────── BOTTOM NAV / SECTIONS ───────────────────────
   String get home => _get('home');
@@ -101,6 +155,20 @@ class Tr {
   String get profileSection => _get('profile_section');
   String get language => _get('language');
   String get interfaceLanguage => _get('interface_language');
+  String get theme => _get('theme');
+  String get themeLight => _get('theme_light');
+  String get themeDark => _get('theme_dark');
+  String get themeSystem => _get('theme_system');
+  String themeLabel(String mode) {
+    switch (mode) {
+      case 'dark':
+        return themeDark;
+      case 'system':
+        return themeSystem;
+      default:
+        return themeLight;
+    }
+  }
   String get baseCurrency => _get('base_currency');
   String get forTotalsReports => _get('for_totals_reports');
   String get shownInApp => _get('shown_in_app');
@@ -402,6 +470,10 @@ class Tr {
       'profile_section': 'Perfil',
       'language': 'Idioma',
       'interface_language': 'Idioma de la interfaz',
+      'theme': 'Tema',
+      'theme_light': 'Claro',
+      'theme_dark': 'Oscuro',
+      'theme_system': 'Como el sistema',
       'base_currency': 'Moneda principal',
       'for_totals_reports': 'Para totales e informes',
       'shown_in_app': 'Se muestra en la aplicación',
@@ -613,6 +685,60 @@ class Tr {
       'select_short': 'Elegir',
       'enter_note_hint': 'Escribe una nota...',
       'backups_short': 'Copias',
+      'transfer_between': 'Entre cuentas',
+      'transfer_external': 'Fuera',
+      'transfer_between_hint': 'Mueve dinero entre tus cuentas. No es ingreso ni gasto.',
+      'transfer_external_hint': 'Envías dinero fuera de tus cuentas. Cuenta como gasto.',
+      'month_balance': 'Balance del mes',
+      'month_net': 'Resultado',
+      'sign_in': 'Iniciar sesión',
+      'sign_in_apple': 'Continuar con Apple',
+      'sign_in_google': 'Continuar con Google',
+      'sign_in_email': 'Email y contraseña',
+      'register': 'Crear cuenta',
+      'sign_out': 'Cerrar sesión',
+      'signed_in_as': 'Sesión iniciada',
+      'auth_failed': 'No se pudo iniciar sesión',
+      'auth_invalid_email': 'Email no válido',
+      'auth_weak_password': 'La contraseña es demasiado corta',
+      'auth_wrong_password': 'Email o contraseña incorrectos',
+      'auth_user_disabled': 'Esta cuenta está desactivada',
+      'auth_too_many': 'Demasiados intentos. Prueba más tarde',
+      'auth_canceled': 'Inicio de sesión cancelado',
+      'cloud_backup_ok': 'Copia subida a la nube',
+      'cloud_restore_ok': 'Datos restaurados desde la nube',
+      'cloud_empty': 'Aún no hay copia en la nube',
+      'sign_in_to_sync': 'Inicia sesión para sincronizar',
+      'email': 'Email',
+      'password': 'Contraseña',
+      'firebase_not_ready': 'La nube se activará cuando conectemos Firebase.',
+      'cloud_backup': 'Copia en la nube',
+      'cloud_restore': 'Restaurar desde la nube',
+      'sync_devices': 'Sincronizar dispositivos',
+      'security': 'Seguridad',
+      'pin_code': 'Código PIN',
+      'use_biometrics': 'Face ID / huella',
+      'auto_lock': 'Bloqueo automático',
+      'enter_pin': 'Introduce el PIN',
+      'set_pin': 'Crear PIN',
+      'confirm_pin': 'Confirma el PIN',
+      'pin_mismatch': 'Los PIN no coinciden',
+      'unlock': 'Desbloquear',
+      'export_csv': 'Exportar CSV',
+      'export_excel': 'Exportar Excel',
+      'export_pdf': 'Exportar PDF',
+      'export_period': 'Periodo de exportación',
+      'period_this_month': 'Este mes',
+      'period_last_month': 'Mes pasado',
+      'period_3m': '3 meses',
+      'period_6m': '6 meses',
+      'period_this_year': 'Este año',
+      'period_last_year': 'Año pasado',
+      'period_custom': 'Periodo personalizado',
+      'restore_local': 'Restaurar',
+      'data_restored': 'Datos restaurados',
+      'restore_failed': 'No se pudo restaurar',
+      'account_section': 'Cuenta',
     },
     'ru': {
       // common
@@ -685,6 +811,10 @@ class Tr {
       'profile_section': 'Профиль',
       'language': 'Язык',
       'interface_language': 'Язык интерфейса',
+      'theme': 'Тема',
+      'theme_light': 'Светлая',
+      'theme_dark': 'Тёмная',
+      'theme_system': 'Как в системе',
       'base_currency': 'Базовая валюта',
       'for_totals_reports': 'Для общих итогов и отчётов',
       'shown_in_app': 'Отображается в приложении',
@@ -896,6 +1026,60 @@ class Tr {
       'select_short': 'Выбрать',
       'enter_note_hint': 'Введите заметку...',
       'backups_short': 'Бэкапы',
+      'transfer_between': 'Между счетами',
+      'transfer_external': 'Внешний',
+      'transfer_between_hint': 'Перевод между своими счетами. Это не доход и не расход.',
+      'transfer_external_hint': 'Деньги уходят вовне. Считается расходом.',
+      'month_balance': 'Баланс за месяц',
+      'month_net': 'Итого',
+      'sign_in': 'Войти',
+      'sign_in_apple': 'Продолжить с Apple',
+      'sign_in_google': 'Продолжить с Google',
+      'sign_in_email': 'Email и пароль',
+      'register': 'Создать аккаунт',
+      'sign_out': 'Выйти',
+      'signed_in_as': 'Вы вошли',
+      'auth_failed': 'Не удалось войти',
+      'auth_invalid_email': 'Некорректный email',
+      'auth_weak_password': 'Пароль слишком короткий',
+      'auth_wrong_password': 'Неверный email или пароль',
+      'auth_user_disabled': 'Аккаунт отключён',
+      'auth_too_many': 'Слишком много попыток. Позже',
+      'auth_canceled': 'Вход отменён',
+      'cloud_backup_ok': 'Копия загружена в облако',
+      'cloud_restore_ok': 'Данные восстановлены из облака',
+      'cloud_empty': 'В облаке пока нет копии',
+      'sign_in_to_sync': 'Войдите, чтобы синхронизировать',
+      'email': 'Email',
+      'password': 'Пароль',
+      'firebase_not_ready': 'Облако включим, когда заказчик даст Firebase.',
+      'cloud_backup': 'Облачная копия',
+      'cloud_restore': 'Восстановить из облака',
+      'sync_devices': 'Синхронизация устройств',
+      'security': 'Безопасность',
+      'pin_code': 'PIN-код',
+      'use_biometrics': 'Face ID / отпечаток',
+      'auto_lock': 'Автоблокировка',
+      'enter_pin': 'Введите PIN',
+      'set_pin': 'Создать PIN',
+      'confirm_pin': 'Повторите PIN',
+      'pin_mismatch': 'PIN не совпадает',
+      'unlock': 'Разблокировать',
+      'export_csv': 'Экспорт CSV',
+      'export_excel': 'Экспорт Excel',
+      'export_pdf': 'Экспорт PDF',
+      'export_period': 'Период экспорта',
+      'period_this_month': 'Этот месяц',
+      'period_last_month': 'Прошлый месяц',
+      'period_3m': '3 месяца',
+      'period_6m': '6 месяцев',
+      'period_this_year': 'Этот год',
+      'period_last_year': 'Прошлый год',
+      'period_custom': 'Свой период',
+      'restore_local': 'Восстановить',
+      'data_restored': 'Данные восстановлены',
+      'restore_failed': 'Не удалось восстановить',
+      'account_section': 'Аккаунт',
     },
     'en': {
       // common
@@ -968,6 +1152,10 @@ class Tr {
       'profile_section': 'Profile',
       'language': 'Language',
       'interface_language': 'Interface language',
+      'theme': 'Theme',
+      'theme_light': 'Light',
+      'theme_dark': 'Dark',
+      'theme_system': 'Match system',
       'base_currency': 'Base currency',
       'for_totals_reports': 'Used for totals and reports',
       'shown_in_app': 'Shown throughout the app',
@@ -1179,6 +1367,60 @@ class Tr {
       'select_short': 'Select',
       'enter_note_hint': 'Enter a note...',
       'backups_short': 'Backups',
+      'transfer_between': 'Between accounts',
+      'transfer_external': 'External',
+      'transfer_between_hint': 'Move money between your own accounts. Not income or expense.',
+      'transfer_external_hint': 'Send money outside your accounts. Counts as an expense.',
+      'month_balance': 'This month',
+      'month_net': 'Net',
+      'sign_in': 'Sign in',
+      'sign_in_apple': 'Continue with Apple',
+      'sign_in_google': 'Continue with Google',
+      'sign_in_email': 'Email and password',
+      'register': 'Create account',
+      'sign_out': 'Sign out',
+      'signed_in_as': 'Signed in',
+      'auth_failed': 'Could not sign in',
+      'auth_invalid_email': 'Invalid email',
+      'auth_weak_password': 'Password is too short',
+      'auth_wrong_password': 'Wrong email or password',
+      'auth_user_disabled': 'This account is disabled',
+      'auth_too_many': 'Too many attempts. Try later',
+      'auth_canceled': 'Sign-in cancelled',
+      'cloud_backup_ok': 'Backup uploaded to the cloud',
+      'cloud_restore_ok': 'Data restored from the cloud',
+      'cloud_empty': 'No cloud backup yet',
+      'sign_in_to_sync': 'Sign in to sync',
+      'email': 'Email',
+      'password': 'Password',
+      'firebase_not_ready': 'Cloud sign-in will turn on when Firebase is connected.',
+      'cloud_backup': 'Cloud backup',
+      'cloud_restore': 'Restore from cloud',
+      'sync_devices': 'Sync devices',
+      'security': 'Security',
+      'pin_code': 'PIN code',
+      'use_biometrics': 'Face ID / fingerprint',
+      'auto_lock': 'Auto-lock',
+      'enter_pin': 'Enter PIN',
+      'set_pin': 'Create PIN',
+      'confirm_pin': 'Confirm PIN',
+      'pin_mismatch': 'PINs do not match',
+      'unlock': 'Unlock',
+      'export_csv': 'Export CSV',
+      'export_excel': 'Export Excel',
+      'export_pdf': 'Export PDF',
+      'export_period': 'Export period',
+      'period_this_month': 'This month',
+      'period_last_month': 'Last month',
+      'period_3m': '3 months',
+      'period_6m': '6 months',
+      'period_this_year': 'This year',
+      'period_last_year': 'Last year',
+      'period_custom': 'Custom range',
+      'restore_local': 'Restore',
+      'data_restored': 'Data restored',
+      'restore_failed': 'Could not restore',
+      'account_section': 'Account',
     },
   };
 }

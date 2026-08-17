@@ -12,6 +12,7 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/seed/seed_categories.dart';
 import '../../widgets/common.dart';
+import '../auth/cloud_auth.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -58,48 +59,24 @@ class SettingsScreen extends ConsumerWidget {
                   trailing: _langLabel(settings.locale),
                   onTap: () => context.push('/settings/language'),
                 ),
+                _SettingsRow(
+                  icon: LucideIcons.moon,
+                  iconBg: const Color(0xFFE8E4FF),
+                  title: tr.theme,
+                  trailing: tr.themeLabel(settings.themeMode),
+                  onTap: () => context.push('/settings/theme'),
+                ),
               ],
             ),
             const SizedBox(height: 12),
 
-            // Управление данными
             _Section(
               children: [
-                _SettingsRow(
-                  icon: LucideIcons.wallet,
-                  iconBg: AppColors.bgFood,
-                  title: tr.accounts,
-                  onTap: () => context.push('/accounts'),
-                ),
                 _SettingsRow(
                   icon: LucideIcons.layers,
                   iconBg: const Color(0xFFD4F5E0),
                   title: tr.categories,
                   onTap: () => context.push('/categories'),
-                ),
-                _SettingsRow(
-                  icon: LucideIcons.pieChart,
-                  iconBg: const Color(0xFFFFF3D6),
-                  title: tr.budgets,
-                  onTap: () => context.push('/budgets'),
-                ),
-                _SettingsRow(
-                  icon: LucideIcons.repeat,
-                  iconBg: const Color(0xFFE0F2FE),
-                  title: tr.recurringOps,
-                  onTap: () => context.push('/recurring'),
-                ),
-                _SettingsRow(
-                  icon: LucideIcons.tv,
-                  iconBg: const Color(0xFFE8E4FF),
-                  title: tr.subscriptions,
-                  onTap: () => context.push('/subscriptions'),
-                ),
-                _SettingsRow(
-                  icon: LucideIcons.users,
-                  iconBg: const Color(0xFFFFE4E1),
-                  title: tr.debts,
-                  onTap: () => context.push('/debts'),
                 ),
                 _SettingsRow(
                   icon: LucideIcons.database,
@@ -355,9 +332,11 @@ Future<void> openNameSheet(
                         final name = ctrl.text.trim();
                         if (name.isEmpty) return;
                         await ref
-                            .read(settingsServiceProvider)
+                            .read(settingsControllerProvider.notifier)
                             .setUserName(name);
-                        ref.invalidate(settingsControllerProvider);
+                        await ref
+                            .read(cloudAuthProvider)
+                            .updateDisplayName(name);
                         if (ctx.mounted) Navigator.pop(ctx);
                       },
                       child: Container(

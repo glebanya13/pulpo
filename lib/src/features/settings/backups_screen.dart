@@ -12,6 +12,8 @@ import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/repositories/backup_service.dart';
 import '../../widgets/common.dart';
+import '../auth/cloud_auth.dart';
+import '../export/export_sheet.dart';
 
 class BackupsScreen extends ConsumerStatefulWidget {
   const BackupsScreen({super.key});
@@ -106,7 +108,79 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                 }
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
+            _Action(
+              icon: LucideIcons.cloud,
+              label: tr.cloudBackup,
+              filled: false,
+              onTap: () async {
+                final user = ref.read(authUserProvider).valueOrNull;
+                if (user == null) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(tr.signInToSync)),
+                    );
+                    context.push('/settings/account');
+                  }
+                  return;
+                }
+                try {
+                  await ref.read(cloudAuthProvider).uploadMoney();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(tr.cloudBackupOk)),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString())),
+                    );
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: 10),
+            _Action(
+              icon: LucideIcons.download,
+              label: tr.cloudRestore,
+              filled: false,
+              onTap: () async {
+                final user = ref.read(authUserProvider).valueOrNull;
+                if (user == null) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(tr.signInToSync)),
+                    );
+                    context.push('/settings/account');
+                  }
+                  return;
+                }
+                try {
+                  final ok = await ref.read(cloudAuthProvider).downloadMoney();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ok ? tr.cloudRestoreOk : tr.cloudEmpty),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString())),
+                    );
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: 10),
+            _Action(
+              icon: LucideIcons.download,
+              label: tr.exportCsv,
+              filled: false,
+              onTap: () => showExportSheet(context, ref),
+            ),
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 10),
               child: Text(tr.localBackupsUpper,
@@ -124,7 +198,27 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                 description: tr.noBackupsDesc,
               )
             else
-              for (final f in _backups) _BackupRow(file: f, onDeleted: _loadBackups),
+              for (final f in _backups)
+                _BackupRow(
+                  file: f,
+                  onDeleted: _loadBackups,
+                  onRestore: () async {
+                    try {
+                      await ref.read(backupServiceProvider).restoreFromFile(f);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(tr.dataRestored)),
+                        );
+                      }
+                    } catch (_) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(tr.restoreFailed)),
+                        );
+                      }
+                    }
+                  },
+                ),
           ],
         ),
       ),
@@ -174,9 +268,14 @@ class _Action extends StatelessWidget {
 }
 
 class _BackupRow extends StatelessWidget {
-  const _BackupRow({required this.file, required this.onDeleted});
+  const _BackupRow({
+    required this.file,
+    required this.onDeleted,
+    required this.onRestore,
+  });
   final File file;
   final VoidCallback onDeleted;
+  final VoidCallback onRestore;
 
   String get _name => file.path.split(RegExp(r'[/\\]')).last;
 
@@ -237,6 +336,11 @@ class _BackupRow extends StatelessWidget {
                         fontSize: 11, color: AppColors.textFaint)),
               ],
             ),
+          ),
+          IconButton(
+            icon: const Icon(LucideIcons.rotateCcw,
+                size: 16, color: AppColors.ink),
+            onPressed: onRestore,
           ),
           IconButton(
             icon: const Icon(LucideIcons.share,

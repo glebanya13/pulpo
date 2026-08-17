@@ -43,7 +43,7 @@ class _OnboardingSetupScreenState
     await ref.read(settingsControllerProvider.notifier).completeOnboarding(
           name: name,
           currency: _currency,
-          themeMode: 'light',
+          themeMode: ref.read(settingsControllerProvider).themeMode,
           locale: locale,
         );
     await ref.read(accountRepositoryProvider).add(

@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -6,14 +7,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'firebase_options.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/data/repositories/providers.dart';
 import 'src/data/repositories/settings_service.dart';
 import 'src/data/seed/seed_categories.dart';
+import 'src/features/security/lock_screen.dart';
 import 'src/router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
 
   final view = WidgetsBinding.instance.platformDispatcher.views.first;
   final shortestSide =
@@ -66,17 +71,31 @@ class BudgetTrackerApp extends ConsumerWidget {
       title: 'Pulpo',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      themeMode: ThemeMode.light,
+      darkTheme: AppTheme.dark(),
+      themeMode: settings.materialThemeMode,
       locale: Locale(settings.locale),
       routerConfig: router,
       builder: (context, child) {
-        return GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () {
-            final focus = FocusManager.instance.primaryFocus;
-            if (focus != null && focus.hasFocus) focus.unfocus();
-          },
-          child: child,
+        final dark = Theme.of(context).brightness == Brightness.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness:
+                dark ? Brightness.light : Brightness.dark,
+            statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+            systemNavigationBarColor:
+                dark ? const Color(0xFF0F0F0F) : const Color(0xFFF2F2F2),
+            systemNavigationBarIconBrightness:
+                dark ? Brightness.light : Brightness.dark,
+          ),
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () {
+              final focus = FocusManager.instance.primaryFocus;
+              if (focus != null && focus.hasFocus) focus.unfocus();
+            },
+            child: LockGate(child: child ?? const SizedBox.shrink()),
+          ),
         );
       },
       localizationsDelegates: const [

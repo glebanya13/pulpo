@@ -5,6 +5,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
 
@@ -33,8 +34,10 @@ class LanguagePickerScreen extends ConsumerWidget {
                 RoundIconButton(
                     icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
                 Text(tr.language,
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700)),
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: context.primaryText)),
                 const SizedBox(width: 42),
               ],
             ),
@@ -42,7 +45,7 @@ class LanguagePickerScreen extends ConsumerWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Container(
-                color: Colors.white,
+                color: context.surface,
                 child: Column(
                   children: [
                     for (var i = 0; i < _langs.length; i++) ...[
@@ -77,9 +80,10 @@ class LanguagePickerScreen extends ConsumerWidget {
                               const SizedBox(width: 14),
                               Expanded(
                                 child: Text(_langs[i].$2,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         fontSize: 14,
-                                        fontWeight: FontWeight.w600)),
+                                        fontWeight: FontWeight.w600,
+                                        color: context.primaryText)),
                               ),
                               if (current == _langs[i].$1)
                                 const Icon(LucideIcons.check,
@@ -89,10 +93,9 @@ class LanguagePickerScreen extends ConsumerWidget {
                         ),
                       ),
                       if (i != _langs.length - 1)
-                        const Padding(
-                          padding: EdgeInsets.only(left: 66, right: 16),
-                          child:
-                              Divider(height: 1, color: AppColors.divider),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 66, right: 16),
+                          child: Divider(height: 1, color: context.divider),
                         ),
                     ],
                   ],

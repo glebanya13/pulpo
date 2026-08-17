@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "734611302573",
+    "project_id": "pulpo-mobi",
+    "storage_bucket": "pulpo-mobi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:734611302573:android:db6fd2c8e4d1b9443abe24",
+        "android_client_info": {
+          "package_name": "com.pulpo.android"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "734611302573-l7occ13kr4q6r7el0l6uuoaoakrd5af1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXA-j_H1ac54sqTrNtJD2_Yv_PRelHU6U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "734611302573-l7occ13kr4q6r7el0l6uuoaoakrd5af1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

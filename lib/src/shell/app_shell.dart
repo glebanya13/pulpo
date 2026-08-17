@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../widgets/bottom_nav.dart';
+import '../widgets/quick_actions_sheet.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
@@ -30,7 +31,7 @@ class AppShell extends StatelessWidget {
           i,
           initialLocation: i == navigationShell.currentIndex,
         ),
-        onFabTap: () => context.push('/add'),
+        onFabTap: () => showQuickActionsSheet(context),
       ),
     );
   }

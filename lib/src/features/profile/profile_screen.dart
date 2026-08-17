@@ -4,13 +4,17 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_format.dart';
+import '../export/export_sheet.dart';
 import '../settings/settings_screen.dart' show openNameSheet;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../auth/cloud_auth.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -19,6 +23,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
     final settings = ref.watch(settingsControllerProvider);
+    final authUser = ref.watch(authUserProvider).valueOrNull;
     final total = ref.watch(totalBalanceProvider);
     final currency = settings.baseCurrency;
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
@@ -39,32 +44,32 @@ class ProfileScreen extends ConsumerWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 120),
+      padding: const EdgeInsets.fromLTRB(20, 48, 20, 120),
       children: [
         // Заголовок
         Text(
           tr.profile,
-          style: const TextStyle(
-            fontSize: 30,
+          style: TextStyle(
+            fontSize: 26,
             fontWeight: FontWeight.w800,
-            letterSpacing: -1,
-            color: AppColors.ink,
+            letterSpacing: -0.8,
+            color: context.primaryText,
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
 
         // Аватар + имя
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            color: context.surface,
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
             children: [
               Container(
-                width: 60,
-                height: 60,
+                width: 48,
+                height: 48,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
@@ -78,7 +83,7 @@ class ProfileScreen extends ConsumerWidget {
                       : 'U',
                   style: const TextStyle(
                     color: AppColors.ink,
-                    fontSize: 24,
+                    fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -90,18 +95,19 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     Text(
                       settings.userName,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.ink,
+                        color: context.primaryText,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${accounts.length} ${tr.accountsCountLabel} · $currency',
-                      style: const TextStyle(
+                      authUser?.email ??
+                          '${accounts.length} ${tr.accountsCountLabel} · $currency',
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textMuted,
+                        color: context.mutedText,
                       ),
                     ),
                   ],
@@ -112,12 +118,12 @@ class ProfileScreen extends ConsumerWidget {
                 child: Container(
                   width: 40,
                   height: 40,
-                  decoration: const BoxDecoration(
-                    color: AppColors.bg,
+                  decoration: BoxDecoration(
+                    color: context.scaffoldBg,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(LucideIcons.pencil,
-                      size: 16, color: AppColors.ink),
+                  child: Icon(LucideIcons.pencil,
+                      size: 16, color: context.primaryText),
                 ),
               ),
             ],
@@ -127,10 +133,11 @@ class ProfileScreen extends ConsumerWidget {
 
         // Общий баланс
         Container(
-          padding: const EdgeInsets.all(22),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           decoration: BoxDecoration(
-            color: AppColors.ink,
-            borderRadius: BorderRadius.circular(28),
+            color: context.emphasized,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: context.emphasizedBorder),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,25 +146,26 @@ class ProfileScreen extends ConsumerWidget {
                 tr.totalBalance,
                 style: const TextStyle(
                   color: Colors.white70,
-                  fontSize: 11,
-                  letterSpacing: 1,
+                  fontSize: 10,
+                  letterSpacing: 0.8,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
                 formatMoney(total, currency),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 34,
+                  fontSize: 28,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -1.5,
+                  height: 1.1,
+                  letterSpacing: -1,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
 
         // Статы этого месяца
         Row(
@@ -185,7 +193,7 @@ class ProfileScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.surface,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
@@ -209,15 +217,15 @@ class ProfileScreen extends ConsumerWidget {
                       DateFormat('LLLL yyyy',
                               Localizations.localeOf(context).languageCode)
                           .format(now),
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.ink),
+                          color: context.primaryText),
                     ),
                     Text(
                       '$monthCount ${tr.transactionsCount}',
-                      style: const TextStyle(
-                          fontSize: 11, color: AppColors.textFaint),
+                      style: TextStyle(
+                          fontSize: 11, color: context.faintText),
                     ),
                   ],
                 ),
@@ -227,53 +235,27 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 20),
 
-        // Быстрые ссылки
-        _SectionLabel(tr.management),
+        _SectionLabel(tr.accountSection),
         _MenuGroup(
           children: [
             _MenuRow(
-              icon: LucideIcons.wallet,
-              iconBg: AppColors.bgFood,
-              label: tr.accounts,
-              trailing: '${accounts.length}',
-              onTap: () => context.push('/accounts'),
-            ),
-            _MenuRow(
-              icon: LucideIcons.layers,
-              iconBg: const Color(0xFFD4F5E0),
-              label: tr.categories,
-              onTap: () => context.push('/categories'),
-            ),
-            _MenuRow(
-              icon: LucideIcons.pieChart,
-              iconBg: const Color(0xFFFFF3D6),
-              label: tr.budgets,
-              onTap: () => context.push('/budgets'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        _SectionLabel(tr.recurring),
-        _MenuGroup(
-          children: [
-            _MenuRow(
-              icon: LucideIcons.repeat,
+              icon: LucideIcons.logIn,
               iconBg: const Color(0xFFE0F2FE),
-              label: tr.recurringOps,
-              onTap: () => context.push('/recurring'),
+              label: authUser != null ? tr.signedInAs : tr.signIn,
+              onTap: () => context.push('/settings/account'),
             ),
+            if (authUser != null)
+              _MenuRow(
+                icon: LucideIcons.logOut,
+                iconBg: const Color(0xFFFFE4E6),
+                label: tr.signOut,
+                onTap: () => ref.read(cloudAuthProvider).signOut(),
+              ),
             _MenuRow(
-              icon: LucideIcons.tv,
-              iconBg: const Color(0xFFE8E4FF),
-              label: tr.subscriptions,
-              onTap: () => context.push('/subscriptions'),
-            ),
-            _MenuRow(
-              icon: LucideIcons.users,
-              iconBg: const Color(0xFFFFE4E1),
-              label: tr.debts,
-              onTap: () => context.push('/debts'),
+              icon: LucideIcons.shield,
+              iconBg: const Color(0xFFD4F5E0),
+              label: tr.security,
+              onTap: () => context.push('/settings/security'),
             ),
           ],
         ),
@@ -283,24 +265,63 @@ class ProfileScreen extends ConsumerWidget {
         _MenuGroup(
           children: [
             _MenuRow(
-              icon: LucideIcons.settings,
+              icon: LucideIcons.layers,
+              iconBg: const Color(0xFFD4F5E0),
+              label: tr.categories,
+              onTap: () => context.push('/categories'),
+            ),
+            _MenuRow(
+              icon: LucideIcons.dollarSign,
+              iconBg: AppColors.bgFood,
+              label: tr.baseCurrency,
+              trailing: currency,
+              onTap: () => context.push('/settings/currency'),
+            ),
+            _MenuRow(
+              icon: LucideIcons.globe,
+              iconBg: const Color(0xFFE0F2FE),
+              label: tr.language,
+              onTap: () => context.push('/settings/language'),
+            ),
+            _MenuRow(
+              icon: LucideIcons.moon,
+              iconBg: const Color(0xFFE8E4FF),
+              label: tr.theme,
+              trailing: tr.themeLabel(settings.themeMode),
+              onTap: () => context.push('/settings/theme'),
+            ),
+            _MenuRow(
+              icon: LucideIcons.database,
               iconBg: const Color(0xFFF2F2F2),
-              label: tr.allSettings,
-              onTap: () => context.push('/settings'),
+              label: tr.dataBackups,
+              onTap: () => context.push('/settings/backups'),
+            ),
+            _MenuRow(
+              icon: LucideIcons.download,
+              iconBg: const Color(0xFFFFF3D6),
+              label: tr.exportCsv,
+              onTap: () => showExportSheet(context, ref),
+            ),
+            _MenuRow(
+              icon: LucideIcons.info,
+              iconBg: const Color(0xFFF2F2F2),
+              label: tr.about,
+              onTap: () => context.push('/settings/about'),
             ),
           ],
         ),
-        const SizedBox(height: 32),
-        const Center(
+        const SizedBox(height: 48),
+        Center(
           child: Text(
-            'Pulpo · v0.1',
+            'Pulpo · v${AppInfo.version}',
             style: TextStyle(
               fontSize: 11,
-              color: AppColors.textFaint,
+              color: context.faintText,
               fontWeight: FontWeight.w500,
             ),
           ),
         ),
+        const SizedBox(height: 24),
       ],
     );
   }
@@ -322,38 +343,46 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: context.surface,
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 28,
+            height: 28,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 16, color: color),
+            child: Icon(icon, size: 14, color: color),
           ),
-          const SizedBox(height: 12),
-          Text(label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.textMuted,
-                letterSpacing: 0.5,
-              )),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-              color: color,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: context.mutedText,
+                      letterSpacing: 0.4,
+                    )),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                    color: color,
+                    height: 1.2,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -372,10 +401,10 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: AppColors.textMuted,
+          color: context.mutedText,
           letterSpacing: 1,
         ),
       ),
@@ -391,7 +420,7 @@ class _MenuGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -399,9 +428,9 @@ class _MenuGroup extends StatelessWidget {
           for (var i = 0; i < children.length; i++) ...[
             children[i],
             if (i != children.length - 1)
-              const Padding(
-                padding: EdgeInsets.only(left: 66, right: 16),
-                child: Divider(height: 1, color: AppColors.divider),
+              Padding(
+                padding: const EdgeInsets.only(left: 66, right: 16),
+                child: Divider(height: 1, color: context.divider),
               ),
           ],
         ],
@@ -445,10 +474,10 @@ class _MenuRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.ink),
+                    color: context.primaryText),
               ),
             ),
             if (trailing != null)
@@ -456,15 +485,15 @@ class _MenuRow extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 6),
                 child: Text(
                   trailing!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.textMuted,
+                    color: context.mutedText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-            const Icon(LucideIcons.chevronRight,
-                size: 16, color: AppColors.textFaint),
+            Icon(LucideIcons.chevronRight,
+                size: 16, color: context.faintText),
           ],
         ),
       ),

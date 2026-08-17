@@ -1,5 +1,15 @@
 class AppInfo {
   static const version = '1.0.0';
+  /// Flip when the client provides google-services.json / GoogleService-Info.plist.
+  static const firebaseConfigured = true;
+  static const firebaseProjectId = 'pulpo-mobi';
+  /// Return URL for Sign in with Apple (Services ID in Apple Developer + Firebase).
+  static const appleAuthHandler =
+      'https://pulpo-mobi.firebaseapp.com/__/auth/handler';
+  /// Services ID in Apple Developer (must match Firebase Auth → Apple).
+  static const appleServicesId = 'com.pulpo.app.signin';
+  static const googleServerClientId =
+      '734611302573-l7occ13kr4q6r7el0l6uuoaoakrd5af1.apps.googleusercontent.com';
   static const site = 'https://pulpo.mobi';
   static const privacyUrl = '$site/privacy';
   static const termsUrl = '$site/terms';

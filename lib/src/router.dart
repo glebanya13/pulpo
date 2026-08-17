@@ -14,10 +14,13 @@ import 'features/onboarding/onboarding_setup_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/recurring/recurring_screen.dart';
 import 'features/reports/reports_screen.dart';
+import 'features/auth/sign_in_screen.dart';
+import 'features/security/security_screen.dart';
 import 'features/settings/about_screen.dart';
 import 'features/settings/backups_screen.dart';
 import 'features/settings/currency_picker_screen.dart';
 import 'features/settings/language_picker_screen.dart';
+import 'features/settings/theme_picker_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/subscriptions/subscriptions_screen.dart';
 import 'features/transactions/add_transaction_screen.dart';
@@ -193,9 +196,24 @@ final routerProvider = Provider<GoRouter>((ref) {
                 _fadePage(state, const LanguagePickerScreen()),
           ),
           GoRoute(
+            path: 'theme',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const ThemePickerScreen()),
+          ),
+          GoRoute(
             path: 'backups',
             pageBuilder: (context, state) =>
                 _fadePage(state, const BackupsScreen()),
+          ),
+          GoRoute(
+            path: 'account',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const SignInScreen()),
+          ),
+          GoRoute(
+            path: 'security',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const SecurityScreen()),
           ),
           GoRoute(
             path: 'about',

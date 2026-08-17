@@ -7,12 +7,14 @@ import 'package:intl/intl.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import 'stats_period.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});
@@ -29,35 +31,92 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     final tr = Tr.of(context);
     final tabs = [tr.tabOverview, tr.tabCategories, tr.tabTrends, tr.tabFlows];
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
-    final now = DateTime.now();
-    final sixMonthsAgo = DateTime(now.year, now.month - 5, 1);
+    final range = ref.watch(statsPeriodProvider);
     final txs = ref
             .watch(transactionsInRangeProvider(
-                (start: sixMonthsAgo, end: DateTime(now.year, now.month + 1, 1))))
+                (start: range.start, end: range.end)))
             .valueOrNull ??
         const [];
     final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
+    final now = DateTime.now();
+    final sixMonthsAgo = range.start;
+
+    String periodLabel(StatsPeriodKind k) {
+      final t = Tr.of(context);
+      switch (k) {
+        case StatsPeriodKind.thisMonth:
+          return t.periodThisMonth;
+        case StatsPeriodKind.lastMonth:
+          return t.periodLastMonth;
+        case StatsPeriodKind.months3:
+          return t.period3m;
+        case StatsPeriodKind.months6:
+          return t.period6m;
+        case StatsPeriodKind.thisYear:
+          return t.periodThisYear;
+        case StatsPeriodKind.lastYear:
+          return t.periodLastYear;
+        case StatsPeriodKind.custom:
+          return t.periodCustom;
+      }
+    }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 120),
+      padding: const EdgeInsets.fromLTRB(20, 52, 20, 120),
       children: [
         Text(
           tr.analytics,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 30,
             fontWeight: FontWeight.w800,
             letterSpacing: -1,
-            color: AppColors.ink,
+            color: context.primaryText,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           tr.analyticsSubtitle,
-          style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 14, color: context.mutedText),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
         SizedBox(
-          height: 34,
+          height: 40,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              for (final k in StatsPeriodKind.values)
+                if (k != StatsPeriodKind.custom) ...[
+                  GestureDetector(
+                    onTap: () =>
+                        ref.read(statsPeriodProvider.notifier).setKind(k),
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: range.kind == k
+                            ? AppColors.lime
+                            : context.surface,
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        periodLabel(k),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: context.primaryText,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 40,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: tabs.length,
@@ -70,16 +129,18 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: active ? AppColors.ink : Colors.white,
+                    color: active
+                        ? (context.isDark ? AppColors.ink3 : AppColors.ink)
+                        : context.surface,
                     borderRadius: BorderRadius.circular(100),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     tabs[i],
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: active ? Colors.white : AppColors.textMuted,
+                      color: active ? Colors.white : context.mutedText,
                     ),
                   ),
                 ),
@@ -92,7 +153,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           txs: txs,
           cats: cats,
           now: now,
-          sixMonthsAgo: sixMonthsAgo,
+          rangeStart: sixMonthsAgo,
+          monthCount: math.max(
+            1,
+            (range.end.year - range.start.year) * 12 +
+                range.end.month -
+                range.start.month,
+          ).clamp(1, 12),
           currency: currency,
         ),
       ],
@@ -103,18 +170,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     required List<db.Transaction> txs,
     required List<db.Category> cats,
     required DateTime now,
-    required DateTime sixMonthsAgo,
+    required DateTime rangeStart,
+    required int monthCount,
     required String currency,
   }) {
     switch (_tab) {
       case 1:
-        return _categoriesView(txs, cats, now, currency);
+        return _categoriesView(txs, cats, currency);
       case 2:
-        return _trendsView(txs, now, sixMonthsAgo, currency);
+        return _trendsView(txs, rangeStart, monthCount, currency);
       case 3:
-        return _flowsView(txs, cats, now, currency);
+        return _flowsView(txs, cats, currency);
       default:
-        return _overviewView(txs, cats, now, sixMonthsAgo, currency);
+        return _overviewView(txs, cats, now, rangeStart, monthCount, currency);
     }
   }
 
@@ -123,25 +191,24 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     List<db.Transaction> txs,
     List<db.Category> cats,
     DateTime now,
-    DateTime sixMonthsAgo,
+    DateTime rangeStart,
+    int monthCount,
     String currency,
   ) {
-    final monthly = List<double>.filled(6, 0);
+    final monthly = List<double>.filled(monthCount, 0);
     for (final t in txs) {
       if (TxType.values[t.type] != TxType.expense) continue;
-      final monthIdx = (t.date.year - sixMonthsAgo.year) * 12 +
-          (t.date.month - sixMonthsAgo.month);
-      if (monthIdx >= 0 && monthIdx < 6) monthly[monthIdx] += t.amount;
+      final monthIdx = (t.date.year - rangeStart.year) * 12 +
+          (t.date.month - rangeStart.month);
+      if (monthIdx >= 0 && monthIdx < monthCount) monthly[monthIdx] += t.amount;
     }
     final total6m = monthly.fold<double>(0, (a, b) => a + b);
     final maxMonthly = monthly.reduce(math.max);
 
-    final monthStart = DateTime(now.year, now.month, 1);
     final byCat = <int, double>{};
     var monthTotal = 0.0;
     for (final t in txs) {
       if (TxType.values[t.type] != TxType.expense) continue;
-      if (t.date.isBefore(monthStart)) continue;
       byCat.update(t.categoryId ?? -1, (v) => v + t.amount,
           ifAbsent: () => t.amount);
       monthTotal += t.amount;
@@ -153,87 +220,123 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       _ChartCard(
         title: Tr.of(context).expenses6Months,
         value: formatMoney(total6m, currency),
-        child: SizedBox(
-          height: 140,
-          child: BarChart(
-            BarChartData(
-              alignment: BarChartAlignment.spaceAround,
-              borderData: FlBorderData(show: false),
-              gridData: const FlGridData(show: false),
-              titlesData: FlTitlesData(
-                leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
-                rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
-                topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (v, meta) {
-                      final month = DateTime(sixMonthsAgo.year,
-                          sixMonthsAgo.month + v.toInt(), 1);
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          DateFormat('MMM', Localizations.localeOf(context).languageCode).format(month),
-                          style: TextStyle(
-                            color: v.toInt() == 5
-                                ? AppColors.limeAccent
-                                : AppColors.textFaint,
-                            fontSize: 10,
-                            fontWeight: v.toInt() == 5
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                          ),
+        child: total6m <= 0
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  Tr.of(context).empty,
+                  style: TextStyle(color: context.mutedText, fontSize: 14),
+                ),
+              )
+            : SizedBox(
+                height: 150,
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    borderData: FlBorderData(show: false),
+                    gridData: const FlGridData(show: false),
+                    titlesData: FlTitlesData(
+                      leftTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 22,
+                          getTitlesWidget: (v, meta) {
+                            final month = DateTime(rangeStart.year,
+                                rangeStart.month + v.toInt(), 1);
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                DateFormat(
+                                        'MMM',
+                                        Localizations.localeOf(context)
+                                            .languageCode)
+                                    .format(month),
+                                style: TextStyle(
+                                  color: v.toInt() == monthCount - 1
+                                      ? AppColors.limeAccent
+                                      : AppColors.textFaint,
+                                  fontSize: 11,
+                                  fontWeight: v.toInt() == monthCount - 1
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
+                      ),
+                    ),
+                    maxY: maxMonthly * 1.2 + 1,
+                    barGroups: [
+                      for (var i = 0; i < monthCount; i++)
+                        BarChartGroupData(
+                          x: i,
+                          barRods: [
+                            BarChartRodData(
+                              toY: monthly[i],
+                              color: i == monthCount - 1
+                                  ? AppColors.lime
+                                  : const Color(0xFFECECEC),
+                              width: 18,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(6),
+                                topRight: Radius.circular(6),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
                   ),
                 ),
               ),
-              maxY: maxMonthly * 1.2 + 1,
-              barGroups: [
-                for (var i = 0; i < 6; i++)
-                  BarChartGroupData(
-                    x: i,
-                    barRods: [
-                      BarChartRodData(
-                        toY: monthly[i],
-                        color: i == 5
-                            ? AppColors.lime
-                            : const Color(0xFFECECEC),
-                        width: 20,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(6),
-                          topRight: Radius.circular(6),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-        ),
       ),
       const SizedBox(height: 16),
       _ChartCard(
         title:
             '${Tr.of(context).byCategoriesMonthPrefix}${DateFormat('MMMM', Localizations.localeOf(context).languageCode).format(now)}',
         value: '',
-        child: SizedBox(
-          height: 160,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 130,
-                height: 130,
-                child: donutData.isEmpty
-                    ? Center(
-                        child: Text(Tr.of(context).empty,
-                            style: const TextStyle(color: AppColors.textMuted)),
-                      )
-                    : PieChart(
+        child: donutData.isEmpty
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Text(Tr.of(context).empty,
+                        style:
+                            TextStyle(color: context.mutedText, fontSize: 14)),
+                    const Spacer(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          formatMoney(monthTotal, currency),
+                          style: TextStyle(
+                            color: context.primaryText,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(Tr.of(context).totalWord,
+                            style: TextStyle(
+                                color: context.faintText, fontSize: 12)),
+                      ],
+                    ),
+                  ],
+                ),
+              )
+            : SizedBox(
+                height: 160,
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 130,
+                      height: 130,
+                      child: PieChart(
                         PieChartData(
                           sectionsSpace: 2,
                           centerSpaceRadius: 40,
@@ -248,47 +351,49 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           ],
                         ),
                       ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      formatMoney(monthTotal, currency),
-                      style: const TextStyle(
-                        color: AppColors.ink,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            formatMoney(monthTotal, currency),
+                            style: TextStyle(
+                              color: context.primaryText,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(Tr.of(context).totalWord,
+                              style: TextStyle(
+                                  color: context.faintText, fontSize: 12)),
+                          const SizedBox(height: 10),
+                          for (var i = 0;
+                              i < donutData.length && i < 5;
+                              i++) ...[
+                            _legendItem(
+                              color: _palette[i % _palette.length],
+                              name: cats
+                                      .where((c) => c.id == donutData[i].key)
+                                      .map((c) =>
+                                          Tr.of(context).categoryName(c.name))
+                                      .firstOrNull ??
+                                  Tr.of(context).other,
+                              percent: monthTotal > 0
+                                  ? (donutData[i].value / monthTotal * 100)
+                                      .round()
+                                  : 0,
+                            ),
+                            const SizedBox(height: 6),
+                          ],
+                        ],
                       ),
                     ),
-                    Text(Tr.of(context).totalWord,
-                        style: const TextStyle(
-                            color: AppColors.textFaint, fontSize: 11)),
-                    const SizedBox(height: 10),
-                    for (var i = 0;
-                        i < donutData.length && i < 5;
-                        i++) ...[
-                      _legendItem(
-                        color: _palette[i % _palette.length],
-                        name: cats
-                                .where((c) => c.id == donutData[i].key)
-                                .map((c) => Tr.of(context).categoryName(c.name))
-                                .firstOrNull ??
-                            Tr.of(context).other,
-                        percent: monthTotal > 0
-                            ? (donutData[i].value / monthTotal * 100).round()
-                            : 0,
-                      ),
-                      const SizedBox(height: 6),
-                    ],
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
       ),
     ];
   }
@@ -297,14 +402,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   List<Widget> _categoriesView(
     List<db.Transaction> txs,
     List<db.Category> cats,
-    DateTime now,
     String currency,
   ) {
-    final monthStart = DateTime(now.year, now.month, 1);
     final byCat = <int, double>{};
     for (final t in txs) {
       if (TxType.values[t.type] != TxType.expense) continue;
-      if (t.date.isBefore(monthStart)) continue;
       byCat.update(t.categoryId ?? -1, (v) => v + t.amount,
           ifAbsent: () => t.amount);
     }
@@ -331,7 +433,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return [
       _ChartCard(
         title:
-            '${Tr.of(context).expensesByCategoriesMonthPrefix}${DateFormat('MMMM', Localizations.localeOf(context).languageCode).format(now)}',
+            '${Tr.of(context).expensesByCategoriesMonthPrefix}',
         value: '',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,16 +457,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   // ─────────────────────── Trends ───────────────────────
   List<Widget> _trendsView(
     List<db.Transaction> txs,
-    DateTime now,
-    DateTime sixMonthsAgo,
+    DateTime rangeStart,
+    int monthCount,
     String currency,
   ) {
-    final incomes = List<double>.filled(6, 0);
-    final expenses = List<double>.filled(6, 0);
+    final incomes = List<double>.filled(monthCount, 0);
+    final expenses = List<double>.filled(monthCount, 0);
     for (final t in txs) {
-      final monthIdx = (t.date.year - sixMonthsAgo.year) * 12 +
-          (t.date.month - sixMonthsAgo.month);
-      if (monthIdx < 0 || monthIdx >= 6) continue;
+      final monthIdx = (t.date.year - rangeStart.year) * 12 +
+          (t.date.month - rangeStart.month);
+      if (monthIdx < 0 || monthIdx >= monthCount) continue;
       final ty = TxType.values[t.type];
       if (ty == TxType.income) incomes[monthIdx] += t.amount;
       if (ty == TxType.expense) expenses[monthIdx] += t.amount;
@@ -372,8 +474,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     final maxVal =
         math.max(incomes.reduce(math.max), expenses.reduce(math.max));
 
-    final currentExpense = expenses[5];
-    final prevExpense = expenses.length > 1 ? expenses[4] : 0;
+    final currentExpense = expenses[monthCount - 1];
+    final prevExpense = monthCount > 1 ? expenses[monthCount - 2] : 0;
     final deltaPct = prevExpense > 0
         ? ((currentExpense - prevExpense) / prevExpense * 100).round()
         : 0;
@@ -408,8 +510,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   sideTitles: SideTitles(
                     showTitles: true,
                     getTitlesWidget: (v, meta) {
-                      final month = DateTime(sixMonthsAgo.year,
-                          sixMonthsAgo.month + v.toInt(), 1);
+                      final month = DateTime(rangeStart.year,
+                          rangeStart.month + v.toInt(), 1);
                       return Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
@@ -425,7 +527,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               lineBarsData: [
                 LineChartBarData(
                   spots: [
-                    for (var i = 0; i < 6; i++)
+                    for (var i = 0; i < monthCount; i++)
                       FlSpot(i.toDouble(), incomes[i]),
                   ],
                   color: AppColors.limeAccent,
@@ -446,7 +548,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 ),
                 LineChartBarData(
                   spots: [
-                    for (var i = 0; i < 6; i++)
+                    for (var i = 0; i < monthCount; i++)
                       FlSpot(i.toDouble(), expenses[i]),
                   ],
                   color: AppColors.danger,
@@ -537,18 +639,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   List<Widget> _flowsView(
     List<db.Transaction> txs,
     List<db.Category> cats,
-    DateTime now,
     String currency,
   ) {
-    final monthStart = DateTime(now.year, now.month, 1);
-
     final incomeByCat = <int, double>{};
     final expenseByCat = <int, double>{};
     var totalIncome = 0.0;
     var totalExpense = 0.0;
 
     for (final t in txs) {
-      if (t.date.isBefore(monthStart)) continue;
       final ty = TxType.values[t.type];
       if (ty == TxType.income) {
         incomeByCat.update(t.categoryId ?? -1, (v) => v + t.amount,
@@ -570,7 +668,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return [
       _ChartCard(
         title:
-            '${Tr.of(context).cashFlowMonthPrefix}${DateFormat('MMMM', Localizations.localeOf(context).languageCode).format(now)}',
+            '${Tr.of(context).cashFlowMonthPrefix}',
         value: '',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -743,18 +841,18 @@ class _ChartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        color: context.surface,
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-                color: AppColors.textMuted,
+            style: TextStyle(
+                color: context.mutedText,
                 fontSize: 13,
                 fontWeight: FontWeight.w600),
           ),
@@ -762,15 +860,15 @@ class _ChartCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               value,
-              style: const TextStyle(
-                color: AppColors.ink,
+              style: TextStyle(
+                color: context.primaryText,
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.5,
               ),
             ),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           child,
         ],
       ),

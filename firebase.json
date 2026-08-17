@@ -1,0 +1,37 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "buildConfigurations": {
+          ".": {
+            "projectId": "pulpo-mobi",
+            "appId": "1:734611302573:android:db6fd2c8e4d1b9443abe24",
+            "fileOutput": "android/app/google-services.json"
+          }
+        }
+      },
+      "ios": {
+        "targets": {
+          "Runner": {
+            "projectId": "pulpo-mobi",
+            "appId": "1:734611302573:ios:5148dcbf4dc06f533abe24",
+            "uploadDebugSymbols": false,
+            "fileOutput": "ios/Runner/GoogleService-Info.plist"
+          }
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "pulpo-mobi",
+          "configurations": {
+            "android": "1:734611302573:android:db6fd2c8e4d1b9443abe24",
+            "ios": "1:734611302573:ios:5148dcbf4dc06f533abe24"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

@@ -66,19 +66,17 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     final daysInMonth = DateTime(_month.year, _month.month + 1, 0).day;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+      padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
       decoration: BoxDecoration(
         color: context.surface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _Header(month: _month, onShift: _shiftMonth),
-          const SizedBox(height: 8),
-          const _WeekdayRow(),
           const SizedBox(height: 4),
-          _Grid(
+          _MonthTable(
             month: _month,
             leading: leading,
             daysInMonth: daysInMonth,
@@ -119,7 +117,8 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = DateFormat('MMMM y', 'es').format(month);
+    final locale = Localizations.localeOf(context).toString();
+    final title = DateFormat('MMMM y', locale).format(month);
     final titleCapitalized =
         title.isEmpty ? title : title[0].toUpperCase() + title.substring(1);
     return Row(
@@ -154,12 +153,12 @@ class _NavBtn extends StatelessWidget {
       onTap: onTap,
       radius: 22,
       child: Container(
-        width: 34,
-        height: 34,
+        width: 32,
+        height: 32,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: context.scaffoldBg,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, size: 18, color: context.primaryText),
       ),
@@ -167,35 +166,8 @@ class _NavBtn extends StatelessWidget {
   }
 }
 
-class _WeekdayRow extends StatelessWidget {
-  const _WeekdayRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final labels = Tr.of(context).weekdayShort;
-    return Row(
-      children: [
-        for (final l in labels)
-          Expanded(
-            child: Center(
-              child: Text(
-                l,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.4,
-                  color: context.faintText,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _Grid extends StatelessWidget {
-  const _Grid({
+class _MonthTable extends StatelessWidget {
+  const _MonthTable({
     required this.month,
     required this.leading,
     required this.daysInMonth,
@@ -213,14 +185,13 @@ class _Grid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labels = Tr.of(context).weekdayShort;
     final prevMonthLast = DateTime(month.year, month.month, 0).day;
     final today = DateTime.now();
-
-    // Количество недель, реально нужных для показа месяца (5 или 6).
     final totalDays = leading + daysInMonth;
     final rowCount = (totalDays / 7).ceil();
 
-    Widget buildCell(int i) {
+    _DayCell cellAt(int i) {
       final dayIndex = i - leading + 1;
       final inMonth = dayIndex >= 1 && dayIndex <= daysInMonth;
 
@@ -241,33 +212,48 @@ class _Grid extends StatelessWidget {
           today.year == cellDate.year &&
           today.month == cellDate.month &&
           today.day == cellDate.day;
-
       final sums = inMonth ? byDay[displayDay] : null;
 
-      return Expanded(
-        child: _DayCell(
-          day: displayDay,
-          inMonth: inMonth,
-          isToday: isToday,
-          income: sums?.income ?? 0,
-          expense: sums?.expense ?? 0,
-          currency: currency,
-          onTap: inMonth ? () => onTapDay(cellDate) : null,
-        ),
+      return _DayCell(
+        day: displayDay,
+        inMonth: inMonth,
+        isToday: isToday,
+        income: sums?.income ?? 0,
+        expense: sums?.expense ?? 0,
+        currency: currency,
+        onTap: inMonth ? () => onTapDay(cellDate) : null,
       );
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Table(
+      defaultColumnWidth: const FlexColumnWidth(),
+      defaultVerticalAlignment: TableCellVerticalAlignment.top,
       children: [
+        TableRow(
+          children: [
+            for (final l in labels)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Center(
+                  child: Text(
+                    l,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: context.faintText,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
         for (var row = 0; row < rowCount; row++)
-          SizedBox(
-            height: 46,
-            child: Row(
-              children: [
-                for (var col = 0; col < 7; col++) buildCell(row * 7 + col),
-              ],
-            ),
+          TableRow(
+            children: [
+              for (var col = 0; col < 7; col++) cellAt(row * 7 + col),
+            ],
           ),
       ],
     );
@@ -298,48 +284,47 @@ class _DayCell extends StatelessWidget {
     final numberColor = !inMonth
         ? context.faintText
         : (isToday ? AppColors.ink : context.primaryText);
+    final showExpense = inMonth && expense > 0;
+    final showIncome = inMonth && income > 0 && expense <= 0;
 
-    return Padding(
-      padding: const EdgeInsets.all(1),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
-          decoration: BoxDecoration(
-            color: isToday
-                ? AppColors.lime.withValues(alpha: 0.25)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isToday
+                    ? AppColors.lime.withValues(alpha: 0.45)
+                    : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
                 '$day',
+                textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: numberColor,
-                  height: 1.0,
+                  height: 1,
                 ),
               ),
-              if (inMonth && expense > 0) ...[
-                const SizedBox(height: 2),
-                _Pill(
+            ),
+            if (showExpense)
+              _Pill(
                   text: _shortMoney(expense, currency),
-                  color: AppColors.danger,
-                ),
-              ],
-              if (inMonth && income > 0) ...[
-                const SizedBox(height: 2),
-                _Pill(
+                  color: AppColors.danger),
+            if (showIncome)
+              _Pill(
                   text: _shortMoney(income, currency),
-                  color: AppColors.limeAccent,
-                ),
-              ],
-            ],
-          ),
+                  color: AppColors.limeAccent),
+          ],
         ),
       ),
     );
@@ -362,10 +347,10 @@ class _Pill extends StatelessWidget {
       child: Text(
         text,
         maxLines: 1,
-        overflow: TextOverflow.clip,
-        softWrap: false,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: 8.5,
+          fontSize: 9,
           fontWeight: FontWeight.w700,
           color: color,
           height: 1.1,
@@ -383,7 +368,8 @@ class _DaySheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final title = DateFormat("d 'de' MMMM", 'es').format(day);
+    final locale = Localizations.localeOf(context).toString();
+    final title = DateFormat.yMMMMd(locale).format(day);
     return Container(
       decoration: BoxDecoration(
         color: context.scaffoldBg,
