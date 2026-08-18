@@ -16,6 +16,8 @@ import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
+import '../../widgets/reset_scroll_when_obscured.dart';
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
@@ -46,8 +48,11 @@ class AccountsScreen extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+        child: ResetScrollWhenObscured(
+          tabPath: '/accounts',
+          builder: (context, scroll) => ListView(
+            controller: scroll,
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
           children: [
             PageHeader(
               first: tr.myAccounts,
@@ -81,6 +86,7 @@ class AccountsScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             _AddCard(onTap: () => _openAddAccount(context, ref)),
           ],
+        ),
         ),
       ),
     );
@@ -185,7 +191,7 @@ class AccountsScreen extends ConsumerWidget {
                   onChanged: (v) => setState(() => type = v ?? AccountType.cash),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
+                ScaledElevatedButton(
                   onPressed: () async {
                     if (nameCtrl.text.trim().isEmpty) return;
                     await ref.read(accountRepositoryProvider).add(
@@ -293,9 +299,9 @@ class _NetWorthCard extends StatelessWidget {
               color: AppColors.lime.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Text(
-              '↑ в реальном времени',
-              style: TextStyle(
+            child: Text(
+              Tr.of(context).inRealtime,
+              style: const TextStyle(
                 color: AppColors.lime,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,

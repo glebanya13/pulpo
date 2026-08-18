@@ -14,6 +14,7 @@ import '../../data/repositories/debt_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 
 class DebtsScreen extends ConsumerStatefulWidget {
   const DebtsScreen({super.key});
@@ -217,7 +218,7 @@ Future<void> _openDebtEditor(
               ),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
+            ScaledElevatedButton(
               onPressed: () async {
                 final amount = double.tryParse(amountCtrl.text) ?? 0;
                 if (nameCtrl.text.trim().isEmpty || amount <= 0) return;

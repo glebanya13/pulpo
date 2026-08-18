@@ -35,7 +35,7 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
     final tr = Tr.of(context);
     final current = ref.watch(settingsControllerProvider).baseCurrency;
     final items =
-        appCurrencies.where(_match).toList(growable: false);
+        uniqueAppCurrencies().where(_match).toList(growable: false);
 
     return Scaffold(
       body: SafeArea(
@@ -81,7 +81,7 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Container(

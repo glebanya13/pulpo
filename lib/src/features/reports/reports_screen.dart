@@ -15,6 +15,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/reset_scroll_when_obscured.dart';
 import 'stats_period.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
@@ -40,7 +41,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         const [];
     final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
     final now = DateTime.now();
-    final sixMonthsAgo = range.start;
+    final monthCount = monthsCovered(range.start, range.end);
 
     String periodLabel(StatsPeriodKind k) {
       final t = Tr.of(context);
@@ -62,10 +63,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       }
     }
 
-    return ListView(
+    final periodName = periodLabel(range.kind);
+
+    return ResetScrollWhenObscured(
+      tabPath: '/reports',
+      builder: (context, scroll) => ListView(
+      controller: scroll,
       padding: EdgeInsets.fromLTRB(
         20,
-        MediaQuery.paddingOf(context).top + 16,
+        MediaQuery.viewPaddingOf(context).top + 8,
         20,
         140,
       ),
@@ -161,16 +167,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           txs: txs,
           cats: cats,
           now: now,
-          rangeStart: sixMonthsAgo,
-          monthCount: math.max(
-            1,
-            (range.end.year - range.start.year) * 12 +
-                range.end.month -
-                range.start.month,
-          ).clamp(1, 12),
+          rangeStart: range.start,
+          rangeEnd: range.end,
+          monthCount: monthCount,
           currency: currency,
+          periodName: periodName,
+          periodKind: range.kind,
         ),
       ],
+    ),
     );
   }
 
@@ -179,18 +184,30 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     required List<db.Category> cats,
     required DateTime now,
     required DateTime rangeStart,
+    required DateTime rangeEnd,
     required int monthCount,
     required String currency,
+    required String periodName,
+    required StatsPeriodKind periodKind,
   }) {
     switch (_tab) {
       case 1:
-        return _categoriesView(txs, cats, currency);
+        return _categoriesView(txs, cats, currency, periodName);
       case 2:
-        return _trendsView(txs, rangeStart, monthCount, currency);
+        return _trendsView(
+          txs,
+          rangeStart,
+          rangeEnd,
+          monthCount,
+          currency,
+          periodName,
+          periodKind,
+        );
       case 3:
-        return _flowsView(txs, cats, currency);
+        return _flowsView(txs, cats, currency, periodName);
       default:
-        return _overviewView(txs, cats, now, rangeStart, monthCount, currency);
+        return _overviewView(
+            txs, cats, now, rangeStart, monthCount, currency, periodName);
     }
   }
 
@@ -202,6 +219,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     DateTime rangeStart,
     int monthCount,
     String currency,
+    String periodName,
   ) {
     final monthly = List<double>.filled(monthCount, 0);
     for (final t in txs) {
@@ -226,7 +244,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
     return [
       _ChartCard(
-        title: Tr.of(context).expenses6Months,
+        title: Tr.of(context).expensesForPeriod(periodName),
         value: formatMoney(total6m, currency),
         child: total6m <= 0
             ? Padding(
@@ -307,7 +325,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       const SizedBox(height: 16),
       _ChartCard(
         title:
-            '${Tr.of(context).byCategoriesMonthPrefix}${DateFormat('LLLL', Localizations.localeOf(context).languageCode).format(now)}',
+            '${Tr.of(context).byCategoriesMonthPrefix}$periodName',
         value: '',
         child: donutData.isEmpty
             ? Padding(
@@ -411,6 +429,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     List<db.Transaction> txs,
     List<db.Category> cats,
     String currency,
+    String periodName,
   ) {
     final byCat = <int, double>{};
     for (final t in txs) {
@@ -441,7 +460,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return [
       _ChartCard(
         title:
-            '${Tr.of(context).expensesByCategoriesMonthPrefix}',
+            '${Tr.of(context).expensesByCategoriesMonthPrefix}$periodName',
         value: '',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,9 +485,209 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   List<Widget> _trendsView(
     List<db.Transaction> txs,
     DateTime rangeStart,
+    DateTime rangeEnd,
     int monthCount,
     String currency,
+    String periodName,
+    StatsPeriodKind periodKind,
   ) {
+    // For "this month" render by day to avoid the "single point" look.
+    if (periodKind == StatsPeriodKind.thisMonth) {
+      final start = DateTime(rangeStart.year, rangeStart.month, rangeStart.day);
+      final lastInclusive = rangeEnd.subtract(const Duration(microseconds: 1));
+      final dayCount = lastInclusive.difference(start).inDays + 1;
+      final incomes = List<double>.filled(dayCount, 0);
+      final expenses = List<double>.filled(dayCount, 0);
+
+      for (final t in txs) {
+        final txDay = DateTime(t.date.year, t.date.month, t.date.day);
+        final dayIdx = txDay.difference(start).inDays;
+        if (dayIdx < 0 || dayIdx >= dayCount) continue;
+        final ty = TxType.values[t.type];
+        if (ty == TxType.income) incomes[dayIdx] += t.amount;
+        if (ty == TxType.expense) expenses[dayIdx] += t.amount;
+      }
+
+      final maxVal =
+          math.max(incomes.reduce(math.max), expenses.reduce(math.max));
+
+      final currentExpense = expenses[dayCount - 1];
+      final prevExpense = dayCount > 1 ? expenses[dayCount - 2] : 0;
+      final deltaPct = prevExpense > 0
+          ? ((currentExpense - prevExpense) / prevExpense * 100).round()
+          : 0;
+
+      return [
+        _ChartCard(
+          title: Tr.of(context).incomeVsForPeriod(periodName),
+          value: '',
+          child: SizedBox(
+            height: 180,
+            child: LineChart(
+              LineChartData(
+                minY: 0,
+                maxY: maxVal * 1.2 + 1,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (v) => const FlLine(
+                    color: Color(0xFFECECEC),
+                    strokeWidth: 1,
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (v, meta) {
+                        final i = v.toInt();
+                        if (i < 0 || i >= dayCount) return const SizedBox.shrink();
+                        // Show first/middle/last to reduce clutter.
+                        final show = i == 0 ||
+                            i == dayCount - 1 ||
+                            i == (dayCount ~/ 2);
+                        if (!show) return const SizedBox.shrink();
+                        final day = start.add(Duration(days: i));
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            DateFormat('d', Localizations.localeOf(context).languageCode)
+                                .format(day),
+                            style: TextStyle(
+                              color: context.faintText,
+                              fontSize: 10,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: [
+                      for (var i = 0; i < dayCount; i++)
+                        FlSpot(i.toDouble(), incomes[i]),
+                    ],
+                    color: AppColors.limeAccent,
+                    isCurved: true,
+                    barWidth: 3,
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                        radius: 4,
+                        color: AppColors.limeAccent,
+                        strokeWidth: 0,
+                      ),
+                    ),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: AppColors.lime.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  LineChartBarData(
+                    spots: [
+                      for (var i = 0; i < dayCount; i++)
+                        FlSpot(i.toDouble(), expenses[i]),
+                    ],
+                    color: AppColors.danger,
+                    isCurved: true,
+                    barWidth: 3,
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                        radius: 4,
+                        color: AppColors.danger,
+                        strokeWidth: 0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.lime.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.circle, size: 8, color: AppColors.limeAccent),
+                  const SizedBox(width: 6),
+                  Text(
+                    Tr.of(context).income,
+                    style: TextStyle(
+                      color: context.primaryText,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.danger.withValues(alpha: 0.22),
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.circle, size: 8, color: AppColors.danger),
+                  const SizedBox(width: 6),
+                  Text(
+                    Tr.of(context).expense,
+                    style: TextStyle(
+                      color: context.primaryText,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _TrendStat(
+                label: Tr.of(context).expenseThisMonth,
+                value: formatMoney(currentExpense, currency),
+                accent: AppColors.danger,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _TrendStat(
+                label: Tr.of(context).vsPrevMonth,
+                value: '${deltaPct >= 0 ? '+' : ''}$deltaPct%',
+                accent: deltaPct > 0 ? AppColors.danger : AppColors.limeAccent,
+              ),
+            ),
+          ],
+        ),
+      ];
+    }
+
+    // Default: month buckets.
     final incomes = List<double>.filled(monthCount, 0);
     final expenses = List<double>.filled(monthCount, 0);
     for (final t in txs) {
@@ -490,7 +709,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
     return [
       _ChartCard(
-        title: Tr.of(context).incomeVsExpenses,
+        title: Tr.of(context).incomeVsForPeriod(periodName),
         value: '',
         child: SizedBox(
           height: 180,
@@ -648,6 +867,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     List<db.Transaction> txs,
     List<db.Category> cats,
     String currency,
+    String periodName,
   ) {
     final incomeByCat = <int, double>{};
     final expenseByCat = <int, double>{};
@@ -676,7 +896,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return [
       _ChartCard(
         title:
-            '${Tr.of(context).cashFlowMonthPrefix}',
+            '${Tr.of(context).cashFlowMonthPrefix}$periodName',
         value: '',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

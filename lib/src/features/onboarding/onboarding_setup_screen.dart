@@ -11,6 +11,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/seed/seed_demo.dart';
+import '../../widgets/pressable.dart';
 
 class OnboardingSetupScreen extends ConsumerStatefulWidget {
   const OnboardingSetupScreen({super.key});
@@ -49,7 +50,7 @@ class _OnboardingSetupScreenState
           locale: locale,
         );
     await ref.read(accountRepositoryProvider).add(
-          name: _cashLabel(locale),
+          name: Tr.fromLang(locale).accountTypeCash,
           type: AccountType.cash,
           currency: _currency,
           initialBalance: double.tryParse(_balanceCtrl.text) ?? 0,
@@ -57,17 +58,6 @@ class _OnboardingSetupScreenState
           color: 0xFF3DDC84,
         );
     if (mounted) context.go('/');
-  }
-
-  String _cashLabel(String locale) {
-    switch (locale) {
-      case 'ru':
-        return 'Наличные';
-      case 'en':
-        return 'Cash';
-      default:
-        return 'Efectivo';
-    }
   }
 
   @override
@@ -91,7 +81,7 @@ class _OnboardingSetupScreenState
               children: [
                 Row(
                   children: [
-                    GestureDetector(
+                    Pressable(
                       onTap: () => context.pop(),
                       child: Container(
                         width: 42,
@@ -201,7 +191,7 @@ class _OnboardingSetupScreenState
                               fontWeight: FontWeight.w600,
                             ),
                             items: [
-                              for (final c in appCurrencies)
+                              for (final c in uniqueAppCurrencies())
                                 DropdownMenuItem(
                                   value: c.country,
                                   child: Text(
@@ -211,9 +201,10 @@ class _OnboardingSetupScreenState
                                 ),
                             ],
                             onChanged: (v) {
-                              final picked = appCurrencies.firstWhere(
+                              final list = uniqueAppCurrencies();
+                              final picked = list.firstWhere(
                                 (c) => c.country == v,
-                                orElse: () => appCurrencies[2],
+                                orElse: () => list.first,
                               );
                               setState(() {
                                 _country = picked.country;
@@ -227,7 +218,7 @@ class _OnboardingSetupScreenState
                   ],
                 ),
                 const SizedBox(height: 32),
-                GestureDetector(
+                Pressable(
                   onTap: _finish,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 18),
@@ -247,7 +238,7 @@ class _OnboardingSetupScreenState
                   ),
                 ),
                 const SizedBox(height: 12),
-                GestureDetector(
+                Pressable(
                   onTap: () => startLocalDemo(context, ref),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),

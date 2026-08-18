@@ -14,6 +14,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/category_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 
 class CategoriesScreen extends ConsumerStatefulWidget {
   const CategoriesScreen({super.key});
@@ -228,7 +229,7 @@ Future<void> _openCategoryEditor(
               ],
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
+            ScaledElevatedButton(
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty) return;
                 final repo = ref.read(categoryRepositoryProvider);

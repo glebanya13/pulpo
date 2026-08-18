@@ -14,6 +14,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/recurring_repository.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 
 class RecurringScreen extends ConsumerStatefulWidget {
   const RecurringScreen({super.key});
@@ -196,7 +197,7 @@ Future<void> _openRuleEditor(
               ),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
+            ScaledElevatedButton(
               onPressed: () async {
                 final amount = double.tryParse(amountCtrl.text) ?? 0;
                 if (nameCtrl.text.trim().isEmpty || amount <= 0) return;

@@ -14,6 +14,8 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/seed/seed_categories.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
+import '../../widgets/reset_scroll_when_obscured.dart';
 import '../auth/cloud_auth.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -26,8 +28,11 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+        child: ResetScrollWhenObscured(
+          tabPath: '/settings',
+          builder: (context, scroll) => ListView(
+            controller: scroll,
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
           children: [
             PageHeader(
               first: tr.settings,
@@ -165,7 +170,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             Center(
               child: Text(
-                'Pulpo · offline-first',
+                tr.offlineFirstTag,
                 style: TextStyle(
                   color: context.faintText,
                   fontSize: 11,
@@ -174,6 +179,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -500,8 +506,10 @@ class _SettingsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final titleColor =
         danger ? const Color(0xFFE53E3E) : context.primaryText;
-    return InkWell(
-      onTap: onTap,
+    return Pressable(
+      enabled: onTap != null,
+      onTap: onTap ?? () {},
+      scale: 0.98,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(

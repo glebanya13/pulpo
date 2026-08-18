@@ -4,6 +4,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../core/l10n/tr.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
+import 'pressable.dart';
 
 /// Header страницы: title с акцентом на 2-й части + subtitle + правая кнопка.
 class PageHeader extends StatelessWidget {
@@ -104,7 +105,7 @@ class _RoundIconBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = dark || context.isDark;
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
         width: 42,
@@ -143,8 +144,9 @@ class SectTitle extends StatelessWidget {
             ),
           ),
           if (actionText != null)
-            GestureDetector(
-              onTap: onAction,
+            Pressable(
+              onTap: onAction ?? () {},
+              enabled: onAction != null,
               child: Text(
                 actionText!,
                 style: TextStyle(
@@ -162,7 +164,8 @@ class SectTitle extends StatelessWidget {
   }
 }
 
-/// Пилюля-переключатель. Список равных сегментов.
+/// Пилюля-переключатель. Ширина сегментов по длине подписи, чтобы
+/// левый и правый край не «съезжали» из‑за короткого Todos и длинного Transferencia.
 class TabsPill extends StatelessWidget {
   const TabsPill({
     super.key,
@@ -178,22 +181,32 @@ class TabsPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final weights = [
+      for (final t in tabs) t.trim().length.clamp(4, 18),
+    ];
+    final total = weights.fold<int>(0, (a, b) => a + b);
+
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: context.surface,
         borderRadius: BorderRadius.circular(100),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final seg = constraints.maxWidth / tabs.length;
+          final inner = constraints.maxWidth;
+          var left = 0.0;
+          for (var i = 0; i < index; i++) {
+            left += inner * (weights[i] / total);
+          }
+          final segW = inner * (weights[index] / total);
           return Stack(
             children: [
               AnimatedPositioned(
-                duration: const Duration(milliseconds: 280),
+                duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
-                left: index * seg,
-                width: seg,
+                left: left,
+                width: segW,
                 top: 0,
                 bottom: 0,
                 child: DecoratedBox(
@@ -209,11 +222,15 @@ class TabsPill extends StatelessWidget {
                 children: [
                   for (var i = 0; i < tabs.length; i++)
                     Expanded(
+                      flex: weights[i],
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () => onChanged(i),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 6,
+                          ),
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
                             child: AnimatedDefaultTextStyle(
@@ -251,8 +268,9 @@ class BudgetToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: () => onChanged(!value),
+      scale: 0.94,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         width: 46,
@@ -337,8 +355,8 @@ class EmptyState extends StatelessWidget {
             ),
             if (action != null && onAction != null) ...[
               const SizedBox(height: 20),
-              GestureDetector(
-                onTap: onAction,
+              Pressable(
+                onTap: onAction!,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 22, vertical: 14),

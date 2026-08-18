@@ -83,4 +83,12 @@ class StatsPeriodController extends Notifier<StatsRange> {
 }
 
 final statsPeriodProvider =
-    NotifierProvider<StatsPeriodController, StatsRange>(StatsPeriodController.new);
+    NotifierProvider<StatsPeriodController, StatsRange>(
+        StatsPeriodController.new);
+
+int monthsCovered(DateTime start, DateTime end) {
+  final last = end.subtract(const Duration(microseconds: 1));
+  final n =
+      (last.year - start.year) * 12 + last.month - start.month + 1;
+  return n.clamp(1, 24);
+}

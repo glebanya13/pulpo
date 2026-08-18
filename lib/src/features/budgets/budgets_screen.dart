@@ -16,6 +16,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/budget_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/pressable.dart';
 
 class BudgetsScreen extends ConsumerWidget {
   const BudgetsScreen({super.key});
@@ -385,7 +386,7 @@ Future<void> _openBudgetEditor(
               onChanged: (v) => setSt(() => period = v ?? 1),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
+            ScaledElevatedButton(
               onPressed: () async {
                 final amount = double.tryParse(amountCtrl.text) ?? 0;
                 if (nameCtrl.text.trim().isEmpty || amount <= 0) return;

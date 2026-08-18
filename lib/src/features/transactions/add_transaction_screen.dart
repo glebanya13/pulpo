@@ -8,6 +8,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
+import '../../widgets/pressable.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
@@ -128,38 +129,31 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   }
 
   Future<void> _pickCategory() async {
-    final cats = ref.read(categoriesProvider).valueOrNull ?? [];
-    final filtered = cats.where((c) {
-      final catType = CategoryType.values[c.type];
-      if (_type == TxType.expense) {
-        return catType != CategoryType.income;
-      }
-      if (_type == TxType.income) {
-        return catType != CategoryType.expense;
-      }
-      return true;
-    }).toList();
-
+    await ref.read(categoriesProvider.future);
+    if (!mounted) return;
     final picked = await showModalBottomSheet<db.Category>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (context) => _CategoryPicker(categories: filtered),
+      builder: (context) => _CategoryPicker(type: _type),
     );
     if (picked != null) setState(() => _category = picked);
   }
 
   Future<void> _pickAccount() async {
-    final accs = ref.read(accountsProvider).valueOrNull ?? [];
+    await ref.read(accountsProvider.future);
+    if (!mounted) return;
     final picked = await showModalBottomSheet<db.Account>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (context) => _AccountPicker(accounts: accs),
+      builder: (context) => const _AccountPicker(),
     );
     if (picked != null) setState(() => _account = picked);
   }
@@ -206,11 +200,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
+    ref.watch(categoriesProvider);
+    ref.watch(accountsProvider);
     if (widget.editId != null && !_hydrated) {
-      // ensure providers rebuild this widget once data is loaded
       ref.watch(allTransactionsProvider);
-      ref.watch(categoriesProvider);
-      ref.watch(accountsProvider);
       _hydrateFromEdit();
     }
     final currency = widget.editId != null && _account != null
@@ -222,108 +215,91 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _IconBtn(
-                    icon: LucideIcons.arrowLeft,
-                    onTap: () =>
-                        widget.editId != null ? context.pop() : context.go('/'),
-                  ),
-                  Text(
-                    widget.editId != null
-                        ? '${tr.edit} ${tr.transactionSingular}'
-                        : tr.newTransaction,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: context.primaryText,
-                    ),
-                  ),
+      body: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          MediaQuery.viewPaddingOf(context).top + 6,
+          20,
+          8 + MediaQuery.viewPaddingOf(context).bottom,
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _IconBtn(
+                  icon: LucideIcons.arrowLeft,
+                  onTap: () =>
+                      widget.editId != null ? context.pop() : context.go('/'),
+                ),
+                Text(
                   widget.editId != null
-                      ? _IconBtn(
-                          icon: LucideIcons.trash2,
-                          onTap: () => _confirmDelete(tr),
-                        )
-                      : const SizedBox(width: 42),
+                      ? '${tr.edit} ${tr.transactionSingular}'
+                      : tr.newTransaction,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: context.primaryText,
+                  ),
+                ),
+                widget.editId != null
+                    ? _IconBtn(
+                        icon: LucideIcons.trash2,
+                        onTap: () => _confirmDelete(tr),
+                      )
+                    : const SizedBox(width: 42),
+              ],
+            ),
+            const SizedBox(height: 10),
+            if (widget.editId == null)
+              _TypeTabs(
+                type: _type,
+                external: _external,
+                onSelect: (t, {required bool external}) {
+                  if (t == TxType.transfer) {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                  }
+                  setState(() {
+                    _type = t;
+                    _external = external;
+                    if (t != TxType.transfer) _category = null;
+                  });
+                },
+              ),
+            Expanded(
+              child: IndexedStack(
+                index: _type == TxType.transfer ? 1 : 0,
+                children: [
+                  _txForm(
+                    tr: tr,
+                    currency: currency,
+                    sign: sign,
+                  ),
+                  const TransferScreen(embedded: true),
                 ],
               ),
-              const SizedBox(height: 12),
-              if (widget.editId == null)
-                _TypeTabs(
-                  type: _type,
-                  external: _external,
-                  onSelect: (t, {required bool external}) {
-                    setState(() {
-                      _type = t;
-                      _external = external;
-                      if (t != TxType.transfer) _category = null;
-                    });
-                  },
-                ),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 280),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeOutCubic,
-                  transitionBuilder: (child, anim) {
-                    return FadeTransition(
-                      opacity: anim,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.03),
-                          end: Offset.zero,
-                        ).animate(anim),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: _type == TxType.transfer
-                      ? const TransferScreen(
-                          key: ValueKey('transfer'),
-                          embedded: true,
-                        )
-                      : _txForm(
-                          key: const ValueKey('tx'),
-                          tr: tr,
-                          currency: currency,
-                          sign: sign,
-                        ),
+            ),
+            if (_type != TxType.transfer)
+              SizedBox(
+                width: double.infinity,
+                child: ScaledElevatedButton(
+                  onPressed: _save,
+                  child: Text(tr.save),
                 ),
               ),
-              if (_type != TxType.transfer)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _save,
-                      child: Text(tr.save),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 
   Widget _txForm({
-    required Key key,
     required Tr tr,
     required String currency,
     required String sign,
   }) {
     return SingleChildScrollView(
-      key: key,
-      padding: const EdgeInsets.only(top: 20, bottom: 20),
+      padding: const EdgeInsets.only(top: 16, bottom: 16),
       child: Column(
         children: [
           _AmountInput(
@@ -416,7 +392,7 @@ class _IconBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
         width: 42,
@@ -496,7 +472,7 @@ class _TypeTabs extends StatelessWidget {
           return Stack(
             children: [
               AnimatedPositioned(
-                duration: const Duration(milliseconds: 280),
+                duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
                 left: index * seg,
                 width: seg,
@@ -564,7 +540,6 @@ class _AmountInput extends StatelessWidget {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          autofocus: true,
           keyboardType:
               const TextInputType.numberWithOptions(decimal: true),
           textAlign: TextAlign.center,
@@ -646,9 +621,9 @@ class _FormRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return Pressable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      scale: 0.98,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Row(
@@ -666,11 +641,12 @@ class _FormRow extends StatelessWidget {
             const SizedBox(width: 12),
             Text(label,
                 style: TextStyle(fontSize: 13, color: context.mutedText)),
-            const Spacer(),
-            Flexible(
+            const SizedBox(width: 12),
+            Expanded(
               child: Text(
                 value,
                 textAlign: TextAlign.right,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14,
@@ -679,7 +655,7 @@ class _FormRow extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
             Icon(LucideIcons.chevronRight, size: 16, color: context.faintText),
           ],
         ),
@@ -688,127 +664,163 @@ class _FormRow extends StatelessWidget {
   }
 }
 
-class _CategoryPicker extends StatelessWidget {
-  const _CategoryPicker({required this.categories});
-  final List<db.Category> categories;
+class _CategoryPicker extends ConsumerWidget {
+  const _CategoryPicker({required this.type});
+  final TxType type;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.handleBar,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            Tr.of(context).category,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: context.primaryText,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Flexible(
-            child: GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              children: [
-                for (final c in categories)
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context, c),
-                    child: Column(
-                      children: [
-                        ColorWellIcon(
-                          color: Color(c.color),
-                          icon: lucideByKey(c.icon),
-                          size: 52,
-                          iconSize: 22,
-                          radius: 16,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          Tr.of(context).categoryName(c.name),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 11, color: context.primaryText),
-                        ),
-                      ],
-                    ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(categoriesProvider);
+    final cats = (async.valueOrNull ?? const <db.Category>[]).where((c) {
+      final catType = CategoryType.values[c.type];
+      if (type == TxType.expense) return catType != CategoryType.income;
+      if (type == TxType.income) return catType != CategoryType.expense;
+      return true;
+    }).toList();
+    final maxH = MediaQuery.sizeOf(context).height * 0.65;
+
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxH),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.handleBar,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-              ],
-            ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                Tr.of(context).category,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: context.primaryText,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (async.isLoading && cats.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else
+                GridView.count(
+                  crossAxisCount: 4,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  children: [
+                    for (final c in cats)
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context, c),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ColorWellIcon(
+                              color: Color(c.color),
+                              icon: lucideByKey(c.icon),
+                              size: 52,
+                              iconSize: 22,
+                              radius: 16,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              Tr.of(context).categoryName(c.name),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 11, color: context.primaryText),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _AccountPicker extends StatelessWidget {
-  const _AccountPicker({required this.accounts});
-  final List<db.Account> accounts;
+class _AccountPicker extends ConsumerWidget {
+  const _AccountPicker();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.handleBar,
-                borderRadius: BorderRadius.circular(2),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(accountsProvider);
+    final accounts = async.valueOrNull ?? const <db.Account>[];
+    final maxH = MediaQuery.sizeOf(context).height * 0.65;
+
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxH),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.handleBar,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            Tr.of(context).account,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: context.primaryText,
-            ),
-          ),
-          const SizedBox(height: 12),
-          for (final a in accounts)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: ColorWellIcon(
-                color: Color(a.color),
-                icon: lucideByKey(a.icon),
-                size: 40,
-                iconSize: 18,
-                radius: 12,
+              const SizedBox(height: 16),
+              Text(
+                Tr.of(context).account,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: context.primaryText,
+                ),
               ),
-              title: Text(a.name,
-                  style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: context.primaryText)),
-              subtitle: Text(a.currency,
-                  style: TextStyle(color: context.mutedText)),
-              onTap: () => Navigator.pop(context, a),
-            ),
-        ],
+              const SizedBox(height: 12),
+              if (async.isLoading && accounts.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else
+                for (final a in accounts)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: ColorWellIcon(
+                      color: Color(a.color),
+                      icon: lucideByKey(a.icon),
+                      size: 40,
+                      iconSize: 18,
+                      radius: 12,
+                    ),
+                    title: Text(a.name,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: context.primaryText)),
+                    subtitle: Text(a.currency,
+                        style: TextStyle(color: context.mutedText)),
+                    onTap: () => Navigator.pop(context, a),
+                  ),
+            ],
+          ),
+        ),
       ),
     );
   }

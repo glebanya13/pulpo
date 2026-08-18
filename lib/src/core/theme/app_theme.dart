@@ -72,6 +72,14 @@ class AppTheme {
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(AppSpacing.rPill)),
           ),
+          animationDuration: const Duration(milliseconds: 90),
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) {
+              return Colors.black.withValues(alpha: 0.14);
+            }
+            return Colors.transparent;
+          }),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -90,6 +98,12 @@ class AppTheme {
         color: AppColors.divider,
         thickness: 1,
         space: 1,
+      ),
+      iconTheme: const IconThemeData(color: AppColors.ink),
+      listTileTheme: const ListTileThemeData(
+        tileColor: Colors.transparent,
+        textColor: AppColors.textPrimary,
+        iconColor: AppColors.ink,
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.all(Colors.white),
@@ -214,6 +228,14 @@ class AppTheme {
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(AppSpacing.rPill)),
           ),
+          animationDuration: const Duration(milliseconds: 90),
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) {
+              return Colors.black.withValues(alpha: 0.14);
+            }
+            return Colors.transparent;
+          }),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

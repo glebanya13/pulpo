@@ -10,6 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/subscription_repository.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 
 class SubscriptionsScreen extends ConsumerWidget {
   const SubscriptionsScreen({super.key});
@@ -212,7 +213,7 @@ Future<void> _openEditor(
               ),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
+            ScaledElevatedButton(
               onPressed: () async {
                 final amount = double.tryParse(amountCtrl.text) ?? 0;
                 if (nameCtrl.text.trim().isEmpty || amount <= 0) return;

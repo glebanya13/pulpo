@@ -84,6 +84,7 @@ class BudgetTrackerApp extends ConsumerWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: settings.materialThemeMode,
+      themeAnimationDuration: Duration.zero,
       locale: Locale(settings.locale),
       routerDelegate: router.routerDelegate,
       routeInformationParser: router.routeInformationParser,

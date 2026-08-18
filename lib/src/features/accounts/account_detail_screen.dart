@@ -14,6 +14,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/providers.dart';
+import '../../widgets/pressable.dart';
 
 class AccountDetailScreen extends ConsumerWidget {
   const AccountDetailScreen({super.key, required this.accountId});
@@ -143,7 +144,7 @@ class AccountDetailScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('${tr.balancePrefix}12',
+                      Text(tr.history12Weeks,
                           style: const TextStyle(
                               color: Colors.white54, fontSize: 12)),
                     ],
@@ -375,7 +376,7 @@ Future<void> _openAccountEditor(
               title: Text(Tr.of(ctx).includeInTotal),
             ),
             const SizedBox(height: 12),
-            ElevatedButton(
+            ScaledElevatedButton(
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty) return;
                 await ref.read(accountRepositoryProvider).update(

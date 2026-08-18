@@ -6,10 +6,12 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/pressable.dart';
 import '../../core/theme/color_well.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/reset_scroll_when_obscured.dart';
 import 'monthly_calendar.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -22,10 +24,13 @@ class DashboardScreen extends ConsumerWidget {
     final total = ref.watch(totalBalanceProvider);
     final currency = settings.baseCurrency;
 
-    return ListView(
+    return ResetScrollWhenObscured(
+      tabPath: '/',
+      builder: (context, scroll) => ListView(
+      controller: scroll,
       padding: EdgeInsets.fromLTRB(
         20,
-        MediaQuery.paddingOf(context).top + 16,
+        MediaQuery.viewPaddingOf(context).top + 8,
         20,
         150 + MediaQuery.paddingOf(context).bottom,
       ),
@@ -101,7 +106,7 @@ class DashboardScreen extends ConsumerWidget {
                 color: context.primaryText,
               ),
             ),
-            GestureDetector(
+            Pressable(
               onTap: () => context.go('/transactions'),
               child: Text(
                 tr.viewHistory,
@@ -117,6 +122,7 @@ class DashboardScreen extends ConsumerWidget {
         const SizedBox(height: 6),
         const MonthlyCalendar(),
       ],
+    ),
     );
   }
 }
@@ -134,7 +140,7 @@ class _QuickChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: GestureDetector(
+      child: Pressable(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
@@ -223,7 +229,7 @@ class _HomeLinks extends StatelessWidget {
       (LucideIcons.target, tr.goals, '/goals', const Color(0xFFCDFF3A)),
     ];
     Widget tile((IconData, String, String, Color) i) {
-      return GestureDetector(
+      return Pressable(
         onTap: () => context.push(i.$3),
         child: Container(
           height: 44,

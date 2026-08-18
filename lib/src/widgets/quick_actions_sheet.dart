@@ -6,6 +6,7 @@ import '../core/l10n/tr.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/color_well.dart';
 import '../core/theme/liquid_glass.dart';
+import 'pressable.dart';
 
 Future<void> showQuickActionsSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -122,7 +123,7 @@ class _Action extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(14),

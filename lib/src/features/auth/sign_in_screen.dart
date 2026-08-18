@@ -7,6 +7,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 import 'cloud_auth.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -163,8 +164,9 @@ class _Btn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    return Pressable(
+      enabled: onTap != null,
+      onTap: onTap ?? () {},
       child: Opacity(
         opacity: onTap == null ? 0.5 : 1,
         child: Container(

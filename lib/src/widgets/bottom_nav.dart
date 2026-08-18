@@ -4,6 +4,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/liquid_glass.dart';
+import 'pressable.dart';
 
 /// Pill bottom nav: glass bar, 4 icons + FAB in the center.
 class BudgetBottomNav extends StatelessWidget {
@@ -77,9 +78,8 @@ class _NavItem extends StatelessWidget {
     final idle = context.isDark
         ? Colors.white.withValues(alpha: 0.55)
         : AppColors.ink.withValues(alpha: 0.42);
-    return InkResponse(
+    return Pressable(
       onTap: onTap,
-      radius: 20,
       child: Container(
         width: 38,
         height: 38,
@@ -103,8 +103,9 @@ class _Fab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
+      scale: 0.9,
       child: Container(
         width: 46,
         height: 46,

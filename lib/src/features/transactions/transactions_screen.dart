@@ -13,6 +13,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../widgets/common.dart';
+import '../../widgets/reset_scroll_when_obscured.dart';
 import '../../widgets/transaction_tile.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -55,10 +56,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     );
     final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
-    return ListView(
+    return ResetScrollWhenObscured(
+      tabPath: '/transactions',
+      builder: (context, scroll) => ListView(
+      controller: scroll,
       padding: EdgeInsets.fromLTRB(
         20,
-        MediaQuery.paddingOf(context).top + 16,
+        MediaQuery.viewPaddingOf(context).top + 8,
         20,
         140,
       ),
@@ -222,6 +226,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ),
           ],
       ],
+    ),
     );
   }
 

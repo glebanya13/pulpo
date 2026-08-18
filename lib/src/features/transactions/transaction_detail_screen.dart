@@ -181,7 +181,7 @@ class TransactionDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
             Center(
-              child: Text('ID: txn_${tx.id}',
+              child: Text(tr.txIdLabel(tx.id),
                   style: TextStyle(
                       fontSize: 10, color: context.faintText)),
             ),

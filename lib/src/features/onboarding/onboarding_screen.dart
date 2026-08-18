@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/seed/seed_demo.dart';
+import '../../widgets/pressable.dart';
 
 class OnboardingScreen extends ConsumerWidget {
   const OnboardingScreen({super.key});
@@ -82,7 +83,7 @@ class OnboardingScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
 
                   // Primary button
-                  GestureDetector(
+                  Pressable(
                     onTap: () => context.push('/onboarding/setup'),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 18),
@@ -103,7 +104,7 @@ class OnboardingScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  GestureDetector(
+                  Pressable(
                     onTap: () => startLocalDemo(context, ref),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),

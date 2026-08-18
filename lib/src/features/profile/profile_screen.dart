@@ -14,6 +14,7 @@ import '../settings/settings_screen.dart' show openNameSheet;
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../auth/cloud_auth.dart';
+import '../../widgets/reset_scroll_when_obscured.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -26,10 +27,13 @@ class ProfileScreen extends ConsumerWidget {
     final currency = settings.baseCurrency;
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
 
-    return ListView(
+    return ResetScrollWhenObscured(
+      tabPath: '/profile',
+      builder: (context, scroll) => ListView(
+      controller: scroll,
       padding: EdgeInsets.fromLTRB(
         20,
-        MediaQuery.paddingOf(context).top + 16,
+        MediaQuery.viewPaddingOf(context).top + 8,
         20,
         140,
       ),
@@ -216,6 +220,7 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 24),
       ],
+    ),
     );
   }
 }

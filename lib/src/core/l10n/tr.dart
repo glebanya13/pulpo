@@ -369,12 +369,14 @@ class Tr {
   String get tabCategories => _get('tab_categories');
   String get tabTrends => _get('tab_trends');
   String get tabFlows => _get('tab_flows');
-  String get expenses6Months => _get('expenses_6_months');
+  String expensesForPeriod(String period) =>
+      _get('expenses_6_months').replaceAll('{}', period);
+  String incomeVsForPeriod(String period) =>
+      _get('income_vs_expenses').replaceAll('{}', period);
   String get byCategoriesTitle => _get('by_categories');
   String get totalWord => _get('total_word');
   String get expensesByCategories => _get('expenses_by_categories');
   String get noExpensesThisMonth => _get('no_expenses_this_month');
-  String get incomeVsExpenses => _get('income_vs_expenses');
   String get expenseThisMonth => _get('expense_this_month');
   String get vsPrevMonth => _get('vs_prev_month');
   String get cashFlow => _get('cash_flow');
@@ -387,6 +389,10 @@ class Tr {
   // ─────────────────────── ACCOUNTS ───────────────────────
   String get myAccounts => _get('my_accounts');
   String get netWorth => _get('net_worth');
+  String get inRealtime => _get('in_realtime');
+  String get history12Weeks => _get('history_12_weeks');
+  String get offlineFirstTag => _get('offline_first_tag');
+  String txIdLabel(int id) => _get('tx_id').replaceAll('{}', '$id');
   String get bankAccounts => _get('bank_accounts');
   String get cashWallets => _get('cash_wallets');
   String get addAccount => _get('add_account');
@@ -698,12 +704,12 @@ class Tr {
       'tab_categories': 'Categorías',
       'tab_trends': 'Tendencias',
       'tab_flows': 'Flujos',
-      'expenses_6_months': 'Gastos · 6 meses',
+      'expenses_6_months': 'Gastos · {}',
       'by_categories': 'Por categoría',
       'total_word': 'total',
       'expenses_by_categories': 'Gastos por categoría',
       'no_expenses_this_month': 'Sin gastos este mes',
-      'income_vs_expenses': 'Ingresos vs Gastos · 6 meses',
+      'income_vs_expenses': 'Ingresos vs Gastos · {}',
       'expense_this_month': 'Gasto de este mes',
       'vs_prev_month': 'vs mes anterior',
       'cash_flow': 'Flujo de caja',
@@ -715,6 +721,10 @@ class Tr {
       // accounts
       'my_accounts': 'Mis cuentas',
       'net_worth': 'PATRIMONIO NETO',
+      'in_realtime': '↑ en tiempo real',
+      'history_12_weeks': '12 semanas',
+      'offline_first_tag': 'Pulpo · offline-first',
+      'tx_id': 'ID: txn_{}',
       'bank_accounts': 'Cuentas bancarias',
       'cash_wallets': 'Efectivo y carteras',
       'add_account': 'Añadir cuenta',
@@ -1079,12 +1089,12 @@ class Tr {
       'tab_categories': 'Категории',
       'tab_trends': 'Тренды',
       'tab_flows': 'Потоки',
-      'expenses_6_months': 'Расходы · 6 месяцев',
+      'expenses_6_months': 'Расходы · {}',
       'by_categories': 'По категориям',
       'total_word': 'всего',
       'expenses_by_categories': 'Расходы по категориям',
       'no_expenses_this_month': 'Нет расходов за этот месяц',
-      'income_vs_expenses': 'Доходы vs Расходы · 6 месяцев',
+      'income_vs_expenses': 'Доходы vs Расходы · {}',
       'expense_this_month': 'Расход в этом месяце',
       'vs_prev_month': 'vs прошлый месяц',
       'cash_flow': 'Денежный поток',
@@ -1096,6 +1106,10 @@ class Tr {
       // accounts
       'my_accounts': 'Мои счета',
       'net_worth': 'ЧИСТЫЙ КАПИТАЛ',
+      'in_realtime': '↑ в реальном времени',
+      'history_12_weeks': '12 недель',
+      'offline_first_tag': 'Pulpo · офлайн',
+      'tx_id': 'ID: txn_{}',
       'bank_accounts': 'Банковские счета',
       'cash_wallets': 'Наличные и кошельки',
       'add_account': 'Добавить счёт',
@@ -1460,12 +1474,12 @@ class Tr {
       'tab_categories': 'Categories',
       'tab_trends': 'Trends',
       'tab_flows': 'Flows',
-      'expenses_6_months': 'Expenses · 6 months',
+      'expenses_6_months': 'Expenses · {}',
       'by_categories': 'By category',
       'total_word': 'total',
       'expenses_by_categories': 'Expenses by category',
       'no_expenses_this_month': 'No expenses this month',
-      'income_vs_expenses': 'Income vs Expenses · 6 months',
+      'income_vs_expenses': 'Income vs Expenses · {}',
       'expense_this_month': 'Expense this month',
       'vs_prev_month': 'vs previous month',
       'cash_flow': 'Cash flow',
@@ -1477,6 +1491,10 @@ class Tr {
       // accounts
       'my_accounts': 'My accounts',
       'net_worth': 'NET WORTH',
+      'in_realtime': '↑ live',
+      'history_12_weeks': '12 weeks',
+      'offline_first_tag': 'Pulpo · offline-first',
+      'tx_id': 'ID: txn_{}',
       'bank_accounts': 'Bank accounts',
       'cash_wallets': 'Cash & wallets',
       'add_account': 'Add account',

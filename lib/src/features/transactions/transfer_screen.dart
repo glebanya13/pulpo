@@ -7,10 +7,12 @@ import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
+import '../../widgets/pressable.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/providers.dart';
+import '../../data/repositories/settings_service.dart';
 import '../../data/repositories/transaction_repository.dart';
 
 class TransferScreen extends ConsumerStatefulWidget {
@@ -36,11 +38,43 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     super.dispose();
   }
 
+  String _fxKey(String from, String to) => 'fx_rate_${from}_${to}';
+
+  void _tryLoadFxRate() {
+    final from = _from;
+    final to = _to;
+    if (from == null || to == null) return;
+
+    final prefs = ref.read(sharedPreferencesProvider);
+    final key = _fxKey(from.currency, to.currency);
+    final last = prefs.getDouble(key);
+    if (last != null && last > 0) _rate = last;
+  }
+
+  void _trySaveFxRate() {
+    final from = _from;
+    final to = _to;
+    if (from == null || to == null) return;
+
+    final prefs = ref.read(sharedPreferencesProvider);
+    final key = _fxKey(from.currency, to.currency);
+    prefs.setDouble(key, _rate);
+  }
+
+  double get _effectiveRate {
+    if (_from != null && _to != null && _from!.currency == _to!.currency) {
+      return 1;
+    }
+    return _rate;
+  }
+
   double get _received =>
-      ((_amount * _rate) - _fee).clamp(0, double.infinity);
+      ((_amount * _effectiveRate) - _fee).clamp(0, double.infinity);
 
   Future<void> _pickAccount({required bool from}) async {
     final tr = Tr.of(context);
+    await ref.read(accountsProvider.future);
+    if (!mounted) return;
     final accs = ref.read(accountsProvider).valueOrNull ?? const [];
     final picked = await showModalBottomSheet<db.Account>(
       context: context,
@@ -92,6 +126,13 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
           _to = picked;
         }
       });
+
+      // Both sides are selected => restore last used FX rate for this pair.
+      if (_from != null && _to != null) {
+        setState(() {
+          _tryLoadFxRate();
+        });
+      }
     }
   }
 
@@ -116,7 +157,6 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     final tr = Tr.of(context);
     final sameCurrency =
         _from != null && _to != null && _from!.currency == _to!.currency;
-    if (sameCurrency && _rate != 1) _rate = 1;
 
     final form = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -173,7 +213,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
           _RateCard(
             from: _from!.currency,
             to: _to!.currency,
-            rate: _rate,
+            rate: _effectiveRate,
             onEdit: () async {
               final ctrl =
                   TextEditingController(text: _rate.toStringAsFixed(4));
@@ -200,7 +240,10 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                   ],
                 ),
               );
-              if (result != null) setState(() => _rate = result);
+              if (result != null) {
+                setState(() => _rate = result);
+                _trySaveFxRate();
+              }
             },
           ),
           const SizedBox(height: 8),
@@ -294,7 +337,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        ElevatedButton(
+        ScaledElevatedButton(
           onPressed: _submit,
           child: Text(tr.confirm),
         ),
@@ -303,7 +346,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
 
     if (widget.embedded) {
       return SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 20, bottom: 20),
+        padding: const EdgeInsets.only(top: 12, bottom: 12),
         child: form,
       );
     }
