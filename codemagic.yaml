@@ -20,12 +20,22 @@ workflows:
 
       - name: Set up code signing
         script: |
-          xcode-project use-profiles
+          xcode-project use-profiles --project ios/Runner.xcodeproj
 
       - name: Build IPA
         script: |
+          set +e
           flutter build ipa --release \
             --export-options-plist=/Users/builder/export_options.plist
+          STATUS=$?
+          if [ $STATUS -ne 0 ]; then
+            echo "===== Xcode / Flutter errors ====="
+            grep -E "error:|Error \(Xcode\)|fatal error|CreateUniversalBinary|Command .* failed|Provisioning|signing" \
+              /tmp/xcodebuild_logs/*.log 2>/dev/null | tail -120
+            find /tmp -name "*flutter_ios_build*" -o -name "*xcresult*" 2>/dev/null | head
+            ls -la /tmp/xcodebuild_logs 2>/dev/null || true
+          fi
+          exit $STATUS
 
     artifacts:
       - build/ios/ipa/*.ipa
