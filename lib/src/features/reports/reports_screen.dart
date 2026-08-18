@@ -679,7 +679,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               child: _TrendStat(
                 label: Tr.of(context).vsPrevMonth,
                 value: '${deltaPct >= 0 ? '+' : ''}$deltaPct%',
-                accent: deltaPct > 0 ? AppColors.danger : AppColors.limeAccent,
+                accent: deltaPct > 0 ? AppColors.limeAccent : AppColors.danger,
               ),
             ),
           ],
@@ -854,7 +854,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             child: _TrendStat(
               label: Tr.of(context).vsPrevMonth,
               value: '${deltaPct >= 0 ? '+' : ''}$deltaPct%',
-              accent: deltaPct > 0 ? AppColors.danger : AppColors.limeAccent,
+              accent: deltaPct > 0 ? AppColors.limeAccent : AppColors.danger,
             ),
           ),
         ],
