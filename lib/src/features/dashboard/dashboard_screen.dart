@@ -133,6 +133,7 @@ class _QuickChip extends StatelessWidget {
     required this.label,
     required this.onTap,
   });
+  static const _labelHeight = 24.0;
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -152,16 +153,26 @@ class _QuickChip extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: context.primaryText),
               const SizedBox(height: 4),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
-                  color: context.primaryText,
+              SizedBox(
+                height: _labelHeight,
+                child: Center(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.clip,
+                    strutStyle: const StrutStyle(
+                      fontSize: 11,
+                      height: 1.1,
+                      forceStrutHeight: true,
+                    ),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      height: 1.1,
+                      color: context.primaryText,
+                    ),
+                  ),
                 ),
               ),
             ],

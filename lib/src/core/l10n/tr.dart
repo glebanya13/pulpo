@@ -78,6 +78,8 @@ class Tr {
   String get transferBetweenTitle => _get('transfer_between_title');
   String get transferExternal => _get('transfer_external');
   String get transferBetweenShort => _get('transfer_between_short');
+  String get transferBetweenTab => _get('transfer_between_tab');
+  String get transferExternalTab => _get('transfer_external_tab');
   String get transferBetweenHint => _get('transfer_between_hint');
   String get transferExternalHint => _get('transfer_external_hint');
   String get monthBalance => _get('month_balance');
@@ -876,10 +878,12 @@ class Tr {
       'select_short': 'Elegir',
       'enter_note_hint': 'Escribe una nota...',
       'backups_short': 'Copias',
-      'transfer_between': 'Entre cuentas',
-      'transfer_between_title': 'Transferencia entre cuentas',
-      'transfer_between_short': 'Entre',
-      'transfer_external': 'Fuera',
+      'transfer_between': 'Transferencia interna',
+      'transfer_between_title': 'Transferencia interna',
+      'transfer_between_short': 'Transferencia interna',
+      'transfer_between_tab': 'Transferencia interna',
+      'transfer_external': 'Transferencia externa',
+      'transfer_external_tab': 'Transferencia externa',
       'transfer_between_hint': 'Mueve dinero entre tus cuentas. No es ingreso ni gasto.',
       'transfer_external_hint': 'Envías dinero fuera de tus cuentas. Cuenta como gasto.',
       'month_balance': 'Balance del mes',
@@ -1261,10 +1265,12 @@ class Tr {
       'select_short': 'Выбрать',
       'enter_note_hint': 'Введите заметку...',
       'backups_short': 'Бэкапы',
-      'transfer_between': 'Между счетами',
+      'transfer_between': 'Внутренний перевод',
       'transfer_between_title': 'Перевод между счетами',
-      'transfer_between_short': 'Между',
-      'transfer_external': 'Внешний',
+      'transfer_between_short': 'Внутренний перевод',
+      'transfer_between_tab': 'Внутренний перевод',
+      'transfer_external': 'Внешний перевод',
+      'transfer_external_tab': 'Внешний перевод',
       'transfer_between_hint': 'Перевод между своими счетами. Это не доход и не расход.',
       'transfer_external_hint': 'Деньги уходят вовне. Считается расходом.',
       'month_balance': 'Баланс за месяц',
@@ -1646,10 +1652,12 @@ class Tr {
       'select_short': 'Select',
       'enter_note_hint': 'Enter a note...',
       'backups_short': 'Backups',
-      'transfer_between': 'Between accounts',
-      'transfer_between_title': 'Transfer between accounts',
-      'transfer_between_short': 'Between',
-      'transfer_external': 'External',
+      'transfer_between': 'Internal transfer',
+      'transfer_between_title': 'Internal transfer',
+      'transfer_between_short': 'Internal transfer',
+      'transfer_between_tab': 'Internal transfer',
+      'transfer_external': 'External transfer',
+      'transfer_external_tab': 'External transfer',
       'transfer_between_hint': 'Move money between your own accounts. Not income or expense.',
       'transfer_external_hint': 'Send money outside your accounts. Counts as an expense.',
       'month_balance': 'This month',

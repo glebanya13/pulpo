@@ -31,5 +31,20 @@ void main() {
     final usd = unique.firstWhere((c) => c.code == 'USD');
     expect(usd.country, 'Estados Unidos');
   });
+
+  test('translations: transfer tab labels exist and are localized', () {
+    final ru = Tr.fromLang('ru');
+    final es = Tr.fromLang('es');
+    final en = Tr.fromLang('en');
+
+    expect(ru.transferBetweenTab.toLowerCase(), contains('перевод'));
+    expect(ru.transferExternalTab.toLowerCase(), contains('внеш'));
+
+    expect(es.transferBetweenTab.toLowerCase(), contains('interna'));
+    expect(es.transferExternalTab.toLowerCase(), contains('externa'));
+
+    expect(en.transferBetweenTab.toLowerCase(), contains('internal'));
+    expect(en.transferExternalTab.toLowerCase(), contains('external'));
+  });
 }
 

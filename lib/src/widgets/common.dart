@@ -181,7 +181,7 @@ class TabsPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final weights = [
+    final weights = <int>[
       for (final t in tabs) t.trim().length.clamp(4, 18),
     ];
     final total = weights.fold<int>(0, (a, b) => a + b);
@@ -231,8 +231,7 @@ class TabsPill extends StatelessWidget {
                             vertical: 10,
                             horizontal: 6,
                           ),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
+                          child: Center(
                             child: AnimatedDefaultTextStyle(
                               duration: const Duration(milliseconds: 200),
                               style: TextStyle(
@@ -244,7 +243,12 @@ class TabsPill extends StatelessWidget {
                                         : Colors.white)
                                     : context.mutedText,
                               ),
-                              child: Text(tabs[i], maxLines: 1),
+                              child: Text(
+                                tabs[i],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ),
                         ),

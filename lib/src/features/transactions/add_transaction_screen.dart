@@ -415,6 +415,7 @@ class _TypeTabs extends StatelessWidget {
     required this.external,
     required this.onSelect,
   });
+  static const _labelHeight = 24.0;
   final TxType type;
   final bool external;
   final void Function(TxType type, {required bool external}) onSelect;
@@ -430,35 +431,16 @@ class _TypeTabs extends StatelessWidget {
                 ? 2
                 : 3;
 
-    Widget tab({
-      required String label,
-      required bool active,
-      required VoidCallback onTap,
-    }) {
-      return Expanded(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
-            child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: active ? Colors.white : context.mutedText,
-              ),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
+    final labels = <String>[
+      tr.income,
+      tr.expense,
+      tr.transferBetweenTab,
+      tr.transferExternalTab,
+    ];
+    final weights = <int>[
+      for (final l in labels)
+        l.trim().isEmpty ? 6 : l.trim().length.clamp(4, 22),
+    ];
 
     return Container(
       padding: const EdgeInsets.all(3),
@@ -468,14 +450,27 @@ class _TypeTabs extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final seg = constraints.maxWidth / 4;
+          final totalW = weights.fold<int>(0, (a, b) => a + b);
+          if (totalW <= 0) return const SizedBox.shrink();
+
+          double leftFor(int i) {
+            int sum = 0;
+            for (var k = 0; k < i; k++) {
+              sum += weights[k];
+            }
+            return (sum / totalW) * constraints.maxWidth;
+          }
+
+          double widthFor(int i) =>
+              (weights[i] / totalW) * constraints.maxWidth;
+
           return Stack(
             children: [
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
-                left: index * seg,
-                width: seg,
+                left: leftFor(index),
+                width: widthFor(index),
                 top: 0,
                 bottom: 0,
                 child: DecoratedBox(
@@ -487,29 +482,62 @@ class _TypeTabs extends StatelessWidget {
               ),
               Row(
                 children: [
-                  tab(
-                    label: tr.income,
-                    active: index == 0,
-                    onTap: () => onSelect(TxType.income, external: false),
-                  ),
-                  tab(
-                    label: tr.expense,
-                    active: index == 1,
-                    onTap: () =>
-                        onSelect(TxType.expense, external: false),
-                  ),
-                  tab(
-                    label: tr.transferBetweenShort,
-                    active: index == 2,
-                    onTap: () =>
-                        onSelect(TxType.transfer, external: false),
-                  ),
-                  tab(
-                    label: tr.transferExternal,
-                    active: index == 3,
-                    onTap: () =>
-                        onSelect(TxType.expense, external: true),
-                  ),
+                  for (var i = 0; i < 4; i++) ...[
+                    Expanded(
+                      flex: weights[i],
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          switch (i) {
+                            case 0:
+                              onSelect(TxType.income, external: false);
+                              return;
+                            case 1:
+                              onSelect(TxType.expense, external: false);
+                              return;
+                            case 2:
+                              onSelect(TxType.transfer, external: false);
+                              return;
+                            default:
+                              onSelect(TxType.expense, external: true);
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 6,
+                          ),
+                          child: SizedBox(
+                            height: _labelHeight,
+                            child: Center(
+                              child: AnimatedDefaultTextStyle(
+                                duration: const Duration(milliseconds: 200),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: i == index
+                                      ? Colors.white
+                                      : context.mutedText,
+                                  height: 1.1,
+                                ),
+                                child: Text(
+                                  labels[i],
+                                  maxLines: 2,
+                                  overflow: TextOverflow.clip,
+                                  textAlign: TextAlign.center,
+                                  strutStyle: const StrutStyle(
+                                    fontSize: 11,
+                                    height: 1.1,
+                                    forceStrutHeight: true,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],
