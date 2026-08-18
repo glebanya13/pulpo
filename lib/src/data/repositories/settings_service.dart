@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/currencies.dart';
+import 'account_repository.dart';
+
 /// Простой сервис пользовательских настроек через SharedPreferences.
 class SettingsService {
   SettingsService(this._prefs);
@@ -10,6 +13,7 @@ class SettingsService {
   static const _kOnboardingDone = 'onboarding_done';
   static const _kUserName = 'user_name';
   static const _kBaseCurrency = 'base_currency';
+  static const _kBaseCurrencyCountry = 'base_currency_country';
   static const _kThemeMode = 'theme_mode';
   static const _kLocale = 'locale';
   static const _kDailyReminder = 'daily_reminder';
@@ -24,8 +28,18 @@ class SettingsService {
   Future<void> setUserName(String v) => _prefs.setString(_kUserName, v);
 
   String get baseCurrency => _prefs.getString(_kBaseCurrency) ?? 'EUR';
+
+  String get baseCurrencyCountry {
+    final stored = _prefs.getString(_kBaseCurrencyCountry);
+    if (stored != null && stored.isNotEmpty) return stored;
+    return defaultCountryForCode(baseCurrency);
+  }
+
   Future<void> setBaseCurrency(String v) =>
       _prefs.setString(_kBaseCurrency, v);
+
+  Future<void> setBaseCurrencyCountry(String v) =>
+      _prefs.setString(_kBaseCurrencyCountry, v);
 
   String get themeMode => _prefs.getString(_kThemeMode) ?? 'system';
   Future<void> setThemeMode(String v) => _prefs.setString(_kThemeMode, v);
@@ -60,6 +74,7 @@ class SettingsState {
     required this.onboardingDone,
     required this.userName,
     required this.baseCurrency,
+    required this.baseCurrencyCountry,
     required this.themeMode,
     required this.locale,
     required this.dailyReminderEnabled,
@@ -70,6 +85,7 @@ class SettingsState {
   final bool onboardingDone;
   final String userName;
   final String baseCurrency;
+  final String baseCurrencyCountry;
   final String themeMode;
   final String locale;
   final bool dailyReminderEnabled;
@@ -91,6 +107,7 @@ class SettingsState {
     bool? onboardingDone,
     String? userName,
     String? baseCurrency,
+    String? baseCurrencyCountry,
     String? themeMode,
     String? locale,
     bool? dailyReminderEnabled,
@@ -101,6 +118,7 @@ class SettingsState {
       onboardingDone: onboardingDone ?? this.onboardingDone,
       userName: userName ?? this.userName,
       baseCurrency: baseCurrency ?? this.baseCurrency,
+      baseCurrencyCountry: baseCurrencyCountry ?? this.baseCurrencyCountry,
       themeMode: themeMode ?? this.themeMode,
       locale: locale ?? this.locale,
       dailyReminderEnabled: dailyReminderEnabled ?? this.dailyReminderEnabled,
@@ -118,6 +136,7 @@ class SettingsController extends Notifier<SettingsState> {
       onboardingDone: s.onboardingDone,
       userName: s.userName,
       baseCurrency: s.baseCurrency,
+      baseCurrencyCountry: s.baseCurrencyCountry,
       themeMode: s.themeMode,
       locale: s.locale,
       dailyReminderEnabled: s.dailyReminderEnabled,
@@ -129,12 +148,14 @@ class SettingsController extends Notifier<SettingsState> {
   Future<void> completeOnboarding({
     required String name,
     required String currency,
+    required String currencyCountry,
     required String themeMode,
     required String locale,
   }) async {
     final s = ref.read(settingsServiceProvider);
     await s.setUserName(name);
     await s.setBaseCurrency(currency);
+    await s.setBaseCurrencyCountry(currencyCountry);
     await s.setThemeMode(themeMode);
     await s.setLocale(locale);
     await s.setOnboardingDone(true);
@@ -142,6 +163,7 @@ class SettingsController extends Notifier<SettingsState> {
       onboardingDone: true,
       userName: name,
       baseCurrency: currency,
+      baseCurrencyCountry: currencyCountry,
       themeMode: themeMode,
       locale: locale,
     );
@@ -157,13 +179,21 @@ class SettingsController extends Notifier<SettingsState> {
     state = state.copyWith(themeMode: mode);
   }
 
-  Future<void> setBaseCurrency(String currency) async {
-    await ref.read(settingsServiceProvider).setBaseCurrency(currency);
-    state = state.copyWith(baseCurrency: currency);
+  Future<void> setBaseCurrency(String currency, {required String country}) async {
+    final s = ref.read(settingsServiceProvider);
+    await s.setBaseCurrency(currency);
+    await s.setBaseCurrencyCountry(country);
+    state = state.copyWith(
+      baseCurrency: currency,
+      baseCurrencyCountry: country,
+    );
   }
 
   Future<void> setLocale(String locale) async {
     await ref.read(settingsServiceProvider).setLocale(locale);
+    await ref
+        .read(accountRepositoryProvider)
+        .relocalizeDefaultCashAccount(locale);
     state = state.copyWith(locale: locale);
   }
 

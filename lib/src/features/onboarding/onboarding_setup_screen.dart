@@ -46,6 +46,7 @@ class _OnboardingSetupScreenState
     await ref.read(settingsControllerProvider.notifier).completeOnboarding(
           name: name,
           currency: _currency,
+          currencyCountry: _country,
           themeMode: ref.read(settingsControllerProvider).themeMode,
           locale: locale,
         );
@@ -191,7 +192,7 @@ class _OnboardingSetupScreenState
                               fontWeight: FontWeight.w600,
                             ),
                             items: [
-                              for (final c in uniqueAppCurrencies())
+                              for (final c in appCurrencies)
                                 DropdownMenuItem(
                                   value: c.country,
                                   child: Text(
@@ -201,7 +202,7 @@ class _OnboardingSetupScreenState
                                 ),
                             ],
                             onChanged: (v) {
-                              final list = uniqueAppCurrencies();
+                              final list = appCurrencies;
                               final picked = list.firstWhere(
                                 (c) => c.country == v,
                                 orElse: () => list.first,

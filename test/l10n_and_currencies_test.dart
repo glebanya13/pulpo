@@ -13,23 +13,32 @@ void main() {
     expect(en.toLowerCase(), contains('live'));
   });
 
-  test('currencies: EUR and USD are unique (no duplicates)', () {
+  test('currencies: full country list order and coverage', () {
+    expect(appCurrencies.length, 29);
+    expect(appCurrencies.first.country, 'México');
+    expect(appCurrencies[1].country, 'Colombia');
+    expect(appCurrencies[2].country, 'España');
+
+    final countries = appCurrencies.map((c) => c.country).toList();
+    expect(countries, contains('Ecuador'));
+    expect(countries, contains('El Salvador'));
+    expect(countries, contains('Puerto Rico'));
+    expect(countries, contains('Francia'));
+    expect(countries, contains('Alemania'));
+    expect(countries, contains('Italia'));
+  });
+
+  test('currencies: unique list keeps first country per code', () {
     final unique = uniqueAppCurrencies();
 
-    int codeCount(String code) =>
-        unique.where((c) => c.code == code).length;
+    expect(unique.firstWhere((c) => c.code == 'EUR').country, 'España');
+    expect(unique.firstWhere((c) => c.code == 'USD').country, 'Estados Unidos');
+  });
 
-    final eurCount = codeCount('EUR');
-    final usdCount = codeCount('USD');
-
-    expect(eurCount, 1);
-    expect(usdCount, 1);
-
-    final eur = unique.firstWhere((c) => c.code == 'EUR');
-    expect(eur.country, 'España');
-
-    final usd = unique.firstWhere((c) => c.code == 'USD');
-    expect(usd.country, 'Estados Unidos');
+  test('currencies: defaultCountryForCode resolves first match', () {
+    expect(defaultCountryForCode('USD'), 'Estados Unidos');
+    expect(defaultCountryForCode('EUR'), 'España');
+    expect(firstCurrencyForCode('EUR').country, 'España');
   });
 
   test('translations: transfer tab labels exist and are localized', () {
@@ -47,4 +56,3 @@ void main() {
     expect(en.transferExternalTab.toLowerCase(), contains('external'));
   });
 }
-

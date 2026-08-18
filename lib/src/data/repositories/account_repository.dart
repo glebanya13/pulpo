@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../db/app_database.dart';
 import '../db/enums.dart';
+import '../../core/l10n/tr.dart';
 import 'providers.dart';
 
 class AccountRepository {
@@ -69,6 +70,26 @@ class AccountRepository {
             : Value(includeInTotal),
       ),
     );
+  }
+
+  /// Renames default onboarding cash accounts when the app language changes.
+  Future<void> relocalizeDefaultCashAccount(String locale) async {
+    final target = Tr.fromLang(locale).accountTypeCash;
+    final known = {
+      for (final lang in ['es', 'ru', 'en']) Tr.fromLang(lang).accountTypeCash,
+    };
+    final rows = await (_db.select(_db.accounts)
+          ..where(
+            (a) =>
+                a.type.equals(AccountType.cash.index) &
+                a.isArchived.equals(false),
+          ))
+        .get();
+    for (final a in rows) {
+      if (known.contains(a.name) && a.name != target) {
+        await update(id: a.id, name: target);
+      }
+    }
   }
 }
 

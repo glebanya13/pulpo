@@ -380,7 +380,9 @@ class Tr {
   String get expensesByCategories => _get('expenses_by_categories');
   String get noExpensesThisMonth => _get('no_expenses_this_month');
   String get expenseThisMonth => _get('expense_this_month');
+  String get expenseToday => _get('expense_today');
   String get vsPrevMonth => _get('vs_prev_month');
+  String get vsYesterday => _get('vs_yesterday');
   String get cashFlow => _get('cash_flow');
   String get incomeUpper => _get('income_upper');
   String get expenseUpper => _get('expense_upper');
@@ -713,7 +715,9 @@ class Tr {
       'no_expenses_this_month': 'Sin gastos este mes',
       'income_vs_expenses': 'Ingresos vs Gastos · {}',
       'expense_this_month': 'Gasto de este mes',
+      'expense_today': 'Gasto de hoy',
       'vs_prev_month': 'vs mes anterior',
+      'vs_yesterday': 'vs ayer',
       'cash_flow': 'Flujo de caja',
       'income_upper': 'INGRESO',
       'expense_upper': 'GASTO',
@@ -1100,7 +1104,9 @@ class Tr {
       'no_expenses_this_month': 'Нет расходов за этот месяц',
       'income_vs_expenses': 'Доходы vs Расходы · {}',
       'expense_this_month': 'Расход в этом месяце',
+      'expense_today': 'Расход сегодня',
       'vs_prev_month': 'vs прошлый месяц',
+      'vs_yesterday': 'vs вчера',
       'cash_flow': 'Денежный поток',
       'income_upper': 'ПРИХОД',
       'expense_upper': 'РАСХОД',
@@ -1487,7 +1493,9 @@ class Tr {
       'no_expenses_this_month': 'No expenses this month',
       'income_vs_expenses': 'Income vs Expenses · {}',
       'expense_this_month': 'Expense this month',
+      'expense_today': 'Expense today',
       'vs_prev_month': 'vs previous month',
+      'vs_yesterday': 'vs yesterday',
       'cash_flow': 'Cash flow',
       'income_upper': 'INCOME',
       'expense_upper': 'EXPENSE',

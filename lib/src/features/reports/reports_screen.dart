@@ -669,7 +669,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           children: [
             Expanded(
               child: _TrendStat(
-                label: Tr.of(context).expenseThisMonth,
+                label: Tr.of(context).expenseToday,
                 value: formatMoney(currentExpense, currency),
                 accent: AppColors.danger,
               ),
@@ -677,7 +677,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: _TrendStat(
-                label: Tr.of(context).vsPrevMonth,
+                label: Tr.of(context).vsYesterday,
                 value: '${deltaPct >= 0 ? '+' : ''}$deltaPct%',
                 accent: deltaPct > 0 ? AppColors.limeAccent : AppColors.danger,
               ),

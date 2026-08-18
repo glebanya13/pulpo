@@ -33,9 +33,10 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final current = ref.watch(settingsControllerProvider).baseCurrency;
-    final items =
-        uniqueAppCurrencies().where(_match).toList(growable: false);
+    final currentCode = ref.watch(settingsControllerProvider).baseCurrency;
+    final currentCountry =
+        ref.watch(settingsControllerProvider).baseCurrencyCountry;
+    final items = appCurrencies.where(_match).toList(growable: false);
 
     return Scaffold(
       body: SafeArea(
@@ -91,11 +92,15 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
                     for (var i = 0; i < items.length; i++) ...[
                       _Row(
                         item: items[i],
-                        selected: items[i].code == current,
+                        selected: items[i].country == currentCountry &&
+                            items[i].code == currentCode,
                         onTap: () async {
                           await ref
                               .read(settingsControllerProvider.notifier)
-                              .setBaseCurrency(items[i].code);
+                              .setBaseCurrency(
+                                items[i].code,
+                                country: items[i].country,
+                              );
                           if (context.mounted) context.pop();
                         },
                       ),

@@ -242,6 +242,7 @@ Future<void> startLocalDemo(BuildContext context, WidgetRef ref) async {
   await ref.read(settingsControllerProvider.notifier).completeOnboarding(
         name: copy.userName,
         currency: 'EUR',
+        currencyCountry: 'España',
         themeMode: settings.themeMode,
         locale: locale,
       );
