@@ -6,6 +6,41 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
 
+/// In-app mark: new logo with slightly rounded corners.
+class BrandLogo extends StatelessWidget {
+  const BrandLogo({super.key, required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size * 0.22),
+        boxShadow: context.isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Image.asset(
+        'assets/logo.png',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.high,
+      ),
+    );
+  }
+}
+
 /// Header страницы: title с акцентом на 2-й части + subtitle + правая кнопка.
 class PageHeader extends StatelessWidget {
   const PageHeader({
@@ -223,8 +258,7 @@ class TabsPill extends StatelessWidget {
                   for (var i = 0; i < tabs.length; i++)
                     Expanded(
                       flex: weights[i],
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
+                      child: Pressable(
                         onTap: () => onChanged(i),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(

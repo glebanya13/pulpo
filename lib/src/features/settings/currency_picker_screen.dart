@@ -54,12 +54,14 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
                   onTap: () => context.pop(),
                 ),
                 Text(tr.baseCurrency,
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700)),
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: context.primaryText)),
                 const SizedBox(width: 42),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               decoration: BoxDecoration(
@@ -85,34 +87,28 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Container(
                 color: context.surface,
                 child: Column(
                   children: [
-                    for (var i = 0; i < items.length; i++) ...[
+                    for (final item in items)
                       _Row(
-                        item: items[i],
-                        selected: items[i].country == currentCountry &&
-                            items[i].code == currentCode,
+                        item: item,
+                        selected: item.country == currentCountry &&
+                            item.code == currentCode,
                         onTap: () async {
                           await ref
                               .read(settingsControllerProvider.notifier)
                               .setBaseCurrency(
-                                items[i].code,
-                                country: items[i].country,
+                                item.code,
+                                country: item.country,
                               );
                           if (context.mounted) context.pop();
                         },
                       ),
-                      if (i != items.length - 1)
-                        const Padding(
-                          padding: EdgeInsets.only(left: 66, right: 16),
-                          child: Divider(height: 1, color: AppColors.divider),
-                        ),
-                    ],
                   ],
                 ),
               ),
@@ -155,17 +151,15 @@ class _Row extends StatelessWidget {
         ),
         child: Row(
           children: [
-            SizedBox(
-              width: 36,
-              child: Center(
-                  child: Text(item.flag, style: const TextStyle(fontSize: 22))),
-            ),
+            Text(item.flag, style: const TextStyle(fontSize: 22)),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 item.localizedTitle(lang),
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: context.primaryText),
               ),
             ),
             if (selected)

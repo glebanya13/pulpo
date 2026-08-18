@@ -5,8 +5,10 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/common.dart';
 import '../../core/theme/color_well.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/repositories/providers.dart';
@@ -28,12 +30,7 @@ class DashboardScreen extends ConsumerWidget {
       tabPath: '/',
       builder: (context, scroll) => ListView(
       controller: scroll,
-      padding: EdgeInsets.fromLTRB(
-        20,
-        MediaQuery.viewPaddingOf(context).top + 8,
-        20,
-        150 + MediaQuery.paddingOf(context).bottom,
-      ),
+      padding: AppSpacing.tabPagePadding(context),
       children: [
         Row(
           children: [
@@ -58,8 +55,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Image.asset('assets/logo.png',
-                height: 32, filterQuality: FilterQuality.high),
+            const BrandLogo(size: 40),
           ],
         ),
         const SizedBox(height: 10),
@@ -189,6 +185,7 @@ class _BalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       decoration: BoxDecoration(
         color: context.emphasized,
@@ -196,10 +193,11 @@ class _BalanceCard extends StatelessWidget {
         border: Border.all(color: context.emphasizedBorder, width: 1),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             tr.totalBalance,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 11,
@@ -210,6 +208,7 @@ class _BalanceCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             formatMoney(total, currency),
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 32,

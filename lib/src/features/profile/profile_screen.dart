@@ -7,9 +7,9 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
-import '../export/export_sheet.dart';
 import '../settings/settings_screen.dart' show openNameSheet;
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
@@ -32,12 +32,7 @@ class ProfileScreen extends ConsumerWidget {
       tabPath: '/profile',
       builder: (context, scroll) => ListView(
       controller: scroll,
-      padding: EdgeInsets.fromLTRB(
-        20,
-        MediaQuery.viewPaddingOf(context).top + 8,
-        20,
-        140,
-      ),
+      padding: AppSpacing.tabPagePadding(context),
       children: [
         Text(
           tr.profile,
@@ -87,7 +82,7 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              GestureDetector(
+              Pressable(
                 onTap: () => openNameSheet(context, ref, tr),
                 child: Container(
                   width: 40,
@@ -162,7 +157,7 @@ class ProfileScreen extends ConsumerWidget {
               icon: LucideIcons.download,
               iconBg: const Color(0xFFFFF3D6),
               label: tr.exportCsv,
-              onTap: () => showExportSheet(context, ref),
+              onTap: () => context.push('/settings/export'),
             ),
             _MenuRow(
               icon: LucideIcons.info,
@@ -186,7 +181,7 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 12),
-          GestureDetector(
+          Pressable(
             onTap: () => ref.read(cloudAuthProvider).signOut(),
             child: Container(
               width: double.infinity,

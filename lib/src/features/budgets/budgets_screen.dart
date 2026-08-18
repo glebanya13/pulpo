@@ -58,7 +58,7 @@ class BudgetsScreen extends ConsumerWidget {
           children: [
             Row(
               children: [
-                GestureDetector(
+                Pressable(
                   onTap: () => context.pop(),
                   child: Container(
                     width: 42,
@@ -88,7 +88,7 @@ class BudgetsScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                GestureDetector(
+                Pressable(
                   onTap: () =>
                       _openBudgetEditor(context, ref, existing: null),
                   child: Container(
@@ -256,8 +256,7 @@ class _BudgetItem extends ConsumerWidget {
         ? AppColors.danger
         : (progress > 0.7 ? AppColors.warning : AppColors.lime);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return Pressable(
       onTap: () => _openBudgetEditor(context, ref, existing: budget),
       child: Container(
       margin: const EdgeInsets.only(bottom: 10),

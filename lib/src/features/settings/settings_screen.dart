@@ -394,7 +394,7 @@ Future<void> openNameSheet(
               Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
+                    child: Pressable(
                       onTap: () => Navigator.pop(ctx),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -415,7 +415,7 @@ Future<void> openNameSheet(
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: GestureDetector(
+                    child: Pressable(
                       onTap: () async {
                         final name = ctrl.text.trim();
                         if (name.isEmpty) return;

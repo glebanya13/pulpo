@@ -5,13 +5,13 @@ import 'package:flutter/services.dart';
 class Pressable extends StatefulWidget {
   const Pressable({
     super.key,
-    required this.onTap,
+    this.onTap,
     required this.child,
     this.scale = 0.96,
     this.enabled = true,
   });
 
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Widget child;
   final double scale;
   final bool enabled;
@@ -23,8 +23,10 @@ class Pressable extends StatefulWidget {
 class _PressableState extends State<Pressable> {
   var _down = false;
 
+  bool get _active => widget.enabled && widget.onTap != null;
+
   void _set(bool down) {
-    if (!widget.enabled || _down == down) return;
+    if (!_active || _down == down) return;
     setState(() => _down = down);
   }
 
@@ -32,19 +34,19 @@ class _PressableState extends State<Pressable> {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTapDown: widget.enabled ? (_) => _set(true) : null,
-      onTapUp: widget.enabled
+      onTapDown: _active ? (_) => _set(true) : null,
+      onTapUp: _active
           ? (_) {
               Future<void>.delayed(const Duration(milliseconds: 70), () {
                 if (mounted) _set(false);
               });
             }
           : null,
-      onTapCancel: widget.enabled ? () => _set(false) : null,
-      onTap: widget.enabled
+      onTapCancel: _active ? () => _set(false) : null,
+      onTap: _active
           ? () {
               HapticFeedback.selectionClick();
-              widget.onTap();
+              widget.onTap!();
             }
           : null,
       child: AnimatedScale(
@@ -76,10 +78,91 @@ class ScaledElevatedButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Pressable(
       enabled: onPressed != null,
-      onTap: onPressed ?? () {},
+      onTap: onPressed,
       scale: 0.97,
       child: AbsorbPointer(
         child: ElevatedButton(
+          onPressed: onPressed,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// [FilledButton] with the same press scale.
+class ScaledFilledButton extends StatelessWidget {
+  const ScaledFilledButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      enabled: onPressed != null,
+      onTap: onPressed,
+      scale: 0.97,
+      child: AbsorbPointer(
+        child: FilledButton(
+          onPressed: onPressed,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// [TextButton] with the same press scale.
+class ScaledTextButton extends StatelessWidget {
+  const ScaledTextButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      enabled: onPressed != null,
+      onTap: onPressed,
+      scale: 0.97,
+      child: AbsorbPointer(
+        child: TextButton(
+          onPressed: onPressed,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// [OutlinedButton] with the same press scale.
+class ScaledOutlinedButton extends StatelessWidget {
+  const ScaledOutlinedButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      enabled: onPressed != null,
+      onTap: onPressed,
+      scale: 0.97,
+      child: AbsorbPointer(
+        child: OutlinedButton(
           onPressed: onPressed,
           child: child,
         ),

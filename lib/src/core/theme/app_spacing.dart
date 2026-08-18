@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 class AppSpacing {
   const AppSpacing._();
 
@@ -16,4 +18,19 @@ class AppSpacing {
   static const double rXl = 24;
   static const double rXxl = 28;
   static const double rPill = 100;
+
+  /// Space so the last item sits just above the floating tab bar.
+  static double tabBodyBottom(BuildContext context) {
+    final home = MediaQuery.paddingOf(context).bottom;
+    return 82 + (home * 0.2).clamp(0, 8);
+  }
+
+  static EdgeInsets tabPagePadding(BuildContext context) {
+    return EdgeInsets.fromLTRB(
+      lg,
+      MediaQuery.viewPaddingOf(context).top + xs,
+      lg,
+      tabBodyBottom(context),
+    );
+  }
 }

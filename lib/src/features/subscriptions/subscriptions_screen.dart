@@ -182,7 +182,7 @@ Future<void> _openEditor(
               onChanged: (v) => setSt(() => cycle = v ?? 'monthly'),
             ),
             const SizedBox(height: 12),
-            InkWell(
+            Pressable(
               onTap: () async {
                 final picked = await showDatePicker(
                   context: ctx,
@@ -339,8 +339,7 @@ class _SubCard extends ConsumerWidget {
     final daysUntil = sub.nextPayment.difference(DateTime.now()).inDays;
 
     final accentColor = context.accent;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return Pressable(
       onTap: () => _openEditor(context, ref, existing: sub),
       child: Container(
       margin: const EdgeInsets.only(bottom: 8),

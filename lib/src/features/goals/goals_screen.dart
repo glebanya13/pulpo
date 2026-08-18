@@ -13,6 +13,7 @@ import '../../data/repositories/goal_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 
 class GoalsScreen extends ConsumerWidget {
   const GoalsScreen({super.key});
@@ -110,15 +111,21 @@ class _GoalCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                IconButton(
-                  onPressed: onEdit,
-                  icon: Icon(LucideIcons.pencil,
-                      size: 16, color: context.mutedText),
+                Pressable(
+                  onTap: onEdit,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(LucideIcons.pencil,
+                        size: 16, color: context.mutedText),
+                  ),
                 ),
-                IconButton(
-                  onPressed: onDelete,
-                  icon: Icon(LucideIcons.trash2,
-                      size: 16, color: AppColors.danger),
+                Pressable(
+                  onTap: onDelete,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(LucideIcons.trash2,
+                        size: 16, color: AppColors.danger),
+                  ),
                 ),
               ],
             ),
@@ -150,7 +157,7 @@ class _GoalCard extends StatelessWidget {
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(
+              child: ScaledTextButton(
                 onPressed: onAdd,
                 child: Text(tr.addToGoal),
               ),
@@ -216,7 +223,7 @@ Future<void> _openProgress(
               ),
             ],
             const SizedBox(height: 16),
-            FilledButton(
+            ScaledFilledButton(
               onPressed: () async {
                 final v =
                     double.tryParse(amountCtrl.text.replaceAll(',', '.'));
@@ -294,7 +301,7 @@ Future<void> _openGoalEditor(
               decoration: InputDecoration(labelText: Tr.of(ctx).goalSaved),
             ),
             const SizedBox(height: 12),
-            InkWell(
+            Pressable(
               onTap: () async {
                 final picked = await showDatePicker(
                   context: ctx,
@@ -317,7 +324,7 @@ Future<void> _openGoalEditor(
               ),
             ),
             const SizedBox(height: 12),
-            FilledButton(
+            ScaledFilledButton(
               onPressed: () async {
                 final name = nameCtrl.text.trim();
                 final target =

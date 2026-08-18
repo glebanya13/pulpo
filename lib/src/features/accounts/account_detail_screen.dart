@@ -242,7 +242,7 @@ class AccountDetailScreen extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: GestureDetector(
+                  child: Pressable(
                     onTap: () =>
                         _openAccountEditor(context, ref, existing: account),
                     child: Container(
@@ -275,7 +275,7 @@ class _CircleBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
         width: 42,

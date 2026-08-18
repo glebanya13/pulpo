@@ -166,7 +166,7 @@ Future<void> _openRuleEditor(
               onChanged: (v) => setSt(() => frequency = v ?? 'monthly'),
             ),
             const SizedBox(height: 12),
-            InkWell(
+            Pressable(
               onTap: () async {
                 final picked = await showDatePicker(
                   context: ctx,
@@ -286,8 +286,7 @@ class _RuleCard extends ConsumerWidget {
     final template = RecurringTemplate.fromJson(rule.templateJson);
     final daysUntil = rule.nextRunAt.difference(DateTime.now()).inDays;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return Pressable(
       onTap: () => _openRuleEditor(context, ref, existing: rule),
       child: Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -363,7 +362,7 @@ class _RuleCard extends ConsumerWidget {
                     ),
                 ],
               ),
-              GestureDetector(
+              Pressable(
                 onTap: () => ref
                     .read(recurringRepositoryProvider)
                     .togglePause(rule.id, !rule.isPaused),

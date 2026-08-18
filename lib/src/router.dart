@@ -17,6 +17,7 @@ import 'features/recurring/recurring_screen.dart';
 import 'features/reports/reports_screen.dart';
 import 'features/auth/sign_in_screen.dart';
 import 'features/security/security_screen.dart';
+import 'features/export/export_screen.dart';
 import 'features/settings/about_screen.dart';
 import 'features/settings/backups_screen.dart';
 import 'features/settings/currency_picker_screen.dart';
@@ -231,6 +232,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'backups',
             pageBuilder: (context, state) =>
                 _fadePage(state, const BackupsScreen()),
+          ),
+          GoRoute(
+            path: 'export',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const ExportScreen()),
           ),
           GoRoute(
             path: 'account',

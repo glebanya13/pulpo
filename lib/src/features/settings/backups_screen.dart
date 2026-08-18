@@ -13,8 +13,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/backup_service.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 import '../auth/cloud_auth.dart';
-import '../export/export_sheet.dart';
 
 class BackupsScreen extends ConsumerStatefulWidget {
   const BackupsScreen({super.key});
@@ -180,7 +180,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               icon: LucideIcons.download,
               label: tr.exportCsv,
               filled: false,
-              onTap: () => showExportSheet(context, ref),
+              onTap: () => context.push('/settings/export'),
             ),
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 10),
@@ -241,7 +241,7 @@ class _Action extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -341,23 +341,32 @@ class _BackupRow extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            icon: Icon(LucideIcons.rotateCcw,
-                size: 16, color: context.primaryText),
-            onPressed: onRestore,
+          Pressable(
+            onTap: onRestore,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(LucideIcons.rotateCcw,
+                  size: 16, color: context.primaryText),
+            ),
           ),
-          IconButton(
-            icon: const Icon(LucideIcons.share,
-                size: 16, color: AppColors.limeAccent),
-            onPressed: () => Share.shareXFiles([XFile(file.path)]),
+          Pressable(
+            onTap: () => Share.shareXFiles([XFile(file.path)]),
+            child: const Padding(
+              padding: EdgeInsets.all(8),
+              child: Icon(LucideIcons.share,
+                  size: 16, color: AppColors.limeAccent),
+            ),
           ),
-          IconButton(
-            icon: const Icon(LucideIcons.trash2,
-                size: 16, color: AppColors.danger),
-            onPressed: () async {
+          Pressable(
+            onTap: () async {
               await file.delete();
               onDeleted();
             },
+            child: const Padding(
+              padding: EdgeInsets.all(8),
+              child: Icon(LucideIcons.trash2,
+                  size: 16, color: AppColors.danger),
+            ),
           ),
         ],
       ),

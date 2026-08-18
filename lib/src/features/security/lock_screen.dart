@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/l10n/tr.dart';
-import '../../core/theme/app_colors.dart';
+import '../../widgets/common.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/scheduled_posting.dart';
 import 'lock_controller.dart';
@@ -77,7 +77,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
           child: Column(
             children: [
               const SizedBox(height: 36),
-              Image.asset('assets/logo.png', height: 64),
+              const BrandLogo(size: 64),
               const SizedBox(height: 24),
               Text(
                 showPin ? tr.enterPin : tr.useBiometrics,

@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 
 class ThemePickerScreen extends ConsumerWidget {
   const ThemePickerScreen({super.key});
@@ -35,8 +36,8 @@ class ThemePickerScreen extends ConsumerWidget {
                 color: context.surface,
                 child: Column(
                   children: [
-                    for (var i = 0; i < options.length; i++) ...[
-                      InkWell(
+                    for (var i = 0; i < options.length; i++)
+                      Pressable(
                         onTap: () async {
                           await ref
                               .read(settingsControllerProvider.notifier)
@@ -81,12 +82,6 @@ class ThemePickerScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      if (i != options.length - 1)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 54, right: 16),
-                          child: Divider(height: 1, color: context.divider),
-                        ),
-                    ],
                   ],
                 ),
               ),

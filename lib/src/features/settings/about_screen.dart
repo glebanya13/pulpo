@@ -7,6 +7,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/open_link.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -22,11 +23,7 @@ class AboutScreen extends StatelessWidget {
             PageHeader(first: tr.about, onBack: () => context.pop()),
             const SizedBox(height: 24),
             Center(
-              child: Image.asset(
-                'assets/logo.png',
-                height: 72,
-                filterQuality: FilterQuality.high,
-              ),
+              child: BrandLogo(size: 72),
             ),
             const SizedBox(height: 12),
             const Center(
@@ -116,7 +113,7 @@ class _LinkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return Pressable(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

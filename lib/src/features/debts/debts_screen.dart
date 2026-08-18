@@ -175,7 +175,7 @@ Future<void> _openDebtEditor(
               decoration: InputDecoration(labelText: Tr.of(ctx).amount),
             ),
             const SizedBox(height: 12),
-            InkWell(
+            Pressable(
               onTap: () async {
                 final picked = await showDatePicker(
                   context: ctx,
@@ -208,7 +208,7 @@ Future<void> _openDebtEditor(
                               .format(dueDate!)),
                     ),
                     if (dueDate != null)
-                      GestureDetector(
+                      Pressable(
                         onTap: () => setSt(() => dueDate = null),
                         child: Icon(LucideIcons.x,
                             size: 16, color: ctx.faintText),
@@ -364,9 +364,8 @@ class _DebtCard extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
+      child: Pressable(
         onTap: () => _openDebtActions(context, ref),
-        borderRadius: BorderRadius.circular(22),
         child: SoftCard(
           padding: const EdgeInsets.all(18),
           radius: 22,
@@ -570,9 +569,8 @@ class _DebtCard extends ConsumerWidget {
     bool danger = false,
   }) {
     final color = danger ? const Color(0xFFE53E3E) : context.primaryText;
-    return InkWell(
+    return Pressable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
         child: Row(

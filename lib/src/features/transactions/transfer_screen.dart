@@ -114,22 +114,25 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
             ),
             const SizedBox(height: 12),
             for (final a in accs)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: ColorWellIcon(
-                  color: Color(a.color),
-                  icon: lucideByKey(a.icon),
-                  size: 42,
-                  iconSize: 18,
-                  radius: 14,
-                ),
-                title: Text(a.name,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: context.primaryText)),
-                subtitle: Text(a.currency,
-                    style: TextStyle(color: context.mutedText)),
+              Pressable(
                 onTap: () => Navigator.pop(ctx, a),
+                scale: 0.98,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: ColorWellIcon(
+                    color: Color(a.color),
+                    icon: lucideByKey(a.icon),
+                    size: 42,
+                    iconSize: 18,
+                    radius: 14,
+                  ),
+                  title: Text(a.name,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: context.primaryText)),
+                  subtitle: Text(a.currency,
+                      style: TextStyle(color: context.mutedText)),
+                ),
               ),
           ],
         ),
@@ -287,7 +290,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
             color: context.surface,
             borderRadius: BorderRadius.circular(24),
           ),
-          child: InkWell(
+          child: Pressable(
             onTap: () async {
               final ctrl =
                   TextEditingController(text: _fee.toStringAsFixed(2));
@@ -375,7 +378,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  GestureDetector(
+                  Pressable(
                     onTap: () => context.pop(),
                     child: Container(
                       width: 42,
@@ -512,9 +515,8 @@ class _RateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return Pressable(
       onTap: onEdit,
-      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(

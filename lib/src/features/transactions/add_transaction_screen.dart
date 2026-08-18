@@ -448,8 +448,7 @@ class _TypeTabs extends StatelessWidget {
           children: [
             for (final i in [a, b])
               Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+                child: Pressable(
                   onTap: () {
                     switch (i) {
                       case 0:
@@ -711,7 +710,7 @@ class _CategoryPicker extends ConsumerWidget {
                   crossAxisSpacing: 12,
                   children: [
                     for (final c in cats)
-                      GestureDetector(
+                      Pressable(
                         onTap: () => Navigator.pop(context, c),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -790,22 +789,25 @@ class _AccountPicker extends ConsumerWidget {
                 )
               else
                 for (final a in accounts)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: ColorWellIcon(
-                      color: Color(a.color),
-                      icon: lucideByKey(a.icon),
-                      size: 40,
-                      iconSize: 18,
-                      radius: 12,
-                    ),
-                    title: Text(a.name,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: context.primaryText)),
-                    subtitle: Text(a.currency,
-                        style: TextStyle(color: context.mutedText)),
+                  Pressable(
                     onTap: () => Navigator.pop(context, a),
+                    scale: 0.98,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: ColorWellIcon(
+                        color: Color(a.color),
+                        icon: lucideByKey(a.icon),
+                        size: 40,
+                        iconSize: 18,
+                        radius: 12,
+                      ),
+                      title: Text(a.name,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: context.primaryText)),
+                      subtitle: Text(a.currency,
+                          style: TextStyle(color: context.mutedText)),
+                    ),
                   ),
             ],
           ),

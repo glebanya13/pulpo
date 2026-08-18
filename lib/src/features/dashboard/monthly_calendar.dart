@@ -14,6 +14,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/transaction_tile.dart';
+import '../../widgets/pressable.dart';
 
 /// Календарь-обзор транзакций за месяц.
 /// Ячейка дня: число + до двух пилюль (расход красная, доход зелёная).
@@ -211,13 +212,17 @@ class _Mini extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(label,
-                style: TextStyle(fontSize: 11, color: context.mutedText)),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: context.mutedText),
+            ),
             const SizedBox(height: 2),
             Text(
               value,
+              textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -237,9 +242,8 @@ class _NavBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkResponse(
+    return Pressable(
       onTap: onTap,
-      radius: 22,
       child: Container(
         width: 32,
         height: 32,
@@ -376,9 +380,8 @@ class _DayCell extends StatelessWidget {
     final showExpense = inMonth && expense > 0;
     final both = showIncome && showExpense;
 
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 4),
         child: Column(
@@ -541,12 +544,11 @@ class _DaySheet extends StatelessWidget {
                 itemCount: txs.length,
                 itemBuilder: (ctx, i) {
                   final t = txs[i];
-                  return InkWell(
+                  return Pressable(
                     onTap: () {
                       Navigator.of(ctx).pop();
                       context.push('/tx/${t.id}');
                     },
-                    borderRadius: BorderRadius.circular(18),
                     child: TransactionTile(tx: t),
                   );
                 },

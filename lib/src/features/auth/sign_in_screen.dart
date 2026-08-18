@@ -117,7 +117,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               decoration: InputDecoration(hintText: tr.password),
             ),
             const SizedBox(height: 12),
-            FilledButton(
+            ScaledFilledButton(
               onPressed: _busy
                   ? null
                   : () => _run(
@@ -129,7 +129,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               child: Text(tr.signIn),
             ),
             const SizedBox(height: 8),
-            OutlinedButton(
+            ScaledOutlinedButton(
               onPressed: _busy
                   ? null
                   : () => _run(
@@ -141,7 +141,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               child: Text(tr.register),
             ),
             const SizedBox(height: 8),
-            TextButton(
+            ScaledTextButton(
               onPressed: _busy ? null : () => context.pop(),
               child: Text(tr.continueWithoutAccount),
             ),
@@ -165,8 +165,7 @@ class _Btn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Pressable(
-      enabled: onTap != null,
-      onTap: onTap ?? () {},
+      onTap: onTap,
       child: Opacity(
         opacity: onTap == null ? 0.5 : 1,
         child: Container(

@@ -174,7 +174,7 @@ Future<void> _openCategoryEditor(
             Wrap(
               spacing: 10,
               children: _palette
-                  .map((c) => GestureDetector(
+                  .map((c) => Pressable(
                         onTap: () => setSt(() => color = c),
                         child: Container(
                           width: 34,
@@ -210,7 +210,7 @@ Future<void> _openCategoryEditor(
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 for (final key in _iconKeys)
-                  GestureDetector(
+                  Pressable(
                     onTap: () => setSt(() => icon = key),
                     child: Container(
                       decoration: BoxDecoration(
@@ -309,7 +309,7 @@ class _CatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return Pressable(
       onTap: onTap,
       child: Padding(
       padding: EdgeInsets.only(left: indent ? 30 : 16, right: 16),

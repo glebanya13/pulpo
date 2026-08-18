@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
@@ -70,12 +71,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       tabPath: '/reports',
       builder: (context, scroll) => ListView(
       controller: scroll,
-      padding: EdgeInsets.fromLTRB(
-        20,
-        MediaQuery.viewPaddingOf(context).top + 8,
-        20,
-        140,
-      ),
+      padding: AppSpacing.tabPagePadding(context),
       children: [
         Text(
           tr.analytics,

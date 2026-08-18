@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
+import '../../widgets/pressable.dart';
 
 class PinPad extends StatelessWidget {
   const PinPad({
@@ -59,7 +60,6 @@ class PinPad extends StatelessWidget {
                   onTap: key.isEmpty
                       ? null
                       : () {
-                          HapticFeedback.selectionClick();
                           if (key == '⌫') {
                             if (value.isEmpty) return;
                             onChanged(value.substring(0, value.length - 1));
@@ -93,24 +93,22 @@ class _Key extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (label.isEmpty) return const SizedBox(width: 72, height: 72);
-    return Material(
-      color: bg,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 72,
-          height: 72,
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: fg,
-                fontSize: label == '⌫' ? 22 : 26,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          color: bg,
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            color: fg,
+            fontSize: label == '⌫' ? 22 : 26,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),

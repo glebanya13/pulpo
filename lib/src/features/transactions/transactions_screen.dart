@@ -7,6 +7,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
@@ -57,12 +58,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        MediaQuery.viewPaddingOf(context).top + 8,
-        20,
-        140,
-      ),
+      padding: AppSpacing.tabPagePadding(context),
       children: [
         Row(
           children: [
@@ -77,7 +73,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 ),
               ),
             ),
-            GestureDetector(
+            Pressable(
               onTap: () => context.push('/accounts'),
               child: Container(
                 width: 42,
@@ -334,21 +330,24 @@ Future<_SheetPick<T>> _openPickSheet<T>(
                   itemBuilder: (_, i) {
                     final item = items[i];
                     final active = item.$1 == selected;
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        item.$2,
-                        style: TextStyle(
-                          fontWeight:
-                              active ? FontWeight.w700 : FontWeight.w500,
-                          color: ctx.primaryText,
-                        ),
-                      ),
-                      trailing: active
-                          ? const Icon(LucideIcons.check,
-                              color: AppColors.limeAccent, size: 20)
-                          : null,
+                    return Pressable(
                       onTap: () => Navigator.pop(ctx, _SheetPick.ok(item.$1)),
+                      scale: 0.98,
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          item.$2,
+                          style: TextStyle(
+                            fontWeight:
+                                active ? FontWeight.w700 : FontWeight.w500,
+                            color: ctx.primaryText,
+                          ),
+                        ),
+                        trailing: active
+                            ? const Icon(LucideIcons.check,
+                                color: AppColors.limeAccent, size: 20)
+                            : null,
+                      ),
                     );
                   },
                 ),
@@ -378,7 +377,7 @@ class _FilterPick extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selected = value != null;
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
         height: 42,
@@ -402,7 +401,7 @@ class _FilterPick extends StatelessWidget {
               ),
             ),
             if (selected && onClear != null)
-              GestureDetector(
+              Pressable(
                 onTap: onClear,
                 child: Padding(
                   padding: const EdgeInsets.all(6),

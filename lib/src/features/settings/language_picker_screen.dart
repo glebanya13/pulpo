@@ -49,7 +49,7 @@ class LanguagePickerScreen extends ConsumerWidget {
                 color: context.surface,
                 child: Column(
                   children: [
-                    for (var i = 0; i < _langs.length; i++) ...[
+                    for (var i = 0; i < _langs.length; i++)
                       Pressable(
                         onTap: () async {
                           await ref
@@ -93,12 +93,6 @@ class LanguagePickerScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      if (i != _langs.length - 1)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 66, right: 16),
-                          child: Divider(height: 1, color: context.divider),
-                        ),
-                    ],
                   ],
                 ),
               ),
