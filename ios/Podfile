@@ -28,7 +28,7 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_frameworks!
+  use_frameworks! :linkage => :static
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
@@ -42,10 +42,39 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       config.build_settings['ENABLE_BITCODE'] = 'NO'
-      # Skip fat arm64+x86_64 binaries (lipo / CreateUniversalBinary).
-      # Apple Silicon simulator is arm64; x86_64 slices also blow disk on gRPC.
-      config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
       config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386 x86_64'
+      # Debug-only: skip fat simulator binaries. Release/archive must stay arm64.
+      if config.name == 'Debug'
+        config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
+      end
+    end
+
+    # Xcode 15+/16: "script phase does not specify any outputs" (BoringSSL-GRPC / gRPC).
+    target.shell_script_build_phases.each do |phase|
+      next unless phase.name&.include?('Create Symlinks to Header Folders')
+      phase.always_out_of_date = '1'
+    end
+
+    # Xcode 16 parses -GCC_WARN_INHIBIT_ALL_WARNINGS as unsupported -G.
+    if target.name == 'BoringSSL-GRPC'
+      target.source_build_phase.files.each do |file|
+        flags = file.settings&.[]('COMPILER_FLAGS')
+        next if flags.nil?
+        file.settings['COMPILER_FLAGS'] = flags
+            .split
+            .reject { |flag| flag == '-GCC_WARN_INHIBIT_ALL_WARNINGS' }
+            .join(' ')
+      end
+    end
+
+    # Resource bundles must not be code-signed during App Store archive.
+    if target.respond_to?(:product_type) &&
+        target.product_type == 'com.apple.product-type.bundle'
+      target.build_configurations.each do |config|
+        config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+      end
     end
   end
 end
