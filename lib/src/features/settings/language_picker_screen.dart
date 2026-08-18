@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 
 class LanguagePickerScreen extends ConsumerWidget {
   const LanguagePickerScreen({super.key});
@@ -49,13 +50,14 @@ class LanguagePickerScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     for (var i = 0; i < _langs.length; i++) ...[
-                      InkWell(
+                      Pressable(
                         onTap: () async {
                           await ref
                               .read(settingsControllerProvider.notifier)
                               .setLocale(_langs[i].$1);
                           if (context.mounted) context.pop();
                         },
+                        scale: 0.99,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 14),

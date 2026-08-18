@@ -13,6 +13,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/transaction_tile.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -213,9 +214,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 onDismissed: (_) => ref
                     .read(transactionRepositoryProvider)
                     .delete(t.id),
-                child: InkWell(
+                child: Pressable(
                   onTap: () => context.push('/tx/${t.id}'),
-                  borderRadius: BorderRadius.circular(18),
                   child: TransactionTile(tx: t),
                 ),
               ),

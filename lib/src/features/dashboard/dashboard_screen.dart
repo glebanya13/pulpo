@@ -65,30 +65,38 @@ class DashboardScreen extends ConsumerWidget {
         const SizedBox(height: 10),
         _BalanceCard(total: total, currency: currency),
         const SizedBox(height: 6),
-        Row(
+        Column(
           children: [
-            _QuickChip(
-              icon: LucideIcons.plus,
-              label: tr.income,
-              onTap: () => context.push('/add?type=income'),
+            Row(
+              children: [
+                _QuickChip(
+                  icon: LucideIcons.plus,
+                  label: tr.income,
+                  onTap: () => context.push('/add?type=income'),
+                ),
+                const SizedBox(width: 6),
+                _QuickChip(
+                  icon: LucideIcons.minus,
+                  label: tr.expense,
+                  onTap: () => context.push('/add?type=expense'),
+                ),
+              ],
             ),
-            const SizedBox(width: 6),
-            _QuickChip(
-              icon: LucideIcons.minus,
-              label: tr.expense,
-              onTap: () => context.push('/add?type=expense'),
-            ),
-            const SizedBox(width: 6),
-            _QuickChip(
-              icon: LucideIcons.arrowLeftRight,
-              label: tr.transferBetweenAccounts,
-              onTap: () => context.push('/add?type=transfer'),
-            ),
-            const SizedBox(width: 6),
-            _QuickChip(
-              icon: LucideIcons.send,
-              label: tr.transferExternal,
-              onTap: () => context.push('/add?type=expense&mode=external'),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                _QuickChip(
+                  icon: LucideIcons.arrowLeftRight,
+                  label: tr.transferBetweenAccounts,
+                  onTap: () => context.push('/add?type=transfer'),
+                ),
+                const SizedBox(width: 6),
+                _QuickChip(
+                  icon: LucideIcons.send,
+                  label: tr.transferExternal,
+                  onTap: () => context.push('/add?type=expense&mode=external'),
+                ),
+              ],
             ),
           ],
         ),
@@ -133,7 +141,6 @@ class _QuickChip extends StatelessWidget {
     required this.label,
     required this.onTap,
   });
-  static const _labelHeight = 24.0;
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -144,7 +151,7 @@ class _QuickChip extends StatelessWidget {
       child: Pressable(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
             color: context.surface,
             borderRadius: BorderRadius.circular(16),
@@ -152,27 +159,17 @@ class _QuickChip extends StatelessWidget {
           child: Column(
             children: [
               Icon(icon, size: 18, color: context.primaryText),
-              const SizedBox(height: 4),
-              SizedBox(
-                height: _labelHeight,
-                child: Center(
-                  child: Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.clip,
-                    strutStyle: const StrutStyle(
-                      fontSize: 11,
-                      height: 1.1,
-                      forceStrutHeight: true,
-                    ),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      height: 1.1,
-                      color: context.primaryText,
-                    ),
-                  ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                  color: context.primaryText,
                 ),
               ),
             ],
@@ -243,8 +240,8 @@ class _HomeLinks extends StatelessWidget {
       return Pressable(
         onTap: () => context.push(i.$3),
         child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: context.surface,
             borderRadius: BorderRadius.circular(14),
@@ -262,11 +259,12 @@ class _HomeLinks extends StatelessWidget {
               Expanded(
                 child: Text(
                   i.$2,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  overflow: TextOverflow.clip,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
+                    height: 1.1,
                     color: context.primaryText,
                   ),
                 ),

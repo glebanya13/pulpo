@@ -12,14 +12,92 @@ class AppCurrency {
   final String flag;
 
   String get title => '$country — $code • $symbol';
+
+  String localizedCountry(String lang) {
+    switch (lang) {
+      case 'en':
+        return _countryEn[country] ?? country;
+      case 'ru':
+        return _countryRu[country] ?? country;
+      default:
+        return country;
+    }
+  }
+
+  String localizedTitle(String lang) =>
+      '${localizedCountry(lang)} — $code • $symbol';
 }
+
+const _countryEn = <String, String>{
+  'España': 'Spain',
+  'México': 'Mexico',
+  'Colombia': 'Colombia',
+  'Argentina': 'Argentina',
+  'Perú': 'Peru',
+  'Venezuela': 'Venezuela',
+  'Chile': 'Chile',
+  'Estados Unidos': 'United States',
+  'Ecuador': 'Ecuador',
+  'Guatemala': 'Guatemala',
+  'Bolivia': 'Bolivia',
+  'República Dominicana': 'Dominican Republic',
+  'Cuba': 'Cuba',
+  'Honduras': 'Honduras',
+  'Paraguay': 'Paraguay',
+  'Nicaragua': 'Nicaragua',
+  'El Salvador': 'El Salvador',
+  'Costa Rica': 'Costa Rica',
+  'Panamá': 'Panama',
+  'Uruguay': 'Uruguay',
+  'Puerto Rico': 'Puerto Rico',
+  'Guinea Ecuatorial': 'Equatorial Guinea',
+  'Brasil': 'Brazil',
+  'Francia': 'France',
+  'Alemania': 'Germany',
+  'Reino Unido': 'United Kingdom',
+  'Italia': 'Italy',
+  'Canadá': 'Canada',
+  'Suiza': 'Switzerland',
+};
+
+const _countryRu = <String, String>{
+  'España': 'Испания',
+  'México': 'Мексика',
+  'Colombia': 'Колумбия',
+  'Argentina': 'Аргентина',
+  'Perú': 'Перу',
+  'Venezuela': 'Венесуэла',
+  'Chile': 'Чили',
+  'Estados Unidos': 'США',
+  'Ecuador': 'Эквадор',
+  'Guatemala': 'Гватемала',
+  'Bolivia': 'Боливия',
+  'República Dominicana': 'Доминиканская Республика',
+  'Cuba': 'Куба',
+  'Honduras': 'Гондурас',
+  'Paraguay': 'Парагвай',
+  'Nicaragua': 'Никарагуа',
+  'El Salvador': 'Сальвадор',
+  'Costa Rica': 'Коста-Рика',
+  'Panamá': 'Панама',
+  'Uruguay': 'Уругвай',
+  'Puerto Rico': 'Пуэрто-Рико',
+  'Guinea Ecuatorial': 'Экваториальная Гвинея',
+  'Brasil': 'Бразилия',
+  'Francia': 'Франция',
+  'Alemania': 'Германия',
+  'Reino Unido': 'Великобритания',
+  'Italia': 'Италия',
+  'Canadá': 'Канада',
+  'Suiza': 'Швейцария',
+};
 
 /// Countries and currencies in the required order.
 /// Same code may appear for multiple countries (EUR, USD).
 const appCurrencies = <AppCurrency>[
+  AppCurrency(country: 'España', code: 'EUR', symbol: '€', flag: '🇪🇸'),
   AppCurrency(country: 'México', code: 'MXN', symbol: r'$', flag: '🇲🇽'),
   AppCurrency(country: 'Colombia', code: 'COP', symbol: r'$', flag: '🇨🇴'),
-  AppCurrency(country: 'España', code: 'EUR', symbol: '€', flag: '🇪🇸'),
   AppCurrency(country: 'Argentina', code: 'ARS', symbol: r'$', flag: '🇦🇷'),
   AppCurrency(country: 'Perú', code: 'PEN', symbol: 'S/', flag: '🇵🇪'),
   AppCurrency(country: 'Venezuela', code: 'VES', symbol: 'Bs.', flag: '🇻🇪'),

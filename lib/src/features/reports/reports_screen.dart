@@ -15,6 +15,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
 import 'stats_period.dart';
 
@@ -98,7 +99,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             children: [
               for (final k in StatsPeriodKind.values)
                 if (k != StatsPeriodKind.custom) ...[
-                  GestureDetector(
+                  Pressable(
                     onTap: () =>
                         ref.read(statsPeriodProvider.notifier).setKind(k),
                     child: Container(
@@ -137,7 +138,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (context, i) {
               final active = _tab == i;
-              return GestureDetector(
+              return Pressable(
                 onTap: () => setState(() => _tab = i),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -450,7 +451,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             borderRadius: BorderRadius.circular(24),
           ),
           child: Center(
-            child: Text(Tr.of(context).noExpensesThisMonth,
+            child: Text(Tr.of(context).noExpensesForPeriod(periodName),
                 style: TextStyle(color: context.mutedText)),
           ),
         ),

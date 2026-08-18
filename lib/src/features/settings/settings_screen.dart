@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/app_info.dart';
+import '../../core/currencies.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/notifications/daily_reminder.dart';
 import '../../core/open_link.dart';
@@ -61,7 +62,7 @@ class SettingsScreen extends ConsumerWidget {
                   iconBg: AppColors.bgFood,
                   title: tr.baseCurrency,
                   subtitle: tr.forTotalsReports,
-                  trailing: settings.baseCurrency,
+                  trailing: '${currencyForCountry(settings.baseCurrencyCountry)?.localizedCountry(settings.locale) ?? settings.baseCurrencyCountry} · ${settings.baseCurrency}',
                   onTap: () => context.push('/settings/currency'),
                 ),
                 _SettingsRow(

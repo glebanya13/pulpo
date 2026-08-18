@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/fx_rate_service.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
@@ -38,7 +39,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     super.dispose();
   }
 
-  String _fxKey(String from, String to) => 'fx_rate_${from}_${to}';
+  String _fxKey(String from, String to) => 'fx_rate_${from}_$to';
 
   void _tryLoadFxRate() {
     final from = _from;
@@ -49,6 +50,22 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     final key = _fxKey(from.currency, to.currency);
     final last = prefs.getDouble(key);
     if (last != null && last > 0) _rate = last;
+  }
+
+  Future<void> _refreshFxRate() async {
+    final from = _from;
+    final to = _to;
+    if (from == null || to == null) return;
+    if (from.currency == to.currency) {
+      setState(() => _rate = 1);
+      return;
+    }
+    setState(_tryLoadFxRate);
+    final live = await FxRateService().fetchRate(from.currency, to.currency);
+    if (!mounted) return;
+    if (live == null || live <= 0) return;
+    setState(() => _rate = live);
+    _trySaveFxRate();
   }
 
   void _trySaveFxRate() {
@@ -127,11 +144,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
         }
       });
 
-      // Both sides are selected => restore last used FX rate for this pair.
       if (_from != null && _to != null) {
-        setState(() {
-          _tryLoadFxRate();
-        });
+        await _refreshFxRate();
       }
     }
   }
@@ -428,9 +442,8 @@ class _AccountRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final balances = ref.watch(accountBalancesProvider);
-    return InkWell(
+    return Pressable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(

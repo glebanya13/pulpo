@@ -379,6 +379,8 @@ class Tr {
   String get totalWord => _get('total_word');
   String get expensesByCategories => _get('expenses_by_categories');
   String get noExpensesThisMonth => _get('no_expenses_this_month');
+  String noExpensesForPeriod(String period) =>
+      _get('no_expenses_period').replaceAll('{}', period);
   String get expenseThisMonth => _get('expense_this_month');
   String get expenseToday => _get('expense_today');
   String get vsPrevMonth => _get('vs_prev_month');
@@ -713,6 +715,7 @@ class Tr {
       'total_word': 'total',
       'expenses_by_categories': 'Gastos por categoría',
       'no_expenses_this_month': 'Sin gastos este mes',
+      'no_expenses_period': 'Sin gastos · {}',
       'income_vs_expenses': 'Ingresos vs Gastos · {}',
       'expense_this_month': 'Gasto de este mes',
       'expense_today': 'Gasto de hoy',
@@ -1102,6 +1105,7 @@ class Tr {
       'total_word': 'всего',
       'expenses_by_categories': 'Расходы по категориям',
       'no_expenses_this_month': 'Нет расходов за этот месяц',
+      'no_expenses_period': 'Нет расходов · {}',
       'income_vs_expenses': 'Доходы vs Расходы · {}',
       'expense_this_month': 'Расход в этом месяце',
       'expense_today': 'Расход сегодня',
@@ -1491,6 +1495,7 @@ class Tr {
       'total_word': 'total',
       'expenses_by_categories': 'Expenses by category',
       'no_expenses_this_month': 'No expenses this month',
+      'no_expenses_period': 'No expenses · {}',
       'income_vs_expenses': 'Income vs Expenses · {}',
       'expense_this_month': 'Expense this month',
       'expense_today': 'Expense today',

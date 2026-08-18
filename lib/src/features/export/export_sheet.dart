@@ -120,7 +120,7 @@ class _ExportSheetState extends ConsumerState<_ExportSheet> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$e')),
+        SnackBar(content: Text(Tr.of(context).errorTitle)),
       );
     } finally {
       if (mounted) setState(() => _busy = false);

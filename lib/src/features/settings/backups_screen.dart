@@ -135,7 +135,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.toString())),
+                      SnackBar(content: Text(tr.errorTitle)),
                     );
                   }
                 }
@@ -169,7 +169,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.toString())),
+                      SnackBar(content: Text(tr.errorTitle)),
                     );
                   }
                 }

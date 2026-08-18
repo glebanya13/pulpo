@@ -15,9 +15,9 @@ void main() {
 
   test('currencies: full country list order and coverage', () {
     expect(appCurrencies.length, 29);
-    expect(appCurrencies.first.country, 'México');
-    expect(appCurrencies[1].country, 'Colombia');
-    expect(appCurrencies[2].country, 'España');
+    expect(appCurrencies.first.country, 'España');
+    expect(appCurrencies[1].country, 'México');
+    expect(appCurrencies[2].country, 'Colombia');
 
     final countries = appCurrencies.map((c) => c.country).toList();
     expect(countries, contains('Ecuador'));
@@ -54,5 +54,18 @@ void main() {
 
     expect(en.transferBetweenTab.toLowerCase(), contains('internal'));
     expect(en.transferExternalTab.toLowerCase(), contains('external'));
+  });
+
+  test('currencies: country names localize', () {
+    final spain = firstCurrencyForCode('EUR');
+    expect(spain.localizedCountry('es'), 'España');
+    expect(spain.localizedCountry('en'), 'Spain');
+    expect(spain.localizedCountry('ru'), 'Испания');
+  });
+
+  test('translations: noExpensesForPeriod is localized', () {
+    expect(Tr.fromLang('es').noExpensesForPeriod('Agosto'), contains('Agosto'));
+    expect(Tr.fromLang('en').noExpensesForPeriod('August'), contains('August'));
+    expect(Tr.fromLang('ru').noExpensesForPeriod('Август'), contains('Август'));
   });
 }

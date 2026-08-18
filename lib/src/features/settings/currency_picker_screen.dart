@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pressable.dart';
 
 class CurrencyPickerScreen extends ConsumerStatefulWidget {
   const CurrencyPickerScreen({super.key});
@@ -24,10 +25,12 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
   bool _match(AppCurrency c) {
     if (_query.isEmpty) return true;
     final q = _query.toLowerCase();
+    final lang = Localizations.localeOf(context).languageCode;
     return c.country.toLowerCase().contains(q) ||
+        c.localizedCountry(lang).toLowerCase().contains(q) ||
         c.code.toLowerCase().contains(q) ||
         c.symbol.toLowerCase().contains(q) ||
-        c.title.toLowerCase().contains(q);
+        c.localizedTitle(lang).toLowerCase().contains(q);
   }
 
   @override
@@ -133,8 +136,10 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final lang = Localizations.localeOf(context).languageCode;
+    return Pressable(
       onTap: onTap,
+      scale: 0.99,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
@@ -158,7 +163,7 @@ class _Row extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                item.title,
+                item.localizedTitle(lang),
                 style: const TextStyle(
                     fontSize: 14, fontWeight: FontWeight.w600),
               ),

@@ -14,6 +14,7 @@ import '../settings/settings_screen.dart' show openNameSheet;
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../auth/cloud_auth.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -389,8 +390,10 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
+    return Pressable(
+      enabled: onTap != null,
+      onTap: onTap ?? () {},
+      scale: 0.98,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(

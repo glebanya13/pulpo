@@ -51,7 +51,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(content: Text(tr.errorTitle)),
       );
     } finally {
       if (mounted) setState(() => _busy = false);
