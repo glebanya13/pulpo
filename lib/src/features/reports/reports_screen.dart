@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
@@ -66,6 +69,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     }
 
     final periodName = periodLabel(range.kind);
+    final isPro = ref.watch(proControllerProvider).isPro;
 
     return ResetScrollWhenObscured(
       tabPath: '/reports',
@@ -96,8 +100,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               for (final k in StatsPeriodKind.values)
                 if (k != StatsPeriodKind.custom) ...[
                   Pressable(
-                    onTap: () =>
-                        ref.read(statsPeriodProvider.notifier).setKind(k),
+                    onTap: () async {
+                      final free = k == StatsPeriodKind.thisMonth ||
+                          k == StatsPeriodKind.lastMonth;
+                      if (!free && !isPro) {
+                        await openPaywall(context, ProGate.analytics);
+                        return;
+                      }
+                      ref.read(statsPeriodProvider.notifier).setKind(k);
+                    },
                     child: Container(
                       margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(
@@ -135,7 +146,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             itemBuilder: (context, i) {
               final active = _tab == i;
               return Pressable(
-                onTap: () => setState(() => _tab = i),
+                onTap: () async {
+                  if ((i == 2 || i == 3) && !isPro) {
+                    await openPaywall(
+                      context,
+                      i == 2 ? ProGate.trends : ProGate.flows,
+                    );
+                    return;
+                  }
+                  setState(() => _tab = i);
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 8),

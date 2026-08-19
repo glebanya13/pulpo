@@ -19,6 +19,7 @@ class SettingsService {
   static const _kDailyReminder = 'daily_reminder';
   static const _kDailyReminderHour = 'daily_reminder_hour';
   static const _kDailyReminderMinute = 'daily_reminder_minute';
+  static const _kSmartReminders = 'smart_reminders';
 
   bool get onboardingDone => _prefs.getBool(_kOnboardingDone) ?? false;
   Future<void> setOnboardingDone(bool v) =>
@@ -58,6 +59,10 @@ class SettingsService {
   int get dailyReminderMinute => _prefs.getInt(_kDailyReminderMinute) ?? 0;
   Future<void> setDailyReminderMinute(int v) =>
       _prefs.setInt(_kDailyReminderMinute, v);
+
+  bool get smartRemindersEnabled => _prefs.getBool(_kSmartReminders) ?? false;
+  Future<void> setSmartRemindersEnabled(bool v) =>
+      _prefs.setBool(_kSmartReminders, v);
 }
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(
@@ -80,6 +85,7 @@ class SettingsState {
     required this.dailyReminderEnabled,
     required this.dailyReminderHour,
     required this.dailyReminderMinute,
+    required this.smartRemindersEnabled,
   });
 
   final bool onboardingDone;
@@ -91,6 +97,7 @@ class SettingsState {
   final bool dailyReminderEnabled;
   final int dailyReminderHour;
   final int dailyReminderMinute;
+  final bool smartRemindersEnabled;
 
   ThemeMode get materialThemeMode {
     switch (themeMode) {
@@ -113,6 +120,7 @@ class SettingsState {
     bool? dailyReminderEnabled,
     int? dailyReminderHour,
     int? dailyReminderMinute,
+    bool? smartRemindersEnabled,
   }) {
     return SettingsState(
       onboardingDone: onboardingDone ?? this.onboardingDone,
@@ -124,6 +132,8 @@ class SettingsState {
       dailyReminderEnabled: dailyReminderEnabled ?? this.dailyReminderEnabled,
       dailyReminderHour: dailyReminderHour ?? this.dailyReminderHour,
       dailyReminderMinute: dailyReminderMinute ?? this.dailyReminderMinute,
+      smartRemindersEnabled:
+          smartRemindersEnabled ?? this.smartRemindersEnabled,
     );
   }
 }
@@ -142,6 +152,7 @@ class SettingsController extends Notifier<SettingsState> {
       dailyReminderEnabled: s.dailyReminderEnabled,
       dailyReminderHour: s.dailyReminderHour,
       dailyReminderMinute: s.dailyReminderMinute,
+      smartRemindersEnabled: s.smartRemindersEnabled,
     );
   }
 
@@ -215,6 +226,11 @@ class SettingsController extends Notifier<SettingsState> {
       dailyReminderHour: hour,
       dailyReminderMinute: minute,
     );
+  }
+
+  Future<void> setSmartRemindersEnabled(bool enabled) async {
+    await ref.read(settingsServiceProvider).setSmartRemindersEnabled(enabled);
+    state = state.copyWith(smartRemindersEnabled: enabled);
   }
 }
 

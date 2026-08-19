@@ -5,10 +5,14 @@ import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/subscription_repository.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 
@@ -20,6 +24,7 @@ class SubscriptionsScreen extends ConsumerWidget {
     final tr = Tr.of(context);
     final subs = ref.watch(subscriptionsProvider).valueOrNull ?? const [];
     final active = subs.where((s) => !s.isPaused).toList();
+    final isPro = ref.watch(proControllerProvider).isPro;
     final monthly = _monthlyTotal(active);
     final yearly = monthly * 12;
 
@@ -30,7 +35,10 @@ class SubscriptionsScreen extends ConsumerWidget {
           children: [
             PageHeader(
               first: tr.subscriptions,
-              subtitle: tr.activeCount(active.length),
+              subtitle: quotaLabel(
+                  isPro: isPro,
+                  used: active.length,
+                  limit: ProLimits.subscriptions),
               onBack: () => context.pop(),
               action: RoundIconButton(
                 icon: LucideIcons.plus,
@@ -106,8 +114,15 @@ class SubscriptionsScreen extends ConsumerWidget {
     return m;
   }
 
-  Future<void> _openAdd(BuildContext context, WidgetRef ref) =>
-      _openEditor(context, ref, existing: null);
+  Future<void> _openAdd(BuildContext context, WidgetRef ref) async {
+    final subs = ref.read(subscriptionsProvider).valueOrNull ?? const [];
+    final used = subs.where((s) => !s.isPaused).length;
+    if (!await requireQuota(context, ref, ProGate.subscriptions, used)) {
+      return;
+    }
+    if (!context.mounted) return;
+    await _openEditor(context, ref, existing: null);
+  }
 }
 
 Future<void> _openEditor(
@@ -123,9 +138,8 @@ Future<void> _openEditor(
       existing?.nextPayment ?? DateTime.now().add(const Duration(days: 30));
   final isEdit = existing != null;
 
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
     backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),

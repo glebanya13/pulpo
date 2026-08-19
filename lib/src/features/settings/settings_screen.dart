@@ -8,6 +8,8 @@ import '../../core/currencies.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/notifications/daily_reminder.dart';
 import '../../core/open_link.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
@@ -15,6 +17,7 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/seed/seed_categories.dart';
 import '../../widgets/common.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
 import '../auth/cloud_auth.dart';
@@ -101,6 +104,19 @@ class SettingsScreen extends ConsumerWidget {
                         _toggleReminder(context, ref, tr, v),
                   ),
                   onTap: () => _pickReminderTime(context, ref, settings),
+                  showChevron: false,
+                ),
+                _SettingsRow(
+                  icon: LucideIcons.bellRing,
+                  iconBg: AppColors.lime.withValues(alpha: 0.35),
+                  title: tr.smartReminders,
+                  subtitle: tr.smartRemindersHint,
+                  trailingWidget: Switch.adaptive(
+                    value: settings.smartRemindersEnabled,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    onChanged: (v) =>
+                        _toggleSmartReminders(context, ref, tr, v),
+                  ),
                   showChevron: false,
                 ),
               ],
@@ -211,6 +227,31 @@ class SettingsScreen extends ConsumerWidget {
         .setDailyReminderEnabled(enabled);
   }
 
+  Future<void> _toggleSmartReminders(
+    BuildContext context,
+    WidgetRef ref,
+    Tr tr,
+    bool enabled,
+  ) async {
+    if (enabled) {
+      final ok = await requirePro(context, ref, ProGate.reminders);
+      if (!ok) return;
+      await initDailyReminder();
+      final allowed = await requestReminderPermission();
+      if (!allowed) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(tr.reminderPermissionDenied)),
+          );
+        }
+        return;
+      }
+    }
+    await ref
+        .read(settingsControllerProvider.notifier)
+        .setSmartRemindersEnabled(enabled);
+  }
+
   Future<void> _pickReminderTime(
     BuildContext context,
     WidgetRef ref,
@@ -289,10 +330,9 @@ Future<void> openNameSheet(
   ctrl.selection =
       TextSelection(baseOffset: 0, extentOffset: ctrl.text.length);
 
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
+    transparent: true,
     builder: (ctx) {
       return Padding(
         padding: EdgeInsets.only(

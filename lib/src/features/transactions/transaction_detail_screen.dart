@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -124,6 +126,46 @@ class TransactionDetailScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            if (tx.receiptPath != null &&
+                File(tx.receiptPath!).existsSync()) ...[
+              const SizedBox(height: 16),
+              Pressable(
+                onTap: () => _openReceiptFull(context, tx.receiptPath!),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: context.surface,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          NeutralWellIcon(icon: LucideIcons.receipt),
+                          const SizedBox(width: 10),
+                          Text(tr.receipt,
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.primaryText)),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.file(
+                          File(tx.receiptPath!),
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             Row(
               children: [
@@ -187,6 +229,25 @@ class TransactionDetailScreen extends ConsumerWidget {
                       fontSize: 10, color: context.faintText)),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _openReceiptFull(BuildContext context, String path) {
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+          ),
+          body: InteractiveViewer(
+            child: Center(
+              child: Image.file(File(path)),
+            ),
+          ),
         ),
       ),
     );

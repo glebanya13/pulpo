@@ -13,6 +13,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/category_repository.dart';
 import '../../data/repositories/providers.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 
@@ -129,9 +130,8 @@ Future<void> _openCategoryEditor(
   var icon = existing?.icon ?? 'circle';
   final isEdit = existing != null;
 
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
     backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),

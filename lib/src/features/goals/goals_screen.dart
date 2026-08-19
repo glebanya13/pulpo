@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_format.dart';
@@ -12,6 +15,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/goal_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 
@@ -22,6 +26,8 @@ class GoalsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
     final goals = ref.watch(goalsProvider).valueOrNull ?? const [];
+    final active = goals.where((g) => isActiveGoal(isCompleted: g.isCompleted)).length;
+    final isPro = ref.watch(proControllerProvider).isPro;
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
 
     return Scaffold(
@@ -31,11 +37,19 @@ class GoalsScreen extends ConsumerWidget {
           children: [
             PageHeader(
               first: tr.goals,
-              subtitle: '${goals.length}',
+              subtitle: quotaLabel(
+                  isPro: isPro, used: active, limit: ProLimits.goals),
               onBack: () => context.pop(),
               action: RoundIconButton(
                 icon: LucideIcons.plus,
-                onTap: () => _openGoalEditor(context, ref, existing: null),
+                onTap: () async {
+                  if (!await requireQuota(
+                      context, ref, ProGate.goals, active)) {
+                    return;
+                  }
+                  if (!context.mounted) return;
+                  await _openGoalEditor(context, ref, existing: null);
+                },
               ),
             ),
             const SizedBox(height: 16),
@@ -179,9 +193,8 @@ Future<void> _openProgress(
   var accountId = goal.accountId ??
       (accounts.isNotEmpty ? accounts.first.id : null);
 
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
     backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -259,9 +272,8 @@ Future<void> _openGoalEditor(
   final isEdit = existing != null;
   final currency = ref.read(settingsControllerProvider).baseCurrency;
 
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
     backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),

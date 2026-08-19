@@ -7,6 +7,9 @@ import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
@@ -16,6 +19,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/budget_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class BudgetsScreen extends ConsumerWidget {
@@ -50,6 +54,10 @@ class BudgetsScreen extends ConsumerWidget {
     final progress = totalBudget > 0 ? (totalSpent / totalBudget).clamp(0, 1) : 0;
     final leftAmount = (totalBudget - totalSpent).clamp(0, double.infinity);
     final daysLeft = monthEnd.difference(DateTime.now()).inDays;
+    final isPro = ref.watch(proControllerProvider).isPro;
+    final activeBudgets = budgets
+        .where((b) => isActiveBudget(endDate: b.endDate, now: now))
+        .length;
 
     return Scaffold(
       body: SafeArea(
@@ -85,12 +93,29 @@ class BudgetsScreen extends ConsumerWidget {
                           color: context.primaryText,
                         ),
                       ),
+                      Text(
+                        quotaLabel(
+                          isPro: isPro,
+                          used: activeBudgets,
+                          limit: ProLimits.budgets,
+                        ),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.mutedText,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 Pressable(
-                  onTap: () =>
-                      _openBudgetEditor(context, ref, existing: null),
+                  onTap: () async {
+                    if (!await requireQuota(
+                        context, ref, ProGate.budgets, activeBudgets)) {
+                      return;
+                    }
+                    if (!context.mounted) return;
+                    await _openBudgetEditor(context, ref, existing: null);
+                  },
                   child: Container(
                     width: 42,
                     height: 42,
@@ -328,9 +353,8 @@ Future<void> _openBudgetEditor(
   var period = existing?.period ?? 1; // 1 = month
   final isEdit = existing != null;
 
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
     backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),

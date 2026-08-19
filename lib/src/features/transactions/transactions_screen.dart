@@ -116,7 +116,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         TabsPill(
           tabs: [tr.all, tr.income, tr.expense, tr.transfer],
           index: _filterType == null
@@ -135,7 +135,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             };
           }),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -380,11 +380,11 @@ class _FilterPick extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        height: 42,
+        height: 40,
         padding: const EdgeInsets.only(left: 14, right: 8),
         decoration: BoxDecoration(
           color: context.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(100),
         ),
         child: Row(
           children: [

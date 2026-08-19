@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulpo/src/core/currencies.dart';
 import 'package:pulpo/src/core/l10n/tr.dart';
+import 'package:pulpo/src/core/pro/pro_limits.dart';
 
 void main() {
   test('translations: inRealtime exists and is localized', () {
@@ -67,5 +68,13 @@ void main() {
     expect(Tr.fromLang('es').noExpensesForPeriod('Agosto'), contains('Agosto'));
     expect(Tr.fromLang('en').noExpensesForPeriod('August'), contains('August'));
     expect(Tr.fromLang('ru').noExpensesForPeriod('Август'), contains('Август'));
+  });
+
+  test('translations: Pro paywall copy exists in ES/RU/EN', () {
+    expect(Tr.fromLang('es').proGo, contains('Pro'));
+    expect(Tr.fromLang('ru').proGo, contains('Pro'));
+    expect(Tr.fromLang('en').proGo.toLowerCase(), contains('pro'));
+    expect(Tr.fromLang('ru').paywallBody(ProGate.accounts), contains('3'));
+    expect(Tr.fromLang('es').importCsv.toLowerCase(), contains('csv'));
   });
 }

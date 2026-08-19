@@ -1,8 +1,14 @@
+import 'dart:io';
+
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
@@ -61,6 +67,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   db.Account? _account;
   DateTime _date = DateTime.now();
   final _noteCtrl = TextEditingController();
+  String? _receiptPath;
 
   @override
   void dispose() {
@@ -93,6 +100,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         accountId: selectedAccount.id,
         date: _date,
         note: note,
+        receiptPath: Value(_receiptPath),
       );
       if (mounted) context.pop();
     } else {
@@ -104,6 +112,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         type: _type,
         date: _date,
         note: note,
+        receiptPath: _receiptPath,
       );
       if (mounted) context.go('/');
     }
@@ -122,6 +131,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         : tx.amount.toString();
     _date = tx.date;
     _noteCtrl.text = tx.note ?? '';
+    _receiptPath = tx.receiptPath;
     final cats = ref.read(categoriesProvider).valueOrNull ?? [];
     _category = cats.where((c) => c.id == tx.categoryId).firstOrNull;
     final accs = ref.read(accountsProvider).valueOrNull ?? [];
@@ -349,6 +359,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          _ReceiptSection(
+            receiptPath: _receiptPath,
+            onPick: _pickReceipt,
+            onRemove: () => setState(() => _receiptPath = null),
+          ),
         ],
       ),
     );
@@ -382,6 +398,22 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       },
     );
     if (result != null) setState(() => _noteCtrl.text = result);
+  }
+
+  Future<void> _pickReceipt(ImageSource source) async {
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 1200,
+      imageQuality: 80,
+    );
+    if (picked == null) return;
+    final dir = await getApplicationDocumentsDirectory();
+    final receiptsDir = Directory(p.join(dir.path, 'receipts'));
+    if (!receiptsDir.existsSync()) receiptsDir.createSync(recursive: true);
+    final name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final dest = p.join(receiptsDir.path, name);
+    await File(picked.path).copy(dest);
+    setState(() => _receiptPath = dest);
   }
 }
 
@@ -645,6 +677,131 @@ class _FormRow extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Icon(LucideIcons.chevronRight, size: 16, color: context.faintText),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReceiptSection extends StatelessWidget {
+  const _ReceiptSection({
+    required this.receiptPath,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final String? receiptPath;
+  final void Function(ImageSource source) onPick;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = Tr.of(context);
+
+    if (receiptPath != null && File(receiptPath!).existsSync()) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.surface,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                NeutralWellIcon(icon: LucideIcons.receipt),
+                const SizedBox(width: 10),
+                Text(tr.receipt,
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: context.primaryText)),
+                const Spacer(),
+                Pressable(
+                  onTap: onRemove,
+                  child: Icon(LucideIcons.x,
+                      size: 18, color: context.mutedText),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.file(
+                File(receiptPath!),
+                width: double.infinity,
+                height: 180,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ReceiptBtn(
+              icon: LucideIcons.camera,
+              label: tr.receiptCamera,
+              onTap: () => onPick(ImageSource.camera),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _ReceiptBtn(
+              icon: LucideIcons.image,
+              label: tr.receiptGallery,
+              onTap: () => onPick(ImageSource.gallery),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReceiptBtn extends StatelessWidget {
+  const _ReceiptBtn({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: context.isDark ? AppColors.ink3 : const Color(0xFFF5F5F5),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 22, color: context.mutedText),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: context.mutedText,
+              ),
+            ),
           ],
         ),
       ),

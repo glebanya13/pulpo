@@ -14,6 +14,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/providers.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class AccountDetailScreen extends ConsumerWidget {
@@ -333,9 +334,8 @@ Future<void> _openAccountEditor(
   final nameCtrl = TextEditingController(text: existing.name);
   var includeInTotal = existing.includeInTotal;
 
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
     backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),

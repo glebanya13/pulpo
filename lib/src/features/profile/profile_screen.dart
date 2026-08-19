@@ -6,6 +6,9 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
@@ -27,6 +30,7 @@ class ProfileScreen extends ConsumerWidget {
     final authUser = ref.watch(authUserProvider).valueOrNull;
     final currency = settings.baseCurrency;
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
+    final isPro = ref.watch(proControllerProvider).isPro;
 
     return ResetScrollWhenObscured(
       tabPath: '/profile',
@@ -104,6 +108,13 @@ class ProfileScreen extends ConsumerWidget {
         _MenuGroup(
           children: [
             _MenuRow(
+              icon: LucideIcons.sparkles,
+              iconBg: AppColors.lime.withValues(alpha: 0.4),
+              label: tr.proTitle,
+              trailing: isPro ? tr.proActiveShort : tr.proGo,
+              onTap: () => openPaywall(context, ProGate.generic),
+            ),
+            _MenuRow(
               icon: LucideIcons.logIn,
               iconBg: const Color(0xFFE0F2FE),
               label: authUser != null ? tr.signedInAs : tr.signIn,
@@ -158,6 +169,16 @@ class ProfileScreen extends ConsumerWidget {
               iconBg: const Color(0xFFFFF3D6),
               label: tr.exportCsv,
               onTap: () => context.push('/settings/export'),
+            ),
+            _MenuRow(
+              icon: LucideIcons.upload,
+              iconBg: const Color(0xFFE0F2FE),
+              label: tr.importCsv,
+              onTap: () async {
+                final ok = await requirePro(context, ref, ProGate.importCsv);
+                if (!ok || !context.mounted) return;
+                context.push('/settings/import');
+              },
             ),
             _MenuRow(
               icon: LucideIcons.info,

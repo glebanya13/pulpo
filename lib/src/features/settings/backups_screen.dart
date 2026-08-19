@@ -9,6 +9,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/backup_service.dart';
@@ -115,6 +117,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               label: tr.cloudBackup,
               filled: false,
               onTap: () async {
+                if (!await requirePro(context, ref, ProGate.cloud)) return;
                 final user = ref.read(authUserProvider).valueOrNull;
                 if (user == null) {
                   if (mounted) {
@@ -147,6 +150,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               label: tr.cloudRestore,
               filled: false,
               onTap: () async {
+                if (!await requirePro(context, ref, ProGate.sync)) return;
                 final user = ref.read(authUserProvider).valueOrNull;
                 if (user == null) {
                   if (mounted) {

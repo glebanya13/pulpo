@@ -62,7 +62,8 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       enableGPUValidationMode = "1"
-      allowLocationSimulation = "YES">
+      allowLocationSimulation = "YES"
+      storeKitConfigurationFileReference = "Runner/Pulpo.storekit">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference

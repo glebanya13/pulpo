@@ -36,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   /// Wipes every user-facing table. Keeps schema and settings intact.
   Future<void> resetAllData() async {
@@ -74,6 +74,7 @@ class AppDatabase extends _$AppDatabase {
             }
           }
           if (from < 4) {
+            // v3→v4: remap pastel colors
             for (final entry in pastelColorRemap.entries) {
               await (update(categories)
                     ..where((c) => c.color.equals(entry.key)))
@@ -85,6 +86,11 @@ class AppDatabase extends _$AppDatabase {
                     ..where((b) => b.color.equals(entry.key)))
                   .write(BudgetsCompanion(color: Value(entry.value)));
             }
+          }
+          if (from < 5) {
+            await customStatement(
+              'ALTER TABLE transactions ADD COLUMN receipt_path TEXT',
+            );
           }
         },
       );

@@ -1091,6 +1091,12 @@ class $TransactionsTable extends Transactions
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       defaultValue: const Constant(0));
+  static const VerificationMeta _receiptPathMeta =
+      const VerificationMeta('receiptPath');
+  @override
+  late final GeneratedColumn<String> receiptPath = GeneratedColumn<String>(
+      'receipt_path', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -1120,6 +1126,7 @@ class $TransactionsTable extends Transactions
         counterparty,
         transferGroupId,
         status,
+        receiptPath,
         createdAt,
         updatedAt
       ];
@@ -1192,6 +1199,12 @@ class $TransactionsTable extends Transactions
       context.handle(_statusMeta,
           status.isAcceptableOrUnknown(data['status']!, _statusMeta));
     }
+    if (data.containsKey('receipt_path')) {
+      context.handle(
+          _receiptPathMeta,
+          receiptPath.isAcceptableOrUnknown(
+              data['receipt_path']!, _receiptPathMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -1231,6 +1244,8 @@ class $TransactionsTable extends Transactions
           .read(DriftSqlType.int, data['${effectivePrefix}transfer_group_id']),
       status: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}status'])!,
+      receiptPath: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}receipt_path']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
@@ -1256,6 +1271,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final String? counterparty;
   final int? transferGroupId;
   final int status;
+  final String? receiptPath;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Transaction(
@@ -1270,6 +1286,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       this.counterparty,
       this.transferGroupId,
       required this.status,
+      this.receiptPath,
       required this.createdAt,
       required this.updatedAt});
   @override
@@ -1294,6 +1311,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       map['transfer_group_id'] = Variable<int>(transferGroupId);
     }
     map['status'] = Variable<int>(status);
+    if (!nullToAbsent || receiptPath != null) {
+      map['receipt_path'] = Variable<String>(receiptPath);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -1318,6 +1338,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ? const Value.absent()
           : Value(transferGroupId),
       status: Value(status),
+      receiptPath: receiptPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(receiptPath),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1338,6 +1361,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       counterparty: serializer.fromJson<String?>(json['counterparty']),
       transferGroupId: serializer.fromJson<int?>(json['transferGroupId']),
       status: serializer.fromJson<int>(json['status']),
+      receiptPath: serializer.fromJson<String?>(json['receiptPath']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1357,6 +1381,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'counterparty': serializer.toJson<String?>(counterparty),
       'transferGroupId': serializer.toJson<int?>(transferGroupId),
       'status': serializer.toJson<int>(status),
+      'receiptPath': serializer.toJson<String?>(receiptPath),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1374,6 +1399,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           Value<String?> counterparty = const Value.absent(),
           Value<int?> transferGroupId = const Value.absent(),
           int? status,
+          Value<String?> receiptPath = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       Transaction(
@@ -1391,6 +1417,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
             ? transferGroupId.value
             : this.transferGroupId,
         status: status ?? this.status,
+        receiptPath: receiptPath.present ? receiptPath.value : this.receiptPath,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -1412,6 +1439,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ? data.transferGroupId.value
           : this.transferGroupId,
       status: data.status.present ? data.status.value : this.status,
+      receiptPath:
+          data.receiptPath.present ? data.receiptPath.value : this.receiptPath,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1431,6 +1460,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('counterparty: $counterparty, ')
           ..write('transferGroupId: $transferGroupId, ')
           ..write('status: $status, ')
+          ..write('receiptPath: $receiptPath, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1450,6 +1480,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       counterparty,
       transferGroupId,
       status,
+      receiptPath,
       createdAt,
       updatedAt);
   @override
@@ -1467,6 +1498,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.counterparty == this.counterparty &&
           other.transferGroupId == this.transferGroupId &&
           other.status == this.status &&
+          other.receiptPath == this.receiptPath &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1483,6 +1515,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<String?> counterparty;
   final Value<int?> transferGroupId;
   final Value<int> status;
+  final Value<String?> receiptPath;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const TransactionsCompanion({
@@ -1497,6 +1530,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.counterparty = const Value.absent(),
     this.transferGroupId = const Value.absent(),
     this.status = const Value.absent(),
+    this.receiptPath = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -1512,6 +1546,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.counterparty = const Value.absent(),
     this.transferGroupId = const Value.absent(),
     this.status = const Value.absent(),
+    this.receiptPath = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   })  : accountId = Value(accountId),
@@ -1531,6 +1566,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<String>? counterparty,
     Expression<int>? transferGroupId,
     Expression<int>? status,
+    Expression<String>? receiptPath,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -1546,6 +1582,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (counterparty != null) 'counterparty': counterparty,
       if (transferGroupId != null) 'transfer_group_id': transferGroupId,
       if (status != null) 'status': status,
+      if (receiptPath != null) 'receipt_path': receiptPath,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -1563,6 +1600,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       Value<String?>? counterparty,
       Value<int?>? transferGroupId,
       Value<int>? status,
+      Value<String?>? receiptPath,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt}) {
     return TransactionsCompanion(
@@ -1577,6 +1615,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       counterparty: counterparty ?? this.counterparty,
       transferGroupId: transferGroupId ?? this.transferGroupId,
       status: status ?? this.status,
+      receiptPath: receiptPath ?? this.receiptPath,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -1618,6 +1657,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (status.present) {
       map['status'] = Variable<int>(status.value);
     }
+    if (receiptPath.present) {
+      map['receipt_path'] = Variable<String>(receiptPath.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1641,6 +1683,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('counterparty: $counterparty, ')
           ..write('transferGroupId: $transferGroupId, ')
           ..write('status: $status, ')
+          ..write('receiptPath: $receiptPath, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -6105,6 +6148,7 @@ typedef $$TransactionsTableCreateCompanionBuilder = TransactionsCompanion
   Value<String?> counterparty,
   Value<int?> transferGroupId,
   Value<int> status,
+  Value<String?> receiptPath,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
 });
@@ -6121,6 +6165,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder = TransactionsCompanion
   Value<String?> counterparty,
   Value<int?> transferGroupId,
   Value<int> status,
+  Value<String?> receiptPath,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
 });
@@ -6211,6 +6256,9 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<int> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get receiptPath => $composableBuilder(
+      column: $table.receiptPath, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -6318,6 +6366,9 @@ class $$TransactionsTableOrderingComposer
   ColumnOrderings<int> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get receiptPath => $composableBuilder(
+      column: $table.receiptPath, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
@@ -6400,6 +6451,9 @@ class $$TransactionsTableAnnotationComposer
 
   GeneratedColumn<int> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get receiptPath => $composableBuilder(
+      column: $table.receiptPath, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -6504,6 +6558,7 @@ class $$TransactionsTableTableManager extends RootTableManager<
             Value<String?> counterparty = const Value.absent(),
             Value<int?> transferGroupId = const Value.absent(),
             Value<int> status = const Value.absent(),
+            Value<String?> receiptPath = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
           }) =>
@@ -6519,6 +6574,7 @@ class $$TransactionsTableTableManager extends RootTableManager<
             counterparty: counterparty,
             transferGroupId: transferGroupId,
             status: status,
+            receiptPath: receiptPath,
             createdAt: createdAt,
             updatedAt: updatedAt,
           ),
@@ -6534,6 +6590,7 @@ class $$TransactionsTableTableManager extends RootTableManager<
             Value<String?> counterparty = const Value.absent(),
             Value<int?> transferGroupId = const Value.absent(),
             Value<int> status = const Value.absent(),
+            Value<String?> receiptPath = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
           }) =>
@@ -6549,6 +6606,7 @@ class $$TransactionsTableTableManager extends RootTableManager<
             counterparty: counterparty,
             transferGroupId: transferGroupId,
             status: status,
+            receiptPath: receiptPath,
             createdAt: createdAt,
             updatedAt: updatedAt,
           ),

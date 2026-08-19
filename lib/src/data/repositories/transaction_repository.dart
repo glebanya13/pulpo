@@ -18,6 +18,7 @@ class TransactionRepository {
     required DateTime date,
     String? note,
     String? counterparty,
+    String? receiptPath,
   }) {
     return _db.into(_db.transactions).insert(
           TransactionsCompanion.insert(
@@ -29,6 +30,7 @@ class TransactionRepository {
             date: date,
             note: Value(note),
             counterparty: Value(counterparty),
+            receiptPath: Value(receiptPath),
           ),
         );
   }
@@ -81,6 +83,7 @@ class TransactionRepository {
     int? accountId,
     DateTime? date,
     String? note,
+    Value<String?> receiptPath = const Value.absent(),
   }) {
     return (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
       TransactionsCompanion(
@@ -90,6 +93,7 @@ class TransactionRepository {
         accountId: accountId == null ? const Value.absent() : Value(accountId),
         date: date == null ? const Value.absent() : Value(date),
         note: note == null ? const Value.absent() : Value(note),
+        receiptPath: receiptPath,
         updatedAt: Value(DateTime.now()),
       ),
     );

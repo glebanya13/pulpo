@@ -10,10 +10,13 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
 import 'src/core/home_widget_sync.dart';
 import 'src/core/notifications/daily_reminder.dart';
+import 'src/core/notifications/smart_reminders.dart';
+import 'src/core/pro/pro_controller.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/data/repositories/providers.dart';
 import 'src/data/repositories/settings_service.dart';
 import 'src/data/repositories/scheduled_posting.dart';
+import 'src/data/repositories/subscription_repository.dart';
 import 'src/data/seed/seed_categories.dart';
 import 'src/features/security/lock_screen.dart';
 import 'src/router.dart';
@@ -77,7 +80,15 @@ class BudgetTrackerApp extends ConsumerWidget {
     ref.listen<SettingsState>(settingsControllerProvider, (prev, next) {
       if (prev == next) return;
       syncDailyReminder(next);
+      _syncSmart(ref);
     });
+    ref.listen<ProState>(proControllerProvider, (prev, next) {
+      if (prev?.isPro == next.isPro) return;
+      _syncSmart(ref);
+    });
+    ref.listen(debtsProvider, (_, _) => _syncSmart(ref));
+    ref.listen(subscriptionsProvider, (_, _) => _syncSmart(ref));
+    ref.listen(goalsProvider, (_, _) => _syncSmart(ref));
     return MaterialApp.router(
       title: 'Pulpo',
       debugShowCheckedModeBanner: false,
@@ -127,4 +138,18 @@ class BudgetTrackerApp extends ConsumerWidget {
       ],
     );
   }
+}
+
+void _syncSmart(WidgetRef ref) {
+  final settings = ref.read(settingsControllerProvider);
+  final isPro = ref.read(proControllerProvider).isPro;
+  final prefs = ref.read(sharedPreferencesProvider);
+  syncSmartReminders(
+    prefs: prefs,
+    settings: settings,
+    isPro: isPro,
+    debts: ref.read(debtsProvider).valueOrNull ?? const [],
+    subscriptions: ref.read(subscriptionsProvider).valueOrNull ?? const [],
+    goals: ref.read(goalsProvider).valueOrNull ?? const [],
+  );
 }

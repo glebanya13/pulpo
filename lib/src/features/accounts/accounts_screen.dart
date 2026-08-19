@@ -5,6 +5,9 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/currencies.dart';
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
@@ -15,6 +18,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
@@ -29,6 +33,8 @@ class AccountsScreen extends ConsumerWidget {
     final balances = ref.watch(accountBalancesProvider);
     final total = ref.watch(totalBalanceProvider);
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
+
+    final isPro = ref.watch(proControllerProvider).isPro;
 
     final bankLike = accounts.where((a) {
       final t = AccountType.values[a.type];
@@ -57,7 +63,7 @@ class AccountsScreen extends ConsumerWidget {
             PageHeader(
               first: tr.myAccounts,
               subtitle:
-                  '${tr.accountsCount(accounts.length)} · ${tr.currenciesCount(currencies)}',
+                  '${quotaLabel(isPro: isPro, used: accounts.length, limit: ProLimits.accounts)} · ${tr.currenciesCount(currencies)}',
               onBack: () => context.pop(),
               action: RoundIconButton(
                 icon: LucideIcons.plus,
@@ -93,14 +99,19 @@ class AccountsScreen extends ConsumerWidget {
   }
 
   Future<void> _openAddAccount(BuildContext context, WidgetRef ref) async {
+    final existing = ref.read(accountsProvider).valueOrNull ?? const [];
+    if (!await requireQuota(
+        context, ref, ProGate.accounts, existing.length)) {
+      return;
+    }
+    if (!context.mounted) return;
     final nameCtrl = TextEditingController();
     final balanceCtrl = TextEditingController();
     AccountType type = AccountType.cash;
     String currency = ref.read(settingsControllerProvider).baseCurrency;
 
-    await showModalBottomSheet(
+    await showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -158,6 +169,7 @@ class AccountsScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<String>(
+                        key: ValueKey(currency),
                         initialValue: uniqueAppCurrencies()
                                 .any((c) => c.code == currency)
                             ? currency
@@ -171,7 +183,19 @@ class AccountsScreen extends ConsumerWidget {
                         ],
                         decoration:
                             InputDecoration(labelText: Tr.of(context).currency),
-                        onChanged: (v) => setState(() => currency = v ?? 'EUR'),
+                        onChanged: (v) async {
+                          final next = v ?? currency;
+                          final base =
+                              ref.read(settingsControllerProvider).baseCurrency;
+                          if (next != base &&
+                              !await requirePro(
+                                  context, ref, ProGate.currencies)) {
+                            if (context.mounted) setState(() {});
+                            return;
+                          }
+                          if (!context.mounted) return;
+                          setState(() => currency = next);
+                        },
                       ),
                     ),
                   ],

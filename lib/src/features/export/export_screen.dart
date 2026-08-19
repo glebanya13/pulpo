@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/db/enums.dart';
@@ -77,6 +79,18 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               onPressed: _busy ? null : () => _go(ExportFormat.pdf),
               child: Text(tr.exportPdf),
             ),
+            const SizedBox(height: 8),
+            ScaledOutlinedButton(
+              onPressed: _busy
+                  ? null
+                  : () async {
+                      final ok =
+                          await requirePro(context, ref, ProGate.importCsv);
+                      if (!ok || !context.mounted) return;
+                      context.push('/settings/import');
+                    },
+              child: Text(tr.importCsv),
+            ),
           ],
         ),
       ),
@@ -85,6 +99,15 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
   Future<void> _go(ExportFormat format) async {
     if (_busy) return;
+    if (format == ExportFormat.excel &&
+        !await requirePro(context, ref, ProGate.excel)) {
+      return;
+    }
+    if (format == ExportFormat.pdf &&
+        !await requirePro(context, ref, ProGate.pdf)) {
+      return;
+    }
+    if (!mounted) return;
     final box = context.findRenderObject() as RenderBox?;
     final origin =
         box == null ? null : box.localToGlobal(Offset.zero) & box.size;

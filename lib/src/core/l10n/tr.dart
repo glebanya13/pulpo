@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../pro/pro_limits.dart';
 import 'plural.dart';
 
 /// Простой словарь переводов. Использование: `Tr.of(context).transactions`.
@@ -360,6 +361,9 @@ class Tr {
   String get account => _get('account');
   String get date => _get('date');
   String get note => _get('note');
+  String get receipt => _get('receipt');
+  String get receiptCamera => _get('receipt_camera');
+  String get receiptGallery => _get('receipt_gallery');
   String get amount => _get('amount');
   String get emptyTransactionsList => _get('empty_transactions_list');
   String get enterNote => _get('enter_note');
@@ -541,6 +545,61 @@ class Tr {
   String get enterNoteHint => _get('enter_note_hint'); // "Введите заметку..."
   String get backupsShort => _get('backups_short'); // "Бэкапы"
 
+  String get proTitle => _get('pro_title');
+  String get proSubtitle => _get('pro_subtitle');
+  String get proGo => _get('pro_go');
+  String get proRestore => _get('pro_restore');
+  String get proYearly => _get('pro_yearly');
+  String get proMonthly => _get('pro_monthly');
+  String get proSemiAnnual => _get('pro_semi_annual');
+  String get proYearlySave => _get('pro_yearly_save');
+  String get proTrial => _get('pro_trial');
+  String get proActive => _get('pro_active');
+  String get proActiveShort => _get('pro_active_short');
+  String get proBuyFailed => _get('pro_buy_failed');
+  String get proStoreEmpty => _get('pro_store_empty');
+  String get proDebugUnlock => _get('pro_debug_unlock');
+  String get importCsv => _get('import_csv');
+  String get importCsvHint => _get('import_csv_hint');
+  String get importPickFile => _get('import_pick_file');
+  String importPreview(int n, int skipped) => _get('import_preview')
+      .replaceAll('{n}', '$n')
+      .replaceAll('{s}', '$skipped');
+  String get importConfirm => _get('import_confirm');
+  String get importFailed => _get('import_failed');
+  String importDone(int n) => _get('import_done').replaceAll('{}', '$n');
+  String get smartReminders => _get('smart_reminders');
+  String get smartRemindersHint => _get('smart_reminders_hint');
+  String get smartDebtTitle => _get('smart_debt_title');
+  String smartDebtBody(String name) =>
+      _get('smart_debt_body').replaceAll('{}', name);
+  String get smartSubTitle => _get('smart_sub_title');
+  String smartSubBody(String name) =>
+      _get('smart_sub_body').replaceAll('{}', name);
+  String get smartGoalTitle => _get('smart_goal_title');
+  String smartGoalBody(String name) =>
+      _get('smart_goal_body').replaceAll('{}', name);
+
+  String paywallBody(ProGate gate) => switch (gate) {
+        ProGate.accounts => _get('pro_gate_accounts'),
+        ProGate.goals => _get('pro_gate_goals'),
+        ProGate.budgets => _get('pro_gate_budgets'),
+        ProGate.debts => _get('pro_gate_debts'),
+        ProGate.subscriptions => _get('pro_gate_subscriptions'),
+        ProGate.recurring => _get('pro_gate_recurring'),
+        ProGate.analytics => _get('pro_gate_analytics'),
+        ProGate.trends => _get('pro_gate_trends'),
+        ProGate.flows => _get('pro_gate_flows'),
+        ProGate.currencies => _get('pro_gate_currencies'),
+        ProGate.cloud => _get('pro_gate_cloud'),
+        ProGate.sync => _get('pro_gate_sync'),
+        ProGate.excel => _get('pro_gate_excel'),
+        ProGate.pdf => _get('pro_gate_pdf'),
+        ProGate.reminders => _get('pro_gate_reminders'),
+        ProGate.importCsv => _get('pro_gate_import'),
+        ProGate.generic => _get('pro_subtitle'),
+      };
+
   /// Локализованный лейбл типа счёта — enum не знает про context, поэтому helper здесь.
   String accountTypeLabel(int index) {
     switch (index) {
@@ -700,6 +759,9 @@ class Tr {
       'account': 'Cuenta',
       'date': 'Fecha',
       'note': 'Nota',
+      'receipt': 'Recibo',
+      'receipt_camera': 'Cámara',
+      'receipt_gallery': 'Galería',
       'amount': 'Importe',
       'empty_transactions_list': 'Sin transacciones.',
       'enter_note': 'Escribe una nota',
@@ -956,6 +1018,71 @@ class Tr {
       'data_restored': 'Datos restaurados',
       'restore_failed': 'No se pudo restaurar',
       'account_section': 'Cuenta',
+      'pro_title': 'Pulpo Pro',
+      'pro_subtitle':
+          'Sin límites en cuentas, metas, informes, importación y copias en la nube.',
+      'pro_go': 'Pasar a Pro',
+      'pro_restore': 'Restaurar compras',
+      'pro_yearly': 'Anual',
+      'pro_monthly': 'Mensual',
+      'pro_semi_annual': '6 meses',
+      'pro_yearly_save': 'Ahorra 44%',
+      'pro_trial': '7 días de prueba gratis',
+      'pro_active': 'Pulpo Pro está activo',
+      'pro_active_short': 'Activo',
+      'pro_buy_failed': 'No se pudo completar la compra',
+      'pro_store_empty':
+          'Productos no disponibles. Crea pulpo_pro_monthly, pulpo_pro_6months y pulpo_pro_yearly en App Store Connect y Play Console.',
+      'pro_debug_unlock': 'Desbloquear Pro (debug)',
+      'import_csv': 'Importar CSV',
+      'import_csv_hint':
+          'Importa un CSV de Pulpo o un extracto bancario con fecha e importe.',
+      'import_pick_file': 'Elegir archivo',
+      'import_preview': '{n} movimientos listos · {s} filas omitidas',
+      'import_confirm': 'Importar',
+      'import_failed': 'No se pudo importar el archivo',
+      'import_done': 'Importadas {} transacciones',
+      'smart_reminders': 'Recordatorios inteligentes',
+      'smart_reminders_hint':
+          'Avisos de deudas, suscripciones y metas (Pro)',
+      'smart_debt_title': 'Pago pendiente',
+      'smart_debt_body': 'Hoy vence un pago con {}',
+      'smart_sub_title': 'Suscripción',
+      'smart_sub_body': 'Pronto se cobra {}',
+      'smart_goal_title': 'Meta',
+      'smart_goal_body': 'Revisa tu meta: {}',
+      'pro_gate_accounts':
+          'La versión gratuita incluye hasta 3 cuentas.\nPasa a Pro para añadir cuentas ilimitadas.',
+      'pro_gate_goals':
+          'La versión gratuita incluye hasta 2 metas activas.\nPasa a Pro para crear metas ilimitadas.',
+      'pro_gate_budgets':
+          'La versión gratuita incluye hasta 3 presupuestos activos.\nPasa a Pro para crear presupuestos ilimitados.',
+      'pro_gate_debts':
+          'La versión gratuita incluye hasta 2 deudas activas.\nPasa a Pro para añadir deudas ilimitadas.',
+      'pro_gate_subscriptions':
+          'La versión gratuita incluye hasta 3 suscripciones activas.\nPasa a Pro para añadir suscripciones ilimitadas.',
+      'pro_gate_recurring':
+          'La versión gratuita incluye hasta 3 operaciones recurrentes.\nPasa a Pro para añadir operaciones ilimitadas.',
+      'pro_gate_analytics':
+          'La analítica avanzada está disponible en Pro.\nPasa a Pro para analizar 3, 6 y 12 meses.',
+      'pro_gate_trends':
+          'El análisis de tendencias está disponible en Pro.\nPasa a Pro para seguir ingresos y gastos en el tiempo.',
+      'pro_gate_flows':
+          'El análisis de flujos está disponible en Pro.\nPasa a Pro para ver el movimiento de tu dinero.',
+      'pro_gate_currencies':
+          'La versión gratuita incluye 1 moneda principal.\nPasa a Pro para usar varias monedas y cuentas.',
+      'pro_gate_cloud':
+          'Las copias en la nube están disponibles en Pro.\nGuarda tus datos y restáuralos en cualquier dispositivo.',
+      'pro_gate_sync':
+          'La sincronización entre dispositivos está disponible en Pro.\nPasa a Pro para tener tus datos en varios dispositivos.',
+      'pro_gate_excel':
+          'Exportar a Excel está disponible en Pro.\nPasa a Pro para exportar tus finanzas a Excel.',
+      'pro_gate_pdf':
+          'Exportar a PDF está disponible en Pro.\nPasa a Pro para crear informes PDF.',
+      'pro_gate_reminders':
+          'Los recordatorios inteligentes están disponibles en Pro.\nPasa a Pro para avisos de pagos, suscripciones y metas.',
+      'pro_gate_import':
+          'Importar CSV y extractos está disponible en Pro.\nPasa a Pro para importar tus movimientos.',
     },
     'ru': {
       // common
@@ -1090,6 +1217,9 @@ class Tr {
       'account': 'Счёт',
       'date': 'Дата',
       'note': 'Заметка',
+      'receipt': 'Чек',
+      'receipt_camera': 'Камера',
+      'receipt_gallery': 'Галерея',
       'amount': 'Сумма',
       'empty_transactions_list': 'Транзакций нет.',
       'enter_note': 'Введите заметку',
@@ -1346,6 +1476,71 @@ class Tr {
       'data_restored': 'Данные восстановлены',
       'restore_failed': 'Не удалось восстановить',
       'account_section': 'Аккаунт',
+      'pro_title': 'Pulpo Pro',
+      'pro_subtitle':
+          'Без лимитов на счета, цели, отчёты, импорт и облачные копии.',
+      'pro_go': 'Перейти на Pro',
+      'pro_restore': 'Восстановить покупки',
+      'pro_yearly': 'На год',
+      'pro_monthly': 'На месяц',
+      'pro_semi_annual': '6 месяцев',
+      'pro_yearly_save': '−44%',
+      'pro_trial': '7 дней бесплатно',
+      'pro_active': 'Pulpo Pro активен',
+      'pro_active_short': 'Активен',
+      'pro_buy_failed': 'Не удалось завершить покупку',
+      'pro_store_empty':
+          'Товары недоступны. Создайте pulpo_pro_monthly, pulpo_pro_6months и pulpo_pro_yearly в App Store Connect и Play Console.',
+      'pro_debug_unlock': 'Открыть Pro (debug)',
+      'import_csv': 'Импорт CSV',
+      'import_csv_hint':
+          'Импортируйте CSV Pulpo или банковскую выписку с датой и суммой.',
+      'import_pick_file': 'Выбрать файл',
+      'import_preview': '{n} операций готово · {s} строк пропущено',
+      'import_confirm': 'Импортировать',
+      'import_failed': 'Не удалось импортировать файл',
+      'import_done': 'Импортировано {} операций',
+      'smart_reminders': 'Умные напоминания',
+      'smart_reminders_hint':
+          'Платежи, подписки и цели (Pro)',
+      'smart_debt_title': 'Платёж',
+      'smart_debt_body': 'Сегодня срок платежа: {}',
+      'smart_sub_title': 'Подписка',
+      'smart_sub_body': 'Скоро спишется {}',
+      'smart_goal_title': 'Цель',
+      'smart_goal_body': 'Проверьте цель: {}',
+      'pro_gate_accounts':
+          'Доступно до 3 счетов в бесплатной версии.\nПерейдите на Pro, чтобы добавить неограниченное количество счетов.',
+      'pro_gate_goals':
+          'Доступно до 2 активных целей в бесплатной версии.\nПерейдите на Pro, чтобы создать неограниченное количество целей.',
+      'pro_gate_budgets':
+          'Доступно до 3 активных бюджетов в бесплатной версии.\nПерейдите на Pro, чтобы создать неограниченное количество бюджетов.',
+      'pro_gate_debts':
+          'Доступно до 2 активных долгов в бесплатной версии.\nПерейдите на Pro, чтобы добавить неограниченное количество долгов.',
+      'pro_gate_subscriptions':
+          'Доступно до 3 активных подписок в бесплатной версии.\nПерейдите на Pro, чтобы добавить неограниченное количество подписок.',
+      'pro_gate_recurring':
+          'Доступно до 3 регулярных операций в бесплатной версии.\nПерейдите на Pro, чтобы добавить неограниченное количество регулярных операций.',
+      'pro_gate_analytics':
+          'Расширенная аналитика доступна в Pro.\nПерейдите на Pro, чтобы анализировать свои финансы за 3, 6 и 12 месяцев.',
+      'pro_gate_trends':
+          'Расширенный анализ тенденций доступен в Pro.\nПерейдите на Pro, чтобы отслеживать изменения доходов и расходов.',
+      'pro_gate_flows':
+          'Расширенный анализ денежных потоков доступен в Pro.\nПерейдите на Pro, чтобы подробно анализировать движение ваших денег.',
+      'pro_gate_currencies':
+          'В бесплатной версии доступна 1 основная валюта.\nПерейдите на Pro, чтобы использовать несколько валют и счета в разных валютах.',
+      'pro_gate_cloud':
+          'Облачные копии доступны в Pro.\nСохраняйте свои финансовые данные в облаке и восстанавливайте их на любом устройстве.',
+      'pro_gate_sync':
+          'Синхронизация между устройствами доступна в Pro.\nПерейдите на Pro, чтобы синхронизировать свои финансовые данные между устройствами.',
+      'pro_gate_excel':
+          'Экспорт в Excel доступен в Pro.\nПерейдите на Pro, чтобы экспортировать свои финансовые данные в Excel.',
+      'pro_gate_pdf':
+          'Экспорт в PDF доступен в Pro.\nПерейдите на Pro, чтобы создавать PDF-отчёты о своих финансах.',
+      'pro_gate_reminders':
+          'Напоминания доступны в Pro.\nПерейдите на Pro, чтобы получать напоминания о платежах, подписках и финансовых целях.',
+      'pro_gate_import':
+          'Импорт CSV и выписок доступен в Pro.\nПерейдите на Pro, чтобы импортировать операции.',
     },
     'en': {
       // common
@@ -1480,6 +1675,9 @@ class Tr {
       'account': 'Account',
       'date': 'Date',
       'note': 'Note',
+      'receipt': 'Receipt',
+      'receipt_camera': 'Camera',
+      'receipt_gallery': 'Gallery',
       'amount': 'Amount',
       'empty_transactions_list': 'No transactions.',
       'enter_note': 'Enter a note',
@@ -1736,6 +1934,71 @@ class Tr {
       'data_restored': 'Data restored',
       'restore_failed': 'Could not restore',
       'account_section': 'Account',
+      'pro_title': 'Pulpo Pro',
+      'pro_subtitle':
+          'Unlimited accounts, goals, reports, import and cloud backups.',
+      'pro_go': 'Go Pro',
+      'pro_restore': 'Restore purchases',
+      'pro_yearly': 'Yearly',
+      'pro_monthly': 'Monthly',
+      'pro_semi_annual': '6 months',
+      'pro_yearly_save': 'Save 44%',
+      'pro_trial': '7-day free trial',
+      'pro_active': 'Pulpo Pro is active',
+      'pro_active_short': 'Active',
+      'pro_buy_failed': 'Could not complete the purchase',
+      'pro_store_empty':
+          'Products unavailable. Create pulpo_pro_monthly, pulpo_pro_6months and pulpo_pro_yearly in App Store Connect and Play Console.',
+      'pro_debug_unlock': 'Unlock Pro (debug)',
+      'import_csv': 'Import CSV',
+      'import_csv_hint':
+          'Import a Pulpo CSV or a bank statement with date and amount.',
+      'import_pick_file': 'Choose file',
+      'import_preview': '{n} transactions ready · {s} rows skipped',
+      'import_confirm': 'Import',
+      'import_failed': 'Could not import the file',
+      'import_done': 'Imported {} transactions',
+      'smart_reminders': 'Smart reminders',
+      'smart_reminders_hint':
+          'Debts, subscriptions and goals (Pro)',
+      'smart_debt_title': 'Payment due',
+      'smart_debt_body': 'A payment with {} is due today',
+      'smart_sub_title': 'Subscription',
+      'smart_sub_body': '{} will be charged soon',
+      'smart_goal_title': 'Goal',
+      'smart_goal_body': 'Check your goal: {}',
+      'pro_gate_accounts':
+          'The free version includes up to 3 accounts.\nGo Pro to add unlimited accounts.',
+      'pro_gate_goals':
+          'The free version includes up to 2 active goals.\nGo Pro to create unlimited goals.',
+      'pro_gate_budgets':
+          'The free version includes up to 3 active budgets.\nGo Pro to create unlimited budgets.',
+      'pro_gate_debts':
+          'The free version includes up to 2 active debts.\nGo Pro to add unlimited debts.',
+      'pro_gate_subscriptions':
+          'The free version includes up to 3 active subscriptions.\nGo Pro to add unlimited subscriptions.',
+      'pro_gate_recurring':
+          'The free version includes up to 3 recurring operations.\nGo Pro to add unlimited recurring operations.',
+      'pro_gate_analytics':
+          'Advanced analytics is available in Pro.\nGo Pro to analyze 3, 6 and 12 months.',
+      'pro_gate_trends':
+          'Trend analysis is available in Pro.\nGo Pro to track income and expenses over time.',
+      'pro_gate_flows':
+          'Cash-flow analysis is available in Pro.\nGo Pro to see how your money moves.',
+      'pro_gate_currencies':
+          'The free version includes 1 base currency.\nGo Pro to use multiple currencies and accounts.',
+      'pro_gate_cloud':
+          'Cloud backups are available in Pro.\nSave your data and restore it on any device.',
+      'pro_gate_sync':
+          'Device sync is available in Pro.\nGo Pro to keep your data across devices.',
+      'pro_gate_excel':
+          'Excel export is available in Pro.\nGo Pro to export your finances to Excel.',
+      'pro_gate_pdf':
+          'PDF export is available in Pro.\nGo Pro to create PDF reports.',
+      'pro_gate_reminders':
+          'Smart reminders are available in Pro.\nGo Pro for payment, subscription and goal alerts.',
+      'pro_gate_import':
+          'CSV and statement import is available in Pro.\nGo Pro to import your transactions.',
     },
   };
 }

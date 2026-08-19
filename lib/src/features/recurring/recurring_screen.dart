@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
@@ -13,6 +16,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/recurring_repository.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 
@@ -32,6 +36,7 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
     final rules = ref.watch(recurringRulesProvider).valueOrNull ?? const [];
     final active = rules.where((r) => !r.isPaused).toList();
     final paused = rules.where((r) => r.isPaused).toList();
+    final isPro = ref.watch(proControllerProvider).isPro;
 
     List<db.RecurringRule> current;
     if (_tab == 1) {
@@ -47,8 +52,10 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
           children: [
             PageHeader(
               first: tr.recurringOps,
-              subtitle:
-                  '${tr.activeCount(active.length)} · ${tr.pausedCount(paused.length)}',
+              subtitle: quotaLabel(
+                  isPro: isPro,
+                  used: active.length,
+                  limit: ProLimits.recurring),
               onBack: () => context.pop(),
               action: RoundIconButton(
                 icon: LucideIcons.plus,
@@ -76,8 +83,13 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
     );
   }
 
-  Future<void> _openAdd(BuildContext context) =>
-      _openRuleEditor(context, ref, existing: null);
+  Future<void> _openAdd(BuildContext context) async {
+    final rules = ref.read(recurringRulesProvider).valueOrNull ?? const [];
+    final used = rules.where((r) => !r.isPaused).length;
+    if (!await requireQuota(context, ref, ProGate.recurring, used)) return;
+    if (!context.mounted) return;
+    await _openRuleEditor(context, ref, existing: null);
+  }
 }
 
 Future<void> _openRuleEditor(
@@ -97,9 +109,8 @@ Future<void> _openRuleEditor(
       existing?.nextRunAt ?? DateTime.now().add(const Duration(days: 7));
   final isEdit = existing != null;
 
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
     backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -363,9 +374,20 @@ class _RuleCard extends ConsumerWidget {
                 ],
               ),
               Pressable(
-                onTap: () => ref
-                    .read(recurringRepositoryProvider)
-                    .togglePause(rule.id, !rule.isPaused),
+                onTap: () async {
+                  if (rule.isPaused) {
+                    final rules =
+                        ref.read(recurringRulesProvider).valueOrNull ?? const [];
+                    final used = rules.where((r) => !r.isPaused).length;
+                    if (!await requireQuota(
+                        context, ref, ProGate.recurring, used)) {
+                      return;
+                    }
+                  }
+                  await ref
+                      .read(recurringRepositoryProvider)
+                      .togglePause(rule.id, !rule.isPaused);
+                },
                 child: Icon(
                   rule.isPaused ? LucideIcons.play : LucideIcons.pause,
                   size: 16,

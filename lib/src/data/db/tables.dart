@@ -39,6 +39,7 @@ class Transactions extends Table {
   TextColumn get counterparty => text().nullable()();
   IntColumn get transferGroupId => integer().nullable()(); // связка для transfer-пары
   IntColumn get status => integer().withDefault(const Constant(0))(); // 0=confirmed, 1=planned, 2=draft
+  TextColumn get receiptPath => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }

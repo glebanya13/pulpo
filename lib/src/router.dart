@@ -18,6 +18,7 @@ import 'features/reports/reports_screen.dart';
 import 'features/auth/sign_in_screen.dart';
 import 'features/security/security_screen.dart';
 import 'features/export/export_screen.dart';
+import 'features/import/import_screen.dart';
 import 'features/settings/about_screen.dart';
 import 'features/settings/backups_screen.dart';
 import 'features/settings/currency_picker_screen.dart';
@@ -237,6 +238,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'export',
             pageBuilder: (context, state) =>
                 _fadePage(state, const ExportScreen()),
+          ),
+          GoRoute(
+            path: 'import',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const ImportScreen()),
           ),
           GoRoute(
             path: 'account',

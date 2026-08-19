@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_format.dart';
@@ -13,6 +16,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/debt_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 
@@ -31,6 +35,14 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
     final tr = Tr.of(context);
     final debts = ref.watch(debtsProvider).valueOrNull ?? const [];
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
+    final isPro = ref.watch(proControllerProvider).isPro;
+    final activeDebts = debts
+        .where((d) => isActiveDebt(
+              status: d.status,
+              amount: d.amount,
+              paidAmount: d.paidAmount,
+            ))
+        .length;
 
     final iOwe = debts.where((d) => d.direction == DebtDirection.iOwe.index);
     final owedToMe =
@@ -56,7 +68,10 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
           children: [
             PageHeader(
               first: tr.debts,
-              subtitle: tr.activeCount(debts.length),
+              subtitle: quotaLabel(
+                  isPro: isPro,
+                  used: activeDebts,
+                  limit: ProLimits.debts),
               onBack: () => context.pop(),
               action: RoundIconButton(
                 icon: LucideIcons.plus,
@@ -106,8 +121,19 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
     );
   }
 
-  Future<void> _openAdd(BuildContext context) =>
-      _openDebtEditor(context, ref, existing: null);
+  Future<void> _openAdd(BuildContext context) async {
+    final debts = ref.read(debtsProvider).valueOrNull ?? const [];
+    final used = debts
+        .where((d) => isActiveDebt(
+              status: d.status,
+              amount: d.amount,
+              paidAmount: d.paidAmount,
+            ))
+        .length;
+    if (!await requireQuota(context, ref, ProGate.debts, used)) return;
+    if (!context.mounted) return;
+    await _openDebtEditor(context, ref, existing: null);
+  }
 }
 
 Future<void> _openDebtEditor(
@@ -124,9 +150,8 @@ Future<void> _openDebtEditor(
   DateTime? dueDate = existing?.dueDate;
   final isEdit = existing != null;
 
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
     backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -490,7 +515,7 @@ class _DebtCard extends ConsumerWidget {
 
   Future<void> _openDebtActions(BuildContext context, WidgetRef ref) async {
     final tr = Tr.of(context);
-    await showModalBottomSheet(
+    await showAppBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
