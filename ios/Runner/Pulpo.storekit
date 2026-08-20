@@ -53,7 +53,7 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "pulpo_pro_yearly",
+          "productID" : "pulpo_pro_1anual",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Pulpo Pro Yearly",
           "subscriptionGroupID" : "21481234",
@@ -83,7 +83,7 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "pulpo_pro_monthly",
+          "productID" : "pulpo_pro_mensual",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Pulpo Pro Monthly",
           "subscriptionGroupID" : "21481234",
@@ -113,7 +113,7 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "pulpo_pro_6months",
+          "productID" : "pulpo_pro_6_meses",
           "recurringSubscriptionPeriod" : "P6M",
           "referenceName" : "Pulpo Pro 6 Months",
           "subscriptionGroupID" : "21481234",
