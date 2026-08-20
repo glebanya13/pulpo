@@ -21,14 +21,9 @@ const kHomeWidgetIosBudgetName = 'PulpoBudgetWidget';
 const kHomeWidgetIosChartName = 'PulpoChartWidget';
 
 Future<void> configureHomeWidget() async {
+  // iOS App Group (group.com.pulpo.widget) is off until the Pulpo
+  // provisioning profile includes App Groups in Apple Developer / Codemagic.
   if (kIsWeb) return;
-  try {
-    if (Platform.isIOS) {
-      await HomeWidget.setAppGroupId('group.com.pulpo.widget');
-    }
-  } catch (e, st) {
-    debugPrint('home widget configure: $e\n$st');
-  }
 }
 
 class HomeWidgetBinder extends ConsumerStatefulWidget {
@@ -102,7 +97,7 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
     required Tr tr,
     required WidgetSnapshot snap,
   }) async {
-    if (kIsWeb) return;
+    if (kIsWeb || Platform.isIOS) return;
     try {
       await HomeWidget.saveWidgetData<String>('balance', snap.balance);
       await HomeWidget.saveWidgetData<String>('spent', snap.spent);
@@ -123,11 +118,7 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
       await HomeWidget.saveWidgetData<String>(
           'categories_json', encodeCategoryShortcuts(snap.categoryShortcuts));
 
-      if (Platform.isIOS) {
-        await HomeWidget.updateWidget(iOSName: kHomeWidgetIosName);
-        await HomeWidget.updateWidget(iOSName: kHomeWidgetIosBudgetName);
-        await HomeWidget.updateWidget(iOSName: kHomeWidgetIosChartName);
-      } else if (Platform.isAndroid) {
+      if (Platform.isAndroid) {
         for (final name in [
           kHomeWidgetAndroidName,
           kHomeWidgetAndroidBudgetName,
