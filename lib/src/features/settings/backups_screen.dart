@@ -9,14 +9,19 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/repositories/auto_backup_runner.dart';
 import '../../data/repositories/backup_service.dart';
+import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../auth/cloud_auth.dart';
+
+enum _CloudRestoreChoice { useCloud, keepLocal }
 
 class BackupsScreen extends ConsumerStatefulWidget {
   const BackupsScreen({super.key});
@@ -27,11 +32,18 @@ class BackupsScreen extends ConsumerStatefulWidget {
 
 class _BackupsScreenState extends ConsumerState<BackupsScreen> {
   bool _autoBackup = true;
+  bool _autoCloud = false;
   List<File> _backups = const [];
+  DateTime? _lastCloud;
 
   @override
   void initState() {
     super.initState();
+    final prefs = ref.read(sharedPreferencesProvider);
+    _autoBackup = prefs.getBool(AutoBackupKeys.enabled) ?? true;
+    _autoCloud = prefs.getBool(AutoBackupKeys.cloudEnabled) ?? false;
+    final raw = prefs.getString(AutoBackupKeys.lastCloud);
+    _lastCloud = raw != null ? DateTime.tryParse(raw) : null;
     _loadBackups();
   }
 
@@ -46,9 +58,104 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
     setState(() => _backups = files);
   }
 
+  Future<void> _setAutoBackup(bool v) async {
+    await ref.read(sharedPreferencesProvider).setBool(AutoBackupKeys.enabled, v);
+    setState(() => _autoBackup = v);
+  }
+
+  Future<void> _setAutoCloud(bool v) async {
+    await ref
+        .read(sharedPreferencesProvider)
+        .setBool(AutoBackupKeys.cloudEnabled, v);
+    setState(() => _autoCloud = v);
+  }
+
+  Future<void> _cloudRestore() async {
+    final tr = Tr.of(context);
+    if (!await requirePro(context, ref, ProGate.sync)) return;
+    final user = ref.read(authUserProvider).valueOrNull;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.signInToSync)),
+        );
+        context.push('/settings/account');
+      }
+      return;
+    }
+
+    final cloud = ref.read(cloudAuthProvider);
+    final hasRemote = await cloud.hasCloudSnapshot();
+    if (!hasRemote) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.cloudEmpty)),
+        );
+      }
+      return;
+    }
+
+    final choice = await showDialog<_CloudRestoreChoice>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tr.cloudRestoreTitle),
+        content: Text(tr.cloudRestoreBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, _CloudRestoreChoice.keepLocal),
+            child: Text(tr.cloudRestoreKeepLocal),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, _CloudRestoreChoice.useCloud),
+            child: Text(tr.cloudRestoreUseCloud),
+          ),
+        ],
+      ),
+    );
+    if (choice == null || !mounted) return;
+
+    try {
+      if (choice == _CloudRestoreChoice.useCloud) {
+        final ok = await cloud.downloadMoney();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(ok ? tr.cloudRestoreOk : tr.cloudEmpty)),
+          );
+        }
+      } else {
+        await cloud.uploadMoney();
+        final now = DateTime.now();
+        await ref.read(sharedPreferencesProvider).setString(
+              AutoBackupKeys.lastCloud,
+              now.toUtc().toIso8601String(),
+            );
+        if (mounted) {
+          setState(() => _lastCloud = now);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(tr.cloudBackupOk)),
+          );
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.errorTitle)),
+        );
+      }
+    }
+  }
+
+  String _syncLabel(Tr tr) {
+    if (_lastCloud == null) return tr.neverSynced;
+    final fmt = DateFormat('d MMM y · HH:mm',
+        Localizations.localeOf(context).languageCode);
+    return '${tr.lastSyncPrefix}${fmt.format(_lastCloud!.toLocal())}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
+    final isPro = ref.watch(proControllerProvider).isPro;
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -91,11 +198,57 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                   ),
                   BudgetToggle(
                     value: _autoBackup,
-                    onChanged: (v) => setState(() => _autoBackup = v),
+                    onChanged: _setAutoBackup,
                   ),
                 ],
               ),
             ),
+            if (isPro) ...[
+              const SizedBox(height: 10),
+              SoftCard(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.lime.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(LucideIcons.cloud,
+                          size: 18, color: AppColors.ink),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(tr.autoCloudBackup,
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.primaryText)),
+                          const SizedBox(height: 2),
+                          Text(tr.autoCloudBackupDesc,
+                              style: TextStyle(
+                                  fontSize: 11, color: context.faintText)),
+                          const SizedBox(height: 4),
+                          Text(
+                            _syncLabel(tr),
+                            style: TextStyle(
+                                fontSize: 10, color: context.mutedText),
+                          ),
+                        ],
+                      ),
+                    ),
+                    BudgetToggle(
+                      value: _autoCloud,
+                      onChanged: _setAutoCloud,
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             _Action(
               icon: LucideIcons.plus,
@@ -130,7 +283,13 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                 }
                 try {
                   await ref.read(cloudAuthProvider).uploadMoney();
+                  final now = DateTime.now();
+                  await ref.read(sharedPreferencesProvider).setString(
+                        AutoBackupKeys.lastCloud,
+                        now.toUtc().toIso8601String(),
+                      );
                   if (mounted) {
+                    setState(() => _lastCloud = now);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(tr.cloudBackupOk)),
                     );
@@ -149,35 +308,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               icon: LucideIcons.download,
               label: tr.cloudRestore,
               filled: false,
-              onTap: () async {
-                if (!await requirePro(context, ref, ProGate.sync)) return;
-                final user = ref.read(authUserProvider).valueOrNull;
-                if (user == null) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(tr.signInToSync)),
-                    );
-                    context.push('/settings/account');
-                  }
-                  return;
-                }
-                try {
-                  final ok = await ref.read(cloudAuthProvider).downloadMoney();
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(ok ? tr.cloudRestoreOk : tr.cloudEmpty),
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(tr.errorTitle)),
-                    );
-                  }
-                }
-              },
+              onTap: _cloudRestore,
             ),
             const SizedBox(height: 10),
             _Action(
@@ -187,7 +318,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               onTap: () => context.push('/settings/export'),
             ),
             Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 10),
+              padding: const EdgeInsets.only(left: 4, bottom: 10, top: 8),
               child: Text(tr.localBackupsUpper,
                   style: TextStyle(
                     fontSize: 11,

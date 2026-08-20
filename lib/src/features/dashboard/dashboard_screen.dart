@@ -230,6 +230,7 @@ class _HomeLinks extends StatelessWidget {
     final items = [
       (LucideIcons.wallet, tr.accounts, '/accounts', const Color(0xFF8BD44A)),
       (LucideIcons.pieChart, tr.budgets, '/budgets', const Color(0xFFFFB020)),
+      (LucideIcons.usersRound, tr.sharedBudgetTitle, '/shared-budget', const Color(0xFF7C6CFF)),
       (LucideIcons.users, tr.debts, '/debts', const Color(0xFFFF5C5C)),
       (LucideIcons.tv, tr.subscriptions, '/subscriptions', const Color(0xFF7C6CFF)),
       (LucideIcons.repeat, tr.recurringOps, '/recurring', const Color(0xFF2EB5FF)),
@@ -298,6 +299,12 @@ class _HomeLinks extends StatelessWidget {
             Expanded(child: tile(items[4])),
             const SizedBox(width: 6),
             Expanded(child: tile(items[5])),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(child: tile(items[6])),
           ],
         ),
       ],

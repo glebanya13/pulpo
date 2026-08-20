@@ -8,6 +8,7 @@ import '../../core/currencies.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/notifications/daily_reminder.dart';
 import '../../core/open_link.dart';
+import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
@@ -29,6 +30,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
     final settings = ref.watch(settingsControllerProvider);
+    final pro = ref.watch(proControllerProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -43,6 +45,14 @@ class SettingsScreen extends ConsumerWidget {
               onBack: () => context.pop(),
             ),
             const SizedBox(height: 20),
+
+            if (!pro.isPro)
+              _ProUpgradeCard(
+                title: tr.proGo,
+                subtitle: tr.proSubtitle,
+                onTap: () => openPaywall(context, ProGate.generic),
+              ),
+            if (!pro.isPro) const SizedBox(height: 12),
 
             _Section(
               children: [
@@ -317,6 +327,85 @@ class SettingsScreen extends ConsumerWidget {
           .showSnackBar(SnackBar(content: Text(tr.resetSuccess)));
       context.go('/');
     }
+  }
+}
+
+class _ProUpgradeCard extends StatelessWidget {
+  const _ProUpgradeCard({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.lime,
+          borderRadius: BorderRadius.circular(26),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.ink.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Icon(LucideIcons.star,
+                    size: 22, color: AppColors.ink),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink.withValues(alpha: 0.7),
+                      height: 1.2,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Icon(
+              LucideIcons.chevronRight,
+              size: 18,
+              color: AppColors.ink.withValues(alpha: 0.9),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

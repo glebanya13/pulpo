@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
@@ -173,6 +175,25 @@ class TransactionDetailScreen extends ConsumerWidget {
                   child: _ActionBtn(
                     label: tr.txDuplicate,
                     onTap: () async {
+                      // If transaction has a receipt, copy the image so that
+                      // deleting either transaction doesn't break the other.
+                      String? receiptToCopy = tx.receiptPath;
+                      if (receiptToCopy != null &&
+                          File(receiptToCopy).existsSync()) {
+                        final dir =
+                            await getApplicationDocumentsDirectory();
+                        final receiptsDir =
+                            Directory(p.join(dir.path, 'receipts'));
+                        if (!receiptsDir.existsSync()) {
+                          receiptsDir.createSync(recursive: true);
+                        }
+                        final name =
+                            '${DateTime.now().millisecondsSinceEpoch}_dup_${tx.id}.jpg';
+                        final dest = p.join(receiptsDir.path, name);
+                        await File(receiptToCopy).copy(dest);
+                        receiptToCopy = dest;
+                      }
+
                       await ref.read(transactionRepositoryProvider).add(
                             accountId: tx.accountId,
                             categoryId: tx.categoryId,
@@ -181,6 +202,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                             type: type,
                             date: DateTime.now(),
                             note: tx.note,
+                            receiptPath: receiptToCopy,
                           );
                       if (context.mounted) context.pop();
                     },
@@ -192,6 +214,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                     label: tr.delete,
                     danger: true,
                     onTap: () async {
+                      final receiptToDelete = tx.receiptPath;
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
@@ -216,6 +239,14 @@ class TransactionDetailScreen extends ConsumerWidget {
                       await ref
                           .read(transactionRepositoryProvider)
                           .delete(tx.id);
+                      if (receiptToDelete != null &&
+                          File(receiptToDelete).existsSync()) {
+                        try {
+                          File(receiptToDelete).deleteSync();
+                        } catch (_) {
+                          // Best-effort cleanup; ignore IO errors.
+                        }
+                      }
                       if (context.mounted) context.pop();
                     },
                   ),

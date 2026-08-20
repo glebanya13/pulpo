@@ -1,21 +1,28 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/repositories/settings_service.dart';
+import 'cloud_pro_service.dart';
 import 'pro_limits.dart';
 
 const _kEntitled = 'pro_entitled';
 const _kDebugUnlock = 'pro_debug_unlock';
 const _kProductId = 'pro_product_id';
+const _kExpiresAt = 'pro_expires_at';
 
 class ProState {
   const ProState({
     required this.entitled,
+    required this.localExpiresAt,
     required this.debugUnlock,
+    required this.cloud,
     required this.loading,
     required this.purchasing,
     required this.storeAvailable,
@@ -24,14 +31,34 @@ class ProState {
   });
 
   final bool entitled;
+  final DateTime? localExpiresAt;
   final bool debugUnlock;
+  final CloudProSnapshot cloud;
   final bool loading;
   final bool purchasing;
   final bool storeAvailable;
   final List<ProductDetails> products;
   final String? error;
 
-  bool get isPro => entitled || debugUnlock;
+  bool get isPro {
+    if (debugUnlock) return true;
+    if (cloud.signedIn && cloud.hasRemote) {
+      if (cloud.revokedByAdmin) return false;
+      return cloud.entitled;
+    }
+    if (!entitled) return false;
+    final expires = localExpiresAt;
+    if (expires == null) return false;
+    return expires.isAfter(DateTime.now());
+  }
+
+  DateTime? get subscriptionExpiresAt => cloud.expiresAt ?? localExpiresAt;
+
+  int? get daysUntilExpiry {
+    final exp = subscriptionExpiresAt;
+    if (exp == null) return null;
+    return exp.difference(DateTime.now()).inDays;
+  }
 
   ProductDetails? get monthly => _byId(ProProducts.monthlyId);
   ProductDetails? get semiAnnual => _byId(ProProducts.semiAnnualId);
@@ -46,7 +73,10 @@ class ProState {
 
   ProState copyWith({
     bool? entitled,
+    DateTime? localExpiresAt,
+    bool clearLocalExpiresAt = false,
     bool? debugUnlock,
+    CloudProSnapshot? cloud,
     bool? loading,
     bool? purchasing,
     bool? storeAvailable,
@@ -56,7 +86,10 @@ class ProState {
   }) {
     return ProState(
       entitled: entitled ?? this.entitled,
+      localExpiresAt:
+          clearLocalExpiresAt ? null : (localExpiresAt ?? this.localExpiresAt),
       debugUnlock: debugUnlock ?? this.debugUnlock,
+      cloud: cloud ?? this.cloud,
       loading: loading ?? this.loading,
       purchasing: purchasing ?? this.purchasing,
       storeAvailable: storeAvailable ?? this.storeAvailable,
@@ -72,18 +105,80 @@ class ProController extends Notifier<ProState> {
 
   SharedPreferences get _prefs => ref.read(sharedPreferencesProvider);
 
+  DateTime? _readLocalExpiresAt() {
+    final raw = _prefs.getString(_kExpiresAt);
+    if (raw == null || raw.isEmpty) return null;
+    return DateTime.tryParse(raw);
+  }
+
+  Future<void> _writeLocalEntitlement({
+    required bool entitled,
+    String? productId,
+    DateTime? expiresAt,
+  }) async {
+    await _prefs.setBool(_kEntitled, entitled);
+    if (productId != null) {
+      await _prefs.setString(_kProductId, productId);
+    }
+    if (expiresAt != null) {
+      await _prefs.setString(_kExpiresAt, expiresAt.toUtc().toIso8601String());
+    } else {
+      await _prefs.remove(_kExpiresAt);
+    }
+  }
+
+  Future<void> _clearLocalEntitlement() async {
+    await _prefs.setBool(_kEntitled, false);
+    await _prefs.remove(_kProductId);
+    await _prefs.remove(_kExpiresAt);
+  }
+
+  void _syncFromCloud(CloudProSnapshot snap) {
+    if (!snap.signedIn) return;
+    if (snap.hasRemote && snap.entitled && snap.expiresAt != null) {
+      unawaited(_writeLocalEntitlement(
+        entitled: true,
+        productId: snap.productId,
+        expiresAt: snap.expiresAt,
+      ));
+      state = state.copyWith(
+        entitled: true,
+        localExpiresAt: snap.expiresAt,
+        cloud: snap,
+      );
+      return;
+    }
+    if (snap.hasRemote && !snap.entitled) {
+      unawaited(_clearLocalEntitlement());
+      state = state.copyWith(
+        entitled: false,
+        clearLocalExpiresAt: true,
+        cloud: snap,
+      );
+    }
+  }
+
   @override
   ProState build() {
     ref.onDispose(() {
       _sub?.cancel();
       _listening = false;
     });
+
+    ref.listen<AsyncValue<CloudProSnapshot>>(cloudProSnapshotProvider, (_, next) {
+      final snap = next.value ?? CloudProSnapshot.none;
+      _syncFromCloud(snap);
+      state = state.copyWith(cloud: snap);
+    });
+
     final entitled = _prefs.getBool(_kEntitled) ?? false;
     final debug = _prefs.getBool(_kDebugUnlock) ?? false;
     Future<void>.microtask(refresh);
     return ProState(
       entitled: entitled,
+      localExpiresAt: _readLocalExpiresAt(),
       debugUnlock: debug,
+      cloud: CloudProSnapshot.none,
       loading: true,
       purchasing: false,
       storeAvailable: false,
@@ -122,11 +217,20 @@ class ProController extends Notifier<ProState> {
       }
     }
 
+    if (FirebaseAuth.instance.currentUser != null) {
+      try {
+        await ref.read(cloudProServiceProvider).refreshEntitlement();
+      } catch (e, st) {
+        debugPrint('refresh entitlement: $e\n$st');
+      }
+    }
+
     state = state.copyWith(
       loading: false,
       storeAvailable: available,
       products: products,
       entitled: _prefs.getBool(_kEntitled) ?? false,
+      localExpiresAt: _readLocalExpiresAt(),
       debugUnlock: _prefs.getBool(_kDebugUnlock) ?? false,
       clearError: true,
     );
@@ -149,22 +253,50 @@ class ProController extends Notifier<ProState> {
   }
 
   Future<void> _onPurchases(List<PurchaseDetails> purchases) async {
-    var unlocked = false;
-    String? productId;
     String? error;
+    var verifiedAny = false;
+
     for (final p in purchases) {
       if (!ProProducts.ids.contains(p.productID)) continue;
-      switch (p.status) {
-        case PurchaseStatus.purchased:
-        case PurchaseStatus.restored:
-          unlocked = true;
-          productId = p.productID;
-        case PurchaseStatus.error:
-          error = p.error?.message ?? 'purchase error';
-        case PurchaseStatus.canceled:
-        case PurchaseStatus.pending:
-          break;
+
+      if (p.status == PurchaseStatus.purchased ||
+          p.status == PurchaseStatus.restored) {
+        if (FirebaseAuth.instance.currentUser == null) {
+          error = 'sign_in_required';
+        } else {
+          try {
+            final platform = !kIsWeb && Platform.isIOS ? 'ios' : 'android';
+            final result =
+                await ref.read(cloudProServiceProvider).verifyPurchase(
+                      platform: platform,
+                      productId: p.productID,
+                      verificationData:
+                          p.verificationData.serverVerificationData,
+                      purchaseId: p.purchaseID,
+                    );
+            if (result.entitled && result.expiresAt != null) {
+              verifiedAny = true;
+              await _writeLocalEntitlement(
+                entitled: true,
+                productId: result.productId ?? p.productID,
+                expiresAt: result.expiresAt,
+              );
+              state = state.copyWith(
+                entitled: true,
+                localExpiresAt: result.expiresAt,
+                purchasing: false,
+                clearError: true,
+              );
+            }
+          } catch (e, st) {
+            debugPrint('verify purchase: $e\n$st');
+            error = e.toString();
+          }
+        }
+      } else if (p.status == PurchaseStatus.error) {
+        error = p.error?.message ?? 'purchase error';
       }
+
       if (p.pendingCompletePurchase) {
         try {
           await InAppPurchase.instance.completePurchase(p);
@@ -174,18 +306,7 @@ class ProController extends Notifier<ProState> {
       }
     }
 
-    if (unlocked) {
-      await _prefs.setBool(_kEntitled, true);
-      if (productId != null) {
-        await _prefs.setString(_kProductId, productId);
-      }
-      state = state.copyWith(
-        entitled: true,
-        purchasing: false,
-        clearError: true,
-      );
-      return;
-    }
+    if (verifiedAny) return;
 
     if (error != null) {
       state = state.copyWith(purchasing: false, error: error);
@@ -196,10 +317,18 @@ class ProController extends Notifier<ProState> {
 
   Future<bool> buy(ProductDetails product) async {
     if (kIsWeb) return false;
+    if (FirebaseAuth.instance.currentUser == null) {
+      state = state.copyWith(purchasing: false, error: 'sign_in_required');
+      return false;
+    }
+
     state = state.copyWith(purchasing: true, clearError: true);
     try {
+      final PurchaseParam param = product is GooglePlayProductDetails
+          ? GooglePlayPurchaseParam(productDetails: product)
+          : PurchaseParam(productDetails: product);
       final ok = await InAppPurchase.instance.buyNonConsumable(
-        purchaseParam: PurchaseParam(productDetails: product),
+        purchaseParam: param,
       );
       if (!ok) {
         state = state.copyWith(purchasing: false, error: 'buy failed');
@@ -212,14 +341,24 @@ class ProController extends Notifier<ProState> {
     }
   }
 
-  Future<void> restore() async {
-    if (kIsWeb) return;
+  Future<bool> restore() async {
+    if (kIsWeb) return false;
+    if (FirebaseAuth.instance.currentUser == null) {
+      state = state.copyWith(purchasing: false, error: 'sign_in_required');
+      return false;
+    }
+
     state = state.copyWith(purchasing: true, clearError: true);
     try {
       await InAppPurchase.instance.restorePurchases();
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      final isProNow = ref.read(proControllerProvider).isPro;
+      state = state.copyWith(purchasing: false);
+      return isProNow;
     } catch (e, st) {
       debugPrint('iap restore: $e\n$st');
       state = state.copyWith(purchasing: false, error: e.toString());
+      return false;
     }
   }
 

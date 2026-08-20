@@ -59,6 +59,8 @@ class AccountRepository {
     String? icon,
     int? color,
     bool? includeInTotal,
+    double? creditLimit,
+    bool clearCreditLimit = false,
   }) {
     return (_db.update(_db.accounts)..where((a) => a.id.equals(id))).write(
       AccountsCompanion(
@@ -68,6 +70,11 @@ class AccountRepository {
         includeInTotal: includeInTotal == null
             ? const Value.absent()
             : Value(includeInTotal),
+        creditLimit: clearCreditLimit
+            ? const Value(null)
+            : (creditLimit == null
+                ? const Value.absent()
+                : Value(creditLimit)),
       ),
     );
   }

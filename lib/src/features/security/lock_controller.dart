@@ -109,10 +109,11 @@ class LockController extends Notifier<LockState> {
   Future<bool> deviceHasBiometrics() async {
     try {
       final supported = await _auth.isDeviceSupported();
-      final can = await _auth.canCheckBiometrics;
-      if (!supported && !can) return false;
+      if (!supported) return false;
+      // `canCheckBiometrics` can be true even when no biometrics are enrolled.
+      // For toggle UX we want to require at least one enrolled biometric type.
       final types = await _auth.getAvailableBiometrics();
-      return types.isNotEmpty || can;
+      return types.isNotEmpty;
     } catch (_) {
       return false;
     }
@@ -124,7 +125,7 @@ class LockController extends Notifier<LockState> {
         localizedReason: 'Pulpo',
         options: const AuthenticationOptions(
           biometricOnly: true,
-          stickyAuth: true,
+          stickyAuth: false,
         ),
       );
       if (!ok) return false;

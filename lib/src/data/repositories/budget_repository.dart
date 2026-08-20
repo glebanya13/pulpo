@@ -18,6 +18,7 @@ class BudgetRepository {
     List<int> categoryIds = const [],
     DateTime? startDate,
     int? color,
+    bool rollover = false,
   }) {
     return _db.into(_db.budgets).insert(
           BudgetsCompanion.insert(
@@ -28,6 +29,7 @@ class BudgetRepository {
             categoryIdsJson: Value(jsonEncode(categoryIds)),
             startDate: startDate ?? DateTime.now(),
             color: color == null ? const Value.absent() : Value(color),
+            rollover: Value(rollover),
           ),
         );
   }
@@ -38,6 +40,7 @@ class BudgetRepository {
     double? amount,
     int? period,
     List<int>? categoryIds,
+    bool? rollover,
   }) async {
     await (_db.update(_db.budgets)..where((b) => b.id.equals(id))).write(
       BudgetsCompanion(
@@ -47,6 +50,7 @@ class BudgetRepository {
         categoryIdsJson: categoryIds == null
             ? const Value.absent()
             : Value(jsonEncode(categoryIds)),
+        rollover: rollover == null ? const Value.absent() : Value(rollover),
       ),
     );
   }

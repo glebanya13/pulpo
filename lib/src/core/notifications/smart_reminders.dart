@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/settings_service.dart';
+import '../../features/budgets/budget_period.dart';
 import '../l10n/tr.dart';
 import 'daily_reminder.dart';
 
@@ -15,6 +17,7 @@ const _kSmartIdsKey = 'smart_reminder_ids';
 const _kDebtBase = 3100;
 const _kSubBase = 4100;
 const _kGoalBase = 5100;
+const _kBudgetBase = 6100;
 
 final _plugin = FlutterLocalNotificationsPlugin();
 
@@ -25,6 +28,8 @@ Future<void> syncSmartReminders({
   required List<db.Debt> debts,
   required List<db.Subscription> subscriptions,
   required List<db.Goal> goals,
+  required List<db.Budget> budgets,
+  required List<db.Transaction> transactions,
 }) async {
   if (kIsWeb) return;
   await initDailyReminder();
@@ -93,6 +98,35 @@ Future<void> syncSmartReminders({
       id: id,
       title: tr.smartGoalTitle,
       body: tr.smartGoalBody(g.name),
+      when: when,
+    );
+    ids.add(id);
+  }
+
+  final nowDt = DateTime.now();
+  for (final b in budgets) {
+    if (b.endDate != null && b.endDate!.isBefore(nowDt)) continue;
+    final catIds = (jsonDecode(b.categoryIdsJson) as List).cast<int>();
+    final range = currentBudgetRange(b, nowDt);
+    final prev = previousBudgetRange(b, nowDt);
+    final prevSpent =
+        budgetSpentInRange(transactions, prev, categoryIds: catIds);
+    final limit =
+        effectiveBudgetLimit(budget: b, previousSpent: prevSpent);
+    if (limit <= 0) continue;
+    final spent =
+        budgetSpentInRange(transactions, range, categoryIds: catIds);
+    final ratio = spent / limit;
+    if (ratio < 0.85) continue;
+    final day = DateTime(nowDt.year, nowDt.month, nowDt.day + 1);
+    final when = _atTen(day);
+    if (!when.isAfter(tz.TZDateTime.now(tz.local))) continue;
+    final id = _kBudgetBase + b.id;
+    final pct = '${(ratio * 100).round()}%';
+    await _schedule(
+      id: id,
+      title: tr.smartBudgetTitle,
+      body: tr.smartBudgetBody(b.name, pct),
       when: when,
     );
     ids.add(id);

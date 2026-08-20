@@ -42,7 +42,9 @@ class AppShell extends StatelessWidget {
         currentIndex: navigationShell.currentIndex,
         onTap: (i) => navigationShell.goBranch(
           i,
-          initialLocation: i == navigationShell.currentIndex,
+          // Customer wants no state "remembering" between pages:
+          // always re-open the target branch at its initial location.
+          initialLocation: true,
         ),
         onFabTap: () => showQuickActionsSheet(context),
       ),

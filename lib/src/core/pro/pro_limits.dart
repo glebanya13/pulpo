@@ -16,6 +16,7 @@ enum ProGate {
   reminders,
   importCsv,
   generic,
+  sharedBudget,
 }
 
 class ProLimits {

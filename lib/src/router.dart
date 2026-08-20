@@ -25,6 +25,7 @@ import 'features/settings/currency_picker_screen.dart';
 import 'features/settings/language_picker_screen.dart';
 import 'features/settings/theme_picker_screen.dart';
 import 'features/settings/settings_screen.dart';
+import 'features/shared_budget/shared_budget_screen.dart';
 import 'features/subscriptions/subscriptions_screen.dart';
 import 'features/transactions/add_transaction_screen.dart';
 import 'features/transactions/transaction_detail_screen.dart';
@@ -203,6 +204,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/subscriptions',
         pageBuilder: (context, state) =>
             _fadePage(state, const SubscriptionsScreen()),
+      ),
+      GoRoute(
+        path: '/shared-budget',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const SharedBudgetScreen()),
       ),
       GoRoute(
         path: '/recurring',

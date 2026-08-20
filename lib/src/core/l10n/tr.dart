@@ -541,6 +541,58 @@ class Tr {
   String get spentThisMonth => _get('spent_this_month');
   String get outOfBudgetTemplate => _get('out_of_budget_template'); // "из {} бюджета"
   String get creditLimitPrefix => _get('credit_limit_prefix'); // "Лимит: "
+  String get creditLimit => _get('credit_limit');
+  String get creditLimitHint => _get('credit_limit_hint');
+  String get autoCloudBackup => _get('auto_cloud_backup');
+  String get autoCloudBackupDesc => _get('auto_cloud_backup_desc');
+  String get lastSyncPrefix => _get('last_sync_prefix');
+  String get neverSynced => _get('never_synced');
+  String get cloudRestoreTitle => _get('cloud_restore_title');
+  String get cloudRestoreBody => _get('cloud_restore_body');
+  String get cloudRestoreUseCloud => _get('cloud_restore_use_cloud');
+  String get cloudRestoreKeepLocal => _get('cloud_restore_keep_local');
+  String get budgetCategories => _get('budget_categories');
+  String get budgetCategoriesAll => _get('budget_categories_all');
+  String get budgetRollover => _get('budget_rollover');
+  String get budgetRolloverDesc => _get('budget_rollover_desc');
+  String get pickDateRange => _get('pick_date_range');
+  String get dateFrom => _get('date_from');
+  String get dateTo => _get('date_to');
+  String get exportPdfDate => _get('export_pdf_date');
+  String get exportPdfType => _get('export_pdf_type');
+  String get exportPdfAmount => _get('export_pdf_amount');
+  String get exportPdfNote => _get('export_pdf_note');
+  String get tagsLabel => _get('tags_label');
+  String get tagsHint => _get('tags_hint');
+  String proExpires(String date) => _get('pro_expires').replaceAll('{}', date);
+  String proDaysLeft(int n) => _get('pro_days_left').replaceAll('{}', '$n');
+  String get proManageSubscription => _get('pro_manage_subscription');
+  String get sharedBudgetTitle => _get('shared_budget_title');
+  String get sharedBudgetSubtitle => _get('shared_budget_subtitle');
+  String get sharedBudgetCreate => _get('shared_budget_create');
+  String get sharedBudgetJoin => _get('shared_budget_join');
+  String get sharedBudgetJoinHint => _get('shared_budget_join_hint');
+  String get sharedBudgetInviteCode => _get('shared_budget_invite_code');
+  String get sharedBudgetSignIn => _get('shared_budget_sign_in');
+  String get sharedBudgetEven => _get('shared_budget_even');
+  String get sharedBudgetSyncExpenses => _get('shared_budget_sync');
+  String get sharedBudgetLeave => _get('shared_budget_leave');
+  String get sharedBudgetLeaveTitle => _get('shared_budget_leave_title');
+  String get sharedBudgetLeaveBody => _get('shared_budget_leave_body');
+  String get sharedBudgetCodeCopied => _get('shared_budget_code_copied');
+  String get sharedBudgetInvalidCode => _get('shared_budget_invalid_code');
+  String get sharedBudgetFull => _get('shared_budget_full');
+  String get sharedBudgetAlreadyJoined => _get('shared_budget_already_joined');
+  String get sharedBudgetWaitingPartner => _get('shared_budget_waiting');
+  String get youLabel => _get('you_label');
+  String get widgetBudgetLeft => _get('widget_budget_left');
+  String get widgetMonthExpense => _get('widget_month_expense');
+  String sharedBudgetSynced(int n) =>
+      _get('shared_budget_synced').replaceAll('{}', '$n');
+  String sharedBudgetPartnerOwes(String amount) =>
+      _get('shared_budget_partner_owes').replaceAll('{}', amount);
+  String sharedBudgetYouOwe(String amount) =>
+      _get('shared_budget_you_owe').replaceAll('{}', amount);
   String get selectShort => _get('select_short'); // "Выбрать"
   String get enterNoteHint => _get('enter_note_hint'); // "Введите заметку..."
   String get backupsShort => _get('backups_short'); // "Бэкапы"
@@ -549,6 +601,9 @@ class Tr {
   String get proSubtitle => _get('pro_subtitle');
   String get proGo => _get('pro_go');
   String get proRestore => _get('pro_restore');
+  String get proSignInRequired => _get('pro_sign_in_required');
+  String get proRestoreEmpty => _get('pro_restore_empty');
+  String get proLegalNotice => _get('pro_legal_notice');
   String get proYearly => _get('pro_yearly');
   String get proMonthly => _get('pro_monthly');
   String get proSemiAnnual => _get('pro_semi_annual');
@@ -568,6 +623,8 @@ class Tr {
   String get importConfirm => _get('import_confirm');
   String get importFailed => _get('import_failed');
   String importDone(int n) => _get('import_done').replaceAll('{}', '$n');
+  String importDuplicatesSkipped(int n) =>
+      _get('import_duplicates_skipped').replaceAll('{}', '$n');
   String get smartReminders => _get('smart_reminders');
   String get smartRemindersHint => _get('smart_reminders_hint');
   String get smartDebtTitle => _get('smart_debt_title');
@@ -579,6 +636,9 @@ class Tr {
   String get smartGoalTitle => _get('smart_goal_title');
   String smartGoalBody(String name) =>
       _get('smart_goal_body').replaceAll('{}', name);
+  String get smartBudgetTitle => _get('smart_budget_title');
+  String smartBudgetBody(String name, String pct) =>
+      _get('smart_budget_body').replaceFirst('{}', name).replaceFirst('{}', pct);
 
   String paywallBody(ProGate gate) => switch (gate) {
         ProGate.accounts => _get('pro_gate_accounts'),
@@ -597,6 +657,7 @@ class Tr {
         ProGate.pdf => _get('pro_gate_pdf'),
         ProGate.reminders => _get('pro_gate_reminders'),
         ProGate.importCsv => _get('pro_gate_import'),
+        ProGate.sharedBudget => _get('pro_gate_shared_budget'),
         ProGate.generic => _get('pro_subtitle'),
       };
 
@@ -944,6 +1005,62 @@ class Tr {
       'spent_this_month': 'Gastado este mes',
       'out_of_budget_template': 'de {} de presupuesto',
       'credit_limit_prefix': 'Límite: ',
+      'credit_limit': 'Límite de crédito',
+      'credit_limit_hint': 'Opcional',
+      'auto_cloud_backup': 'Copia en la nube',
+      'auto_cloud_backup_desc': 'Subida diaria automática (Pro)',
+      'last_sync_prefix': 'Última sync: ',
+      'never_synced': 'Aún no sincronizado',
+      'cloud_restore_title': '¿Restaurar datos?',
+      'cloud_restore_body':
+          'Puedes reemplazar los datos locales con la copia en la nube o subir los datos locales a la nube.',
+      'cloud_restore_use_cloud': 'Usar nube',
+      'cloud_restore_keep_local': 'Mantener local',
+      'budget_categories': 'Categorías',
+      'budget_categories_all': 'Todas',
+      'budget_rollover': 'Arrastrar saldo',
+      'budget_rollover_desc': 'El sobrante pasa al siguiente periodo',
+      'pick_date_range': 'Elegir periodo',
+      'date_from': 'Desde',
+      'date_to': 'Hasta',
+      'export_pdf_date': 'Fecha',
+      'export_pdf_type': 'Tipo',
+      'export_pdf_amount': 'Importe',
+      'export_pdf_note': 'Nota',
+      'tags_label': 'Etiquetas',
+      'tags_hint': 'viaje, trabajo…',
+      'import_duplicates_skipped': 'Duplicados omitidos: {}',
+      'pro_expires': 'Pro activo hasta {}',
+      'pro_days_left': '{} días restantes',
+      'pro_manage_subscription': 'Gestionar suscripción',
+      'shared_budget_title': 'Presupuesto compartido',
+      'shared_budget_subtitle':
+          'Rastrea y sincroniza transacciones con tu pareja',
+      'shared_budget_create': 'Crear enlace de pareja',
+      'shared_budget_join': 'Unirse con código',
+      'shared_budget_join_hint': 'Introduce el código de invitación de tu pareja',
+      'shared_budget_invite_code': 'Código de invitación',
+      'shared_budget_sign_in': 'Inicia sesión para compartir un presupuesto',
+      'shared_budget_even': 'Estáis a mano ✌️',
+      'shared_budget_sync': 'Sincronizar mis gastos del mes',
+      'shared_budget_leave': 'Salir del presupuesto',
+      'shared_budget_leave_title': '¿Salir del presupuesto compartido?',
+      'shared_budget_leave_body': 'Dejarás de ver los gastos compartidos.',
+      'shared_budget_code_copied': 'Código copiado',
+      'shared_budget_invalid_code': 'Código no válido',
+      'shared_budget_full': 'Este presupuesto ya tiene pareja',
+      'shared_budget_already_joined': 'Ya estás en un presupuesto compartido',
+      'shared_budget_waiting': 'Esperando pareja…',
+      'shared_budget_synced': 'Sincronizados {} gastos',
+      'shared_budget_partner_owes': 'Tu pareja te debe {}',
+      'shared_budget_you_owe': 'Debes {} a tu pareja',
+      'you_label': 'Tú',
+      'pro_gate_shared_budget':
+          'Comparte un presupuesto con tu pareja y sincroniza gastos en la nube.',
+      'widget_budget_left': 'Queda',
+      'widget_month_expense': 'Gasto',
+      'smart_budget_title': 'Presupuesto',
+      'smart_budget_body': '{} casi agotado ({})',
       'select_short': 'Elegir',
       'enter_note_hint': 'Escribe una nota...',
       'backups_short': 'Copias',
@@ -1023,6 +1140,9 @@ class Tr {
           'Sin límites en cuentas, metas, informes, importación y copias en la nube.',
       'pro_go': 'Pasar a Pro',
       'pro_restore': 'Restaurar compras',
+      'pro_sign_in_required': 'Inicia sesión para activar Pro',
+      'pro_restore_empty': 'No se encontraron compras activas',
+      'pro_legal_notice': 'Al suscribirte aceptas los Términos y la Política de privacidad',
       'pro_yearly': 'Anual',
       'pro_monthly': 'Mensual',
       'pro_semi_annual': '6 meses',
@@ -1402,6 +1522,62 @@ class Tr {
       'spent_this_month': 'Потрачено в этом месяце',
       'out_of_budget_template': 'из {} бюджета',
       'credit_limit_prefix': 'Лимит: ',
+      'credit_limit': 'Кредитный лимит',
+      'credit_limit_hint': 'Необязательно',
+      'auto_cloud_backup': 'Облачный бэкап',
+      'auto_cloud_backup_desc': 'Ежедневная автозагрузка (Pro)',
+      'last_sync_prefix': 'Последняя sync: ',
+      'never_synced': 'Ещё не синхронизировано',
+      'cloud_restore_title': 'Восстановить данные?',
+      'cloud_restore_body':
+          'Можно заменить локальные данные облачной копией или загрузить локальные данные в облако.',
+      'cloud_restore_use_cloud': 'Из облака',
+      'cloud_restore_keep_local': 'Оставить локальные',
+      'budget_categories': 'Категории',
+      'budget_categories_all': 'Все',
+      'budget_rollover': 'Перенос остатка',
+      'budget_rollover_desc': 'Непотраченное переносится на следующий период',
+      'pick_date_range': 'Выбрать период',
+      'date_from': 'С',
+      'date_to': 'По',
+      'export_pdf_date': 'Дата',
+      'export_pdf_type': 'Тип',
+      'export_pdf_amount': 'Сумма',
+      'export_pdf_note': 'Заметка',
+      'tags_label': 'Теги',
+      'tags_hint': 'отпуск, работа…',
+      'import_duplicates_skipped': 'Пропущено дубликатов: {}',
+      'pro_expires': 'Pro до {}',
+      'pro_days_left': 'Осталось {} дн.',
+      'pro_manage_subscription': 'Управление подпиской',
+      'shared_budget_title': 'Общий бюджет',
+      'shared_budget_subtitle':
+          'Отслеживайте и синхронизируйте траты с партнёром',
+      'shared_budget_create': 'Создать парный бюджет',
+      'shared_budget_join': 'Присоединиться по коду',
+      'shared_budget_join_hint': 'Введите код приглашения партнёра',
+      'shared_budget_invite_code': 'Код приглашения',
+      'shared_budget_sign_in': 'Войдите, чтобы делиться бюджетом',
+      'shared_budget_even': 'Вы в расчёте ✌️',
+      'shared_budget_sync': 'Синхронизировать мои траты за месяц',
+      'shared_budget_leave': 'Выйти из общего бюджета',
+      'shared_budget_leave_title': 'Выйти из общего бюджета?',
+      'shared_budget_leave_body': 'Вы перестанете видеть общие траты.',
+      'shared_budget_code_copied': 'Код скопирован',
+      'shared_budget_invalid_code': 'Неверный код',
+      'shared_budget_full': 'В этом бюджете уже есть партнёр',
+      'shared_budget_already_joined': 'Вы уже в общем бюджете',
+      'shared_budget_waiting': 'Ждём партнёра…',
+      'shared_budget_synced': 'Синхронизировано {} трат',
+      'shared_budget_partner_owes': 'Партнёр должен вам {}',
+      'shared_budget_you_owe': 'Вы должны партнёру {}',
+      'you_label': 'Вы',
+      'pro_gate_shared_budget':
+          'Общий бюджет с партнёром и синхронизация трат в облаке.',
+      'widget_budget_left': 'Осталось',
+      'widget_month_expense': 'Расход',
+      'smart_budget_title': 'Бюджет',
+      'smart_budget_body': '{} почти исчерпан ({})',
       'select_short': 'Выбрать',
       'enter_note_hint': 'Введите заметку...',
       'backups_short': 'Бэкапы',
@@ -1481,6 +1657,9 @@ class Tr {
           'Без лимитов на счета, цели, отчёты, импорт и облачные копии.',
       'pro_go': 'Перейти на Pro',
       'pro_restore': 'Восстановить покупки',
+      'pro_sign_in_required': 'Войдите в аккаунт, чтобы активировать Pro',
+      'pro_restore_empty': 'Активных покупок не найдено',
+      'pro_legal_notice': 'Оформляя подписку, вы принимаете Условия и Политику конфиденциальности',
       'pro_yearly': 'На год',
       'pro_monthly': 'На месяц',
       'pro_semi_annual': '6 месяцев',
@@ -1860,6 +2039,62 @@ class Tr {
       'spent_this_month': 'Spent this month',
       'out_of_budget_template': 'of {} budget',
       'credit_limit_prefix': 'Limit: ',
+      'credit_limit': 'Credit limit',
+      'credit_limit_hint': 'Optional',
+      'auto_cloud_backup': 'Cloud backup',
+      'auto_cloud_backup_desc': 'Daily automatic upload (Pro)',
+      'last_sync_prefix': 'Last sync: ',
+      'never_synced': 'Not synced yet',
+      'cloud_restore_title': 'Restore data?',
+      'cloud_restore_body':
+          'Replace local data with the cloud copy, or upload local data to the cloud.',
+      'cloud_restore_use_cloud': 'Use cloud',
+      'cloud_restore_keep_local': 'Keep local',
+      'budget_categories': 'Categories',
+      'budget_categories_all': 'All',
+      'budget_rollover': 'Rollover',
+      'budget_rollover_desc': 'Unused amount carries to the next period',
+      'pick_date_range': 'Pick date range',
+      'date_from': 'From',
+      'date_to': 'To',
+      'export_pdf_date': 'Date',
+      'export_pdf_type': 'Type',
+      'export_pdf_amount': 'Amount',
+      'export_pdf_note': 'Note',
+      'tags_label': 'Tags',
+      'tags_hint': 'trip, work…',
+      'import_duplicates_skipped': 'Duplicates skipped: {}',
+      'pro_expires': 'Pro until {}',
+      'pro_days_left': '{} days left',
+      'pro_manage_subscription': 'Manage subscription',
+      'shared_budget_title': 'Shared budget',
+      'shared_budget_subtitle':
+          'Track and sync transactions with your partner',
+      'shared_budget_create': 'Create partner link',
+      'shared_budget_join': 'Join with code',
+      'shared_budget_join_hint': 'Enter your partner\'s invite code',
+      'shared_budget_invite_code': 'Invite code',
+      'shared_budget_sign_in': 'Sign in to share a budget',
+      'shared_budget_even': 'You are even ✌️',
+      'shared_budget_sync': 'Sync my expenses this month',
+      'shared_budget_leave': 'Leave shared budget',
+      'shared_budget_leave_title': 'Leave shared budget?',
+      'shared_budget_leave_body': 'You will stop seeing shared expenses.',
+      'shared_budget_code_copied': 'Code copied',
+      'shared_budget_invalid_code': 'Invalid code',
+      'shared_budget_full': 'This budget already has a partner',
+      'shared_budget_already_joined': 'You are already in a shared budget',
+      'shared_budget_waiting': 'Waiting for partner…',
+      'shared_budget_synced': 'Synced {} expenses',
+      'shared_budget_partner_owes': 'Partner owes you {}',
+      'shared_budget_you_owe': 'You owe partner {}',
+      'you_label': 'You',
+      'pro_gate_shared_budget':
+          'Share a budget with your partner and sync expenses in the cloud.',
+      'widget_budget_left': 'Left',
+      'widget_month_expense': 'Expense',
+      'smart_budget_title': 'Budget',
+      'smart_budget_body': '{} almost used up ({})',
       'select_short': 'Select',
       'enter_note_hint': 'Enter a note...',
       'backups_short': 'Backups',
@@ -1939,6 +2174,9 @@ class Tr {
           'Unlimited accounts, goals, reports, import and cloud backups.',
       'pro_go': 'Go Pro',
       'pro_restore': 'Restore purchases',
+      'pro_sign_in_required': 'Sign in to activate Pro',
+      'pro_restore_empty': 'No active purchases found',
+      'pro_legal_notice': 'By subscribing you agree to the Terms and Privacy Policy',
       'pro_yearly': 'Yearly',
       'pro_monthly': 'Monthly',
       'pro_semi_annual': '6 months',

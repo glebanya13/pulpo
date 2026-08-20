@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../db/app_database.dart';
 import '../db/enums.dart';
+import '../../core/fx_rate_service.dart';
 
 /// Синглтон-провайдер БД. Открывается один раз на всё приложение.
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -133,14 +134,39 @@ final accountBalancesProvider = Provider<Map<int, double>>((ref) {
   };
 });
 
-/// Общий баланс (сумма по счетам с includeInTotal). Пока без конвертации валют.
+/// FX rates to base currency (base => 1.0).
+final fxRatesToBaseProvider =
+    FutureProvider.family<Map<String, double>, String>((ref, baseCurrency) async {
+  final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
+  final base = baseCurrency.toUpperCase();
+  final rates = <String, double>{base: 1.0};
+  final fx = FxRateService();
+  for (final a in accounts) {
+    final code = a.currency.toUpperCase();
+    if (rates.containsKey(code)) continue;
+    final rate = await fx.fetchRate(code, base);
+    rates[code] = rate ?? 1.0;
+  }
+  return rates;
+});
+
+/// Общий баланс (сумма по счетам с includeInTotal) с конвертацией в базовую валюту.
 final totalBalanceProvider = Provider<double>((ref) {
   final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
   final balances = ref.watch(accountBalancesProvider);
+  final base = ref.watch(settingsBaseCurrencyProvider);
+  final rates = ref.watch(fxRatesToBaseProvider(base)).valueOrNull ?? {base: 1.0};
   var total = 0.0;
   for (final a in accounts) {
     if (!a.includeInTotal) continue;
-    total += balances[a.id] ?? 0.0;
+    final bal = balances[a.id] ?? 0.0;
+    final rate = rates[a.currency.toUpperCase()] ?? 1.0;
+    total += bal * rate;
   }
   return total;
+});
+
+/// Base currency without importing settings_controller (avoids circular deps).
+final settingsBaseCurrencyProvider = Provider<String>((ref) {
+  throw UnimplementedError('override in main()');
 });

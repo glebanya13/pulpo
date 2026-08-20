@@ -1,16 +1,21 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../features/auth/cloud_auth.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../../core/open_link.dart';
+import '../../core/pro/subscription_links.dart';
 
 class PaywallScreen extends ConsumerWidget {
   const PaywallScreen({super.key, this.gate = ProGate.generic});
@@ -21,6 +26,7 @@ class PaywallScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
     final pro = ref.watch(proControllerProvider);
+    final signedIn = ref.watch(authUserProvider).valueOrNull != null;
     final yearly = pro.yearly;
     final monthly = pro.monthly;
 
@@ -102,11 +108,66 @@ class PaywallScreen extends ConsumerWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
+                    if (pro.subscriptionExpiresAt != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        tr.proExpires(
+                          MaterialLocalizations.of(context)
+                              .formatMediumDate(pro.subscriptionExpiresAt!),
+                        ),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.mutedText,
+                        ),
+                      ),
+                      if (pro.daysUntilExpiry != null &&
+                          pro.daysUntilExpiry! <= 14)
+                        Text(
+                          tr.proDaysLeft(pro.daysUntilExpiry!),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.warning,
+                          ),
+                        ),
+                    ],
+                    const SizedBox(height: 12),
+                    ScaledOutlinedButton(
+                      onPressed: () => openManageSubscriptions(context),
+                      child: Text(tr.proManageSubscription),
+                    ),
                   ] else ...[
+                    if (!signedIn)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: context.surface,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              tr.proSignInRequired,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: context.mutedText,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            ScaledElevatedButton(
+                              onPressed: () => context.push('/settings/account'),
+                              child: Text(tr.signIn),
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 20),
                     _PlanCard(
                       title: tr.proYearly,
-                      price: yearly?.price ?? '19,99 €',
+                      price: yearly?.price ?? '24,99 €',
                       badge: tr.proYearlySave,
                       subtitle: tr.proTrial,
                       highlighted: true,
@@ -116,7 +177,7 @@ class PaywallScreen extends ConsumerWidget {
                     const SizedBox(height: 10),
                     _PlanCard(
                       title: tr.proSemiAnnual,
-                      price: pro.semiAnnual?.price ?? '12,99 €',
+                      price: pro.semiAnnual?.price ?? '14,99 €',
                       subtitle: tr.proTrial,
                       busy: pro.purchasing,
                       onTap: () => _buy(context, ref, tr, pro.semiAnnual),
@@ -124,7 +185,7 @@ class PaywallScreen extends ConsumerWidget {
                     const SizedBox(height: 10),
                     _PlanCard(
                       title: tr.proMonthly,
-                      price: monthly?.price ?? '2,99 €',
+                      price: monthly?.price ?? '3,99 €',
                       subtitle: tr.proTrial,
                       busy: pro.purchasing,
                       onTap: () => _buy(context, ref, tr, monthly),
@@ -140,15 +201,14 @@ class PaywallScreen extends ConsumerWidget {
                     ScaledTextButton(
                       onPressed: pro.purchasing
                           ? null
-                          : () =>
-                              ref.read(proControllerProvider.notifier).restore(),
+                          : () => _restore(context, ref, tr),
                       child: Text(tr.proRestore),
                     ),
                     if (pro.error != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
-                          tr.proBuyFailed,
+                          _errorText(tr, pro.error!),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 13,
@@ -156,18 +216,56 @@ class PaywallScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
+                    const SizedBox(height: 12),
+                    Text(
+                      tr.proLegalNotice,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.35,
+                        color: context.faintText,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 12,
+                      children: [
+                        ScaledTextButton(
+                          onPressed: () => openAppLink(context, AppInfo.termsUri),
+                          child: Text(tr.termsOfUse),
+                        ),
+                        ScaledTextButton(
+                          onPressed: () =>
+                              openAppLink(context, AppInfo.privacyUri),
+                          child: Text(tr.privacyPolicy),
+                        ),
+                      ],
+                    ),
                     if (!pro.loading &&
                         pro.storeAvailable &&
                         pro.products.isEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          tr.proStoreEmpty,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.faintText,
-                          ),
+                        child: Column(
+                          children: [
+                            Text(
+                              tr.proStoreEmpty,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: context.faintText,
+                              ),
+                            ),
+                            ScaledTextButton(
+                              onPressed: pro.purchasing
+                                  ? null
+                                  : () => ref
+                                      .read(proControllerProvider.notifier)
+                                      .refresh(),
+                              child: Text(tr.retry),
+                            ),
+                          ],
                         ),
                       ),
                   ],
@@ -197,6 +295,14 @@ class PaywallScreen extends ConsumerWidget {
     Tr tr,
     ProductDetails? product,
   ) async {
+    if (ref.read(authUserProvider).valueOrNull == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr.proSignInRequired)),
+      );
+      context.push('/settings/account');
+      return;
+    }
     if (product == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(tr.proStoreEmpty)),
@@ -208,6 +314,29 @@ class PaywallScreen extends ConsumerWidget {
     if (ok && ref.read(proControllerProvider).isPro) {
       Navigator.pop(context);
     }
+  }
+
+  Future<void> _restore(
+    BuildContext context,
+    WidgetRef ref,
+    Tr tr,
+  ) async {
+    final restored =
+        await ref.read(proControllerProvider.notifier).restore();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(restored ? tr.proRestore : tr.proRestoreEmpty),
+      ),
+    );
+    if (restored) {
+      Navigator.pop(context);
+    }
+  }
+
+  String _errorText(Tr tr, String error) {
+    if (error.contains('sign_in_required')) return tr.proSignInRequired;
+    return tr.proBuyFailed;
   }
 }
 

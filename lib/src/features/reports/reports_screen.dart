@@ -21,6 +21,7 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
+import 'custom_period_picker.dart';
 import 'stats_period.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
@@ -36,7 +37,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final tabs = [tr.tabOverview, tr.tabCategories, tr.tabTrends, tr.tabFlows];
+    final tabs = [tr.tabOverview, tr.tabTrends, tr.tabFlows];
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
     final range = ref.watch(statsPeriodProvider);
     final txs = ref
@@ -98,17 +99,24 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             scrollDirection: Axis.horizontal,
             children: [
               for (final k in StatsPeriodKind.values)
-                if (k != StatsPeriodKind.custom) ...[
-                  Pressable(
-                    onTap: () async {
-                      final free = k == StatsPeriodKind.thisMonth ||
-                          k == StatsPeriodKind.lastMonth;
-                      if (!free && !isPro) {
+                Pressable(
+                  onTap: () async {
+                    if (k == StatsPeriodKind.custom) {
+                      if (!isPro) {
                         await openPaywall(context, ProGate.analytics);
                         return;
                       }
-                      ref.read(statsPeriodProvider.notifier).setKind(k);
-                    },
+                      await pickCustomStatsPeriod(context, ref);
+                      return;
+                    }
+                    final free = k == StatsPeriodKind.thisMonth ||
+                        k == StatsPeriodKind.lastMonth;
+                    if (!free && !isPro) {
+                      await openPaywall(context, ProGate.analytics);
+                      return;
+                    }
+                    ref.read(statsPeriodProvider.notifier).setKind(k);
+                  },
                     child: Container(
                       margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(
@@ -132,7 +140,6 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       ),
                     ),
                   ),
-                ],
             ],
           ),
         ),
@@ -147,10 +154,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               final active = _tab == i;
               return Pressable(
                 onTap: () async {
-                  if ((i == 2 || i == 3) && !isPro) {
+                  if ((i == 1 || i == 2) && !isPro) {
                     await openPaywall(
                       context,
-                      i == 2 ? ProGate.trends : ProGate.flows,
+                      i == 1 ? ProGate.trends : ProGate.flows,
                     );
                     return;
                   }
@@ -209,8 +216,6 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   }) {
     switch (_tab) {
       case 1:
-        return _categoriesView(txs, cats, currency, periodName);
-      case 2:
         return _trendsView(
           txs,
           rangeStart,
@@ -220,7 +225,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           periodName,
           periodKind,
         );
-      case 3:
+      case 2:
         return _flowsView(txs, cats, currency, periodName);
       default:
         return _overviewView(
@@ -258,6 +263,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     }
     final donutData = byCat.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
+    final maxCatVal = donutData.isEmpty ? 1.0 : donutData.first.value;
 
     return [
       _ChartCard(
@@ -292,6 +298,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           getTitlesWidget: (v, meta) {
                             final month = DateTime(rangeStart.year,
                                 rangeStart.month + v.toInt(), 1);
+                            final isCurrent = v.toInt() == monthCount - 1;
                             return Padding(
                               padding: const EdgeInsets.only(top: 6),
                               child: Text(
@@ -301,11 +308,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                             .languageCode)
                                     .format(month),
                                 style: TextStyle(
-                                  color: v.toInt() == monthCount - 1
-                                      ? AppColors.limeAccent
+                                  color: isCurrent
+                                      ? _chartBarColor
                                       : context.faintText,
                                   fontSize: 11,
-                                  fontWeight: v.toInt() == monthCount - 1
+                                  fontWeight: isCurrent
                                       ? FontWeight.w700
                                       : FontWeight.w500,
                                 ),
@@ -324,8 +331,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             BarChartRodData(
                               toY: monthly[i],
                               color: i == monthCount - 1
-                                  ? AppColors.lime
-                                  : const Color(0xFFECECEC),
+                                  ? _chartBarColor
+                                  : context.progressTrack,
                               width: 18,
                               borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(6),
@@ -347,153 +354,57 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         child: donutData.isEmpty
             ? Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Text(Tr.of(context).empty,
-                        style:
-                            TextStyle(color: context.mutedText, fontSize: 14)),
-                    const Spacer(),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          formatMoney(monthTotal, currency),
-                          style: TextStyle(
-                            color: context.primaryText,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        Text(Tr.of(context).totalWord,
-                            style: TextStyle(
-                                color: context.faintText, fontSize: 12)),
-                      ],
-                    ),
-                  ],
+                child: Text(
+                  Tr.of(context).noExpensesForPeriod(periodName),
+                  style: TextStyle(color: context.mutedText, fontSize: 14),
                 ),
               )
-            : SizedBox(
-                height: 160,
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 130,
-                      height: 130,
-                      child: PieChart(
-                        PieChartData(
-                          sectionsSpace: 2,
-                          centerSpaceRadius: 40,
-                          sections: [
-                            for (var i = 0; i < donutData.length; i++)
-                              PieChartSectionData(
-                                value: donutData[i].value,
-                                color: _palette[i % _palette.length],
-                                radius: 24,
-                                showTitle: false,
-                              ),
-                          ],
-                        ),
-                      ),
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    formatMoney(monthTotal, currency),
+                    style: TextStyle(
+                      color: context.primaryText,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            formatMoney(monthTotal, currency),
-                            style: TextStyle(
-                              color: context.primaryText,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                            ),
+                  ),
+                  Text(
+                    Tr.of(context).totalWord,
+                    style: TextStyle(
+                      color: context.faintText,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _CategoryStackBar(
+                    segments: [
+                      for (final e in donutData)
+                        _StackSegment(
+                          color: _colorForCategory(
+                            cats.where((c) => c.id == e.key).firstOrNull,
                           ),
-                          Text(Tr.of(context).totalWord,
-                              style: TextStyle(
-                                  color: context.faintText, fontSize: 12)),
-                          const SizedBox(height: 10),
-                          for (var i = 0;
-                              i < donutData.length && i < 5;
-                              i++) ...[
-                            _legendItem(
-                              color: _palette[i % _palette.length],
-                              name: cats
-                                      .where((c) => c.id == donutData[i].key)
-                                      .map((c) =>
-                                          Tr.of(context).categoryName(c.name))
-                                      .firstOrNull ??
-                                  Tr.of(context).other,
-                              percent: monthTotal > 0
-                                  ? (donutData[i].value / monthTotal * 100)
-                                      .round()
-                                  : 0,
-                            ),
-                            const SizedBox(height: 6),
-                          ],
-                        ],
-                      ),
+                          value: e.value,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  for (var i = 0; i < donutData.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 14),
+                    _CategoryRow(
+                      category: cats
+                          .where((c) => c.id == donutData[i].key)
+                          .firstOrNull,
+                      amount: donutData[i].value,
+                      fraction: donutData[i].value / maxCatVal,
+                      total: monthTotal,
+                      currency: currency,
                     ),
                   ],
-                ),
+                ],
               ),
-      ),
-    ];
-  }
-
-  // ─────────────────────── Categories ───────────────────────
-  List<Widget> _categoriesView(
-    List<db.Transaction> txs,
-    List<db.Category> cats,
-    String currency,
-    String periodName,
-  ) {
-    final byCat = <int, double>{};
-    for (final t in txs) {
-      if (TxType.values[t.type] != TxType.expense) continue;
-      byCat.update(t.categoryId ?? -1, (v) => v + t.amount,
-          ifAbsent: () => t.amount);
-    }
-    final sorted = byCat.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final maxVal = sorted.isEmpty ? 1.0 : sorted.first.value;
-
-    if (sorted.isEmpty) {
-      return [
-        Container(
-          padding: const EdgeInsets.all(30),
-          decoration: BoxDecoration(
-            color: context.surface,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Center(
-            child: Text(Tr.of(context).noExpensesForPeriod(periodName),
-                style: TextStyle(color: context.mutedText)),
-          ),
-        ),
-      ];
-    }
-
-    return [
-      _ChartCard(
-        title:
-            '${Tr.of(context).expensesByCategoriesMonthPrefix}$periodName',
-        value: '',
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final e in sorted) ...[
-              _CategoryRow(
-                category: cats.where((c) => c.id == e.key).firstOrNull,
-                amount: e.value,
-                fraction: e.value / maxVal,
-                total: byCat.values.fold(0.0, (a, b) => a + b),
-                currency: currency,
-              ),
-              const SizedBox(height: 14),
-            ],
-          ],
-        ),
       ),
     ];
   }
@@ -1033,44 +944,47 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     ];
   }
 
-  Widget _legendItem({
-    required Color color,
-    required String name,
-    required int percent,
-  }) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            name,
-            style: TextStyle(color: context.mutedText, fontSize: 11),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Text(
-          '$percent%',
-          style: TextStyle(
-              color: context.primaryText,
-              fontSize: 11,
-              fontWeight: FontWeight.w700),
-        ),
-      ],
-    );
+  static Color _colorForCategory(db.Category? category) {
+    if (category == null) return const Color(0xFF8A94A6);
+    return Color(category.color).asVivid;
   }
 
-  static const _palette = [
-    AppColors.lime,
-    AppColors.danger,
-    AppColors.info,
-    AppColors.warning,
-    AppColors.violet,
-  ];
+  static const _chartBarColor = Color(0xFF5B8DEF);
+}
+
+class _StackSegment {
+  const _StackSegment({required this.color, required this.value});
+  final Color color;
+  final double value;
+}
+
+class _CategoryStackBar extends StatelessWidget {
+  const _CategoryStackBar({required this.segments});
+
+  final List<_StackSegment> segments;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = segments.fold<double>(0, (sum, s) => sum + s.value);
+    if (total <= 0) return const SizedBox.shrink();
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: SizedBox(
+        height: 10,
+        child: Row(
+          children: [
+            for (final seg in segments)
+              if (seg.value > 0)
+                Expanded(
+                  flex: (seg.value * 1000).round().clamp(1, 1000000),
+                  child: ColoredBox(color: seg.color),
+                ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _ChartCard extends StatelessWidget {

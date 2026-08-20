@@ -1,0 +1,19 @@
+{
+  "name": "pulpo-functions",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "scripts": {
+    "lint": "node --check index.js && node --check verify.js && node --check products.js",
+    "test": "node --test tests/**/*.test.js",
+    "predeploy": "sh scripts/fetch-certs.sh"
+  },
+  "dependencies": {
+    "@apple/app-store-server-library": "^1.6.0",
+    "firebase-admin": "^13.4.0",
+    "firebase-functions": "^6.4.0",
+    "googleapis": "^144.0.0"
+  }
+}

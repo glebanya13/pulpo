@@ -8,7 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'firebase_options.dart';
+import 'src/core/auto_sync_binder.dart';
 import 'src/core/home_widget_sync.dart';
+import 'src/data/repositories/auto_backup_runner.dart';
+import 'src/data/repositories/backup_service.dart';
 import 'src/core/notifications/daily_reminder.dart';
 import 'src/core/notifications/smart_reminders.dart';
 import 'src/core/pro/pro_controller.dart';
@@ -56,12 +59,19 @@ Future<void> main() async {
   final container = ProviderContainer(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(prefs),
+      settingsBaseCurrencyProvider.overrideWith((ref) {
+        return ref.watch(settingsControllerProvider).baseCurrency;
+      }),
     ],
   );
 
   final db = container.read(databaseProvider);
   await seedCategoriesIfEmpty(db);
   await postDueScheduledItems(db);
+  await runAutoLocalBackupIfDue(
+    prefs: prefs,
+    backup: container.read(backupServiceProvider),
+  );
   await syncDailyReminder(container.read(settingsControllerProvider));
 
   runApp(UncontrolledProviderScope(
@@ -89,6 +99,8 @@ class BudgetTrackerApp extends ConsumerWidget {
     ref.listen(debtsProvider, (_, _) => _syncSmart(ref));
     ref.listen(subscriptionsProvider, (_, _) => _syncSmart(ref));
     ref.listen(goalsProvider, (_, _) => _syncSmart(ref));
+    ref.listen(budgetsProvider, (_, _) => _syncSmart(ref));
+    ref.listen(allTransactionsProvider, (_, _) => _syncSmart(ref));
     return MaterialApp.router(
       title: 'Pulpo',
       debugShowCheckedModeBanner: false,
@@ -120,8 +132,10 @@ class BudgetTrackerApp extends ConsumerWidget {
               final focus = FocusManager.instance.primaryFocus;
               if (focus != null && focus.hasFocus) focus.unfocus();
             },
-            child: HomeWidgetBinder(
-              child: LockGate(child: child ?? const SizedBox.shrink()),
+            child: AutoSyncBinder(
+              child: HomeWidgetBinder(
+                child: LockGate(child: child ?? const SizedBox.shrink()),
+              ),
             ),
           ),
         );
@@ -151,5 +165,7 @@ void _syncSmart(WidgetRef ref) {
     debts: ref.read(debtsProvider).valueOrNull ?? const [],
     subscriptions: ref.read(subscriptionsProvider).valueOrNull ?? const [],
     goals: ref.read(goalsProvider).valueOrNull ?? const [],
+    budgets: ref.read(budgetsProvider).valueOrNull ?? const [],
+    transactions: ref.read(allTransactionsProvider).valueOrNull ?? const [],
   );
 }

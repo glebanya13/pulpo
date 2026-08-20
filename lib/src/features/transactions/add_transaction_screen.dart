@@ -20,6 +20,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../data/repositories/tag_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import 'transfer_screen.dart';
 
@@ -67,11 +68,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   db.Account? _account;
   DateTime _date = DateTime.now();
   final _noteCtrl = TextEditingController();
+  final _tagsCtrl = TextEditingController();
   String? _receiptPath;
+  String? _originalReceiptPath;
 
   @override
   void dispose() {
     _noteCtrl.dispose();
+    _tagsCtrl.dispose();
     _amountCtrl.dispose();
     super.dispose();
   }
@@ -92,7 +96,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
     final note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
     final repo = ref.read(transactionRepositoryProvider);
+    final tagRepo = ref.read(tagRepositoryProvider);
     if (widget.editId != null) {
+      final prevReceipt = _originalReceiptPath;
       await repo.update(
         id: widget.editId!,
         amount: _amount,
@@ -102,9 +108,21 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         note: note,
         receiptPath: Value(_receiptPath),
       );
+      final tagIds = await tagRepo.parseAndUpsert(_tagsCtrl.text);
+      await tagRepo.setTagsForTransaction(widget.editId!, tagIds);
+      // If receipt changed during edit, delete the old file to avoid orphans.
+      if (prevReceipt != null &&
+          prevReceipt != _receiptPath &&
+          File(prevReceipt).existsSync()) {
+        try {
+          File(prevReceipt).deleteSync();
+        } catch (_) {
+          // Best-effort cleanup; don't break saving on IO errors.
+        }
+      }
       if (mounted) context.pop();
     } else {
-      await repo.add(
+      final id = await repo.add(
         accountId: selectedAccount.id,
         categoryId: _category?.id,
         amount: _amount,
@@ -114,6 +132,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         note: note,
         receiptPath: _receiptPath,
       );
+      final tagIds = await tagRepo.parseAndUpsert(_tagsCtrl.text);
+      await tagRepo.setTagsForTransaction(id, tagIds);
       if (mounted) context.go('/');
     }
   }
@@ -131,11 +151,18 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         : tx.amount.toString();
     _date = tx.date;
     _noteCtrl.text = tx.note ?? '';
+    _originalReceiptPath = tx.receiptPath;
     _receiptPath = tx.receiptPath;
     final cats = ref.read(categoriesProvider).valueOrNull ?? [];
     _category = cats.where((c) => c.id == tx.categoryId).firstOrNull;
     final accs = ref.read(accountsProvider).valueOrNull ?? [];
     _account = accs.where((a) => a.id == tx.accountId).firstOrNull;
+    ref.read(tagRepositoryProvider).forTransaction(tx.id).then((tags) {
+      if (!mounted) return;
+      setState(() {
+        _tagsCtrl.text = tags.map((t) => t.name).join(', ');
+      });
+    });
   }
 
   Future<void> _pickCategory() async {
@@ -204,6 +231,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     );
     if (confirmed != true) return;
     await ref.read(transactionRepositoryProvider).delete(id);
+    final receiptToDelete = _receiptPath ?? _originalReceiptPath;
+    if (receiptToDelete != null && File(receiptToDelete).existsSync()) {
+      try {
+        File(receiptToDelete).deleteSync();
+      } catch (_) {
+        // Best-effort cleanup; ignore IO errors.
+      }
+    }
     if (mounted) context.go('/');
   }
 
@@ -357,13 +392,32 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 value: _noteCtrl.text.isEmpty ? tr.add : _noteCtrl.text,
                 onTap: _openNote,
               ),
+              _FormRow(
+                icon: LucideIcons.hash,
+                label: tr.tagsLabel,
+                value: _tagsCtrl.text.isEmpty ? tr.tagsHint : _tagsCtrl.text,
+                onTap: _openTags,
+              ),
             ],
           ),
           const SizedBox(height: 16),
           _ReceiptSection(
             receiptPath: _receiptPath,
             onPick: _pickReceipt,
-            onRemove: () => setState(() => _receiptPath = null),
+            onRemove: () {
+              final toDelete = _receiptPath ?? _originalReceiptPath;
+              if (toDelete != null && File(toDelete).existsSync()) {
+                try {
+                  File(toDelete).deleteSync();
+                } catch (_) {
+                  // ignore
+                }
+              }
+              setState(() {
+                _receiptPath = null;
+                _originalReceiptPath = null;
+              });
+            },
           ),
         ],
       ),
@@ -398,6 +452,35 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       },
     );
     if (result != null) setState(() => _noteCtrl.text = result);
+  }
+
+  Future<void> _openTags() async {
+    final tr = Tr.of(context);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController(text: _tagsCtrl.text);
+        return AlertDialog(
+          title: Text(tr.tagsLabel),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: InputDecoration(hintText: tr.tagsHint),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(tr.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: Text(tr.save),
+            ),
+          ],
+        );
+      },
+    );
+    if (result != null) setState(() => _tagsCtrl.text = result);
   }
 
   Future<void> _pickReceipt(ImageSource source) async {

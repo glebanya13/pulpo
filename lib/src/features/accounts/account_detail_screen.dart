@@ -332,7 +332,12 @@ Future<void> _openAccountEditor(
   required db.Account existing,
 }) async {
   final nameCtrl = TextEditingController(text: existing.name);
+  final creditCtrl = TextEditingController(
+    text: existing.creditLimit?.toString() ?? '',
+  );
   var includeInTotal = existing.includeInTotal;
+  final isCredit = existing.type == AccountType.card.index ||
+      existing.type == AccountType.loan.index;
 
   await showAppBottomSheet(
     context: context,
@@ -375,14 +380,32 @@ Future<void> _openAccountEditor(
               onChanged: (v) => setSt(() => includeInTotal = v),
               title: Text(Tr.of(ctx).includeInTotal),
             ),
+            if (isCredit) ...[
+              const SizedBox(height: 8),
+              TextField(
+                controller: creditCtrl,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: Tr.of(ctx).creditLimit,
+                  hintText: Tr.of(ctx).creditLimitHint,
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             ScaledElevatedButton(
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty) return;
+                final creditRaw = creditCtrl.text.trim();
+                final credit = creditRaw.isEmpty
+                    ? null
+                    : double.tryParse(creditRaw.replaceAll(',', '.'));
                 await ref.read(accountRepositoryProvider).update(
                       id: existing.id,
                       name: nameCtrl.text.trim(),
                       includeInTotal: includeInTotal,
+                      creditLimit: credit,
+                      clearCreditLimit: isCredit && creditRaw.isEmpty,
                     );
                 if (ctx.mounted) Navigator.pop(ctx);
               },

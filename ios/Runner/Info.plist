@@ -60,6 +60,10 @@
 		</array>
 		<key>NSFaceIDUsageDescription</key>
 		<string>Pulpo usa Face ID para desbloquear la app.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>Usamos la cámara para adjuntar fotos de recibos a tus transacciones.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Usamos la galería para adjuntar fotos de recibos a tus transacciones.</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>LSSupportsOpeningDocumentsInPlace</key>

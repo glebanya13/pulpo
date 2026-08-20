@@ -9,8 +9,10 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
+import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../reports/custom_period_picker.dart';
 import '../reports/stats_period.dart';
 import 'export_service.dart';
 
@@ -53,15 +55,21 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               runSpacing: 8,
               children: [
                 for (final k in StatsPeriodKind.values)
-                  if (k != StatsPeriodKind.custom)
-                    _Chip(
-                      label: _label(tr, k),
-                      active: range.kind == k,
-                      onTap: _busy
-                          ? null
-                          : () =>
-                              ref.read(statsPeriodProvider.notifier).setKind(k),
-                    ),
+                  _Chip(
+                    label: _label(tr, k),
+                    active: range.kind == k,
+                    onTap: _busy
+                        ? null
+                        : () async {
+                            if (k == StatsPeriodKind.custom) {
+                              await pickCustomStatsPeriod(context, ref);
+                              return;
+                            }
+                            ref
+                                .read(statsPeriodProvider.notifier)
+                                .setKind(k);
+                          },
+                  ),
               ],
             ),
             const SizedBox(height: 24),
@@ -126,6 +134,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         format: format,
         start: range.start,
         end: range.end,
+        locale: ref.read(settingsControllerProvider).locale,
         shareOrigin: origin,
       );
     } catch (e) {

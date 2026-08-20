@@ -24,6 +24,7 @@ class SubscriptionsScreen extends ConsumerWidget {
     final tr = Tr.of(context);
     final subs = ref.watch(subscriptionsProvider).valueOrNull ?? const [];
     final active = subs.where((s) => !s.isPaused).toList();
+    final used = active.length;
     final isPro = ref.watch(proControllerProvider).isPro;
     final monthly = _monthlyTotal(active);
     final yearly = monthly * 12;
@@ -42,7 +43,7 @@ class SubscriptionsScreen extends ConsumerWidget {
               onBack: () => context.pop(),
               action: RoundIconButton(
                 icon: LucideIcons.plus,
-                onTap: () => _openAdd(context, ref),
+                onTap: () => _openAdd(context, ref, used),
               ),
             ),
             const SizedBox(height: 20),
@@ -114,9 +115,11 @@ class SubscriptionsScreen extends ConsumerWidget {
     return m;
   }
 
-  Future<void> _openAdd(BuildContext context, WidgetRef ref) async {
-    final subs = ref.read(subscriptionsProvider).valueOrNull ?? const [];
-    final used = subs.where((s) => !s.isPaused).length;
+  Future<void> _openAdd(
+    BuildContext context,
+    WidgetRef ref,
+    int used,
+  ) async {
     if (!await requireQuota(context, ref, ProGate.subscriptions, used)) {
       return;
     }

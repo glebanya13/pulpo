@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/services.dart';
@@ -11,8 +10,20 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
+import '../../core/l10n/tr.dart';
 
 enum ExportFormat { csv, excel, pdf }
+
+String _txTypeLabel(Tr tr, TxType type) {
+  switch (type) {
+    case TxType.income:
+      return tr.income;
+    case TxType.expense:
+      return tr.expense;
+    case TxType.transfer:
+      return tr.transfer;
+  }
+}
 
 class ExportService {
   Future<void> shareTransactions({
@@ -20,6 +31,7 @@ class ExportService {
     required ExportFormat format,
     required DateTime start,
     required DateTime end,
+    required String locale,
     Rect? shareOrigin,
   }) async {
     final stamp = DateFormat('yyyyMMdd').format(start);
@@ -52,6 +64,7 @@ class ExportService {
         final fontData =
             await rootBundle.load('assets/fonts/DejaVuSans.ttf');
         final font = pw.Font.ttf(fontData);
+        final tr = Tr.fromLang(locale);
         final doc = pw.Document();
         doc.addPage(
           pw.MultiPage(
@@ -64,12 +77,17 @@ class ExportService {
               ),
               pw.SizedBox(height: 12),
               pw.TableHelper.fromTextArray(
-                headers: const ['Date', 'Type', 'Amount', 'Note'],
+                headers: [
+                  tr.exportPdfDate,
+                  tr.exportPdfType,
+                  tr.exportPdfAmount,
+                  tr.exportPdfNote,
+                ],
                 data: [
                   for (final t in txs)
                     [
                       DateFormat('yyyy-MM-dd').format(t.date),
-                      TxType.values[t.type].name,
+                      _txTypeLabel(tr, TxType.values[t.type]),
                       t.amount.toStringAsFixed(2),
                       t.note ?? '',
                     ],
@@ -172,7 +190,7 @@ $rows
     final bytes = utf8.encode(content);
     archive.addFile(ArchiveFile(name, bytes.length, bytes));
   });
-  return ZipEncoder().encode(archive)!;
+  return ZipEncoder().encode(archive);
 }
 
 final exportService = ExportService();

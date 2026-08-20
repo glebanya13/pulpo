@@ -58,7 +58,7 @@ class _OnboardingSetupScreenState
           icon: 'wallet',
           color: 0xFF3DDC84,
         );
-    if (mounted) context.go('/');
+    if (mounted) context.go('/add?type=expense');
   }
 
   @override

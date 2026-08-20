@@ -103,19 +103,6 @@ class CloudAuth {
         await _afterSignIn(cred);
         return;
       }
-      if (e.code == 'invalid-credential' || e.code == 'wrong-password') {
-        try {
-          final cred = await _auth.createUserWithEmailAndPassword(
-            email: trimmed,
-            password: password,
-          );
-          await _afterSignIn(cred);
-          return;
-        } on FirebaseAuthException catch (created) {
-          if (created.code == 'email-already-in-use') throw e;
-          rethrow;
-        }
-      }
       rethrow;
     }
   }
@@ -220,13 +207,27 @@ class CloudAuth {
     return true;
   }
 
+  Future<DateTime?> cloudSnapshotUpdatedAt() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    final snap = await _moneyRef(user.uid).get();
+    if (!snap.exists) return null;
+    final updated = snap.data()?['updatedAt'];
+    if (updated is Timestamp) return updated.toDate();
+    return null;
+  }
+
+  Future<bool> hasCloudSnapshot() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    return (await _moneyRef(user.uid).get()).exists;
+  }
+
   Future<void> syncOnLogin() async {
     final user = _auth.currentUser;
     if (user == null) return;
     final remote = await _moneyRef(user.uid).get();
-    if (remote.exists) {
-      await downloadMoney();
-    } else {
+    if (!remote.exists) {
       await uploadMoney();
     }
   }
@@ -285,6 +286,8 @@ class CloudAuth {
     await _profileRef(user.uid).set({
       if (chosen != null) 'displayName': chosen,
       if (picture != null) 'photoUrl': picture,
+      if (user.email != null) 'email': user.email,
+      if (isNew) 'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 

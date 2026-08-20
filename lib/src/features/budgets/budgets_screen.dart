@@ -21,6 +21,7 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/pressable.dart';
+import 'budget_period.dart';
 
 class BudgetsScreen extends ConsumerWidget {
   const BudgetsScreen({super.key});
@@ -33,23 +34,23 @@ class BudgetsScreen extends ConsumerWidget {
     final currency = settings.baseCurrency;
 
     final now = DateTime.now();
-    final monthStart = DateTime(now.year, now.month, 1);
-    final monthEnd = DateTime(now.year, now.month + 1, 1);
-    final monthTxs = ref
-            .watch(transactionsInRangeProvider(
-                (start: monthStart, end: monthEnd)))
-            .valueOrNull ??
-        const [];
+    final allTxs =
+        ref.watch(allTransactionsProvider).valueOrNull ?? const [];
 
     var totalSpent = 0.0;
-    for (final t in monthTxs) {
-      if (TxType.values[t.type] == TxType.expense) totalSpent += t.amount;
-    }
-
     var totalBudget = 0.0;
     for (final b in budgets) {
-      totalBudget += b.amount;
+      if (!isActiveBudget(endDate: b.endDate, now: now)) continue;
+      final range = currentBudgetRange(b, now);
+      final catIds = (jsonDecode(b.categoryIdsJson) as List).cast<int>();
+      final prev = previousBudgetRange(b, now);
+      final prevSpent = budgetSpentInRange(allTxs, prev, categoryIds: catIds);
+      final limit = effectiveBudgetLimit(budget: b, previousSpent: prevSpent);
+      totalBudget += limit;
+      totalSpent += budgetSpentInRange(allTxs, range, categoryIds: catIds);
     }
+
+    final monthEnd = DateTime(now.year, now.month + 1, 1);
 
     final progress = totalBudget > 0 ? (totalSpent / totalBudget).clamp(0, 1) : 0;
     final leftAmount = (totalBudget - totalSpent).clamp(0, double.infinity);
@@ -165,7 +166,7 @@ class BudgetsScreen extends ConsumerWidget {
               for (final b in budgets)
                 _BudgetItem(
                   budget: b,
-                  monthTxs: monthTxs,
+                  allTxs: allTxs,
                 ),
           ],
         ),
@@ -263,20 +264,23 @@ class _Summary extends StatelessWidget {
 }
 
 class _BudgetItem extends ConsumerWidget {
-  const _BudgetItem({required this.budget, required this.monthTxs});
+  const _BudgetItem({required this.budget, required this.allTxs});
   final db.Budget budget;
-  final List monthTxs;
+  final List allTxs;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final now = DateTime.now();
     final catIds = (jsonDecode(budget.categoryIdsJson) as List).cast<int>();
-    var spent = 0.0;
-    for (final t in monthTxs) {
-      if (TxType.values[t.type] != TxType.expense) continue;
-      if (catIds.isNotEmpty && !catIds.contains(t.categoryId)) continue;
-      spent += t.amount;
-    }
-    final progress = budget.amount > 0 ? (spent / budget.amount).clamp(0, 1) : 0;
+    final range = currentBudgetRange(budget, now);
+    final prev = previousBudgetRange(budget, now);
+    final prevSpent =
+        budgetSpentInRange(allTxs, prev, categoryIds: catIds);
+    final limit =
+        effectiveBudgetLimit(budget: budget, previousSpent: prevSpent);
+    final spent =
+        budgetSpentInRange(allTxs, range, categoryIds: catIds);
+    final progress = limit > 0 ? (spent / limit).clamp(0, 1) : 0;
     final barColor = progress > 0.9
         ? AppColors.danger
         : (progress > 0.7 ? AppColors.warning : AppColors.lime);
@@ -311,7 +315,7 @@ class _BudgetItem extends ConsumerWidget {
                 ),
               ),
               Text(
-                '${formatMoney(spent, budget.currency)} / ${formatMoney(budget.amount, budget.currency)}',
+                '${formatMoney(spent, budget.currency)} / ${formatMoney(limit, budget.currency)}',
                 style: TextStyle(
                     fontSize: 12, color: context.faintText),
               ),
@@ -350,8 +354,17 @@ Future<void> _openBudgetEditor(
   final nameCtrl = TextEditingController(text: existing?.name ?? '');
   final amountCtrl = TextEditingController(
       text: existing == null ? '' : existing.amount.toString());
-  var period = existing?.period ?? 1; // 1 = month
+  var period = existing?.period ?? 1;
+  var rollover = existing?.rollover ?? false;
+  var selectedCats = existing == null
+      ? <int>{}
+      : (jsonDecode(existing.categoryIdsJson) as List).cast<int>().toSet();
   final isEdit = existing != null;
+  final expenseCats = (ref.read(categoriesProvider).valueOrNull ?? const [])
+      .where((c) =>
+          CategoryType.values[c.type] == CategoryType.expense ||
+          CategoryType.values[c.type] == CategoryType.both)
+      .toList();
 
   await showAppBottomSheet(
     context: context,
@@ -408,18 +421,58 @@ Future<void> _openBudgetEditor(
               ],
               onChanged: (v) => setSt(() => period = v ?? 1),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+            Text(Tr.of(ctx).budgetCategories,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: context.mutedText)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                FilterChip(
+                  label: Text(Tr.of(ctx).budgetCategoriesAll),
+                  selected: selectedCats.isEmpty,
+                  onSelected: (_) => setSt(() => selectedCats.clear()),
+                ),
+                for (final c in expenseCats)
+                  FilterChip(
+                    label: Text(Tr.of(ctx).categoryName(c.name)),
+                    selected: selectedCats.contains(c.id),
+                    onSelected: (on) => setSt(() {
+                      if (on) {
+                        selectedCats.add(c.id);
+                      } else {
+                        selectedCats.remove(c.id);
+                      }
+                    }),
+                  ),
+              ],
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: rollover,
+              onChanged: (v) => setSt(() => rollover = v),
+              title: Text(Tr.of(ctx).budgetRollover),
+              subtitle: Text(Tr.of(ctx).budgetRolloverDesc),
+            ),
+            const SizedBox(height: 12),
             ScaledElevatedButton(
               onPressed: () async {
                 final amount = double.tryParse(amountCtrl.text) ?? 0;
                 if (nameCtrl.text.trim().isEmpty || amount <= 0) return;
                 final repo = ref.read(budgetRepositoryProvider);
+                final catList = selectedCats.toList();
                 if (isEdit) {
                   await repo.update(
                     id: existing.id,
                     name: nameCtrl.text.trim(),
                     amount: amount,
                     period: period,
+                    categoryIds: catList,
+                    rollover: rollover,
                   );
                 } else {
                   final currency =
@@ -429,6 +482,8 @@ Future<void> _openBudgetEditor(
                     amount: amount,
                     currency: currency,
                     period: period,
+                    categoryIds: catList,
+                    rollover: rollover,
                   );
                 }
                 if (ctx.mounted) Navigator.pop(ctx);

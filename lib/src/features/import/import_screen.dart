@@ -149,10 +149,16 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     if (!ok || !mounted) return;
     setState(() => _busy = true);
     final repo = ref.read(transactionRepositoryProvider);
+    final existing = ref.read(allTransactionsProvider).valueOrNull ?? const [];
     var imported = 0;
+    var skippedDup = 0;
     try {
       for (final row in parsed.rows) {
         if (row.type == TxType.transfer) continue;
+        if (_isDuplicate(existing, accountId, row)) {
+          skippedDup++;
+          continue;
+        }
         await repo.add(
           accountId: accountId,
           amount: row.amount,
@@ -164,8 +170,11 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         imported++;
       }
       if (!mounted) return;
+      final msg = skippedDup > 0
+          ? '${Tr.of(context).importDone(imported)} · ${Tr.of(context).importDuplicatesSkipped(skippedDup)}'
+          : Tr.of(context).importDone(imported);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(Tr.of(context).importDone(imported))),
+        SnackBar(content: Text(msg)),
       );
       context.pop();
     } catch (_) {
@@ -185,4 +194,21 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       return latin1.decode(bytes);
     }
   }
+}
+
+bool _isDuplicate(List<dynamic> existing, int accountId, ImportedRow row) {
+  for (final t in existing) {
+    if (t.accountId != accountId) continue;
+    if (t.date.year != row.date.year ||
+        t.date.month != row.date.month ||
+        t.date.day != row.date.day) {
+      continue;
+    }
+    if ((t.amount - row.amount).abs() > 0.009) continue;
+    final a = (t.note ?? '').trim().toLowerCase();
+    final b = (row.note ?? '').trim().toLowerCase();
+    if (a.isEmpty && b.isEmpty) return true;
+    if (a == b) return true;
+  }
+  return false;
 }
