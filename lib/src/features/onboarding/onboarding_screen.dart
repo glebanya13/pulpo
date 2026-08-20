@@ -45,7 +45,23 @@ class OnboardingScreen extends ConsumerWidget {
                 children: [
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: const BrandLogo(size: 88),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const BrandLogo(size: 44),
+                        const SizedBox(width: 12),
+                        Text(
+                          'PULPO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.6,
+                            height: 1,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
 
                   // Cards (flex:1 — растягиваются в оставшуюся высоту)

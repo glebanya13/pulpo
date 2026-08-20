@@ -6,7 +6,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
 
-/// In-app mark: new logo with slightly rounded corners.
+/// Brand mark: transparent wallet on a theme-colored plate (follows light/dark).
 class BrandLogo extends StatelessWidget {
   const BrandLogo({super.key, required this.size});
 
@@ -14,28 +14,36 @@ class BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = size * 0.22;
+    final plate = context.isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.white;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size * 0.22),
+        color: plate,
+        borderRadius: BorderRadius.circular(radius),
         boxShadow: context.isDark
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
               ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Image.asset(
-        'assets/logo.png',
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        filterQuality: FilterQuality.high,
+      child: Padding(
+        padding: EdgeInsets.all(size * 0.12),
+        child: Image.asset(
+          'assets/logo_mark.png',
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
       ),
     );
   }
