@@ -20,6 +20,7 @@ import '../../data/repositories/budget_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/app_bottom_sheet.dart';
+import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import 'budget_period.dart';
 
@@ -65,70 +66,25 @@ class BudgetsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
           children: [
-            Row(
-              children: [
-                Pressable(
-                  onTap: () => context.pop(),
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: context.surface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(LucideIcons.arrowLeft,
-                        size: 18, color: context.primaryText),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        tr.budgets,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -1,
-                          color: context.primaryText,
-                        ),
-                      ),
-                      Text(
-                        quotaLabel(
-                          isPro: isPro,
-                          used: activeBudgets,
-                          limit: ProLimits.budgets,
-                        ),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: context.mutedText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Pressable(
-                  onTap: () async {
-                    if (!await requireQuota(
-                        context, ref, ProGate.budgets, activeBudgets)) {
-                      return;
-                    }
-                    if (!context.mounted) return;
-                    await _openBudgetEditor(context, ref, existing: null);
-                  },
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: context.surface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(LucideIcons.plus,
-                        size: 18, color: context.primaryText),
-                  ),
-                ),
-              ],
+            PageHeader(
+              first: tr.budgets,
+              subtitle: quotaLabel(
+                isPro: isPro,
+                used: activeBudgets,
+                limit: ProLimits.budgets,
+              ),
+              onBack: () => context.pop(),
+              action: RoundIconButton(
+                icon: LucideIcons.plus,
+                onTap: () async {
+                  if (!await requireQuota(
+                      context, ref, ProGate.budgets, activeBudgets)) {
+                    return;
+                  }
+                  if (!context.mounted) return;
+                  await _openBudgetEditor(context, ref, existing: null);
+                },
+              ),
             ),
             const SizedBox(height: 4),
             Padding(

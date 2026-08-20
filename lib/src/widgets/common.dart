@@ -41,7 +41,7 @@ class BrandLogo extends StatelessWidget {
   }
 }
 
-/// Header страницы: title с акцентом на 2-й части + subtitle + правая кнопка.
+/// Header страницы: back/action по краям, заголовок по центру в pill.
 class PageHeader extends StatelessWidget {
   const PageHeader({
     super.key,
@@ -58,51 +58,86 @@ class PageHeader extends StatelessWidget {
   final Widget? action;
   final VoidCallback? onBack;
 
+  static const _side = 42.0;
+
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (onBack != null) ...[
-          _RoundIconBtn(icon: LucideIcons.arrowLeft, onTap: onBack!),
-          const SizedBox(width: 12),
-        ],
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RichText(
-                text: TextSpan(
-                  text: first,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1,
-                    color: context.primaryText,
-                    height: 1.1,
-                  ),
-                  children: [
-                    if (second != null)
-                      TextSpan(
-                        text: second,
-                        style: TextStyle(
-                            color: context.isDark
-                                ? AppColors.lime
-                                : AppColors.limeAccent),
-                      ),
-                  ],
+    final titleStyle = TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.2,
+      height: 1.15,
+      color: context.primaryText,
+    );
+
+    final pill = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: context.isDark
+            ? Colors.white.withValues(alpha: 0.1)
+            : context.surface,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: RichText(
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        text: TextSpan(
+          text: first,
+          style: titleStyle,
+          children: [
+            if (second != null)
+              TextSpan(
+                text: second,
+                style: titleStyle.copyWith(
+                  color: context.isDark
+                      ? AppColors.lime
+                      : AppColors.limeAccent,
                 ),
               ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 4),
-                Text(subtitle!,
-                    style:
-                        TextStyle(fontSize: 12, color: context.mutedText)),
-              ],
-            ],
-          ),
+          ],
         ),
-        if (action != null) action!,
+      ),
+    );
+
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: _side,
+              height: _side,
+              child: onBack != null
+                  ? _RoundIconBtn(
+                      icon: LucideIcons.arrowLeft,
+                      onTap: onBack!,
+                    )
+                  : const SizedBox.shrink(),
+            ),
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 260),
+                  child: pill,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: _side,
+              height: _side,
+              child: action ?? const SizedBox.shrink(),
+            ),
+          ],
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            subtitle!,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: context.mutedText),
+          ),
+        ],
       ],
     );
   }

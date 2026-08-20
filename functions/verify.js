@@ -7,8 +7,8 @@ const {
 const { google } = require('googleapis');
 const {
   assertProductId,
-  fallbackExpiry,
   fallbackAmount,
+  resolveSubscriptionExpiry,
 } = require('./products');
 
 const IOS_BUNDLE_ID = process.env.IOS_BUNDLE_ID || 'com.pulpo.app';
@@ -74,11 +74,12 @@ async function verifyApplePurchase(jws, productId) {
     throw new Error('Apple productId mismatch');
   }
 
-  const expiresMs = decoded.expiresDate;
-  const expiresAt =
-    expiresMs && Number(expiresMs) > 0
-      ? new Date(Number(expiresMs))
-      : fallbackExpiry(productId);
+  // expiresDate from Apple already covers free trial (intro) and paid periods.
+  const expiresAt = resolveSubscriptionExpiry({
+    productId,
+    expiresDateMs: decoded.expiresDate,
+    offerType: decoded.offerType,
+  });
 
   if (expiresAt.getTime() <= Date.now()) {
     throw new Error('Apple subscription expired');
@@ -90,6 +91,7 @@ async function verifyApplePurchase(jws, productId) {
     expiresAt,
     amount: fallbackAmount(productId),
     currency: 'EUR',
+    isTrial: Number(decoded.offerType) === 1,
   };
 }
 
@@ -130,10 +132,16 @@ async function verifyAndroidPurchase(purchaseToken, productId) {
     throw new Error('Google Play subscription expired or invalid');
   }
 
+  // paymentState: 0 pending, 1 received, 2 free trial, 3 deferred
   const paymentState = Number(data.paymentState ?? -1);
   if (paymentState === 0) {
-    // payment pending — do not grant yet
     throw new Error('Google Play payment pending');
+  }
+  if (paymentState !== 1 && paymentState !== 2 && paymentState !== -1) {
+    // Allow unknown/-1 for older responses; block deferred (3) and other unpaid states.
+    if (paymentState === 3) {
+      throw new Error('Google Play payment deferred');
+    }
   }
 
   return {
@@ -142,6 +150,7 @@ async function verifyAndroidPurchase(purchaseToken, productId) {
     expiresAt: new Date(expiryMs),
     amount: fallbackAmount(productId),
     currency: 'EUR',
+    isTrial: paymentState === 2,
   };
 }
 

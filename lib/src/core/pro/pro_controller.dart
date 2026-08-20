@@ -227,6 +227,12 @@ class ProController extends Notifier<ProState> {
       } catch (e, st) {
         debugPrint('refresh entitlement: $e\n$st');
       }
+      try {
+        final snap = await ref.read(cloudProServiceProvider).fetchCurrent();
+        await _restoreIfSubscriptionNeedsSync(snap);
+      } catch (e, st) {
+        debugPrint('iap sync restore: $e\n$st');
+      }
     }
 
     state = state.copyWith(
@@ -254,6 +260,19 @@ class ProController extends Notifier<ProState> {
     } catch (e, st) {
       debugPrint('iap listen: $e\n$st');
     }
+  }
+
+  /// Re-query store when cloud expiry is missing, past, or within 3 days so
+  /// trial→paid renewals update Firebase via verifyPurchase.
+  Future<void> _restoreIfSubscriptionNeedsSync(CloudProSnapshot cloud) async {
+    if (kIsWeb) return;
+    if (!cloud.signedIn) return;
+    final exp = cloud.expiresAt ?? state.localExpiresAt;
+    final stillFresh = exp != null &&
+        exp.isAfter(DateTime.now().add(const Duration(days: 3)));
+    if (stillFresh) return;
+    if (!cloud.hasRemote && !state.entitled) return;
+    await InAppPurchase.instance.restorePurchases();
   }
 
   Future<void> _onPurchases(List<PurchaseDetails> purchases) async {

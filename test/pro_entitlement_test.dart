@@ -99,6 +99,22 @@ void main() {
       expect(snap.entitled, isFalse);
     });
 
+    test('future trial expiry stays entitled', () {
+      final snap = CloudProSnapshot.fromProfileData({
+        'pro': {
+          'entitled': true,
+          'source': 'iap',
+          'productId': ProProducts.yearlyId,
+          'expiresAt': DateTime.now()
+              .add(const Duration(days: 7))
+              .toUtc()
+              .toIso8601String(),
+        },
+      });
+      expect(snap.entitled, isTrue);
+      expect(snap.productId, ProProducts.yearlyId);
+    });
+
     test('admin revoke detected', () {
       final snap = CloudProSnapshot.fromProfileData({
         'pro': {

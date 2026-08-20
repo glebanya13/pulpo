@@ -141,12 +141,21 @@ class _Header extends StatelessWidget {
         _NavBtn(icon: LucideIcons.chevronLeft, onTap: () => onShift(-1)),
         Expanded(
           child: Center(
-            child: Text(
-              titleCapitalized,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: context.primaryText,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: context.isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : context.surface,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                titleCapitalized,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: context.primaryText,
+                ),
               ),
             ),
           ),

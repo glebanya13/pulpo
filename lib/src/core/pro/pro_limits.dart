@@ -46,9 +46,10 @@ class ProLimits {
 class ProProducts {
   const ProProducts._();
 
-  static const monthlyId = 'pulpo_pro_monthly';
-  static const semiAnnualId = 'pulpo_pro_6months';
-  static const yearlyId = 'pulpo_pro_yearly';
+  /// Must match App Store Connect / Play Console product IDs exactly.
+  static const monthlyId = 'pulpo_pro_mensual';
+  static const semiAnnualId = 'pulpo_pro_6_meses';
+  static const yearlyId = 'pulpo_pro_1anual';
   static const ids = {monthlyId, semiAnnualId, yearlyId};
 }
 
