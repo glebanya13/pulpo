@@ -1084,7 +1084,7 @@ class Tr {
       'delete_cloud_account': 'Eliminar cuenta en la nube',
       'delete_cloud_account_title': '¿Eliminar cuenta en la nube?',
       'delete_cloud_account_body':
-          'Se borrará el login (Apple, Google o email) en nuestros servidores. Los datos locales en este dispositivo se quedan. Esto no restablece el presupuesto en el teléfono. No se puede deshacer.',
+          'Se borrará el login (Apple, Google o email), la copia en la nube, tu participación en el presupuesto compartido y tus gastos compartidos. Los datos locales en este dispositivo se quedan. No se puede deshacer.',
       'delete_cloud_account_relogin':
           'Por seguridad, inicia sesión otra vez y vuelve a intentar. Apple y Google piden una sesión reciente.',
       'delete_cloud_account_failed': 'No se pudo eliminar la cuenta',
@@ -1142,7 +1142,8 @@ class Tr {
       'pro_restore': 'Restaurar compras',
       'pro_sign_in_required': 'Inicia sesión para activar Pro',
       'pro_restore_empty': 'No se encontraron compras activas',
-      'pro_legal_notice': 'Al suscribirte aceptas los Términos y la Política de privacidad',
+      'pro_legal_notice':
+          'El pago se carga a tu Apple ID. La suscripción se renueva automáticamente salvo que la canceles al menos 24 h antes del final del periodo. Gestiona o cancela en Ajustes → Apple ID → Suscripciones. Si compras durante la prueba, pierdes el resto de días gratis. Al continuar aceptas los Términos y la Política de privacidad.',
       'pro_yearly': 'Anual',
       'pro_monthly': 'Mensual',
       'pro_semi_annual': '6 meses',
@@ -1152,7 +1153,7 @@ class Tr {
       'pro_active_short': 'Activo',
       'pro_buy_failed': 'No se pudo completar la compra',
       'pro_store_empty':
-          'Productos no disponibles. Crea pulpo_pro_monthly, pulpo_pro_6months y pulpo_pro_yearly en App Store Connect y Play Console.',
+          'Los precios no están disponibles ahora. Comprueba la conexión e inténtalo de nuevo.',
       'pro_debug_unlock': 'Desbloquear Pro (debug)',
       'import_csv': 'Importar CSV',
       'import_csv_hint':
@@ -1601,7 +1602,7 @@ class Tr {
       'delete_cloud_account': 'Удалить облачный аккаунт',
       'delete_cloud_account_title': 'Удалить облачный аккаунт?',
       'delete_cloud_account_body':
-          'Логин (Apple, Google или email) будет удалён на наших серверах. Данные на этом телефоне останутся. Локальный бюджет не сбрасывается. Это нельзя отменить.',
+          'Будут удалены логин (Apple, Google или email), облачная копия, участие в общем бюджете и ваши общие расходы. Данные на этом телефоне останутся. Это нельзя отменить.',
       'delete_cloud_account_relogin':
           'Из соображений безопасности войдите ещё раз и повторите. Apple и Google требуют недавний вход.',
       'delete_cloud_account_failed': 'Не удалось удалить аккаунт',
@@ -1659,7 +1660,8 @@ class Tr {
       'pro_restore': 'Восстановить покупки',
       'pro_sign_in_required': 'Войдите в аккаунт, чтобы активировать Pro',
       'pro_restore_empty': 'Активных покупок не найдено',
-      'pro_legal_notice': 'Оформляя подписку, вы принимаете Условия и Политику конфиденциальности',
+      'pro_legal_notice':
+          'Оплата списывается с Apple ID. Подписка продлевается автоматически, если не отменить её минимум за 24 часа до конца периода. Управление: Настройки → Apple ID → Подписки. Покупка во время пробного периода отменяет оставшиеся дни триала. Продолжая, вы принимаете Условия использования и Политику конфиденциальности.',
       'pro_yearly': 'На год',
       'pro_monthly': 'На месяц',
       'pro_semi_annual': '6 месяцев',
@@ -1669,7 +1671,7 @@ class Tr {
       'pro_active_short': 'Активен',
       'pro_buy_failed': 'Не удалось завершить покупку',
       'pro_store_empty':
-          'Товары недоступны. Создайте pulpo_pro_monthly, pulpo_pro_6months и pulpo_pro_yearly в App Store Connect и Play Console.',
+          'Цены сейчас недоступны. Проверьте интернет и попробуйте снова.',
       'pro_debug_unlock': 'Открыть Pro (debug)',
       'import_csv': 'Импорт CSV',
       'import_csv_hint':
@@ -2118,7 +2120,7 @@ class Tr {
       'delete_cloud_account': 'Delete cloud account',
       'delete_cloud_account_title': 'Delete cloud account?',
       'delete_cloud_account_body':
-          'Your Apple, Google or email login will be removed from our servers. Data on this device stays. This does not reset the local budget. This cannot be undone.',
+          'Your Apple, Google or email login, cloud backup, shared-budget membership and your shared expenses will be removed from our servers. Data on this device stays. This cannot be undone.',
       'delete_cloud_account_relogin':
           'For security, sign in again and retry. Apple and Google require a recent login.',
       'delete_cloud_account_failed': 'Could not delete account',
@@ -2176,7 +2178,8 @@ class Tr {
       'pro_restore': 'Restore purchases',
       'pro_sign_in_required': 'Sign in to activate Pro',
       'pro_restore_empty': 'No active purchases found',
-      'pro_legal_notice': 'By subscribing you agree to the Terms and Privacy Policy',
+      'pro_legal_notice':
+          'Payment will be charged to your Apple ID. Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. Manage or cancel in Settings → Apple ID → Subscriptions. Any unused free trial is forfeited when you purchase. By continuing you agree to the Terms of Use and Privacy Policy.',
       'pro_yearly': 'Yearly',
       'pro_monthly': 'Monthly',
       'pro_semi_annual': '6 months',
@@ -2186,7 +2189,7 @@ class Tr {
       'pro_active_short': 'Active',
       'pro_buy_failed': 'Could not complete the purchase',
       'pro_store_empty':
-          'Products unavailable. Create pulpo_pro_monthly, pulpo_pro_6months and pulpo_pro_yearly in App Store Connect and Play Console.',
+          'Prices are unavailable right now. Check your connection and try again.',
       'pro_debug_unlock': 'Unlock Pro (debug)',
       'import_csv': 'Import CSV',
       'import_csv_hint':

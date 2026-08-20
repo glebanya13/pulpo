@@ -1,0 +1,4 @@
+/* Localized permission strings for App Review */
+"NSFaceIDUsageDescription" = "Pulpo uses Face ID to unlock the app.";
+"NSCameraUsageDescription" = "We use the camera to attach receipt photos to your transactions.";
+"NSPhotoLibraryUsageDescription" = "We use the photo library to attach receipt photos to your transactions.";

@@ -165,34 +165,39 @@ class PaywallScreen extends ConsumerWidget {
                         ),
                       ),
                     const SizedBox(height: 20),
-                    _PlanCard(
-                      title: tr.proYearly,
-                      price: yearly?.price ?? '24,99 €',
-                      badge: tr.proYearlySave,
-                      subtitle: tr.proTrial,
-                      highlighted: true,
-                      busy: pro.purchasing,
-                      onTap: () => _buy(context, ref, tr, yearly),
-                    ),
-                    const SizedBox(height: 10),
-                    _PlanCard(
-                      title: tr.proSemiAnnual,
-                      price: pro.semiAnnual?.price ?? '14,99 €',
-                      subtitle: tr.proTrial,
-                      busy: pro.purchasing,
-                      onTap: () => _buy(context, ref, tr, pro.semiAnnual),
-                    ),
-                    const SizedBox(height: 10),
-                    _PlanCard(
-                      title: tr.proMonthly,
-                      price: monthly?.price ?? '3,99 €',
-                      subtitle: tr.proTrial,
-                      busy: pro.purchasing,
-                      onTap: () => _buy(context, ref, tr, monthly),
-                    ),
+                    if (yearly != null)
+                      _PlanCard(
+                        title: tr.proYearly,
+                        price: yearly.price,
+                        badge: tr.proYearlySave,
+                        subtitle: tr.proTrial,
+                        highlighted: true,
+                        busy: pro.purchasing,
+                        onTap: () => _buy(context, ref, tr, yearly),
+                      ),
+                    if (pro.semiAnnual != null) ...[
+                      const SizedBox(height: 10),
+                      _PlanCard(
+                        title: tr.proSemiAnnual,
+                        price: pro.semiAnnual!.price,
+                        subtitle: tr.proTrial,
+                        busy: pro.purchasing,
+                        onTap: () => _buy(context, ref, tr, pro.semiAnnual),
+                      ),
+                    ],
+                    if (monthly != null) ...[
+                      const SizedBox(height: 10),
+                      _PlanCard(
+                        title: tr.proMonthly,
+                        price: monthly.price,
+                        subtitle: tr.proTrial,
+                        busy: pro.purchasing,
+                        onTap: () => _buy(context, ref, tr, monthly),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     ScaledElevatedButton(
-                      onPressed: pro.purchasing
+                      onPressed: pro.purchasing || yearly == null
                           ? null
                           : () => _buy(context, ref, tr, yearly),
                       child: Text(tr.proGo),
@@ -221,8 +226,8 @@ class PaywallScreen extends ConsumerWidget {
                       tr.proLegalNotice,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 12,
-                        height: 1.35,
+                        fontSize: 11,
+                        height: 1.4,
                         color: context.faintText,
                       ),
                     ),
@@ -243,8 +248,7 @@ class PaywallScreen extends ConsumerWidget {
                       ],
                     ),
                     if (!pro.loading &&
-                        pro.storeAvailable &&
-                        pro.products.isEmpty)
+                        (pro.products.isEmpty || !pro.storeAvailable))
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Column(

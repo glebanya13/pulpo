@@ -41,7 +41,7 @@ class ProState {
   final String? error;
 
   bool get isPro {
-    if (debugUnlock) return true;
+    if (kDebugMode && debugUnlock) return true;
     if (cloud.signedIn && cloud.hasRemote) {
       if (cloud.revokedByAdmin) return false;
       return cloud.entitled;
@@ -172,12 +172,16 @@ class ProController extends Notifier<ProState> {
     });
 
     final entitled = _prefs.getBool(_kEntitled) ?? false;
-    final debug = _prefs.getBool(_kDebugUnlock) ?? false;
+    var debug = _prefs.getBool(_kDebugUnlock) ?? false;
+    if (!kDebugMode && debug) {
+      debug = false;
+      unawaited(_prefs.setBool(_kDebugUnlock, false));
+    }
     Future<void>.microtask(refresh);
     return ProState(
       entitled: entitled,
       localExpiresAt: _readLocalExpiresAt(),
-      debugUnlock: debug,
+      debugUnlock: kDebugMode && debug,
       cloud: CloudProSnapshot.none,
       loading: true,
       purchasing: false,
@@ -363,6 +367,7 @@ class ProController extends Notifier<ProState> {
   }
 
   Future<void> setDebugUnlock(bool value) async {
+    if (!kDebugMode) return;
     await _prefs.setBool(_kDebugUnlock, value);
     state = state.copyWith(debugUnlock: value);
   }

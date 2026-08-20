@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/db/app_database.dart' as db;
@@ -345,6 +346,28 @@ class HouseholdService {
     final joined = await watchHousehold(householdId).first;
     if (joined == null) throw StateError('household_join_failed');
     return joined;
+  }
+
+  Future<void> purgeUserSharedData() async {
+    final uid = _uid;
+    if (uid == null) return;
+    final householdId = await householdIdForUser();
+    if (householdId == null) return;
+
+    try {
+      final entries = await _households
+          .doc(householdId)
+          .collection('entries')
+          .where('uid', isEqualTo: uid)
+          .get();
+      for (final doc in entries.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e, st) {
+      debugPrint('purge shared entries: $e\n$st');
+    }
+
+    await leaveHousehold(householdId);
   }
 
   Future<void> leaveHousehold(String householdId) async {

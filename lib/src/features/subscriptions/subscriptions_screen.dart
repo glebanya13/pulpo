@@ -11,6 +11,7 @@ import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/db/app_database.dart' as db;
+import '../../data/repositories/settings_service.dart';
 import '../../data/repositories/subscription_repository.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
@@ -148,153 +149,200 @@ Future<void> _openEditor(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
     builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: SizedBox(
-                width: 36,
-                child: Divider(thickness: 4, color: context.handleBar),
+      builder: (ctx, setSt) {
+        final tr = Tr.of(ctx);
+        Widget cycleChip(String value, String label) {
+          final active = cycle == value;
+          return Expanded(
+            child: Pressable(
+              onTap: () => setSt(() => cycle = value),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: active ? AppColors.lime : ctx.scaffoldBg,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: active ? AppColors.ink : ctx.primaryText,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-                isEdit
-                    ? Tr.of(ctx).editSubscription
-                    : Tr.of(ctx).newSubscription,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameCtrl,
-              decoration:
-                  InputDecoration(labelText: Tr.of(ctx).serviceName),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: Tr.of(ctx).amount),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: cycle,
-              decoration:
-                  InputDecoration(labelText: Tr.of(ctx).periodicity),
-              items: [
-                DropdownMenuItem(
-                    value: 'monthly', child: Text(Tr.of(ctx).monthlyLabel)),
-                DropdownMenuItem(
-                    value: 'yearly', child: Text(Tr.of(ctx).yearlyLabel)),
-              ],
-              onChanged: (v) => setSt(() => cycle = v ?? 'monthly'),
-            ),
-            const SizedBox(height: 12),
-            Pressable(
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: ctx,
-                  initialDate: next,
-                  firstDate: DateTime.now()
-                      .subtract(const Duration(days: 365)),
-                  lastDate:
-                      DateTime.now().add(const Duration(days: 365 * 3)),
-                );
-                if (picked != null) setSt(() => next = picked);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: ctx.scaffoldBg,
-                  borderRadius: BorderRadius.circular(16),
+          );
+        }
+
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            left: 20,
+            right: 20,
+            top: 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: SizedBox(
+                    width: 36,
+                    child: Divider(thickness: 4, color: context.handleBar),
+                  ),
                 ),
-                child: Row(
+                const SizedBox(height: 12),
+                Text(
+                  isEdit ? tr.editSubscription : tr.newSubscription,
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameCtrl,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(labelText: tr.serviceName),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: amountCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true),
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(labelText: tr.amount),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  tr.periodicity,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: ctx.mutedText,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
                   children: [
-                    Icon(LucideIcons.calendar,
-                        size: 18, color: ctx.primaryText),
-                    const SizedBox(width: 10),
-                    Text(
-                        '${Tr.of(ctx).nextPaymentPrefix}${DateFormat('d MMM y', Localizations.localeOf(ctx).languageCode).format(next)}'),
+                    cycleChip('monthly', tr.monthlyLabel),
+                    const SizedBox(width: 8),
+                    cycleChip('yearly', tr.yearlyLabel),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ScaledElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(amountCtrl.text) ?? 0;
-                if (nameCtrl.text.trim().isEmpty || amount <= 0) return;
-                final repo = ref.read(subscriptionRepositoryProvider);
-                if (isEdit) {
-                  await repo.update(
-                    id: existing.id,
-                    name: nameCtrl.text.trim(),
-                    amount: amount,
-                    cycle: cycle,
-                    nextPayment: next,
-                  );
-                } else {
-                  await repo.add(
-                    name: nameCtrl.text.trim(),
-                    amount: amount,
-                    currency: 'USD',
-                    cycle: cycle,
-                    nextPayment: next,
-                  );
-                }
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: Text(Tr.of(ctx).save),
-            ),
-            if (isEdit) ...[
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: ctx,
-                    builder: (dctx) => AlertDialog(
-                      title: Text(Tr.of(dctx).deleteSubTitle),
-                      content: Text(Tr.of(dctx).deleteTxBody),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dctx, false),
-                          child: Text(Tr.of(dctx).cancel),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(dctx, true),
-                          style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFFE53E3E),
-                          ),
-                          child: Text(Tr.of(dctx).delete),
+                const SizedBox(height: 12),
+                Pressable(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: ctx,
+                      initialDate: next,
+                      firstDate: DateTime.now()
+                          .subtract(const Duration(days: 365)),
+                      lastDate: DateTime.now()
+                          .add(const Duration(days: 365 * 3)),
+                    );
+                    if (picked != null) setSt(() => next = picked);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: ctx.scaffoldBg,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.calendar,
+                            size: 18, color: ctx.primaryText),
+                        const SizedBox(width: 10),
+                        Text(
+                          '${tr.nextPaymentPrefix}${DateFormat('d MMM y', Localizations.localeOf(ctx).languageCode).format(next)}',
                         ),
                       ],
                     ),
-                  );
-                  if (confirmed != true) return;
-                  await ref
-                      .read(subscriptionRepositoryProvider)
-                      .delete(existing.id);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFE53E3E),
+                  ),
                 ),
-                child: Text(Tr.of(ctx).delete),
-              ),
-            ],
-          ],
-        ),
-      ),
+                const SizedBox(height: 20),
+                ScaledElevatedButton(
+                  onPressed: () async {
+                    final name = nameCtrl.text.trim();
+                    final amount = double.tryParse(
+                          amountCtrl.text.trim().replaceAll(',', '.'),
+                        ) ??
+                        0;
+                    if (name.isEmpty || amount <= 0) {
+                      if (!ctx.mounted) return;
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(content: Text(tr.errorTitle)),
+                      );
+                      return;
+                    }
+                    final currency =
+                        ref.read(settingsControllerProvider).baseCurrency;
+                    final repo = ref.read(subscriptionRepositoryProvider);
+                    if (isEdit) {
+                      await repo.update(
+                        id: existing.id,
+                        name: name,
+                        amount: amount,
+                        cycle: cycle,
+                        nextPayment: next,
+                      );
+                    } else {
+                      await repo.add(
+                        name: name,
+                        amount: amount,
+                        currency: currency,
+                        cycle: cycle,
+                        nextPayment: next,
+                      );
+                    }
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                  child: Text(tr.save),
+                ),
+                if (isEdit) ...[
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: ctx,
+                        builder: (dctx) => AlertDialog(
+                          title: Text(Tr.of(dctx).deleteSubTitle),
+                          content: Text(Tr.of(dctx).deleteTxBody),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dctx, false),
+                              child: Text(Tr.of(dctx).cancel),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(dctx, true),
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFFE53E3E),
+                              ),
+                              child: Text(Tr.of(dctx).delete),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed != true) return;
+                      await ref
+                          .read(subscriptionRepositoryProvider)
+                          .delete(existing.id);
+                      if (ctx.mounted) Navigator.pop(ctx);
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFE53E3E),
+                    ),
+                    child: Text(tr.delete),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     ),
   );
 }

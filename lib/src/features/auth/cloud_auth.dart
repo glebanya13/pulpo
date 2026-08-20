@@ -12,6 +12,7 @@ import '../../../firebase_options.dart';
 import '../../core/app_info.dart';
 import '../../data/repositories/backup_service.dart';
 import '../../data/repositories/settings_service.dart';
+import '../shared_budget/household_service.dart';
 
 class CloudNotConfigured implements Exception {
   const CloudNotConfigured();
@@ -130,6 +131,9 @@ class CloudAuth {
       throw FirebaseAuthException(code: 'no-current-user');
     }
     final uid = user.uid;
+    try {
+      await _ref.read(householdServiceProvider).purgeUserSharedData();
+    } catch (_) {}
     try {
       await _moneyRef(uid).delete();
     } catch (_) {}

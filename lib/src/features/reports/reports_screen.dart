@@ -379,16 +379,21 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  _CategoryStackBar(
+                  _CategoryDonut(
                     segments: [
-                      for (final e in donutData)
+                      for (var i = 0; i < donutData.length; i++)
                         _StackSegment(
-                          color: _colorForCategory(
-                            cats.where((c) => c.id == e.key).firstOrNull,
+                          color: _pieColorForCategory(
+                            cats
+                                .where((c) => c.id == donutData[i].key)
+                                .firstOrNull,
+                            i,
                           ),
-                          value: e.value,
+                          value: donutData[i].value,
                         ),
                     ],
+                    centerLabel: formatMoney(monthTotal, currency),
+                    centerHint: Tr.of(context).totalWord,
                   ),
                   const SizedBox(height: 20),
                   for (var i = 0; i < donutData.length; i++) ...[
@@ -401,6 +406,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       fraction: donutData[i].value / maxCatVal,
                       total: monthTotal,
                       currency: currency,
+                      barColor: _pieColorForCategory(
+                        cats
+                            .where((c) => c.id == donutData[i].key)
+                            .firstOrNull,
+                        i,
+                      ),
                     ),
                   ],
                 ],
@@ -944,9 +955,37 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     ];
   }
 
-  static Color _colorForCategory(db.Category? category) {
-    if (category == null) return const Color(0xFF8A94A6);
-    return Color(category.color).asVivid;
+  /// Palette for the category pie — never uses app lime (#CDFF3A family).
+  static const _pieFallback = <Color>[
+    Color(0xFF5B8DEF),
+    Color(0xFFFF6B6B),
+    Color(0xFFFFB84E),
+    Color(0xFFA78BFA),
+    Color(0xFF4ECDC4),
+    Color(0xFFFF8A5B),
+    Color(0xFF6C8EFF),
+    Color(0xFFE879A9),
+  ];
+
+  static Color _pieColorForCategory(db.Category? category, int index) {
+    if (category == null) {
+      return _pieFallback[index % _pieFallback.length];
+    }
+    return _withoutBrandLime(
+      Color(category.color).asVivid,
+      fallbackIndex: index,
+    );
+  }
+
+  static Color _withoutBrandLime(Color c, {int fallbackIndex = 0}) {
+    final hsl = HSLColor.fromColor(c);
+    // Brand lime sits roughly hue ~70–95 with high lightness.
+    final isLimeFamily = hsl.hue >= 55 &&
+        hsl.hue <= 110 &&
+        hsl.saturation > 0.35 &&
+        hsl.lightness > 0.35;
+    if (!isLimeFamily) return c;
+    return _pieFallback[fallbackIndex % _pieFallback.length];
   }
 
   static const _chartBarColor = Color(0xFF5B8DEF);
@@ -958,30 +997,65 @@ class _StackSegment {
   final double value;
 }
 
-class _CategoryStackBar extends StatelessWidget {
-  const _CategoryStackBar({required this.segments});
+class _CategoryDonut extends StatelessWidget {
+  const _CategoryDonut({
+    required this.segments,
+    required this.centerLabel,
+    required this.centerHint,
+  });
 
   final List<_StackSegment> segments;
+  final String centerLabel;
+  final String centerHint;
 
   @override
   Widget build(BuildContext context) {
     final total = segments.fold<double>(0, (sum, s) => sum + s.value);
     if (total <= 0) return const SizedBox.shrink();
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
-      child: SizedBox(
-        height: 10,
-        child: Row(
-          children: [
-            for (final seg in segments)
-              if (seg.value > 0)
-                Expanded(
-                  flex: (seg.value * 1000).round().clamp(1, 1000000),
-                  child: ColoredBox(color: seg.color),
+    return SizedBox(
+      height: 200,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          PieChart(
+            PieChartData(
+              sectionsSpace: 2,
+              centerSpaceRadius: 58,
+              startDegreeOffset: -90,
+              sections: [
+                for (final seg in segments)
+                  if (seg.value > 0)
+                    PieChartSectionData(
+                      value: seg.value,
+                      color: seg.color,
+                      radius: 34,
+                      showTitle: false,
+                    ),
+              ],
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                centerLabel,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: context.primaryText,
                 ),
-          ],
-        ),
+              ),
+              Text(
+                centerHint,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: context.faintText,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1042,6 +1116,7 @@ class _CategoryRow extends StatelessWidget {
     required this.fraction,
     required this.total,
     required this.currency,
+    required this.barColor,
   });
 
   final db.Category? category;
@@ -1049,6 +1124,7 @@ class _CategoryRow extends StatelessWidget {
   final double fraction;
   final double total;
   final String currency;
+  final Color barColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1059,9 +1135,7 @@ class _CategoryRow extends StatelessWidget {
         Row(
           children: [
             ColorWellIcon(
-              color: category != null
-                  ? Color(category!.color)
-                  : const Color(0xFF8A94A6),
+              color: barColor,
               icon: category != null
                   ? lucideByKey(category!.icon)
                   : Icons.circle,
@@ -1113,9 +1187,7 @@ class _CategoryRow extends StatelessWidget {
             widthFactor: fraction.clamp(0, 1),
             child: Container(
               decoration: BoxDecoration(
-                color: category != null
-                    ? Color(category!.color).asVivid
-                    : AppColors.lime,
+                color: barColor,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),

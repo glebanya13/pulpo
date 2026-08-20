@@ -16,6 +16,7 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		A31F8C2B2C6E4A1A00B4C002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A31F8C2A2C6E4A1A00B4C001 /* PrivacyInfo.xcprivacy */; };
+		A32F8C2C2C6E4A1A00B4C010 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A32F8C2C2C6E4A1A00B4C011 /* InfoPlist.strings */; };
 		C94C11062ABB3A2072FCD5E3 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 74359D04076FCBDED790EE8B /* GoogleService-Info.plist */; };
 		FC07FEE44DF1FADBF47D1B0D /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F1A8E6D85EB787415D8AF3E /* Pods_RunnerTests.framework */; };
 /* End PBXBuildFile section */
@@ -66,6 +67,9 @@
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A31F8C2A2C6E4A1A00B4C001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A32F8C2C2C6E4A1A00B4C012 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A32F8C2C2C6E4A1A00B4C013 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A32F8C2C2C6E4A1A00B4C014 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A41F8C2D2C6E4A1A00B4C003 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		AD4F36AACDEA4BD5C1BD2954 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		B1EE1402D52D109DBCF93B67 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -155,6 +159,7 @@
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
 				97C147021CF9000F007C117D /* Info.plist */,
+				A32F8C2C2C6E4A1A00B4C011 /* InfoPlist.strings */,
 				A41F8C2D2C6E4A1A00B4C003 /* Runner.entitlements */,
 				A31F8C2A2C6E4A1A00B4C001 /* PrivacyInfo.xcprivacy */,
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
@@ -278,6 +283,7 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				A31F8C2B2C6E4A1A00B4C002 /* PrivacyInfo.xcprivacy in Resources */,
+				A32F8C2C2C6E4A1A00B4C010 /* InfoPlist.strings in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				C94C11062ABB3A2072FCD5E3 /* GoogleService-Info.plist in Resources */,
 			);
@@ -443,6 +449,16 @@
 				97C147001CF9000F007C117D /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		A32F8C2C2C6E4A1A00B4C011 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A32F8C2C2C6E4A1A00B4C012 /* en */,
+				A32F8C2C2C6E4A1A00B4C013 /* es */,
+				A32F8C2C2C6E4A1A00B4C014 /* ru */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
