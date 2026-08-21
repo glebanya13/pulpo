@@ -51,6 +51,102 @@ class BrandLogo extends StatelessWidget {
   }
 }
 
+/// Title in a surface pill — matches cards / filters as part of the chrome.
+class ScreenTitlePill extends StatelessWidget {
+  const ScreenTitlePill({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.eyebrow,
+    this.trailing,
+    this.large = false,
+    this.expand = false,
+  });
+
+  final String title;
+  final String? subtitle;
+  /// Smaller muted line above the title (e.g. greeting).
+  final String? eyebrow;
+  /// Optional control inside the pill (e.g. profile on home).
+  final Widget? trailing;
+  final bool large;
+  final bool expand;
+
+  @override
+  Widget build(BuildContext context) {
+    final textBlock = Column(
+      crossAxisAlignment:
+          expand || large ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (eyebrow != null) ...[
+          Text(
+            eyebrow!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: large ? 13 : 12,
+              fontWeight: FontWeight.w500,
+              color: context.mutedText,
+            ),
+          ),
+          const SizedBox(height: 2),
+        ],
+        Text(
+          title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: large ? 22 : 15,
+            fontWeight: FontWeight.w800,
+            letterSpacing: large ? -0.6 : -0.2,
+            height: 1.15,
+            color: context.primaryText,
+          ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            subtitle!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: large ? 13 : 12,
+              fontWeight: FontWeight.w500,
+              color: context.mutedText,
+            ),
+          ),
+        ],
+      ],
+    );
+
+    final child = Container(
+      width: expand ? double.infinity : null,
+      padding: EdgeInsets.fromLTRB(
+        16,
+        large ? 12 : 10,
+        trailing != null ? 10 : 16,
+        large ? 12 : 10,
+      ),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(large ? 18 : 999),
+      ),
+      child: trailing == null
+          ? textBlock
+          : Row(
+              children: [
+                Expanded(child: textBlock),
+                const SizedBox(width: 8),
+                trailing!,
+              ],
+            ),
+    );
+    if (expand) return child;
+    return Align(alignment: Alignment.centerLeft, child: child);
+  }
+}
+
 /// Header страницы: back/action по краям, заголовок по центру в pill.
 class PageHeader extends StatelessWidget {
   const PageHeader({
@@ -83,9 +179,7 @@ class PageHeader extends StatelessWidget {
     final pill = Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: context.isDark
-            ? Colors.white.withValues(alpha: 0.1)
-            : context.surface,
+        color: context.surface,
         borderRadius: BorderRadius.circular(999),
       ),
       child: RichText(

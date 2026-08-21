@@ -19,6 +19,7 @@ import '../../data/repositories/backup_service.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/pro_badge.dart';
 import '../auth/cloud_auth.dart';
 
 enum _CloudRestoreChoice { useCloud, keepLocal }
@@ -269,6 +270,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               icon: LucideIcons.cloud,
               label: tr.cloudBackup,
               filled: false,
+              showPro: !isPro,
               onTap: () async {
                 if (!await requirePro(context, ref, ProGate.cloud)) return;
                 final user = ref.read(authUserProvider).valueOrNull;
@@ -308,6 +310,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               icon: LucideIcons.download,
               label: tr.cloudRestore,
               filled: false,
+              showPro: !isPro,
               onTap: _cloudRestore,
             ),
             const SizedBox(height: 10),
@@ -368,11 +371,13 @@ class _Action extends StatelessWidget {
     required this.label,
     required this.filled,
     required this.onTap,
+    this.showPro = false,
   });
   final IconData icon;
   final String label;
   final bool filled;
   final VoidCallback onTap;
+  final bool showPro;
 
   @override
   Widget build(BuildContext context) {
@@ -397,6 +402,10 @@ class _Action extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: filled ? AppColors.ink : context.primaryText)),
+            if (showPro) ...[
+              const SizedBox(width: 8),
+              const ProBadge(dense: true),
+            ],
           ],
         ),
       ),

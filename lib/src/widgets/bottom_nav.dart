@@ -6,18 +6,21 @@ import '../core/theme/app_theme.dart';
 import '../core/theme/liquid_glass.dart';
 import 'pressable.dart';
 
-/// Pill bottom nav: glass bar, 4 icons + FAB in the center.
+/// Pill bottom nav: home · txs · plus (bright FAB) · reports · chat (quiet).
 class BudgetBottomNav extends StatelessWidget {
   const BudgetBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTap,
-    required this.onFabTap,
+    required this.onAddTap,
+    required this.onChatTap,
   });
 
+  /// Shell tab index: 0 home, 1 transactions, 2 reports.
   final int currentIndex;
   final ValueChanged<int> onTap;
-  final VoidCallback onFabTap;
+  final VoidCallback onAddTap;
+  final VoidCallback onChatTap;
 
   @override
   Widget build(BuildContext context) {
@@ -44,16 +47,21 @@ class BudgetBottomNav extends StatelessWidget {
               active: currentIndex == 1,
               onTap: () => onTap(1),
             ),
-            _Fab(onTap: onFabTap),
+            _Fab(
+              icon: LucideIcons.plus,
+              size: 52,
+              iconSize: 24,
+              onTap: onAddTap,
+            ),
             _NavItem(
               icon: LucideIcons.pieChart,
               active: currentIndex == 2,
               onTap: () => onTap(2),
             ),
             _NavItem(
-              icon: LucideIcons.user,
-              active: currentIndex == 3,
-              onTap: () => onTap(3),
+              icon: LucideIcons.messageCircle,
+              active: false,
+              onTap: onChatTap,
             ),
           ],
         ),
@@ -98,8 +106,17 @@ class _NavItem extends StatelessWidget {
 }
 
 class _Fab extends StatelessWidget {
-  const _Fab({required this.onTap});
+  const _Fab({
+    required this.icon,
+    required this.onTap,
+    this.size = 46,
+    this.iconSize = 20,
+  });
+
+  final IconData icon;
   final VoidCallback onTap;
+  final double size;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context) {
@@ -107,20 +124,20 @@ class _Fab extends StatelessWidget {
       onTap: onTap,
       scale: 0.9,
       child: Container(
-        width: 46,
-        height: 46,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: AppColors.lime,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: AppColors.lime.withValues(alpha: 0.4),
-              blurRadius: 12,
+              color: AppColors.lime.withValues(alpha: 0.45),
+              blurRadius: 14,
               offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: const Icon(Icons.add, color: AppColors.ink, size: 22),
+        child: Icon(icon, color: AppColors.ink, size: iconSize),
       ),
     );
   }

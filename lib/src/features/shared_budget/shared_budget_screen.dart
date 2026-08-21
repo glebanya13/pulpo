@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
@@ -18,6 +19,7 @@ import '../../data/repositories/settings_service.dart';
 import '../../features/auth/cloud_auth.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/pro_badge.dart';
 import 'household_service.dart';
 
 class SharedBudgetScreen extends ConsumerStatefulWidget {
@@ -71,6 +73,7 @@ class _SharedBudgetScreenState extends ConsumerState<SharedBudgetScreen> {
               _SetupCard(
                 codeCtrl: _codeCtrl,
                 busy: _busy,
+                showPro: !ref.watch(proControllerProvider).isPro,
                 onCreate: () => _run(() async {
                   if (!await requirePro(context, ref, ProGate.sharedBudget)) {
                     return;
@@ -203,12 +206,14 @@ class _SetupCard extends StatelessWidget {
     required this.busy,
     required this.onCreate,
     required this.onJoin,
+    this.showPro = false,
   });
 
   final TextEditingController codeCtrl;
   final bool busy;
   final VoidCallback onCreate;
   final VoidCallback onJoin;
+  final bool showPro;
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +223,17 @@ class _SetupCard extends StatelessWidget {
       children: [
         ScaledFilledButton(
           onPressed: busy ? null : onCreate,
-          child: Text(tr.sharedBudgetCreate),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(tr.sharedBudgetCreate),
+              if (showPro) ...[
+                const SizedBox(width: 8),
+                const ProBadge(dense: true),
+              ],
+            ],
+          ),
         ),
         const SizedBox(height: 20),
         Text(tr.sharedBudgetJoinHint,
@@ -235,7 +250,17 @@ class _SetupCard extends StatelessWidget {
         const SizedBox(height: 12),
         ScaledOutlinedButton(
           onPressed: busy ? null : onJoin,
-          child: Text(tr.sharedBudgetJoin),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(tr.sharedBudgetJoin),
+              if (showPro) ...[
+                const SizedBox(width: 8),
+                const ProBadge(dense: true),
+              ],
+            ],
+          ),
         ),
       ],
     );

@@ -63,16 +63,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         Row(
           children: [
             Expanded(
-              child: Text(
-                tr.transactions,
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1,
-                  color: context.primaryText,
-                ),
+              child: ScreenTitlePill(
+                title: tr.transactions,
+                large: true,
+                expand: true,
               ),
             ),
+            const SizedBox(width: 10),
             Pressable(
               onTap: () => context.push('/accounts'),
               child: Container(

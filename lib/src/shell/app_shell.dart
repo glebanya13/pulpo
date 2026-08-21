@@ -46,7 +46,8 @@ class AppShell extends StatelessWidget {
           // always re-open the target branch at its initial location.
           initialLocation: true,
         ),
-        onFabTap: () => showQuickActionsSheet(context),
+        onAddTap: () => showQuickActionsSheet(context),
+        onChatTap: () => context.push('/assistant'),
       ),
     );
   }

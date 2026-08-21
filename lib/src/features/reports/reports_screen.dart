@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/ai/ai_errors.dart';
 import '../../core/ai/ai_models.dart';
 import '../../core/ai/pulpo_ai_service.dart';
 import '../../core/l10n/tr.dart';
@@ -23,6 +24,8 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/common.dart';
+import '../../widgets/pro_badge.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
 import 'custom_period_picker.dart';
 import 'stats_period.dart';
@@ -87,19 +90,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       controller: scroll,
       padding: AppSpacing.tabPagePadding(context),
       children: [
-        Text(
-          tr.analytics,
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -1,
-            color: context.primaryText,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          tr.analyticsSubtitle,
-          style: TextStyle(fontSize: 14, color: context.mutedText),
+        ScreenTitlePill(
+          title: tr.analytics,
+          subtitle: tr.analyticsSubtitle,
+          large: true,
+          expand: true,
         ),
         const SizedBox(height: 16),
         _PeriodDropdownButton(
@@ -117,6 +112,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         _ReportsSegmentedTabs(
           labels: tabs,
           index: _tab,
+          locked: isPro ? const {} : const {1, 2},
           onSelect: (i) async {
             if ((i == 1 || i == 2) && !isPro) {
               await openPaywall(
@@ -282,10 +278,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         _aiInsight = result.text;
         _aiInsightForPeriod = periodName;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr.aiFailed)),
+        SnackBar(content: Text(describeAiError(tr, e))),
       );
     } finally {
       if (mounted) setState(() => _aiInsightBusy = false);
@@ -351,6 +347,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       _AiInsightCard(
         insight: _aiInsight,
         busy: _aiInsightBusy,
+        showPro: !ref.watch(proControllerProvider).isPro,
         onGenerate: () => _generateInsight(
           periodName: periodName,
           currency: currency,
@@ -1218,11 +1215,13 @@ class _ReportsSegmentedTabs extends StatelessWidget {
     required this.labels,
     required this.index,
     required this.onSelect,
+    this.locked = const {},
   });
 
   final List<String> labels;
   final int index;
   final ValueChanged<int> onSelect;
+  final Set<int> locked;
 
   @override
   Widget build(BuildContext context) {
@@ -1249,17 +1248,29 @@ class _ReportsSegmentedTabs extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
-                  child: Text(
-                    labels[i],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: index == i
-                          ? Colors.white
-                          : context.mutedText,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          labels[i],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: index == i
+                                ? Colors.white
+                                : context.mutedText,
+                          ),
+                        ),
+                      ),
+                      if (locked.contains(i)) ...[
+                        const SizedBox(width: 4),
+                        const ProRocketDot(size: 14),
+                      ],
+                    ],
                   ),
                 ),
               ),
@@ -1304,12 +1315,14 @@ class _PeriodSheetTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  color: context.primaryText,
+                  color: locked
+                      ? proLockedTextColor(context)
+                      : context.primaryText,
                 ),
               ),
             ),
             if (locked)
-              Icon(LucideIcons.lock, size: 16, color: context.faintText)
+              const ProRocketDot(size: 18)
             else if (selected)
               const Icon(LucideIcons.check, size: 18, color: AppColors.ink),
           ],
@@ -1324,11 +1337,13 @@ class _AiInsightCard extends StatelessWidget {
     required this.insight,
     required this.busy,
     required this.onGenerate,
+    this.showPro = false,
   });
 
   final String? insight;
   final bool busy;
   final VoidCallback onGenerate;
+  final bool showPro;
 
   @override
   Widget build(BuildContext context) {
@@ -1345,7 +1360,23 @@ class _AiInsightCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.sparkles, size: 18, color: context.primaryText),
+              if (showPro)
+                ProIconMark(
+                  size: 28,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      LucideIcons.sparkles,
+                      size: 18,
+                      color: context.primaryText.withValues(alpha: 0.55),
+                    ),
+                  ),
+                )
+              else
+                Icon(LucideIcons.sparkles,
+                    size: 18, color: context.primaryText),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1353,7 +1384,9 @@ class _AiInsightCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: context.primaryText,
+                    color: showPro
+                        ? proLockedTextColor(context)
+                        : context.primaryText,
                   ),
                 ),
               ),
@@ -1363,7 +1396,13 @@ class _AiInsightCard extends StatelessWidget {
           if (insight == null)
             Text(
               tr.aiInsightHint,
-              style: TextStyle(fontSize: 13, height: 1.35, color: context.mutedText),
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.35,
+                color: showPro
+                    ? proLockedMutedColor(context)
+                    : context.mutedText,
+              ),
             )
           else
             Text(

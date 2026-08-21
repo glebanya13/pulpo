@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
@@ -12,6 +15,7 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/pro_badge.dart';
 import '../reports/custom_period_picker.dart';
 import '../reports/stats_period.dart';
 import 'export_service.dart';
@@ -30,6 +34,12 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final range = ref.watch(statsPeriodProvider);
+    final isPro = ref.watch(proControllerProvider).isPro;
+    final periodName = _label(tr, range.kind);
+    final customRangeLabel = range.kind == StatsPeriodKind.custom
+        ? '${DateFormat('d MMM', Localizations.localeOf(context).languageCode).format(range.start)} – ${DateFormat('d MMM', Localizations.localeOf(context).languageCode).format(range.end.subtract(const Duration(days: 1)))}'
+        : null;
+
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -50,27 +60,14 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               const LinearProgressIndicator(minHeight: 2),
               const SizedBox(height: 12),
             ],
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final k in StatsPeriodKind.values)
-                  _Chip(
-                    label: _label(tr, k),
-                    active: range.kind == k,
-                    onTap: _busy
-                        ? null
-                        : () async {
-                            if (k == StatsPeriodKind.custom) {
-                              await pickCustomStatsPeriod(context, ref);
-                              return;
-                            }
-                            ref
-                                .read(statsPeriodProvider.notifier)
-                                .setKind(k);
-                          },
-                  ),
-              ],
+            _PeriodDropdownButton(
+              label: customRangeLabel ?? periodName,
+              onTap: _busy
+                  ? null
+                  : () => _openPeriodPicker(
+                        context: context,
+                        current: range.kind,
+                      ),
             ),
             const SizedBox(height: 24),
             ScaledFilledButton(
@@ -80,28 +77,99 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             const SizedBox(height: 8),
             ScaledOutlinedButton(
               onPressed: _busy ? null : () => _go(ExportFormat.excel),
-              child: Text(tr.exportExcel),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(tr.exportExcel),
+                  if (!isPro) ...[
+                    const SizedBox(width: 8),
+                    const ProBadge(dense: true),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(height: 8),
             ScaledOutlinedButton(
               onPressed: _busy ? null : () => _go(ExportFormat.pdf),
-              child: Text(tr.exportPdf),
-            ),
-            const SizedBox(height: 8),
-            ScaledOutlinedButton(
-              onPressed: _busy
-                  ? null
-                  : () async {
-                      final ok =
-                          await requirePro(context, ref, ProGate.importCsv);
-                      if (!ok || !context.mounted) return;
-                      context.push('/settings/import');
-                    },
-              child: Text(tr.importCsv),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(tr.exportPdf),
+                  if (!isPro) ...[
+                    const SizedBox(width: 8),
+                    const ProBadge(dense: true),
+                  ],
+                ],
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _openPeriodPicker({
+    required BuildContext context,
+    required StatsPeriodKind current,
+  }) async {
+    final tr = Tr.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 10, 8, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: context.faintText.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    tr.choosePeriod,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: context.primaryText,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                for (final k in StatsPeriodKind.values)
+                  _PeriodSheetTile(
+                    label: _label(tr, k),
+                    selected: current == k,
+                    onTap: () async {
+                      Navigator.pop(ctx);
+                      if (k == StatsPeriodKind.custom) {
+                        await pickCustomStatsPeriod(context, ref);
+                        return;
+                      }
+                      ref.read(statsPeriodProvider.notifier).setKind(k);
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -111,6 +179,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         !await requirePro(context, ref, ProGate.excel)) {
       return;
     }
+    if (!mounted) return;
     if (format == ExportFormat.pdf &&
         !await requirePro(context, ref, ProGate.pdf)) {
       return;
@@ -148,10 +217,13 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.active, this.onTap});
+class _PeriodDropdownButton extends StatelessWidget {
+  const _PeriodDropdownButton({
+    required this.label,
+    this.onTap,
+  });
+
   final String label;
-  final bool active;
   final VoidCallback? onTap;
 
   @override
@@ -159,20 +231,89 @@ class _Chip extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
         decoration: BoxDecoration(
-          color: active
-              ? (context.isDark ? AppColors.ink3 : AppColors.ink)
-              : context.surface,
-          borderRadius: BorderRadius.circular(100),
+          color: context.surface,
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: active ? Colors.white : context.primaryText,
-          ),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.lime.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                LucideIcons.calendar,
+                size: 16,
+                color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: context.primaryText,
+                ),
+              ),
+            ),
+            Icon(
+              LucideIcons.chevronDown,
+              size: 18,
+              color: context.mutedText,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PeriodSheetTile extends StatelessWidget {
+  const _PeriodSheetTile({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.lime.withValues(alpha: 0.22)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  color: context.primaryText,
+                ),
+              ),
+            ),
+            if (selected)
+              const Icon(LucideIcons.check, size: 18, color: AppColors.ink),
+          ],
         ),
       ),
     );

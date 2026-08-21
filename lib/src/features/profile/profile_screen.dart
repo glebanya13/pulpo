@@ -17,8 +17,9 @@ import '../settings/settings_screen.dart' show openNameSheet;
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../auth/cloud_auth.dart';
+import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
-import '../../widgets/reset_scroll_when_obscured.dart';
+import '../../widgets/pro_badge.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -32,20 +33,19 @@ class ProfileScreen extends ConsumerWidget {
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
     final isPro = ref.watch(proControllerProvider).isPro;
 
-    return ResetScrollWhenObscured(
-      tabPath: '/profile',
-      builder: (context, scroll) => ListView(
-      controller: scroll,
-      padding: AppSpacing.tabPagePadding(context),
+    return Scaffold(
+      body: SafeArea(
+        child: ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xs,
+        AppSpacing.lg,
+        AppSpacing.xxl,
+      ),
       children: [
-        Text(
-          tr.profile,
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.8,
-            color: context.primaryText,
-          ),
+        PageHeader(
+          first: tr.profile,
+          onBack: () => context.pop(),
         ),
         const SizedBox(height: 12),
 
@@ -114,12 +114,13 @@ class ProfileScreen extends ConsumerWidget {
               trailing: isPro ? tr.proActiveShort : tr.proGo,
               onTap: () => openPaywall(context, ProGate.generic),
             ),
-            _MenuRow(
-              icon: LucideIcons.logIn,
-              iconBg: const Color(0xFFE0F2FE),
-              label: authUser != null ? tr.signedInAs : tr.signIn,
-              onTap: () => context.push('/settings/account'),
-            ),
+            if (authUser == null)
+              _MenuRow(
+                icon: LucideIcons.logIn,
+                iconBg: const Color(0xFFE0F2FE),
+                label: tr.signIn,
+                onTap: () => context.push('/settings/account'),
+              ),
             _MenuRow(
               icon: LucideIcons.shield,
               iconBg: const Color(0xFFD4F5E0),
@@ -174,6 +175,7 @@ class ProfileScreen extends ConsumerWidget {
               icon: LucideIcons.upload,
               iconBg: const Color(0xFFE0F2FE),
               label: tr.importCsv,
+              proLocked: !isPro,
               onTap: () async {
                 final ok = await requirePro(context, ref, ProGate.importCsv);
                 if (!ok || !context.mounted) return;
@@ -237,7 +239,8 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 24),
       ],
-    ),
+        ),
+      ),
     );
   }
 }
@@ -394,6 +397,7 @@ class _MenuRow extends StatelessWidget {
     this.trailingWidget,
     this.onTap,
     this.danger = false,
+    this.proLocked = false,
   });
   final IconData icon;
   final Color iconBg;
@@ -403,9 +407,26 @@ class _MenuRow extends StatelessWidget {
   final Widget? trailingWidget;
   final VoidCallback? onTap;
   final bool danger;
+  final bool proLocked;
 
   @override
   Widget build(BuildContext context) {
+    final labelColor = proLocked
+        ? proLockedTextColor(context, danger: danger)
+        : (danger ? const Color(0xFFE53E3E) : context.primaryText);
+    final iconWell = Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: context.wellBg(iconBg),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        icon,
+        size: 18,
+        color: context.wellFg(iconBg).withValues(alpha: proLocked ? 0.55 : 1),
+      ),
+    );
     return Pressable(
       enabled: onTap != null,
       onTap: onTap ?? () {},
@@ -414,17 +435,7 @@ class _MenuRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: context.wellBg(iconBg),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon,
-                  size: 18,
-                  color: context.wellFg(iconBg)),
-            ),
+            if (proLocked) ProIconMark(child: iconWell) else iconWell,
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -433,18 +444,21 @@ class _MenuRow extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: danger
-                            ? const Color(0xFFE53E3E)
-                            : context.primaryText),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: labelColor,
+                    ),
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       subtitle!,
                       style: TextStyle(
-                          fontSize: 11, color: context.faintText),
+                        fontSize: 11,
+                        color: proLocked
+                            ? proLockedMutedColor(context)
+                            : context.faintText,
+                      ),
                     ),
                   ],
                 ],
@@ -457,15 +471,22 @@ class _MenuRow extends StatelessWidget {
                   trailing!,
                   style: TextStyle(
                     fontSize: 13,
-                    color: context.mutedText,
+                    color: proLocked
+                        ? proLockedMutedColor(context)
+                        : context.mutedText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             if (trailingWidget != null) trailingWidget!,
             if (onTap != null && !danger)
-              Icon(LucideIcons.chevronRight,
-                  size: 16, color: context.faintText),
+              Icon(
+                LucideIcons.chevronRight,
+                size: 16,
+                color: proLocked
+                    ? proLockedMutedColor(context)
+                    : context.faintText,
+              ),
           ],
         ),
       ),

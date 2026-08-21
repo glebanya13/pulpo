@@ -9,10 +9,12 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/common.dart';
+import '../../widgets/pro_badge.dart';
 import '../../core/theme/color_well.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../core/pro/pro_controller.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
 import 'monthly_calendar.dart';
 
@@ -32,31 +34,29 @@ class DashboardScreen extends ConsumerWidget {
       controller: scroll,
       padding: AppSpacing.tabPagePadding(context),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tr.greetingForHour(DateTime.now().hour),
-                    style: TextStyle(fontSize: 13, color: context.mutedText),
-                  ),
-                  Text(
-                    settings.userName,
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      height: 1.15,
-                      color: context.primaryText,
-                    ),
-                  ),
-                ],
+        ScreenTitlePill(
+          title: settings.userName,
+          eyebrow: tr.greetingForHour(DateTime.now().hour),
+          large: true,
+          expand: true,
+          trailing: Pressable(
+            onTap: () => context.push('/profile'),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: context.isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : AppColors.ink.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                LucideIcons.user,
+                size: 18,
+                color: context.isDark ? AppColors.lime : AppColors.ink,
               ),
             ),
-            const SizedBox(width: 10),
-            const BrandLogo(size: 40),
-          ],
+          ),
         ),
         const SizedBox(height: 10),
         _BalanceCard(total: total, currency: currency),
@@ -97,17 +97,18 @@ class DashboardScreen extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 6),
-        _HomeLinks(),
+        const _HomeLinks(),
         const SizedBox(height: 10),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              tr.calendar,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: context.primaryText,
+            Expanded(
+              child: Text(
+                tr.calendar,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: context.primaryText,
+                ),
               ),
             ),
             Pressable(
@@ -123,6 +124,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
+        const SizedBox(height: 8),
         const SizedBox(height: 6),
         const MonthlyCalendar(),
       ],
@@ -223,20 +225,31 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
-class _HomeLinks extends StatelessWidget {
+class _HomeLinks extends ConsumerWidget {
+  const _HomeLinks();
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
+    final isPro = ref.watch(proControllerProvider).isPro;
     final items = [
-      (LucideIcons.wallet, tr.accounts, '/accounts', const Color(0xFF8BD44A)),
-      (LucideIcons.pieChart, tr.budgets, '/budgets', const Color(0xFFFFB020)),
-      (LucideIcons.usersRound, tr.sharedBudgetTitle, '/shared-budget', const Color(0xFF7C6CFF)),
-      (LucideIcons.users, tr.debts, '/debts', const Color(0xFFFF5C5C)),
-      (LucideIcons.tv, tr.subscriptions, '/subscriptions', const Color(0xFF7C6CFF)),
-      (LucideIcons.repeat, tr.recurringOps, '/recurring', const Color(0xFF2EB5FF)),
-      (LucideIcons.target, tr.goals, '/goals', const Color(0xFFCDFF3A)),
+      (LucideIcons.wallet, tr.accounts, '/accounts', const Color(0xFF8BD44A), false),
+      (LucideIcons.pieChart, tr.budgets, '/budgets', const Color(0xFFFFB020), false),
+      (LucideIcons.usersRound, tr.sharedBudgetTitle, '/shared-budget', const Color(0xFF7C6CFF), true),
+      (LucideIcons.users, tr.debts, '/debts', const Color(0xFFFF5C5C), false),
+      (LucideIcons.tv, tr.subscriptions, '/subscriptions', const Color(0xFF7C6CFF), false),
+      (LucideIcons.repeat, tr.recurringOps, '/recurring', const Color(0xFF2EB5FF), false),
+      (LucideIcons.target, tr.goals, '/goals', const Color(0xFFCDFF3A), false),
     ];
-    Widget tile((IconData, String, String, Color) i) {
+    Widget tile((IconData, String, String, Color, bool) i) {
+      final showPro = i.$5 && !isPro;
+      final iconWell = ColorWellIcon(
+        color: i.$4,
+        icon: i.$1,
+        size: 26,
+        iconSize: 14,
+        radius: 8,
+      );
       return Pressable(
         onTap: () => context.push(i.$3),
         child: Container(
@@ -248,13 +261,10 @@ class _HomeLinks extends StatelessWidget {
           ),
           child: Row(
             children: [
-              ColorWellIcon(
-                color: i.$4,
-                icon: i.$1,
-                size: 26,
-                iconSize: 14,
-                radius: 8,
-              ),
+              if (showPro)
+                ProIconMark(size: 26, child: iconWell)
+              else
+                iconWell,
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -265,7 +275,9 @@ class _HomeLinks extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     height: 1.1,
-                    color: context.primaryText,
+                    color: showPro
+                        ? proLockedTextColor(context)
+                        : context.primaryText,
                   ),
                 ),
               ),

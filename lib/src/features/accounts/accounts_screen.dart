@@ -21,6 +21,7 @@ import '../../data/repositories/settings_service.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/pro_badge.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
 
 class AccountsScreen extends ConsumerWidget {
@@ -168,33 +169,63 @@ class AccountsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        key: ValueKey(currency),
-                        initialValue: uniqueAppCurrencies()
-                                .any((c) => c.code == currency)
-                            ? currency
-                            : uniqueAppCurrencies().first.code,
-                        items: [
-                          for (final c in uniqueAppCurrencies())
-                            DropdownMenuItem(
-                              value: c.code,
-                              child: Text('${c.flag} ${c.code}'),
+                      child: Builder(
+                        builder: (context) {
+                          final base = ref
+                              .watch(settingsControllerProvider)
+                              .baseCurrency;
+                          final isPro =
+                              ref.watch(proControllerProvider).isPro;
+                          return DropdownButtonFormField<String>(
+                            key: ValueKey(currency),
+                            initialValue: uniqueAppCurrencies()
+                                    .any((c) => c.code == currency)
+                                ? currency
+                                : uniqueAppCurrencies().first.code,
+                            items: [
+                              for (final c in uniqueAppCurrencies())
+                                DropdownMenuItem(
+                                  value: c.code,
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                          child: Text('${c.flag} ${c.code}')),
+                                      if (c.code != base && !isPro)
+                                        const ProBadge(
+                                            dense: true, showLock: false),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                            decoration: InputDecoration(
+                              labelText: Tr.of(context).currency,
+                              suffixIcon: !isPro
+                                  ? const Padding(
+                                      padding: EdgeInsets.only(right: 10),
+                                      child: Align(
+                                        widthFactor: 1,
+                                        alignment: Alignment.centerRight,
+                                        child: ProBadge(dense: true),
+                                      ),
+                                    )
+                                  : null,
+                              suffixIconConstraints: const BoxConstraints(
+                                minWidth: 0,
+                                minHeight: 0,
+                              ),
                             ),
-                        ],
-                        decoration:
-                            InputDecoration(labelText: Tr.of(context).currency),
-                        onChanged: (v) async {
-                          final next = v ?? currency;
-                          final base =
-                              ref.read(settingsControllerProvider).baseCurrency;
-                          if (next != base &&
-                              !await requirePro(
-                                  context, ref, ProGate.currencies)) {
-                            if (context.mounted) setState(() {});
-                            return;
-                          }
-                          if (!context.mounted) return;
-                          setState(() => currency = next);
+                            onChanged: (v) async {
+                              final next = v ?? currency;
+                              if (next != base &&
+                                  !await requirePro(
+                                      context, ref, ProGate.currencies)) {
+                                if (context.mounted) setState(() {});
+                                return;
+                              }
+                              if (!context.mounted) return;
+                              setState(() => currency = next);
+                            },
+                          );
                         },
                       ),
                     ),

@@ -21,6 +21,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../../features/auth/cloud_auth.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/pro_badge.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
@@ -526,6 +527,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           const SizedBox(height: 12),
           _AiQuickActions(
             busy: _aiBusy,
+            showPro: !ref.watch(proControllerProvider).isPro,
             onVoice: _voiceEntry,
           ),
           if (_aiCategorySuggestion != null) ...[
@@ -589,6 +591,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           _ReceiptSection(
             receiptPath: _receiptPath,
             aiBusy: _aiBusy,
+            showPro: !ref.watch(proControllerProvider).isPro,
             onPick: _pickReceipt,
             onAnalyzeAi: _analyzeReceiptAi,
             onRemove: () {
@@ -961,10 +964,12 @@ class _AiQuickActions extends StatelessWidget {
   const _AiQuickActions({
     required this.busy,
     required this.onVoice,
+    this.showPro = false,
   });
 
   final bool busy;
   final VoidCallback onVoice;
+  final bool showPro;
 
   @override
   Widget build(BuildContext context) {
@@ -980,11 +985,26 @@ class _AiQuickActions extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(
-              LucideIcons.mic,
-              size: 18,
-              color: context.primaryText,
-            ),
+            if (showPro)
+              ProIconMark(
+                size: 28,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    LucideIcons.mic,
+                    size: 18,
+                    color: context.primaryText.withValues(alpha: 0.55),
+                  ),
+                ),
+              )
+            else
+              Icon(
+                LucideIcons.mic,
+                size: 18,
+                color: context.primaryText,
+              ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -992,11 +1012,14 @@ class _AiQuickActions extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: context.primaryText,
+                  color: showPro
+                      ? proLockedTextColor(context)
+                      : context.primaryText,
                 ),
               ),
             ),
-            Icon(LucideIcons.sparkles, size: 16, color: context.mutedText),
+            if (!showPro)
+              Icon(LucideIcons.sparkles, size: 16, color: context.mutedText),
           ],
         ),
       ),
@@ -1061,6 +1084,7 @@ class _ReceiptSection extends StatelessWidget {
     required this.onRemove,
     required this.onAnalyzeAi,
     required this.aiBusy,
+    this.showPro = false,
   });
 
   final String? receiptPath;
@@ -1068,6 +1092,7 @@ class _ReceiptSection extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback onAnalyzeAi;
   final bool aiBusy;
+  final bool showPro;
 
   @override
   Widget build(BuildContext context) {
@@ -1115,7 +1140,17 @@ class _ReceiptSection extends StatelessWidget {
               width: double.infinity,
               child: ScaledOutlinedButton(
                 onPressed: aiBusy ? null : onAnalyzeAi,
-                child: Text(aiBusy ? tr.aiBusy : tr.aiRecognizeReceipt),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(aiBusy ? tr.aiBusy : tr.aiRecognizeReceipt),
+                    if (showPro && !aiBusy) ...[
+                      const SizedBox(width: 8),
+                      const ProBadge(dense: true),
+                    ],
+                  ],
+                ),
               ),
             ),
           ],

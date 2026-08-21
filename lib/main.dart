@@ -126,9 +126,9 @@ class BudgetTrackerApp extends ConsumerWidget {
             systemNavigationBarIconBrightness:
                 dark ? Brightness.light : Brightness.dark,
           ),
-          child: GestureDetector(
+          child: Listener(
             behavior: HitTestBehavior.translucent,
-            onTap: () {
+            onPointerDown: (_) {
               final focus = FocusManager.instance.primaryFocus;
               if (focus != null && focus.hasFocus) focus.unfocus();
             },

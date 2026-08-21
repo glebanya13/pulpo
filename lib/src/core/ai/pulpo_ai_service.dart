@@ -21,6 +21,7 @@ class PulpoAiService {
 
   final FirebaseAuth _auth;
   GenerativeModel? _model;
+  GenerativeModel? _chatModel;
 
   static const _modelName = 'gemini-2.5-flash';
 
@@ -34,16 +35,30 @@ class PulpoAiService {
     );
   }
 
+  GenerativeModel get _textModel {
+    return _chatModel ??= FirebaseAI.googleAI(auth: _auth).generativeModel(
+      model: _modelName,
+      generationConfig: GenerationConfig(temperature: 0.35),
+    );
+  }
+
   void _requireSignedIn() {
     if (_auth.currentUser == null) {
       throw const PulpoAiException('sign_in_required');
     }
   }
 
-  Future<String> _generate(List<Content> contents, {required String label}) async {
+  Future<String> _generate(
+    List<Content> contents, {
+    required String label,
+    bool json = true,
+  }) async {
     _requireSignedIn();
     try {
-      final response = await _jsonModel.generateContent(contents);
+      // Ensure Auth ID token is fresh for Firebase AI / App Check backends.
+      await _auth.currentUser?.getIdToken();
+      final model = json ? _jsonModel : _textModel;
+      final response = await model.generateContent(contents);
       final text = response.text;
       if (text == null || text.trim().isEmpty) {
         throw const PulpoAiException('empty_response');
@@ -54,7 +69,20 @@ class PulpoAiService {
     } catch (e, st) {
       debugPrint('PulpoAI[$label]: $e');
       debugPrint('$st');
-      throw const PulpoAiException('request_failed');
+      final msg = e.toString();
+      if (msg.contains('API key') || msg.contains('InvalidApiKey')) {
+        throw const PulpoAiException('api_key');
+      }
+      if (msg.contains('not enabled') || msg.contains('ServiceApiNotEnabled')) {
+        throw const PulpoAiException('api_not_enabled');
+      }
+      if (msg.contains('PERMISSION') || msg.contains('permission') || msg.contains('App Check')) {
+        throw const PulpoAiException('permission_denied');
+      }
+      if (msg.contains('Quota') || msg.contains('RESOURCE_EXHAUSTED')) {
+        throw const PulpoAiException('quota');
+      }
+      throw PulpoAiException('request_failed: $e');
     }
   }
 
@@ -201,6 +229,39 @@ Top categories: $tops
 ''';
       return _generate([Content.text(prompt)], label: 'insight');
     }, parsePeriodInsightJson);
+  }
+
+  /// Answers questions using only the provided app snapshot. No financial advice.
+  Future<String> chatAboutApp({
+    required String userMessage,
+    required String appContext,
+    required String locale,
+    required List<({String role, String text})> history,
+  }) async {
+    final system = '''
+You are Pulpo Assistant inside a personal budget app.
+Reply in ${_langName(locale)}. Be concise and clear.
+
+Hard rules:
+- Use ONLY facts from APP DATA below. Do not invent numbers, accounts, or transactions.
+- Do NOT give financial, investment, tax, credit, or budgeting advice. Do not recommend what to buy, cut, save, invest, or borrow.
+- You may restate, filter, compare, and explain what is already in APP DATA (balances, recent txs, budgets, goals, debts).
+- If the user asks for advice or anything outside APP DATA, politely refuse and say you can only talk about data already in the app.
+- If APP DATA does not contain the answer, say you don't have that information in the app.
+
+APP DATA:
+$appContext
+''';
+    final contents = <Content>[
+      Content.system(system),
+    ];
+    for (final turn in history.take(16)) {
+      contents.add(
+        Content(turn.role == 'user' ? 'user' : 'model', [TextPart(turn.text)]),
+      );
+    }
+    contents.add(Content.text(userMessage));
+    return _generate(contents, label: 'chat', json: false);
   }
 }
 

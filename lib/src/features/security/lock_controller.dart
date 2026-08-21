@@ -11,6 +11,27 @@ import '../../data/repositories/settings_service.dart';
 String hashLockPin(String pin) =>
     sha256.convert(utf8.encode('pulpo:$pin')).toString();
 
+/// iOS often returns an empty enrolled list even when Face ID works.
+@visibleForTesting
+bool biometricsLikelyAvailable({
+  required bool canCheck,
+  required bool deviceSupported,
+  required List<BiometricType> enrolled,
+}) {
+  if (!canCheck && !deviceSupported) return false;
+  return enrolled.isNotEmpty || canCheck;
+}
+
+@visibleForTesting
+bool shouldAutoLockOnPause({
+  required bool autoLock,
+  required bool hasLock,
+  required bool authInProgress,
+}) {
+  if (authInProgress) return false;
+  return autoLock && hasLock;
+}
+
 class LockState {
   const LockState({
     required this.pinEnabled,
@@ -52,13 +73,19 @@ class LockState {
 }
 
 class LockController extends Notifier<LockState> {
+  LockController({LocalAuthentication? auth}) : _auth = auth ?? LocalAuthentication();
+
   static const _kPinHash = 'lock_pin_hash';
   static const _kBio = 'lock_biometrics';
   static const _kPinLen = 'lock_pin_len';
   static const _kAuto = 'lock_autolock';
 
   SharedPreferences get _prefs => ref.read(sharedPreferencesProvider);
-  final _auth = LocalAuthentication();
+  final LocalAuthentication _auth;
+  var _authInProgress = false;
+
+  @visibleForTesting
+  bool get authInProgress => _authInProgress;
 
   @override
   LockState build() {
@@ -108,29 +135,44 @@ class LockController extends Notifier<LockState> {
 
   Future<bool> deviceHasBiometrics() async {
     try {
+      final canCheck = await _auth.canCheckBiometrics;
       final supported = await _auth.isDeviceSupported();
-      if (!supported) return false;
-      // `canCheckBiometrics` can be true even when no biometrics are enrolled.
-      // For toggle UX we want to require at least one enrolled biometric type.
       final types = await _auth.getAvailableBiometrics();
-      return types.isNotEmpty;
-    } catch (_) {
+      return biometricsLikelyAvailable(
+        canCheck: canCheck,
+        deviceSupported: supported,
+        enrolled: types,
+      );
+    } catch (e, st) {
+      debugPrint('deviceHasBiometrics: $e\n$st');
       return false;
+    }
+  }
+
+  Future<bool> _authenticate({required bool sticky}) async {
+    _authInProgress = true;
+    try {
+      return await _auth.authenticate(
+        localizedReason: 'Pulpo',
+        options: AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: sticky,
+          useErrorDialogs: true,
+        ),
+      );
+    } finally {
+      _authInProgress = false;
     }
   }
 
   Future<bool> enableBiometrics() async {
     try {
-      final ok = await _auth.authenticate(
-        localizedReason: 'Pulpo',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: false,
-        ),
-      );
+      final available = await deviceHasBiometrics();
+      if (!available) return false;
+      final ok = await _authenticate(sticky: true);
       if (!ok) return false;
       await _prefs.setBool(_kBio, true);
-      state = state.copyWith(biometricsEnabled: true);
+      state = state.copyWith(biometricsEnabled: true, unlocked: true);
       return true;
     } catch (e, st) {
       debugPrint('enable biometrics: $e\n$st');
@@ -160,19 +202,19 @@ class LockController extends Notifier<LockState> {
   }
 
   void onAppPaused() {
-    if (state.autoLock) lock();
+    if (shouldAutoLockOnPause(
+      autoLock: state.autoLock,
+      hasLock: state.hasLock,
+      authInProgress: _authInProgress,
+    )) {
+      lock();
+    }
   }
 
   Future<bool> tryBiometrics() async {
     if (!state.biometricsEnabled) return false;
     try {
-      final ok = await _auth.authenticate(
-        localizedReason: 'Pulpo',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
-      );
+      final ok = await _authenticate(sticky: true);
       if (ok) state = state.copyWith(unlocked: true);
       return ok;
     } catch (e, st) {

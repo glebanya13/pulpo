@@ -77,8 +77,10 @@ WidgetSnapshot buildWidgetSnapshot({
     if (idx >= 0 && idx < dayCount) daily[idx] += t.amount;
   }
   final maxDaily = daily.isEmpty ? 1.0 : daily.reduce(math.max);
+  final safeMax = (maxDaily.isFinite && maxDaily > 0) ? maxDaily : 1.0;
   final bars = [
-    for (final v in daily) ((v / maxDaily) * 100).round().clamp(0, 100),
+    for (final v in daily)
+      (((v.isFinite ? v : 0) / safeMax) * 100).round().clamp(0, 100),
   ];
   final last7 = bars.length <= 7 ? bars : bars.sublist(bars.length - 7);
 

@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/l10n/tr.dart';
+import '../core/pro/pro_controller.dart';
+import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/color_well.dart';
 import '../core/theme/liquid_glass.dart';
 import 'pressable.dart';
+import 'pro_badge.dart';
 
 Future<void> showQuickActionsSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -17,12 +21,13 @@ Future<void> showQuickActionsSheet(BuildContext context) {
   );
 }
 
-class _QuickActionsSheet extends StatelessWidget {
+class _QuickActionsSheet extends ConsumerWidget {
   const _QuickActionsSheet();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
+    final isPro = ref.watch(proControllerProvider).isPro;
     return LiquidGlass(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       padding: EdgeInsets.fromLTRB(
@@ -81,15 +86,14 @@ class _QuickActionsSheet extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                gradient: const LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    Color(0xFF4F46E5),
-                    Color(0xFF7C3AED),
-                    Color(0xFFDB2777),
-                  ],
-                ),
+                color: AppColors.lime,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.lime.withValues(alpha: 0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -97,11 +101,11 @@ class _QuickActionsSheet extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: AppColors.ink.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(LucideIcons.mic,
-                        size: 18, color: Colors.white),
+                        size: 18, color: AppColors.ink),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -113,7 +117,7 @@ class _QuickActionsSheet extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                            color: AppColors.ink,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -124,17 +128,20 @@ class _QuickActionsSheet extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             height: 1.25,
-                            color: Colors.white.withValues(alpha: 0.85),
+                            color: AppColors.ink.withValues(alpha: 0.65),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Icon(
-                    LucideIcons.sparkles,
-                    size: 16,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
+                  if (!isPro)
+                    const ProBadge(dense: true)
+                  else
+                    Icon(
+                      LucideIcons.sparkles,
+                      size: 16,
+                      color: AppColors.ink.withValues(alpha: 0.75),
+                    ),
                 ],
               ),
             ),
@@ -145,7 +152,7 @@ class _QuickActionsSheet extends StatelessWidget {
               Expanded(
                 child: _Action(
                   icon: LucideIcons.arrowLeftRight,
-                  color: const Color(0xFF7C6CFF),
+                  color: AppColors.info,
                   label: tr.transferBetweenAccounts,
                   hint: tr.transferBetweenHint,
                   onTap: () {

@@ -642,8 +642,16 @@ class Tr {
   String get aiInsightTitle => _get('ai_insight_title');
   String get aiInsightGenerate => _get('ai_insight_generate');
   String get aiInsightHint => _get('ai_insight_hint');
+  String get aiChatTitle => _get('ai_chat_title');
+  String get aiChatHint => _get('ai_chat_hint');
+  String get aiChatPlaceholder => _get('ai_chat_placeholder');
+  String get aiChatWelcome => _get('ai_chat_welcome');
   String get aiBusy => _get('ai_busy');
   String get aiFailed => _get('ai_failed');
+  String get aiSpeechUnavailable => _get('ai_speech_unavailable');
+  String get aiApiNotEnabled => _get('ai_api_not_enabled');
+  String get aiPermissionDenied => _get('ai_permission_denied');
+  String get aiQuotaExceeded => _get('ai_quota_exceeded');
   String get aiFilled => _get('ai_filled');
   String get importCsv => _get('import_csv');
   String get importCsvHint => _get('import_csv_hint');
@@ -1244,7 +1252,7 @@ class Tr {
       'pro_gate_import':
           'Importar CSV y extractos está disponible en Pro.\nPasa a Pro para importar tus movimientos.',
       'pro_gate_ai':
-          'La IA de Pulpo (recibos, voz e insights) está en Pro.\nInicia sesión y pasa a Pro para usarla.',
+          'La IA de Pulpo (recibos, voz, chat e insights) está en Pro.\nInicia sesión y pasa a Pro para usarla.',
       'ai_recognize_receipt': 'Reconocer con IA',
       'ai_voice_entry': 'Decir gasto',
       'ai_voice_empty_title': 'Aún no hay operaciones',
@@ -1264,8 +1272,20 @@ class Tr {
       'ai_insight_generate': 'Generar insight',
       'ai_insight_hint':
           'Un resumen breve a partir de los totales del periodo (Pro).',
+      'ai_chat_title': 'Chat',
+      'ai_chat_hint': 'Sin consejos financieros.',
+      'ai_chat_placeholder': '¿Cuánto gasté este mes en…?',
+      'ai_chat_welcome':
+          'Puedo ayudarte con saldos, movimientos, presupuestos, metas y deudas que ya están en la app. No doy consejos financieros.',
       'ai_busy': 'Pensando…',
       'ai_failed': 'No se pudo completar la solicitud de IA. Inténtalo de nuevo.',
+      'ai_speech_unavailable':
+          'El micrófono no está disponible. Escribe el gasto o prueba en un iPhone real.',
+      'ai_api_not_enabled':
+          'Activa Gemini / Firebase AI Logic en la consola de Firebase.',
+      'ai_permission_denied':
+          'Firebase rechazó la petición de IA (App Check o permisos).',
+      'ai_quota_exceeded': 'Se alcanzó el límite de uso de IA. Prueba más tarde.',
       'ai_filled': 'Campos rellenados con IA',
     },
     'ru': {
@@ -1793,7 +1813,7 @@ class Tr {
       'pro_gate_import':
           'Импорт CSV и выписок доступен в Pro.\nПерейдите на Pro, чтобы импортировать операции.',
       'pro_gate_ai':
-          'ИИ Pulpo (чеки, голос и инсайты) доступен в Pro.\nВойдите в аккаунт и перейдите на Pro.',
+          'ИИ Pulpo (чеки, голос, чат и инсайты) доступен в Pro.\nВойдите в аккаунт и перейдите на Pro.',
       'ai_recognize_receipt': 'Распознать с ИИ',
       'ai_voice_entry': 'Сказать расход',
       'ai_voice_empty_title': 'Пока нет операций',
@@ -1813,8 +1833,20 @@ class Tr {
       'ai_insight_generate': 'Сгенерировать',
       'ai_insight_hint':
           'Краткий текст по итогам периода (Pro). Сырые операции не отправляются.',
+      'ai_chat_title': 'Чат',
+      'ai_chat_hint': 'Без финансовых советов.',
+      'ai_chat_placeholder': 'Сколько я потратил на…?',
+      'ai_chat_welcome':
+          'Могу отвечать по балансам, операциям, бюджетам, целям и долгам из приложения. Финансовых советов не даю.',
       'ai_busy': 'Думаю…',
       'ai_failed': 'Не удалось выполнить запрос к ИИ. Попробуйте ещё раз.',
+      'ai_speech_unavailable':
+          'Микрофон недоступен. Введите расход текстом или попробуйте на реальном iPhone.',
+      'ai_api_not_enabled':
+          'Включите Gemini / Firebase AI Logic в консоли Firebase.',
+      'ai_permission_denied':
+          'Firebase отклонил запрос ИИ (App Check или права доступа).',
+      'ai_quota_exceeded': 'Лимит ИИ исчерпан. Попробуйте позже.',
       'ai_filled': 'Поля заполнены с помощью ИИ',
     },
     'en': {
@@ -2342,7 +2374,7 @@ class Tr {
       'pro_gate_import':
           'CSV and statement import is available in Pro.\nGo Pro to import your transactions.',
       'pro_gate_ai':
-          'Pulpo AI (receipts, voice and insights) is a Pro feature.\nSign in and go Pro to use it.',
+          'Pulpo AI (receipts, voice, chat and insights) is a Pro feature.\nSign in and go Pro to use it.',
       'ai_recognize_receipt': 'Recognize with AI',
       'ai_voice_entry': 'Say expense',
       'ai_voice_empty_title': 'No transactions yet',
@@ -2362,8 +2394,20 @@ class Tr {
       'ai_insight_generate': 'Generate insight',
       'ai_insight_hint':
           'A short summary from period totals (Pro). Raw transactions are not sent.',
+      'ai_chat_title': 'Chat',
+      'ai_chat_hint': 'No financial advice.',
+      'ai_chat_placeholder': 'How much did I spend on…?',
+      'ai_chat_welcome':
+          'I can answer about balances, transactions, budgets, goals, and debts already in the app. I don’t give financial advice.',
       'ai_busy': 'Thinking…',
       'ai_failed': 'Could not complete the AI request. Try again.',
+      'ai_speech_unavailable':
+          'Microphone unavailable. Type the expense or try on a real iPhone.',
+      'ai_api_not_enabled':
+          'Enable Gemini / Firebase AI Logic in the Firebase console.',
+      'ai_permission_denied':
+          'Firebase rejected the AI request (App Check or permissions).',
+      'ai_quota_exceeded': 'AI usage limit reached. Try again later.',
       'ai_filled': 'Fields filled with AI',
     },
   };

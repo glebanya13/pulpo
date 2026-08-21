@@ -29,19 +29,7 @@ class LanguagePickerScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                RoundIconButton(
-                    icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
-                Text(tr.language,
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: context.primaryText)),
-                const SizedBox(width: 42),
-              ],
-            ),
+            PageHeader(first: tr.language, onBack: () => context.pop()),
             const SizedBox(height: 20),
             ClipRRect(
               borderRadius: BorderRadius.circular(20),

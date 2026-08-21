@@ -42,17 +42,53 @@ Future<void> initDailyReminder() async {
   _initialized = true;
 }
 
+Future<bool> _iosNotificationsAllowed() async {
+  final ios = _plugin.resolvePlatformSpecificImplementation<
+      IOSFlutterLocalNotificationsPlugin>();
+  if (ios == null) return false;
+  try {
+    final existing = await ios.checkPermissions();
+    if (existing != null &&
+        (existing.isEnabled || existing.isProvisionalEnabled)) {
+      return true;
+    }
+  } catch (e, st) {
+    debugPrint('daily reminder checkPermissions: $e\n$st');
+  }
+  return await ios.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      ) ??
+      false;
+}
+
+Future<bool> _macNotificationsAllowed() async {
+  final mac = _plugin.resolvePlatformSpecificImplementation<
+      MacOSFlutterLocalNotificationsPlugin>();
+  if (mac == null) return false;
+  try {
+    final existing = await mac.checkPermissions();
+    if (existing != null &&
+        (existing.isEnabled || existing.isProvisionalEnabled)) {
+      return true;
+    }
+  } catch (e, st) {
+    debugPrint('daily reminder checkPermissions: $e\n$st');
+  }
+  return await mac.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      ) ??
+      false;
+}
+
 Future<bool> requestReminderPermission() async {
   if (kIsWeb) return false;
-  if (Platform.isIOS || Platform.isMacOS) {
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
-    final mac = _plugin.resolvePlatformSpecificImplementation<
-        MacOSFlutterLocalNotificationsPlugin>();
-    final ok = await ios?.requestPermissions(alert: true, badge: true, sound: true) ??
-        await mac?.requestPermissions(alert: true, badge: true, sound: true);
-    return ok ?? false;
-  }
+  await initDailyReminder();
+  if (Platform.isIOS) return _iosNotificationsAllowed();
+  if (Platform.isMacOS) return _macNotificationsAllowed();
   if (Platform.isAndroid) {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();

@@ -31,7 +31,6 @@ class _ResetScrollWhenObscuredState extends State<ResetScrollWhenObscured> {
     '/',
     '/transactions',
     '/reports',
-    '/profile',
   };
 
   @override

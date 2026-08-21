@@ -67,11 +67,13 @@ flutter_launcher_icons:
     generate: true
     image_path: assets/logo_mark.png
   image_path: assets/logo_mark.png
-  adaptive_icon_background: "#000000"
+  # Light (default): white plate. Dark (iOS 18+): transparent mark on system dark plate.
+  image_path_ios_dark_transparent: assets/logo_mark.png
+  adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: assets/logo_mark.png
   adaptive_icon_foreground_inset: 0
   remove_alpha_ios: true
-  background_color_ios: "#000000"
+  background_color_ios: "#FFFFFF"
 
 flutter_native_splash:
   color: "#000000"

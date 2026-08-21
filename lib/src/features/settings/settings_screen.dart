@@ -20,6 +20,7 @@ import '../../data/seed/seed_categories.dart';
 import '../../widgets/common.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/pro_badge.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
 import '../auth/cloud_auth.dart';
 
@@ -104,6 +105,7 @@ class SettingsScreen extends ConsumerWidget {
                   iconBg: AppColors.lime.withValues(alpha: 0.35),
                   title: tr.smartReminders,
                   subtitle: tr.smartRemindersHint,
+                  proLocked: !pro.isPro,
                   trailingWidget: Switch.adaptive(
                     value: settings.smartRemindersEnabled,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -217,6 +219,10 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     await showAppBottomSheet<void>(
       context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       builder: (ctx) {
         return Consumer(
           builder: (context, ref, _) {
@@ -225,82 +231,56 @@ class SettingsScreen extends ConsumerWidget {
               settings.dailyReminderHour,
               settings.dailyReminderMinute,
             );
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    tr.dailyReminderCta,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: context.primaryText,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    tr.dailyReminder,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: context.mutedText,
-                      height: 1.35,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: context.surface,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            tr.dailyReminder,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: context.primaryText,
-                            ),
-                          ),
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: context.faintText.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(100),
                         ),
-                        Switch.adaptive(
-                          value: settings.dailyReminderEnabled,
-                          onChanged: (v) =>
-                              _toggleReminder(context, ref, tr, v),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Pressable(
-                    onTap: () => _pickReminderTime(context, ref, settings),
-                    child: Container(
+                    const SizedBox(height: 14),
+                    Text(
+                      tr.dailyReminderCta,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: context.primaryText,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      tr.dailyReminder,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.mutedText,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,
-                        vertical: 16,
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: context.surface,
+                        color: context.scaffoldBg,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            LucideIcons.clock,
-                            size: 18,
-                            color: context.primaryText,
-                          ),
-                          const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              tr.dailyReminderTime,
+                              tr.dailyReminder,
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
@@ -308,25 +288,66 @@ class SettingsScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          Text(
-                            time,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: context.primaryText,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            LucideIcons.chevronRight,
-                            size: 16,
-                            color: context.faintText,
+                          Switch.adaptive(
+                            value: settings.dailyReminderEnabled,
+                            onChanged: (v) =>
+                                _toggleReminder(context, ref, tr, v),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    Material(
+                      color: context.scaffoldBg,
+                      borderRadius: BorderRadius.circular(16),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () =>
+                            _pickReminderTime(context, ref, settings),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 16,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                LucideIcons.clock,
+                                size: 18,
+                                color: context.primaryText,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  tr.dailyReminderTime,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: context.primaryText,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                time,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: context.primaryText,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                LucideIcons.chevronRight,
+                                size: 16,
+                                color: context.faintText,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -346,10 +367,12 @@ class SettingsScreen extends ConsumerWidget {
       final ok = await requestReminderPermission();
       if (!ok) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(tr.reminderPermissionDenied)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(tr.reminderPermissionDenied)),
+          );
         }
-        return;
+        // Still persist intent so UI reflects choice; sync will no-op until
+        // permission is granted later.
       }
     }
     await ref
@@ -368,13 +391,10 @@ class SettingsScreen extends ConsumerWidget {
       if (!ok) return;
       await initDailyReminder();
       final allowed = await requestReminderPermission();
-      if (!allowed) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(tr.reminderPermissionDenied)),
-          );
-        }
-        return;
+      if (!allowed && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.reminderPermissionDenied)),
+        );
       }
     }
     await ref
@@ -394,6 +414,15 @@ class SettingsScreen extends ConsumerWidget {
         hour: settings.dailyReminderHour,
         minute: settings.dailyReminderMinute,
       ),
+      builder: (ctx, child) {
+        return Theme(
+          data: Theme.of(context),
+          child: MediaQuery(
+            data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true),
+            child: child ?? const SizedBox.shrink(),
+          ),
+        );
+      },
     );
     if (picked == null) return;
     await ref
@@ -479,14 +508,13 @@ class _ProUpgradeCard extends StatelessWidget {
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
             colors: [
-              Color(0xFF5B7CFF),
-              Color(0xFF8B5CF6),
-              Color(0xFFC026D3),
+              AppColors.limeDark,
+              AppColors.lime,
             ],
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
+              color: AppColors.lime.withValues(alpha: 0.35),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -498,13 +526,13 @@ class _ProUpgradeCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: AppColors.ink.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(
                 LucideIcons.rocket,
                 size: 22,
-                color: Colors.white,
+                color: AppColors.ink,
               ),
             ),
             const SizedBox(width: 12),
@@ -517,7 +545,7 @@ class _ProUpgradeCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: AppColors.ink,
                       letterSpacing: -0.2,
                     ),
                     maxLines: 1,
@@ -529,7 +557,7 @@ class _ProUpgradeCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.88),
+                      color: AppColors.ink.withValues(alpha: 0.7),
                       height: 1.25,
                     ),
                     maxLines: 2,
@@ -542,7 +570,7 @@ class _ProUpgradeCard extends StatelessWidget {
             Icon(
               LucideIcons.chevronRight,
               size: 20,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: AppColors.ink.withValues(alpha: 0.75),
             ),
           ],
         ),
@@ -779,21 +807,17 @@ class _ReminderCtaButton extends StatelessWidget {
             end: Alignment.centerRight,
             colors: enabled
                 ? const [
-                    Color(0xFF4F46E5),
-                    Color(0xFF7C3AED),
-                    Color(0xFFDB2777),
+                    AppColors.limeDark,
+                    AppColors.lime,
                   ]
                 : const [
                     Color(0xFF64748B),
                     Color(0xFF475569),
-                    Color(0xFF334155),
                   ],
           ),
           boxShadow: [
             BoxShadow(
-              color: (enabled
-                      ? const Color(0xFF7C3AED)
-                      : const Color(0xFF475569))
+              color: (enabled ? AppColors.lime : const Color(0xFF475569))
                   .withValues(alpha: 0.32),
               blurRadius: 18,
               offset: const Offset(0, 8),
@@ -806,13 +830,14 @@ class _ReminderCtaButton extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: (enabled ? AppColors.ink : Colors.white)
+                    .withValues(alpha: enabled ? 0.12 : 0.2),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 enabled ? LucideIcons.bellRing : LucideIcons.bellOff,
                 size: 22,
-                color: Colors.white,
+                color: enabled ? AppColors.ink : Colors.white,
               ),
             ),
             const SizedBox(width: 12),
@@ -822,10 +847,10 @@ class _ReminderCtaButton extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: enabled ? AppColors.ink : Colors.white,
                       letterSpacing: -0.2,
                     ),
                   ),
@@ -835,7 +860,9 @@ class _ReminderCtaButton extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.88),
+                      color: enabled
+                          ? AppColors.ink.withValues(alpha: 0.7)
+                          : Colors.white.withValues(alpha: 0.88),
                       height: 1.25,
                     ),
                   ),
@@ -846,7 +873,9 @@ class _ReminderCtaButton extends StatelessWidget {
             Icon(
               LucideIcons.chevronRight,
               size: 20,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: enabled
+                  ? AppColors.ink.withValues(alpha: 0.75)
+                  : Colors.white.withValues(alpha: 0.9),
             ),
           ],
         ),
@@ -866,6 +895,7 @@ class _SettingsRow extends StatelessWidget {
     this.onTap,
     this.danger = false,
     this.showChevron = true,
+    this.proLocked = false,
   });
   final IconData icon;
   final Color iconBg;
@@ -876,61 +906,84 @@ class _SettingsRow extends StatelessWidget {
   final VoidCallback? onTap;
   final bool danger;
   final bool showChevron;
+  final bool proLocked;
 
   @override
   Widget build(BuildContext context) {
-    final titleColor =
-        danger ? const Color(0xFFE53E3E) : context.primaryText;
-    return Pressable(
-      enabled: onTap != null,
-      onTap: onTap ?? () {},
-      scale: 0.98,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: context.wellBg(iconBg),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 18, color: context.wellFg(iconBg)),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    final titleColor = proLocked
+        ? proLockedTextColor(context, danger: danger)
+        : (danger ? const Color(0xFFE53E3E) : context.primaryText);
+    final iconWell = Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: context.wellBg(iconBg),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        icon,
+        size: 18,
+        color: context.wellFg(iconBg).withValues(alpha: proLocked ? 0.55 : 1),
+      ),
+    );
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Pressable(
+              enabled: onTap != null,
+              onTap: onTap,
+              scale: 0.98,
+              child: Row(
                 children: [
-                  Text(title,
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: titleColor)),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(subtitle!,
-                        style: TextStyle(
-                            fontSize: 11, color: context.faintText)),
-                  ],
+                  if (proLocked) ProIconMark(child: iconWell) else iconWell,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title,
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: titleColor)),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(subtitle!,
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: proLocked
+                                      ? proLockedMutedColor(context)
+                                      : context.faintText)),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (trailing != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Text(trailing!,
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: proLocked
+                                  ? proLockedMutedColor(context)
+                                  : context.mutedText)),
+                    ),
+                  if (onTap != null && !danger && showChevron)
+                    Icon(LucideIcons.chevronRight,
+                        size: 16,
+                        color: proLocked
+                            ? proLockedMutedColor(context)
+                            : context.faintText),
                 ],
               ),
             ),
-            if (trailing != null)
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Text(trailing!,
-                    style: TextStyle(
-                        fontSize: 13, color: context.mutedText)),
-              ),
-            if (trailingWidget != null) trailingWidget!,
-            if (onTap != null && !danger && showChevron)
-              Icon(LucideIcons.chevronRight,
-                  size: 16, color: context.faintText),
-          ],
-        ),
+          ),
+          if (trailingWidget != null) trailingWidget!,
+        ],
       ),
     );
+    return row;
   }
 }

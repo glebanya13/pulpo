@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../../core/ai/ai_errors.dart';
 import '../../core/ai/ai_models.dart';
 import '../../core/ai/pulpo_ai_service.dart';
 import '../../core/l10n/tr.dart';
@@ -73,7 +75,8 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
     if (_busy) return;
     final tr = Tr.of(context);
     final available = await _speech.initialize(
-      onError: (_) {
+      onError: (e) {
+        debugPrint('speech error: $e');
         if (mounted) setState(() => _listening = false);
       },
       onStatus: (status) {
@@ -85,19 +88,32 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
     if (!available) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(tr.aiFailed)));
+          .showSnackBar(SnackBar(content: Text(tr.aiSpeechUnavailable)));
       return;
     }
+
+    final preferred = _localeId(ref.read(settingsControllerProvider).locale);
+    final locales = await _speech.locales();
+    final matched = locales
+        .where((l) =>
+            l.localeId == preferred ||
+            l.localeId.startsWith(preferred.split('_').first))
+        .map((l) => l.localeId)
+        .firstOrNull;
+
     setState(() => _listening = true);
     await _speech.listen(
       onResult: (result) {
+        if (!mounted) return;
         setState(() => _textCtrl.text = result.recognizedWords);
       },
       listenOptions: stt.SpeechListenOptions(
-        localeId: _localeId(ref.read(settingsControllerProvider).locale),
-        listenFor: const Duration(seconds: 45),
-        pauseFor: const Duration(seconds: 4),
+        localeId: matched ?? preferred,
+        listenFor: const Duration(seconds: 60),
+        pauseFor: const Duration(seconds: 5),
         partialResults: true,
+        listenMode: stt.ListenMode.dictation,
+        cancelOnError: true,
       ),
     );
   }
@@ -207,10 +223,10 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
         SnackBar(content: Text(tr.aiVoiceSaved(drafts.length))),
       );
       context.go('/');
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(tr.aiFailed)));
+          .showSnackBar(SnackBar(content: Text(describeAiError(tr, e))));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

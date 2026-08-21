@@ -1,7 +1,6 @@
 import Flutter
 import UIKit
 import UserNotifications
-import flutter_local_notifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -9,9 +8,10 @@ import flutter_local_notifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    FlutterLocalNotificationsPlugin.setPluginRegistrantCallback { registry in
-      GeneratedPluginRegistrant.register(with: registry)
-    }
+    // Do not `import flutter_local_notifications` here: Xcode 26 fails to resolve
+    // that Swift module with static CocoaPods frameworks. Local notifications still
+    // register via GeneratedPluginRegistrant; background-action isolate callback
+    // can be re-added once plugin headers are visible to Runner again.
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self as UNUserNotificationCenterDelegate
     }

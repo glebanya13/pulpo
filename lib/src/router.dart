@@ -12,6 +12,7 @@ import 'features/debts/debts_screen.dart';
 import 'features/goals/goals_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/onboarding/onboarding_setup_screen.dart';
+import 'features/assistant/assistant_chat_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/recurring/recurring_screen.dart';
 import 'features/reports/reports_screen.dart';
@@ -124,15 +125,17 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/profile',
-                builder: (context, state) => const ProfileScreen(),
-              ),
-            ],
-          ),
         ],
+      ),
+      GoRoute(
+        path: '/assistant',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const AssistantChatScreen()),
+      ),
+      GoRoute(
+        path: '/profile',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const ProfileScreen()),
       ),
       GoRoute(
         path: '/add',

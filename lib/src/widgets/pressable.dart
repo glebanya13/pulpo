@@ -33,7 +33,10 @@ class _PressableState extends State<Pressable> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+      // When inactive, don't absorb hits — otherwise Switch/IconButton children
+      // inside settings rows never receive taps.
+      behavior:
+          _active ? HitTestBehavior.opaque : HitTestBehavior.deferToChild,
       onTapDown: _active ? (_) => _set(true) : null,
       onTapUp: _active
           ? (_) {
