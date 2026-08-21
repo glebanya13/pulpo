@@ -12,7 +12,7 @@ import '../../features/budgets/budget_period.dart';
 import '../l10n/tr.dart';
 import 'daily_reminder.dart';
 
-const _kSmartChannelId = 'pulpo_smart_reminders';
+const _kSmartChannelId = 'pulpo_smart_reminders_v2';
 const _kSmartIdsKey = 'smart_reminder_ids';
 const _kDebtBase = 3100;
 const _kSubBase = 4100;
@@ -163,6 +163,8 @@ Future<void> _schedule({
         channelDescription: 'Payment, subscription and goal reminders',
         importance: Importance.high,
         priority: Priority.high,
+        icon: 'ic_stat_pulpo',
+        largeIcon: DrawableResourceAndroidBitmap('ic_notification_pulpo'),
       ),
       iOS: DarwinNotificationDetails(),
       macOS: DarwinNotificationDetails(),

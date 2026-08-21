@@ -6,7 +6,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
 
-/// Brand mark: transparent wallet on a theme-colored plate (follows light/dark).
+/// Transparent wallet mark on a theme plate: white in light, soft in dark.
 class BrandLogo extends StatelessWidget {
   const BrandLogo({super.key, required this.size});
 
@@ -36,13 +36,15 @@ class BrandLogo extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: EdgeInsets.all(size * 0.12),
+        padding: EdgeInsets.all(size * 0.08),
         child: Image.asset(
           'assets/logo_mark.png',
           width: size,
           height: size,
           fit: BoxFit.contain,
           filterQuality: FilterQuality.high,
+          // Avoid black fringe from zero-RGB transparent pixels.
+          isAntiAlias: true,
         ),
       ),
     );

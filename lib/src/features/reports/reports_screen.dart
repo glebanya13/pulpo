@@ -4,7 +4,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/ai/ai_models.dart';
+import '../../core/ai/pulpo_ai_service.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
@@ -33,6 +36,9 @@ class ReportsScreen extends ConsumerStatefulWidget {
 
 class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   int _tab = 0;
+  String? _aiInsight;
+  String? _aiInsightForPeriod;
+  bool _aiInsightBusy = false;
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +77,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
     final periodName = periodLabel(range.kind);
     final isPro = ref.watch(proControllerProvider).isPro;
+    final customRangeLabel = range.kind == StatsPeriodKind.custom
+        ? '${DateFormat('d MMM', Localizations.localeOf(context).languageCode).format(range.start)} – ${DateFormat('d MMM', Localizations.localeOf(context).languageCode).format(range.end.subtract(const Duration(days: 1)))}'
+        : null;
 
     return ResetScrollWhenObscured(
       tabPath: '/reports',
@@ -92,99 +101,32 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           tr.analyticsSubtitle,
           style: TextStyle(fontSize: 14, color: context.mutedText),
         ),
-        const SizedBox(height: 14),
-        SizedBox(
-          height: 40,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              for (final k in StatsPeriodKind.values)
-                Pressable(
-                  onTap: () async {
-                    if (k == StatsPeriodKind.custom) {
-                      if (!isPro) {
-                        await openPaywall(context, ProGate.analytics);
-                        return;
-                      }
-                      await pickCustomStatsPeriod(context, ref);
-                      return;
-                    }
-                    final free = k == StatsPeriodKind.thisMonth ||
-                        k == StatsPeriodKind.lastMonth;
-                    if (!free && !isPro) {
-                      await openPaywall(context, ProGate.analytics);
-                      return;
-                    }
-                    ref.read(statsPeriodProvider.notifier).setKind(k);
-                  },
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: range.kind == k
-                            ? AppColors.lime
-                            : context.surface,
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        periodLabel(k),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: range.kind == k
-                              ? AppColors.ink
-                              : context.primaryText,
-                        ),
-                      ),
-                    ),
-                  ),
-            ],
+        const SizedBox(height: 16),
+        _PeriodDropdownButton(
+          label: customRangeLabel ?? periodName,
+          onTap: () => _openPeriodPicker(
+            context: context,
+            ref: ref,
+            tr: tr,
+            current: range.kind,
+            isPro: isPro,
+            periodLabel: periodLabel,
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 40,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: tabs.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, i) {
-              final active = _tab == i;
-              return Pressable(
-                onTap: () async {
-                  if ((i == 1 || i == 2) && !isPro) {
-                    await openPaywall(
-                      context,
-                      i == 1 ? ProGate.trends : ProGate.flows,
-                    );
-                    return;
-                  }
-                  setState(() => _tab = i);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: active
-                        ? (context.isDark ? AppColors.ink3 : AppColors.ink)
-                        : context.surface,
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    tabs[i],
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: active ? Colors.white : context.mutedText,
-                    ),
-                  ),
-                ),
+        _ReportsSegmentedTabs(
+          labels: tabs,
+          index: _tab,
+          onSelect: (i) async {
+            if ((i == 1 || i == 2) && !isPro) {
+              await openPaywall(
+                context,
+                i == 1 ? ProGate.trends : ProGate.flows,
               );
-            },
-          ),
+              return;
+            }
+            setState(() => _tab = i);
+          },
         ),
         const SizedBox(height: 20),
         ..._buildTabContent(
@@ -202,6 +144,84 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     ),
     );
   }
+
+  Future<void> _openPeriodPicker({
+    required BuildContext context,
+    required WidgetRef ref,
+    required Tr tr,
+    required StatsPeriodKind current,
+    required bool isPro,
+    required String Function(StatsPeriodKind) periodLabel,
+  }) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 10, 8, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: context.faintText.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    tr.choosePeriod,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: context.primaryText,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                for (final k in StatsPeriodKind.values)
+                  _PeriodSheetTile(
+                    label: periodLabel(k),
+                    selected: current == k,
+                    locked: !_isFreePeriod(k) && !isPro,
+                    onTap: () async {
+                      Navigator.pop(ctx);
+                      if (k == StatsPeriodKind.custom) {
+                        if (!isPro) {
+                          await openPaywall(context, ProGate.analytics);
+                          return;
+                        }
+                        await pickCustomStatsPeriod(context, ref);
+                        return;
+                      }
+                      if (!_isFreePeriod(k) && !isPro) {
+                        await openPaywall(context, ProGate.analytics);
+                        return;
+                      }
+                      ref.read(statsPeriodProvider.notifier).setKind(k);
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  bool _isFreePeriod(StatsPeriodKind k) =>
+      k == StatsPeriodKind.thisMonth || k == StatsPeriodKind.lastMonth;
 
   List<Widget> _buildTabContent({
     required List<db.Transaction> txs,
@@ -234,6 +254,44 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   }
 
   // ─────────────────────── Overview ───────────────────────
+  Future<void> _generateInsight({
+    required String periodName,
+    required String currency,
+    required double totalExpense,
+    required double totalIncome,
+    required List<({String name, double amount})> topCategories,
+  }) async {
+    final tr = Tr.of(context);
+    if (!await requireAi(context, ref)) return;
+    if (!mounted) return;
+    setState(() => _aiInsightBusy = true);
+    try {
+      final locale = ref.read(settingsControllerProvider).locale;
+      final result = await ref.read(pulpoAiServiceProvider).generatePeriodInsight(
+            PeriodInsightInput(
+              periodLabel: periodName,
+              currency: currency,
+              totalExpense: totalExpense,
+              totalIncome: totalIncome,
+              topCategories: topCategories,
+            ),
+            locale: locale,
+          );
+      if (!mounted) return;
+      setState(() {
+        _aiInsight = result.text;
+        _aiInsightForPeriod = periodName;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr.aiFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _aiInsightBusy = false);
+    }
+  }
+
   List<Widget> _overviewView(
     List<db.Transaction> txs,
     List<db.Category> cats,
@@ -255,8 +313,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
     final byCat = <int, double>{};
     var monthTotal = 0.0;
+    var incomeTotal = 0.0;
     for (final t in txs) {
-      if (TxType.values[t.type] != TxType.expense) continue;
+      final type = TxType.values[t.type];
+      if (type == TxType.income) {
+        incomeTotal += t.amount;
+        continue;
+      }
+      if (type != TxType.expense) continue;
       byCat.update(t.categoryId ?? -1, (v) => v + t.amount,
           ifAbsent: () => t.amount);
       monthTotal += t.amount;
@@ -265,7 +329,37 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       ..sort((a, b) => b.value.compareTo(a.value));
     final maxCatVal = donutData.isEmpty ? 1.0 : donutData.first.value;
 
+    final tr = Tr.of(context);
+    final topCategories = <({String name, double amount})>[];
+    for (final e in donutData.take(8)) {
+      final cat = cats.where((c) => c.id == e.key).firstOrNull;
+      final name = cat != null ? tr.categoryName(cat.name) : tr.other;
+      topCategories.add((name: name, amount: e.value));
+    }
+
+    if (_aiInsightForPeriod != null && _aiInsightForPeriod != periodName) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _aiInsight = null;
+          _aiInsightForPeriod = null;
+        });
+      });
+    }
+
     return [
+      _AiInsightCard(
+        insight: _aiInsight,
+        busy: _aiInsightBusy,
+        onGenerate: () => _generateInsight(
+          periodName: periodName,
+          currency: currency,
+          totalExpense: monthTotal,
+          totalIncome: incomeTotal,
+          topCategories: topCategories,
+        ),
+      ),
+      const SizedBox(height: 16),
       _ChartCard(
         title: Tr.of(context).expensesForPeriod(periodName),
         value: formatMoney(total6m, currency),
@@ -1054,6 +1148,240 @@ class _CategoryDonut extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PeriodDropdownButton extends StatelessWidget {
+  const _PeriodDropdownButton({
+    required this.label,
+    required this.onTap,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+        decoration: BoxDecoration(
+          color: context.surface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.lime.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                LucideIcons.calendar,
+                size: 16,
+                color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: context.primaryText,
+                ),
+              ),
+            ),
+            Icon(
+              LucideIcons.chevronDown,
+              size: 18,
+              color: context.mutedText,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportsSegmentedTabs extends StatelessWidget {
+  const _ReportsSegmentedTabs({
+    required this.labels,
+    required this.index,
+    required this.onSelect,
+  });
+
+  final List<String> labels;
+  final int index;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < labels.length; i++)
+            Expanded(
+              child: Pressable(
+                onTap: () => onSelect(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: index == i
+                        ? (context.isDark ? AppColors.ink3 : AppColors.ink)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    labels[i],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: index == i
+                          ? Colors.white
+                          : context.mutedText,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PeriodSheetTile extends StatelessWidget {
+  const _PeriodSheetTile({
+    required this.label,
+    required this.selected,
+    required this.locked,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final bool locked;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.lime.withValues(alpha: 0.22)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  color: context.primaryText,
+                ),
+              ),
+            ),
+            if (locked)
+              Icon(LucideIcons.lock, size: 16, color: context.faintText)
+            else if (selected)
+              const Icon(LucideIcons.check, size: 18, color: AppColors.ink),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AiInsightCard extends StatelessWidget {
+  const _AiInsightCard({
+    required this.insight,
+    required this.busy,
+    required this.onGenerate,
+  });
+
+  final String? insight;
+  final bool busy;
+  final VoidCallback onGenerate;
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = Tr.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.sparkles, size: 18, color: context.primaryText),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  tr.aiInsightTitle,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: context.primaryText,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (insight == null)
+            Text(
+              tr.aiInsightHint,
+              style: TextStyle(fontSize: 13, height: 1.35, color: context.mutedText),
+            )
+          else
+            Text(
+              insight!,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.4,
+                fontWeight: FontWeight.w500,
+                color: context.primaryText,
+              ),
+            ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ScaledOutlinedButton(
+              onPressed: busy ? null : onGenerate,
+              child: Text(busy ? tr.aiBusy : tr.aiInsightGenerate),
+            ),
           ),
         ],
       ),

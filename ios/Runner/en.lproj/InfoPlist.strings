@@ -2,3 +2,5 @@
 "NSFaceIDUsageDescription" = "Pulpo uses Face ID to unlock the app.";
 "NSCameraUsageDescription" = "We use the camera to attach receipt photos to your transactions.";
 "NSPhotoLibraryUsageDescription" = "We use the photo library to attach receipt photos to your transactions.";
+"NSMicrophoneUsageDescription" = "We use the microphone so you can dictate expenses with AI (Pro).";
+"NSSpeechRecognitionUsageDescription" = "We use speech recognition to turn what you say into a transaction draft (Pro).";

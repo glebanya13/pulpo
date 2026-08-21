@@ -64,6 +64,10 @@
 		<string>Usamos la cámara para adjuntar fotos de recibos a tus transacciones.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Usamos la galería para adjuntar fotos de recibos a tus transacciones.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Usamos el micrófono para dictar gastos con IA (Pro).</string>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>Usamos el reconocimiento de voz para convertir lo que dices en un borrador de movimiento (Pro).</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>LSSupportsOpeningDocumentsInPlace</key>

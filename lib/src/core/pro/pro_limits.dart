@@ -17,6 +17,7 @@ enum ProGate {
   importCsv,
   generic,
   sharedBudget,
+  ai,
 }
 
 class ProLimits {

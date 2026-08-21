@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
@@ -10,7 +11,7 @@ import '../../data/repositories/settings_service.dart';
 import '../l10n/tr.dart';
 
 const _kReminderId = 2100;
-const _kChannelId = 'pulpo_daily_reminder';
+const _kChannelId = 'pulpo_daily_reminder_v2';
 
 final _plugin = FlutterLocalNotificationsPlugin();
 var _initialized = false;
@@ -25,7 +26,7 @@ Future<void> initDailyReminder() async {
     debugPrint('daily reminder tz: $e\n$st');
   }
 
-  const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const android = AndroidInitializationSettings('@drawable/ic_stat_pulpo');
   const darwin = DarwinInitializationSettings(
     requestAlertPermission: false,
     requestBadgePermission: false,
@@ -82,6 +83,10 @@ Future<void> syncDailyReminder(SettingsState settings) async {
       channelDescription: 'Daily reminder to log transactions',
       importance: Importance.high,
       priority: Priority.high,
+      icon: 'ic_stat_pulpo',
+      largeIcon: DrawableResourceAndroidBitmap('ic_notification_pulpo'),
+      color: Color(0xFFCDFF3A),
+      colorized: false,
     ),
     iOS: DarwinNotificationDetails(),
     macOS: DarwinNotificationDetails(),

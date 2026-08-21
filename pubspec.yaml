@@ -47,6 +47,8 @@ dependencies:
   in_app_purchase_android: ^0.4.0+2
   file_selector: ^1.0.3
   image_picker: ^1.2.3
+  firebase_ai: ^2.3.0
+  speech_to_text: ^7.4.0
 
 dev_dependencies:
   flutter_test:
@@ -63,12 +65,13 @@ flutter_launcher_icons:
   ios: true
   macos:
     generate: true
-    image_path: assets/icon.png
-  image_path: assets/icon.png
+    image_path: assets/logo_mark.png
+  image_path: assets/logo_mark.png
   adaptive_icon_background: "#000000"
-  adaptive_icon_foreground: assets/icon.png
+  adaptive_icon_foreground: assets/logo_mark.png
   adaptive_icon_foreground_inset: 0
   remove_alpha_ios: true
+  background_color_ios: "#000000"
 
 flutter_native_splash:
   color: "#000000"

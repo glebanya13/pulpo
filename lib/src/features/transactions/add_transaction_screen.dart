@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
@@ -10,10 +11,15 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../../core/ai/ai_models.dart';
+import '../../core/ai/pulpo_ai_service.dart';
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
+import '../../core/pro/pro_guard.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
+import '../../features/auth/cloud_auth.dart';
 import '../../widgets/pressable.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../data/db/app_database.dart' as db;
@@ -71,9 +77,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final _tagsCtrl = TextEditingController();
   String? _receiptPath;
   String? _originalReceiptPath;
+  bool _aiBusy = false;
+  CategorySuggestion? _aiCategorySuggestion;
+  Timer? _categoryDebounce;
 
   @override
   void dispose() {
+    _categoryDebounce?.cancel();
     _noteCtrl.dispose();
     _tagsCtrl.dispose();
     _amountCtrl.dispose();
@@ -81,6 +91,167 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   }
 
   double get _amount => double.tryParse(_amountCtrl.text.replaceAll(',', '.')) ?? 0.0;
+
+  List<String> _localizedCategoryNames(Tr tr, List<db.Category> cats) {
+    return cats.where((c) {
+      final catType = CategoryType.values[c.type];
+      if (_type == TxType.expense) return catType != CategoryType.income;
+      if (_type == TxType.income) return catType != CategoryType.expense;
+      return true;
+    }).map((c) => tr.categoryName(c.name)).toList();
+  }
+
+  db.Category? _matchCategoryHint(
+    String? hint,
+    List<db.Category> cats,
+    Tr tr,
+  ) {
+    if (hint == null || hint.trim().isEmpty) return null;
+    final h = hint.toLowerCase().trim();
+    for (final c in cats) {
+      if (c.name.toLowerCase() == h) return c;
+      if (tr.categoryName(c.name).toLowerCase() == h) return c;
+    }
+    for (final c in cats) {
+      final n = tr.categoryName(c.name).toLowerCase();
+      if (n.contains(h) || h.contains(n)) return c;
+    }
+    return null;
+  }
+
+  void _snack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _scheduleCategorySuggest(String text) {
+    _categoryDebounce?.cancel();
+    _categoryDebounce = Timer(const Duration(milliseconds: 700), () {
+      unawaited(_runCategorySuggest(text));
+    });
+  }
+
+  Future<void> _runCategorySuggest(String text) async {
+    if (!ref.read(proControllerProvider).isPro) return;
+    if (ref.read(authUserProvider).valueOrNull == null) return;
+    final trimmed = text.trim();
+    if (trimmed.length < 2) {
+      if (mounted) setState(() => _aiCategorySuggestion = null);
+      return;
+    }
+    final tr = Tr.of(context);
+    final cats = ref.read(categoriesProvider).valueOrNull ?? [];
+    final names = _localizedCategoryNames(tr, cats);
+    final locale = ref.read(settingsControllerProvider).locale;
+    try {
+      final suggestion = await ref.read(pulpoAiServiceProvider).suggestCategory(
+            noteOrMerchant: trimmed,
+            categoryNames: names,
+            locale: locale,
+          );
+      if (!mounted) return;
+      setState(() => _aiCategorySuggestion = suggestion);
+    } catch (_) {
+      // Silent for debounce suggestions.
+    }
+  }
+
+  Future<void> _applyCategorySuggestion() async {
+    final suggestion = _aiCategorySuggestion;
+    if (suggestion == null) return;
+    final tr = Tr.of(context);
+    final cats = ref.read(categoriesProvider).valueOrNull ?? [];
+    final match = _matchCategoryHint(suggestion.categoryName, cats, tr);
+    if (match != null) {
+      setState(() {
+        _category = match;
+        _aiCategorySuggestion = null;
+      });
+    }
+  }
+
+  void _applyAiDraft({
+    required double? amount,
+    required DateTime? date,
+    required String? note,
+    required String? merchant,
+    required String? categoryHint,
+    required String type,
+  }) {
+    final tr = Tr.of(context);
+    final cats = ref.read(categoriesProvider).valueOrNull ?? [];
+    setState(() {
+      if (amount != null && amount > 0) {
+        _amountCtrl.text = amount == amount.roundToDouble()
+            ? amount.toStringAsFixed(0)
+            : amount.toStringAsFixed(2);
+      }
+      if (date != null) _date = date;
+      final noteText = note?.trim().isNotEmpty == true
+          ? note!.trim()
+          : (merchant?.trim().isNotEmpty == true ? merchant!.trim() : null);
+      if (noteText != null) _noteCtrl.text = noteText;
+      if (type == 'income') {
+        _type = TxType.income;
+        _external = false;
+      } else if (_type == TxType.transfer) {
+        _type = TxType.expense;
+        _external = false;
+      }
+      final match = _matchCategoryHint(categoryHint, cats, tr);
+      if (match != null) {
+        _category = match;
+        _aiCategorySuggestion = null;
+      } else if (categoryHint != null && categoryHint.trim().isNotEmpty) {
+        _aiCategorySuggestion = CategorySuggestion(categoryName: categoryHint);
+      }
+    });
+    if (_noteCtrl.text.trim().isNotEmpty) {
+      _scheduleCategorySuggest(_noteCtrl.text);
+    }
+  }
+
+  Future<void> _analyzeReceiptAi() async {
+    final path = _receiptPath;
+    if (path == null) return;
+    final tr = Tr.of(context);
+    if (!await requireAi(context, ref)) return;
+    if (!mounted) return;
+    setState(() => _aiBusy = true);
+    try {
+      final cats = ref.read(categoriesProvider).valueOrNull ?? [];
+      final locale = ref.read(settingsControllerProvider).locale;
+      final currency = (_account ??
+              ref.read(accountsProvider).valueOrNull?.firstOrNull)
+          ?.currency;
+      final result = await ref.read(pulpoAiServiceProvider).analyzeReceipt(
+            File(path),
+            locale: locale,
+            categoryNames: _localizedCategoryNames(tr, cats),
+            currencyHint: currency,
+          );
+      if (!mounted) return;
+      _applyAiDraft(
+        amount: result.amount,
+        date: result.date,
+        note: result.note,
+        merchant: result.merchant,
+        categoryHint: result.categoryHint,
+        type: result.type,
+      );
+      _snack(tr.aiFilled);
+    } catch (_) {
+      _snack(tr.aiFailed);
+    } finally {
+      if (mounted) setState(() => _aiBusy = false);
+    }
+  }
+
+  Future<void> _voiceEntry() async {
+    if (!await requireAi(context, ref)) return;
+    if (!mounted) return;
+    context.push('/voice-ai');
+  }
 
   Future<void> _save() async {
     final accounts = ref.read(accountsProvider).valueOrNull ?? [];
@@ -352,7 +523,21 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             sign: sign,
             currency: currency,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          _AiQuickActions(
+            busy: _aiBusy,
+            onVoice: _voiceEntry,
+          ),
+          if (_aiCategorySuggestion != null) ...[
+            const SizedBox(height: 10),
+            _AiCategoryChip(
+              label: tr.aiCategorySuggest(_aiCategorySuggestion!.categoryName),
+              applyLabel: tr.aiApplyCategory,
+              onApply: _applyCategorySuggestion,
+              onDismiss: () => setState(() => _aiCategorySuggestion = null),
+            ),
+          ],
+          const SizedBox(height: 12),
           _FormBlock(
             rows: [
               _FormRow(
@@ -403,7 +588,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           const SizedBox(height: 16),
           _ReceiptSection(
             receiptPath: _receiptPath,
+            aiBusy: _aiBusy,
             onPick: _pickReceipt,
+            onAnalyzeAi: _analyzeReceiptAi,
             onRemove: () {
               final toDelete = _receiptPath ?? _originalReceiptPath;
               if (toDelete != null && File(toDelete).existsSync()) {
@@ -451,7 +638,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         );
       },
     );
-    if (result != null) setState(() => _noteCtrl.text = result);
+    if (result != null) {
+      setState(() => _noteCtrl.text = result);
+      _scheduleCategorySuggest(result);
+    }
   }
 
   Future<void> _openTags() async {
@@ -767,16 +957,117 @@ class _FormRow extends StatelessWidget {
   }
 }
 
+class _AiQuickActions extends StatelessWidget {
+  const _AiQuickActions({
+    required this.busy,
+    required this.onVoice,
+  });
+
+  final bool busy;
+  final VoidCallback onVoice;
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = Tr.of(context);
+    return Pressable(
+      onTap: busy ? null : onVoice,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: context.surface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              LucideIcons.mic,
+              size: 18,
+              color: context.primaryText,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                busy ? tr.aiBusy : tr.aiVoiceEntry,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: context.primaryText,
+                ),
+              ),
+            ),
+            Icon(LucideIcons.sparkles, size: 16, color: context.mutedText),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AiCategoryChip extends StatelessWidget {
+  const _AiCategoryChip({
+    required this.label,
+    required this.applyLabel,
+    required this.onApply,
+    required this.onDismiss,
+  });
+
+  final String label;
+  final String applyLabel;
+  final VoidCallback onApply;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(LucideIcons.sparkles, size: 16, color: context.mutedText),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: context.primaryText,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onApply,
+            child: Text(applyLabel),
+          ),
+          IconButton(
+            onPressed: onDismiss,
+            icon: Icon(LucideIcons.x, size: 16, color: context.mutedText),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ReceiptSection extends StatelessWidget {
   const _ReceiptSection({
     required this.receiptPath,
     required this.onPick,
     required this.onRemove,
+    required this.onAnalyzeAi,
+    required this.aiBusy,
   });
 
   final String? receiptPath;
   final void Function(ImageSource source) onPick;
   final VoidCallback onRemove;
+  final VoidCallback onAnalyzeAi;
+  final bool aiBusy;
 
   @override
   Widget build(BuildContext context) {
@@ -817,6 +1108,14 @@ class _ReceiptSection extends StatelessWidget {
                 width: double.infinity,
                 height: 180,
                 fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ScaledOutlinedButton(
+                onPressed: aiBusy ? null : onAnalyzeAi,
+                child: Text(aiBusy ? tr.aiBusy : tr.aiRecognizeReceipt),
               ),
             ),
           ],

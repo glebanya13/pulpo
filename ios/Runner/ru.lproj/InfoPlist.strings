@@ -2,3 +2,5 @@
 "NSFaceIDUsageDescription" = "Pulpo использует Face ID для разблокировки приложения.";
 "NSCameraUsageDescription" = "Камера нужна, чтобы прикреплять фото чеков к операциям.";
 "NSPhotoLibraryUsageDescription" = "Галерея нужна, чтобы прикреплять фото чеков к операциям.";
+"NSMicrophoneUsageDescription" = "Микрофон нужен, чтобы диктовать расходы с ИИ (Pro).";
+"NSSpeechRecognitionUsageDescription" = "Распознавание речи нужно, чтобы превратить сказанное в черновик операции (Pro).";

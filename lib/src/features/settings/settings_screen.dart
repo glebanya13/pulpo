@@ -49,7 +49,7 @@ class SettingsScreen extends ConsumerWidget {
             if (!pro.isPro)
               _ProUpgradeCard(
                 title: tr.proGo,
-                subtitle: tr.proSubtitle,
+                subtitle: tr.proCtaSubtitle,
                 onTap: () => openPaywall(context, ProGate.generic),
               ),
             if (!pro.isPro) const SizedBox(height: 12),
@@ -100,23 +100,6 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
                 _SettingsRow(
-                  icon: LucideIcons.bell,
-                  iconBg: const Color(0xFFFFE0C2),
-                  title: tr.dailyReminder,
-                  subtitle: tr.dailyReminderAt(_hhmm(
-                    settings.dailyReminderHour,
-                    settings.dailyReminderMinute,
-                  )),
-                  trailingWidget: Switch.adaptive(
-                    value: settings.dailyReminderEnabled,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    onChanged: (v) =>
-                        _toggleReminder(context, ref, tr, v),
-                  ),
-                  onTap: () => _pickReminderTime(context, ref, settings),
-                  showChevron: false,
-                ),
-                _SettingsRow(
                   icon: LucideIcons.bellRing,
                   iconBg: AppColors.lime.withValues(alpha: 0.35),
                   title: tr.smartReminders,
@@ -130,6 +113,18 @@ class SettingsScreen extends ConsumerWidget {
                   showChevron: false,
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            _ReminderCtaButton(
+              enabled: settings.dailyReminderEnabled,
+              title: tr.dailyReminderCta,
+              subtitle: settings.dailyReminderEnabled
+                  ? tr.dailyReminderCtaOn(_hhmm(
+                      settings.dailyReminderHour,
+                      settings.dailyReminderMinute,
+                    ))
+                  : tr.dailyReminderCtaOff,
+              onTap: () => _openReminderSheet(context, ref, tr),
             ),
             const SizedBox(height: 12),
 
@@ -215,6 +210,131 @@ class SettingsScreen extends ConsumerWidget {
   String _hhmm(int hour, int minute) =>
       '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 
+  Future<void> _openReminderSheet(
+    BuildContext context,
+    WidgetRef ref,
+    Tr tr,
+  ) async {
+    await showAppBottomSheet<void>(
+      context: context,
+      builder: (ctx) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final settings = ref.watch(settingsControllerProvider);
+            final time = _hhmm(
+              settings.dailyReminderHour,
+              settings.dailyReminderMinute,
+            );
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    tr.dailyReminderCta,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: context.primaryText,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    tr.dailyReminder,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: context.mutedText,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.surface,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            tr.dailyReminder,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: context.primaryText,
+                            ),
+                          ),
+                        ),
+                        Switch.adaptive(
+                          value: settings.dailyReminderEnabled,
+                          onChanged: (v) =>
+                              _toggleReminder(context, ref, tr, v),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Pressable(
+                    onTap: () => _pickReminderTime(context, ref, settings),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.surface,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            LucideIcons.clock,
+                            size: 18,
+                            color: context.primaryText,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              tr.dailyReminderTime,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: context.primaryText,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            time,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: context.primaryText,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            LucideIcons.chevronRight,
+                            size: 16,
+                            color: context.faintText,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _toggleReminder(
     BuildContext context,
     WidgetRef ref,
@@ -267,6 +387,7 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     SettingsState settings,
   ) async {
+    final tr = Tr.of(context);
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(
@@ -278,6 +399,10 @@ class SettingsScreen extends ConsumerWidget {
     await ref
         .read(settingsControllerProvider.notifier)
         .setDailyReminderTime(picked.hour, picked.minute);
+    if (!settings.dailyReminderEnabled) {
+      if (!context.mounted) return;
+      await _toggleReminder(context, ref, tr, true);
+    }
   }
 
   String _langLabel(String code) {
@@ -347,23 +472,39 @@ class _ProUpgradeCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
         decoration: BoxDecoration(
-          color: AppColors.lime,
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(22),
+          gradient: const LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Color(0xFF5B7CFF),
+              Color(0xFF8B5CF6),
+              Color(0xFFC026D3),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: AppColors.ink.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Center(
-                child: Icon(LucideIcons.star,
-                    size: 22, color: AppColors.ink),
+              child: const Icon(
+                LucideIcons.rocket,
+                size: 22,
+                color: Colors.white,
               ),
             ),
             const SizedBox(width: 12),
@@ -376,19 +517,20 @@ class _ProUpgradeCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.ink,
+                      color: Colors.white,
+                      letterSpacing: -0.2,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink.withValues(alpha: 0.7),
-                      height: 1.2,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.88),
+                      height: 1.25,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -396,11 +538,11 @@ class _ProUpgradeCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Icon(
               LucideIcons.chevronRight,
-              size: 18,
-              color: AppColors.ink.withValues(alpha: 0.9),
+              size: 20,
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ],
         ),
@@ -605,6 +747,109 @@ class _Section extends StatelessWidget {
               ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _ReminderCtaButton extends StatelessWidget {
+  const _ReminderCtaButton({
+    required this.enabled,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final bool enabled;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: enabled
+                ? const [
+                    Color(0xFF4F46E5),
+                    Color(0xFF7C3AED),
+                    Color(0xFFDB2777),
+                  ]
+                : const [
+                    Color(0xFF64748B),
+                    Color(0xFF475569),
+                    Color(0xFF334155),
+                  ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (enabled
+                      ? const Color(0xFF7C3AED)
+                      : const Color(0xFF475569))
+                  .withValues(alpha: 0.32),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                enabled ? LucideIcons.bellRing : LucideIcons.bellOff,
+                size: 22,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.88),
+                      height: 1.25,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              LucideIcons.chevronRight,
+              size: 20,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ],
+        ),
       ),
     );
   }

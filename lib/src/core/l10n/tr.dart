@@ -140,6 +140,7 @@ class Tr {
   String get periodThisYear => _get('period_this_year');
   String get periodLastYear => _get('period_last_year');
   String get periodCustom => _get('period_custom');
+  String get choosePeriod => _get('choose_period');
   String get restoreLocal => _get('restore_local');
   String get dataRestored => _get('data_restored');
   String get restoreFailed => _get('restore_failed');
@@ -308,6 +309,12 @@ class Tr {
   String get dailyReminder => _get('daily_reminder');
   String dailyReminderAt(String time) =>
       _get('daily_reminder_at').replaceAll('{}', time);
+  String get dailyReminderOffHint => _get('daily_reminder_off_hint');
+  String get dailyReminderTime => _get('daily_reminder_time');
+  String get dailyReminderCta => _get('daily_reminder_cta');
+  String dailyReminderCtaOn(String time) =>
+      _get('daily_reminder_cta_on').replaceAll('{}', time);
+  String get dailyReminderCtaOff => _get('daily_reminder_cta_off');
   String get dailyReminderTitle => _get('daily_reminder_title');
   String get dailyReminderBody => _get('daily_reminder_body');
   String get reminderPermissionDenied => _get('reminder_permission_denied');
@@ -599,6 +606,7 @@ class Tr {
 
   String get proTitle => _get('pro_title');
   String get proSubtitle => _get('pro_subtitle');
+  String get proCtaSubtitle => _get('pro_cta_subtitle');
   String get proGo => _get('pro_go');
   String get proRestore => _get('pro_restore');
   String get proSignInRequired => _get('pro_sign_in_required');
@@ -614,6 +622,29 @@ class Tr {
   String get proBuyFailed => _get('pro_buy_failed');
   String get proStoreEmpty => _get('pro_store_empty');
   String get proDebugUnlock => _get('pro_debug_unlock');
+  String get aiRecognizeReceipt => _get('ai_recognize_receipt');
+  String get aiVoiceEntry => _get('ai_voice_entry');
+  String get aiVoiceEmptyTitle => _get('ai_voice_empty_title');
+  String get aiVoiceEmptyHint => _get('ai_voice_empty_hint');
+  String get aiVoiceHint => _get('ai_voice_hint');
+  String get aiVoiceConfirmTitle => _get('ai_voice_confirm_title');
+  String aiVoiceConfirmCount(int n) =>
+      _get('ai_voice_confirm_count').replaceAll('{}', '$n');
+  String get aiVoiceApprove => _get('ai_voice_approve');
+  String aiVoiceSaved(int n) =>
+      _get('ai_voice_saved').replaceAll('{}', '$n');
+  String get aiListening => _get('ai_listening');
+  String get aiConfirmTranscript => _get('ai_confirm_transcript');
+  String get aiUseTranscript => _get('ai_use_transcript');
+  String aiCategorySuggest(String name) =>
+      _get('ai_category_suggest').replaceAll('{}', name);
+  String get aiApplyCategory => _get('ai_apply_category');
+  String get aiInsightTitle => _get('ai_insight_title');
+  String get aiInsightGenerate => _get('ai_insight_generate');
+  String get aiInsightHint => _get('ai_insight_hint');
+  String get aiBusy => _get('ai_busy');
+  String get aiFailed => _get('ai_failed');
+  String get aiFilled => _get('ai_filled');
   String get importCsv => _get('import_csv');
   String get importCsvHint => _get('import_csv_hint');
   String get importPickFile => _get('import_pick_file');
@@ -658,6 +689,7 @@ class Tr {
         ProGate.reminders => _get('pro_gate_reminders'),
         ProGate.importCsv => _get('pro_gate_import'),
         ProGate.sharedBudget => _get('pro_gate_shared_budget'),
+        ProGate.ai => _get('pro_gate_ai'),
         ProGate.generic => _get('pro_subtitle'),
       };
 
@@ -775,6 +807,11 @@ class Tr {
       'theme_dark_hint': 'Activar tema nocturno',
       'daily_reminder': 'Recordatorios diarios automáticos',
       'daily_reminder_at': 'Aviso a las {} para anotar ingresos y gastos',
+      'daily_reminder_off_hint': 'Activa el interruptor y elige la hora',
+      'daily_reminder_time': 'Hora',
+      'daily_reminder_cta': 'Notificaciones',
+      'daily_reminder_cta_on': 'Cada día a las {}',
+      'daily_reminder_cta_off': 'Configurar horario',
       'daily_reminder_title': 'Recordatorio diario ⏰',
       'daily_reminder_body':
           'Mantén tus finanzas bajo control registrando tus transacciones del día.',
@@ -1131,13 +1168,15 @@ class Tr {
       'period_this_year': 'Este año',
       'period_last_year': 'Año pasado',
       'period_custom': 'Periodo personalizado',
+      'choose_period': 'Elegir periodo',
       'restore_local': 'Restaurar',
       'data_restored': 'Datos restaurados',
       'restore_failed': 'No se pudo restaurar',
       'account_section': 'Cuenta',
       'pro_title': 'Pulpo Pro',
       'pro_subtitle':
-          'Sin límites en cuentas, metas, informes, importación y copias en la nube.',
+          'Sin límites en cuentas, metas, informes, IA (recibos y voz), importación y copias en la nube.',
+      'pro_cta_subtitle': 'Acceso sin límites',
       'pro_go': 'Pasar a Pro',
       'pro_restore': 'Restaurar compras',
       'pro_sign_in_required': 'Inicia sesión para activar Pro',
@@ -1204,6 +1243,30 @@ class Tr {
           'Los recordatorios inteligentes están disponibles en Pro.\nPasa a Pro para avisos de pagos, suscripciones y metas.',
       'pro_gate_import':
           'Importar CSV y extractos está disponible en Pro.\nPasa a Pro para importar tus movimientos.',
+      'pro_gate_ai':
+          'La IA de Pulpo (recibos, voz e insights) está en Pro.\nInicia sesión y pasa a Pro para usarla.',
+      'ai_recognize_receipt': 'Reconocer con IA',
+      'ai_voice_entry': 'Decir gasto',
+      'ai_voice_empty_title': 'Aún no hay operaciones',
+      'ai_voice_empty_hint':
+          'Añádelas en segundos — con la voz, escaneando un recibo o a mano.',
+      'ai_voice_hint': 'Di algo como: gasté 10 en taxi y 20 en comida',
+      'ai_voice_confirm_title': 'Confirmación',
+      'ai_voice_confirm_count': '{} transacciones',
+      'ai_voice_approve': 'Aprobar',
+      'ai_voice_saved': 'Guardadas {} operaciones',
+      'ai_listening': 'Escuchando…',
+      'ai_confirm_transcript': '¿Usar este texto?',
+      'ai_use_transcript': 'Usar',
+      'ai_category_suggest': 'IA sugiere: {}',
+      'ai_apply_category': 'Aplicar',
+      'ai_insight_title': 'Insight de IA',
+      'ai_insight_generate': 'Generar insight',
+      'ai_insight_hint':
+          'Un resumen breve a partir de los totales del periodo (Pro).',
+      'ai_busy': 'Pensando…',
+      'ai_failed': 'No se pudo completar la solicitud de IA. Inténtalo de nuevo.',
+      'ai_filled': 'Campos rellenados con IA',
     },
     'ru': {
       // common
@@ -1293,6 +1356,11 @@ class Tr {
       'theme_dark_hint': 'Включить ночную тему',
       'daily_reminder': 'Автоматические ежедневные напоминания',
       'daily_reminder_at': 'Напоминание в {} записать доходы и расходы',
+      'daily_reminder_off_hint': 'Включи переключатель и выбери время',
+      'daily_reminder_time': 'Время',
+      'daily_reminder_cta': 'Уведомления',
+      'daily_reminder_cta_on': 'Каждый день в {}',
+      'daily_reminder_cta_off': 'Настроить расписание',
       'daily_reminder_title': 'Ежедневное напоминание ⏰',
       'daily_reminder_body':
           'Запиши доходы и расходы за сегодня — так проще держать финансы под контролем.',
@@ -1649,13 +1717,15 @@ class Tr {
       'period_this_year': 'Этот год',
       'period_last_year': 'Прошлый год',
       'period_custom': 'Свой период',
+      'choose_period': 'Выбрать период',
       'restore_local': 'Восстановить',
       'data_restored': 'Данные восстановлены',
       'restore_failed': 'Не удалось восстановить',
       'account_section': 'Аккаунт',
       'pro_title': 'Pulpo Pro',
       'pro_subtitle':
-          'Без лимитов на счета, цели, отчёты, импорт и облачные копии.',
+          'Без лимитов на счета, цели, отчёты, ИИ (чеки и голос), импорт и облачные копии.',
+      'pro_cta_subtitle': 'Доступ без ограничений',
       'pro_go': 'Перейти на Pro',
       'pro_restore': 'Восстановить покупки',
       'pro_sign_in_required': 'Войдите в аккаунт, чтобы активировать Pro',
@@ -1722,6 +1792,30 @@ class Tr {
           'Напоминания доступны в Pro.\nПерейдите на Pro, чтобы получать напоминания о платежах, подписках и финансовых целях.',
       'pro_gate_import':
           'Импорт CSV и выписок доступен в Pro.\nПерейдите на Pro, чтобы импортировать операции.',
+      'pro_gate_ai':
+          'ИИ Pulpo (чеки, голос и инсайты) доступен в Pro.\nВойдите в аккаунт и перейдите на Pro.',
+      'ai_recognize_receipt': 'Распознать с ИИ',
+      'ai_voice_entry': 'Сказать расход',
+      'ai_voice_empty_title': 'Пока нет операций',
+      'ai_voice_empty_hint':
+          'Добавьте их за пару секунд — голосом, сканированием чека или вручную.',
+      'ai_voice_hint': 'Скажи: потратил 10 на такси и 20 на еду',
+      'ai_voice_confirm_title': 'Подтверждение',
+      'ai_voice_confirm_count': '{} транзакции',
+      'ai_voice_approve': 'Одобрить',
+      'ai_voice_saved': 'Сохранено операций: {}',
+      'ai_listening': 'Слушаю…',
+      'ai_confirm_transcript': 'Использовать этот текст?',
+      'ai_use_transcript': 'Использовать',
+      'ai_category_suggest': 'ИИ предлагает: {}',
+      'ai_apply_category': 'Применить',
+      'ai_insight_title': 'ИИ-инсайт',
+      'ai_insight_generate': 'Сгенерировать',
+      'ai_insight_hint':
+          'Краткий текст по итогам периода (Pro). Сырые операции не отправляются.',
+      'ai_busy': 'Думаю…',
+      'ai_failed': 'Не удалось выполнить запрос к ИИ. Попробуйте ещё раз.',
+      'ai_filled': 'Поля заполнены с помощью ИИ',
     },
     'en': {
       // common
@@ -1811,6 +1905,11 @@ class Tr {
       'theme_dark_hint': 'Enable night theme',
       'daily_reminder': 'Automated daily reminders',
       'daily_reminder_at': 'Reminder at {} to log income and expenses',
+      'daily_reminder_off_hint': 'Turn on the switch and pick a time',
+      'daily_reminder_time': 'Time',
+      'daily_reminder_cta': 'Notifications',
+      'daily_reminder_cta_on': 'Every day at {}',
+      'daily_reminder_cta_off': 'Set up schedule',
       'daily_reminder_title': 'Daily reminder ⏰',
       'daily_reminder_body':
           "Keep your finances in check by logging today's transactions.",
@@ -2167,13 +2266,15 @@ class Tr {
       'period_this_year': 'This year',
       'period_last_year': 'Last year',
       'period_custom': 'Custom range',
+      'choose_period': 'Choose period',
       'restore_local': 'Restore',
       'data_restored': 'Data restored',
       'restore_failed': 'Could not restore',
       'account_section': 'Account',
       'pro_title': 'Pulpo Pro',
       'pro_subtitle':
-          'Unlimited accounts, goals, reports, import and cloud backups.',
+          'Unlimited accounts, goals, reports, AI (receipts & voice), import and cloud backups.',
+      'pro_cta_subtitle': 'Unlimited access',
       'pro_go': 'Go Pro',
       'pro_restore': 'Restore purchases',
       'pro_sign_in_required': 'Sign in to activate Pro',
@@ -2240,6 +2341,30 @@ class Tr {
           'Smart reminders are available in Pro.\nGo Pro for payment, subscription and goal alerts.',
       'pro_gate_import':
           'CSV and statement import is available in Pro.\nGo Pro to import your transactions.',
+      'pro_gate_ai':
+          'Pulpo AI (receipts, voice and insights) is a Pro feature.\nSign in and go Pro to use it.',
+      'ai_recognize_receipt': 'Recognize with AI',
+      'ai_voice_entry': 'Say expense',
+      'ai_voice_empty_title': 'No transactions yet',
+      'ai_voice_empty_hint':
+          'Add them in seconds — by voice, scanning a receipt, or manually.',
+      'ai_voice_hint': 'Say: I spent 10 on taxi and 20 on food',
+      'ai_voice_confirm_title': 'Confirmation',
+      'ai_voice_confirm_count': '{} transactions',
+      'ai_voice_approve': 'Approve',
+      'ai_voice_saved': 'Saved {} transactions',
+      'ai_listening': 'Listening…',
+      'ai_confirm_transcript': 'Use this text?',
+      'ai_use_transcript': 'Use',
+      'ai_category_suggest': 'AI suggests: {}',
+      'ai_apply_category': 'Apply',
+      'ai_insight_title': 'AI insight',
+      'ai_insight_generate': 'Generate insight',
+      'ai_insight_hint':
+          'A short summary from period totals (Pro). Raw transactions are not sent.',
+      'ai_busy': 'Thinking…',
+      'ai_failed': 'Could not complete the AI request. Try again.',
+      'ai_filled': 'Fields filled with AI',
     },
   };
 }

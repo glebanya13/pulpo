@@ -28,6 +28,7 @@ import 'features/settings/settings_screen.dart';
 import 'features/shared_budget/shared_budget_screen.dart';
 import 'features/subscriptions/subscriptions_screen.dart';
 import 'features/transactions/add_transaction_screen.dart';
+import 'features/transactions/voice_ai_screen.dart';
 import 'features/transactions/transaction_detail_screen.dart';
 import 'features/transactions/transactions_screen.dart';
 import 'features/transactions/transfer_screen.dart';
@@ -142,6 +143,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialMode: state.uri.queryParameters['mode'],
           ),
         ),
+      ),
+      GoRoute(
+        path: '/voice-ai',
+        pageBuilder: (context, state) =>
+            _fadePage(state, const VoiceAiScreen()),
       ),
       GoRoute(
         path: '/transfer',
