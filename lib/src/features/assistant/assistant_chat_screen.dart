@@ -13,9 +13,12 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../core/ai/ai_errors.dart';
 import '../../core/ai/ai_models.dart';
+import '../../core/ai/assistant_energy.dart';
 import '../../core/ai/pulpo_ai_service.dart';
 import '../../core/l10n/tr.dart';
+import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
@@ -23,6 +26,7 @@ import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/assistant_energy_chip.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/ai_assistant_mark.dart';
 import 'app_chat_context.dart';
@@ -61,6 +65,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   bool _listening = false;
   int _listenSeconds = 0;
   Timer? _listenTimer;
+  Timer? _burnTimer;
+  DateTime? _burnAnchor;
 
   @override
   void initState() {
@@ -73,15 +79,69 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   void dispose() {
     unawaited(_speech.cancel());
     _listenTimer?.cancel();
+    _burnTimer?.cancel();
     _input.dispose();
     _listCtrl.dispose();
     super.dispose();
   }
 
+  bool get _shouldBurnEnergy {
+    if (ref.read(proControllerProvider).isPro) return false;
+    return _listening || _busy;
+  }
+
+  void _syncEnergyBurn() {
+    if (!_shouldBurnEnergy) {
+      _flushEnergyBurn();
+      _burnTimer?.cancel();
+      _burnTimer = null;
+      _burnAnchor = null;
+      return;
+    }
+    _burnAnchor ??= DateTime.now();
+    _burnTimer ??= Timer.periodic(
+      const Duration(milliseconds: 250),
+      (_) => unawaited(_tickEnergyBurn()),
+    );
+  }
+
+  Future<void> _flushEnergyBurn() async {
+    final anchor = _burnAnchor;
+    if (anchor == null) return;
+    final elapsed = DateTime.now().difference(anchor).inMilliseconds;
+    _burnAnchor = DateTime.now();
+    if (elapsed > 0) {
+      await ref.read(assistantEnergyProvider.notifier).consumeMs(elapsed);
+    }
+  }
+
+  Future<void> _tickEnergyBurn() async {
+    if (!mounted || !_shouldBurnEnergy) {
+      _syncEnergyBurn();
+      return;
+    }
+    final anchor = _burnAnchor ?? DateTime.now();
+    final now = DateTime.now();
+    final elapsed = now.difference(anchor).inMilliseconds;
+    _burnAnchor = now;
+    if (elapsed <= 0) return;
+    final left =
+        await ref.read(assistantEnergyProvider.notifier).consumeMs(elapsed);
+    if (!mounted) return;
+    if (left > 0) return;
+    if (_listening) await _stopListening();
+    _syncEnergyBurn();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(Tr.of(context).aiEnergyEmpty)),
+    );
+    await openPaywall(context, ProGate.ai);
+  }
+
   Future<void> _ensureAccess() async {
     if (_gateChecked) return;
     _gateChecked = true;
-    final ok = await requireAi(context, ref);
+    final ok = await requireAi(context, ref, allowFreeEnergy: true);
     if (!mounted) return;
     if (!ok) {
       if (context.canPop()) context.pop();
@@ -112,6 +172,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       if (text.isNotEmpty) await _send(text);
       return;
     }
+
+    final ok = await requireAi(context, ref, allowFreeEnergy: true);
+    if (!mounted || !ok) return;
 
     final tr = Tr.of(context);
     final available = await _speech.initialize(
@@ -145,6 +208,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       _listening = true;
       _listenSeconds = 0;
     });
+    _syncEnergyBurn();
     _listenTimer?.cancel();
     _listenTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _listenSeconds++);
@@ -175,6 +239,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         _listening = false;
         _listenSeconds = 0;
       });
+      _syncEnergyBurn();
     }
   }
 
@@ -188,7 +253,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final text = (overrideText ?? _input.text).trim();
     if (text.isEmpty || _busy) return;
 
-    final ok = await requireAi(context, ref);
+    final ok = await requireAi(context, ref, allowFreeEnergy: true);
     if (!mounted || !ok) return;
 
     await _stopListening();
@@ -198,6 +263,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       _input.clear();
       _busy = true;
     });
+    _syncEnergyBurn();
     _scrollToEnd();
 
     try {
@@ -212,7 +278,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         ));
       });
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() => _busy = false);
+        _syncEnergyBurn();
+      }
       _scrollToEnd();
     }
   }
@@ -347,7 +416,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
   Future<void> _pickReceipt(ImageSource source) async {
     if (_busy) return;
-    final ok = await requireAi(context, ref);
+    final ok = await requireAi(context, ref, allowFreeEnergy: true);
     if (!mounted || !ok) return;
 
     final tr = Tr.of(context);
@@ -374,6 +443,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       ));
       _busy = true;
     });
+    _syncEnergyBurn();
     _scrollToEnd();
 
     try {
@@ -449,7 +519,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         ));
       });
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() => _busy = false);
+        _syncEnergyBurn();
+      }
       _scrollToEnd();
     }
   }
@@ -521,6 +594,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final hasText = _input.text.trim().isNotEmpty;
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
     final account = _account ?? accounts.firstOrNull;
+    final isPro = ref.watch(proControllerProvider).isPro;
 
     return Scaffold(
       body: SafeArea(
@@ -578,6 +652,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                           ],
                         ),
                       ),
+                      if (!isPro) ...[
+                        const AssistantEnergyChip(),
+                        const SizedBox(width: 8),
+                      ],
                       Pressable(
                         onTap: _closeChat,
                         child: Container(

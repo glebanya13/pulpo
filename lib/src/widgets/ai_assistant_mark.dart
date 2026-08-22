@@ -3,7 +3,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/theme/app_colors.dart';
 
-/// AI assistant avatar — same lime accent as the “Say expense” action.
+/// AI assistant mark — violet / bot, not lime (Pro uses lime + rocket).
 class AiAssistantMark extends StatelessWidget {
   const AiAssistantMark({
     super.key,
@@ -23,10 +23,18 @@ class AiAssistantMark extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColors.lime,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF8B7CFF),
+            AppColors.violet,
+            Color(0xFFC4B5FD),
+          ],
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.lime.withValues(alpha: 0.35),
+            color: AppColors.violet.withValues(alpha: 0.4),
             blurRadius: size * 0.22,
             offset: Offset(0, size * 0.06),
           ),
@@ -34,9 +42,9 @@ class AiAssistantMark extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Icon(
-        LucideIcons.sparkles,
+        LucideIcons.bot,
         size: icon,
-        color: AppColors.ink,
+        color: Colors.white,
       ),
     );
   }

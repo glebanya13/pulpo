@@ -4,45 +4,52 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 
-/// Compact lime pill that marks a Pro-only control (buttons, tabs, sheets).
+/// Solid lime rectangle — same accent as primary actions, with “PRO” inside.
 class ProBadge extends StatelessWidget {
   const ProBadge({
     super.key,
     this.dense = false,
-    this.showLock = true,
+    this.showLock = false,
+    this.onAccent = false,
   });
 
   final bool dense;
+
+  /// Optional lock glyph before the label (rare; prefer plain PRO).
   final bool showLock;
+
+  /// Use on lime / accent surfaces (dark plate, lime label).
+  final bool onAccent;
 
   @override
   Widget build(BuildContext context) {
-    final accent =
-        context.isDark ? AppColors.lime : AppColors.limeAccent;
+    final bg = onAccent ? AppColors.ink : AppColors.lime;
+    final fg = onAccent ? AppColors.lime : AppColors.ink;
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: dense ? 6 : 8,
-        vertical: dense ? 2 : 4,
+        vertical: dense ? 3 : 4,
       ),
       decoration: BoxDecoration(
-        color: AppColors.lime.withValues(alpha: 0.22),
-        borderRadius: BorderRadius.circular(100),
+        color: bg,
+        borderRadius: BorderRadius.circular(dense ? 5 : 6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (showLock) ...[
-            Icon(LucideIcons.lock, size: dense ? 10 : 12, color: accent),
+            Icon(LucideIcons.lock, size: dense ? 9 : 11, color: fg),
             SizedBox(width: dense ? 3 : 4),
           ],
           Text(
             'PRO',
             style: TextStyle(
-              fontSize: dense ? 10 : 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
+              fontSize: dense ? 9 : 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.6,
               height: 1,
-              color: accent,
+              color: fg,
             ),
           ),
         ],

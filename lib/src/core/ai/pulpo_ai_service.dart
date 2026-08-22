@@ -61,8 +61,14 @@ class PulpoAiService {
   }) async {
     _requireSignedIn();
     try {
-      // Ensure Auth ID token is fresh for Firebase AI / App Check backends.
-      await _auth.currentUser?.getIdToken();
+      // Fresh Auth + App Check tokens (App Check is enforced for AI Logic).
+      await _auth.currentUser?.getIdToken(true);
+      try {
+        await FirebaseAppCheck.instance.getToken(true);
+      } catch (e) {
+        debugPrint('PulpoAI[$label] App Check token: $e');
+        throw const PulpoAiException('permission_denied');
+      }
       final model = json ? _jsonModel : _textModel;
       final response = await model.generateContent(contents);
       final text = response.text;
@@ -82,7 +88,14 @@ class PulpoAiService {
       if (msg.contains('not enabled') || msg.contains('ServiceApiNotEnabled')) {
         throw const PulpoAiException('api_not_enabled');
       }
-      if (msg.contains('PERMISSION') || msg.contains('permission') || msg.contains('App Check')) {
+      if (msg.contains('PERMISSION') ||
+          msg.contains('permission') ||
+          msg.contains('App Check') ||
+          msg.contains('app-check') ||
+          msg.contains('FirebaseAppCheck') ||
+          msg.contains('403') ||
+          msg.contains('UNAUTHENTICATED') ||
+          msg.contains('unauthenticated')) {
         throw const PulpoAiException('permission_denied');
       }
       if (msg.contains('Quota') || msg.contains('RESOURCE_EXHAUSTED')) {

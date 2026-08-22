@@ -274,10 +274,12 @@ class PageHeader extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(
-              width: _side,
-              height: _side,
-              child: action ?? const SizedBox.shrink(),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: _side, minHeight: _side),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: action ?? const SizedBox(width: _side, height: _side),
+              ),
             ),
           ],
         ),

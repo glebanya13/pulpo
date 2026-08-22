@@ -90,13 +90,14 @@ void main() {
       ),
       isFalse,
     );
+    // Passcode-only: do not claim biometrics are available.
     expect(
       biometricsLikelyAvailable(
         canCheck: false,
         deviceSupported: true,
         enrolled: const [],
       ),
-      isTrue,
+      isFalse,
     );
     expect(
       biometricsLikelyAvailable(
@@ -125,11 +126,14 @@ void main() {
       ),
       isTrue,
     );
+    final now = DateTime(2026, 8, 22, 12);
     expect(
       shouldAutoLockOnPause(
-        autoLock: false,
+        autoLock: true,
         hasLock: true,
         authInProgress: false,
+        ignorePauseUntil: now.add(const Duration(seconds: 2)),
+        now: now,
       ),
       isFalse,
     );

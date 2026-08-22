@@ -16,10 +16,11 @@ import '../../core/theme/color_well.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/seed/seed_categories.dart';
+import '../../widgets/assistant_energy_chip.dart';
 import '../../widgets/common.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/pressable.dart';
-import '../../widgets/pro_badge.dart';
+import '../../widgets/pro_upgrade_card.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
 import '../auth/cloud_auth.dart';
 import 'reminder_settings.dart';
@@ -41,14 +42,17 @@ class SettingsScreen extends ConsumerWidget {
             controller: scroll,
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
           children: [
-            PageHeader(
-              first: tr.settings,
-              onBack: () => context.pop(),
-            ),
+              PageHeader(
+                first: tr.settings,
+                onBack: () => context.pop(),
+                action: pro.isPro
+                    ? null
+                    : const AssistantEnergyChip(),
+              ),
             const SizedBox(height: 20),
 
             if (!pro.isPro)
-              _ProUpgradeCard(
+              ProUpgradeCard(
                 title: tr.proGo,
                 subtitle: tr.proCtaSubtitle,
                 onTap: () => openPaywall(context, ProGate.generic),
@@ -100,25 +104,12 @@ class SettingsScreen extends ConsumerWidget {
                         .setTheme(v ? 'dark' : 'light'),
                   ),
                 ),
-                _SettingsRow(
-                  icon: LucideIcons.bellRing,
-                  iconBg: AppColors.lime.withValues(alpha: 0.35),
-                  title: tr.smartReminders,
-                  subtitle: tr.smartRemindersHint,
-                  proLocked: !pro.isPro,
-                  trailingWidget: Switch.adaptive(
-                    value: settings.smartRemindersEnabled,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    onChanged: (v) =>
-                        toggleSmartReminders(context, ref, tr, v),
-                  ),
-                  showChevron: false,
-                ),
               ],
             ),
             const SizedBox(height: 12),
             ReminderCtaButton(
-              enabled: settings.dailyReminderEnabled,
+              enabled: settings.dailyReminderEnabled ||
+                  (pro.isPro && settings.smartRemindersEnabled),
               title: tr.dailyReminderCta,
               subtitle: settings.dailyReminderEnabled
                   ? tr.dailyReminderCtaOn(formatReminderTime(
@@ -126,7 +117,7 @@ class SettingsScreen extends ConsumerWidget {
                       settings.dailyReminderMinute,
                     ))
                   : tr.dailyReminderCtaOff,
-              onTap: () => openReminderSheet(context, ref, tr),
+              onTap: () => context.push('/settings/reminders'),
             ),
             const SizedBox(height: 12),
 
@@ -256,101 +247,6 @@ class SettingsScreen extends ConsumerWidget {
           .showSnackBar(SnackBar(content: Text(tr.resetSuccess)));
       context.go('/');
     }
-  }
-}
-
-class _ProUpgradeCard extends StatelessWidget {
-  const _ProUpgradeCard({
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          gradient: const LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              AppColors.limeDark,
-              AppColors.lime,
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.lime.withValues(alpha: 0.35),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.ink.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                LucideIcons.rocket,
-                size: 22,
-                color: AppColors.ink,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.ink,
-                      letterSpacing: -0.2,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.ink.withValues(alpha: 0.7),
-                      height: 1.25,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(
-              LucideIcons.chevronRight,
-              size: 20,
-              color: AppColors.ink.withValues(alpha: 0.75),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -565,8 +461,6 @@ class _SettingsRow extends StatelessWidget {
     this.trailingWidget,
     this.onTap,
     this.danger = false,
-    this.showChevron = true,
-    this.proLocked = false,
   });
   final IconData icon;
   final Color iconBg;
@@ -576,14 +470,11 @@ class _SettingsRow extends StatelessWidget {
   final Widget? trailingWidget;
   final VoidCallback? onTap;
   final bool danger;
-  final bool showChevron;
-  final bool proLocked;
 
   @override
   Widget build(BuildContext context) {
-    final titleColor = proLocked
-        ? proLockedTextColor(context, danger: danger)
-        : (danger ? const Color(0xFFE53E3E) : context.primaryText);
+    final titleColor =
+        danger ? const Color(0xFFE53E3E) : context.primaryText;
     final iconWell = Container(
       width: 36,
       height: 36,
@@ -594,10 +485,10 @@ class _SettingsRow extends StatelessWidget {
       child: Icon(
         icon,
         size: 18,
-        color: context.wellFg(iconBg).withValues(alpha: proLocked ? 0.55 : 1),
+        color: context.wellFg(iconBg),
       ),
     );
-    final row = Padding(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
@@ -608,7 +499,7 @@ class _SettingsRow extends StatelessWidget {
               scale: 0.98,
               child: Row(
                 children: [
-                  if (proLocked) ProIconMark(child: iconWell) else iconWell,
+                  iconWell,
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -623,10 +514,7 @@ class _SettingsRow extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(subtitle!,
                               style: TextStyle(
-                                  fontSize: 11,
-                                  color: proLocked
-                                      ? proLockedMutedColor(context)
-                                      : context.faintText)),
+                                  fontSize: 11, color: context.faintText)),
                         ],
                       ],
                     ),
@@ -636,17 +524,11 @@ class _SettingsRow extends StatelessWidget {
                       padding: const EdgeInsets.only(right: 6),
                       child: Text(trailing!,
                           style: TextStyle(
-                              fontSize: 13,
-                              color: proLocked
-                                  ? proLockedMutedColor(context)
-                                  : context.mutedText)),
+                              fontSize: 13, color: context.mutedText)),
                     ),
-                  if (onTap != null && !danger && showChevron)
+                  if (onTap != null && !danger)
                     Icon(LucideIcons.chevronRight,
-                        size: 16,
-                        color: proLocked
-                            ? proLockedMutedColor(context)
-                            : context.faintText),
+                        size: 16, color: context.faintText),
                 ],
               ),
             ),
@@ -655,6 +537,5 @@ class _SettingsRow extends StatelessWidget {
         ],
       ),
     );
-    return row;
   }
 }

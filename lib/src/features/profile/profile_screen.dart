@@ -20,7 +20,7 @@ import '../../data/repositories/settings_service.dart';
 import '../auth/cloud_auth.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
-import '../../widgets/pro_badge.dart';
+import '../../widgets/pro_upgrade_card.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -105,16 +105,26 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 20),
 
+        if (!isPro) ...[
+          ProUpgradeCard(
+            title: tr.proGo,
+            subtitle: tr.proCtaSubtitle,
+            onTap: () => openPaywall(context, ProGate.generic),
+          ),
+          const SizedBox(height: 20),
+        ],
+
         _SectionLabel(tr.sectionSettings),
         _MenuGroup(
           children: [
-            _MenuRow(
-              icon: LucideIcons.sparkles,
-              iconBg: AppColors.lime.withValues(alpha: 0.4),
-              label: tr.proTitle,
-              trailing: isPro ? tr.proActiveShort : tr.proGo,
-              onTap: () => openPaywall(context, ProGate.generic),
-            ),
+            if (isPro)
+              _MenuRow(
+                icon: LucideIcons.rocket,
+                iconBg: AppColors.lime.withValues(alpha: 0.45),
+                label: tr.proTitle,
+                trailing: tr.proActiveShort,
+                onTap: () => openPaywall(context, ProGate.generic),
+              ),
             if (authUser == null)
               _MenuRow(
                 icon: LucideIcons.logIn,
@@ -161,18 +171,6 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             _MenuRow(
-              icon: LucideIcons.bellRing,
-              iconBg: AppColors.lime.withValues(alpha: 0.35),
-              label: tr.smartReminders,
-              subtitle: tr.smartRemindersHint,
-              proLocked: !isPro,
-              trailingWidget: Switch.adaptive(
-                value: settings.smartRemindersEnabled,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                onChanged: (v) => toggleSmartReminders(context, ref, tr, v),
-              ),
-            ),
-            _MenuRow(
               icon: LucideIcons.database,
               iconBg: const Color(0xFFF2F2F2),
               label: tr.dataBackups,
@@ -200,7 +198,8 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         ReminderCtaButton(
-          enabled: settings.dailyReminderEnabled,
+          enabled: settings.dailyReminderEnabled ||
+              (isPro && settings.smartRemindersEnabled),
           title: tr.dailyReminderCta,
           subtitle: settings.dailyReminderEnabled
               ? tr.dailyReminderCtaOn(formatReminderTime(
@@ -208,7 +207,7 @@ class ProfileScreen extends ConsumerWidget {
                   settings.dailyReminderMinute,
                 ))
               : tr.dailyReminderCtaOff,
-          onTap: () => openReminderSheet(context, ref, tr),
+          onTap: () => context.push('/settings/reminders'),
         ),
         if (authUser != null) ...[
           const SizedBox(height: 28),
@@ -417,7 +416,6 @@ class _MenuRow extends StatelessWidget {
     this.trailingWidget,
     this.onTap,
     this.danger = false,
-    this.proLocked = false,
   });
   final IconData icon;
   final Color iconBg;
@@ -427,13 +425,11 @@ class _MenuRow extends StatelessWidget {
   final Widget? trailingWidget;
   final VoidCallback? onTap;
   final bool danger;
-  final bool proLocked;
 
   @override
   Widget build(BuildContext context) {
-    final labelColor = proLocked
-        ? proLockedTextColor(context, danger: danger)
-        : (danger ? const Color(0xFFE53E3E) : context.primaryText);
+    final labelColor =
+        danger ? const Color(0xFFE53E3E) : context.primaryText;
     final iconWell = Container(
       width: 36,
       height: 36,
@@ -444,7 +440,7 @@ class _MenuRow extends StatelessWidget {
       child: Icon(
         icon,
         size: 18,
-        color: context.wellFg(iconBg).withValues(alpha: proLocked ? 0.55 : 1),
+        color: context.wellFg(iconBg),
       ),
     );
     return Pressable(
@@ -455,7 +451,7 @@ class _MenuRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            if (proLocked) ProIconMark(child: iconWell) else iconWell,
+            iconWell,
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -475,9 +471,7 @@ class _MenuRow extends StatelessWidget {
                       subtitle!,
                       style: TextStyle(
                         fontSize: 11,
-                        color: proLocked
-                            ? proLockedMutedColor(context)
-                            : context.faintText,
+                        color: context.faintText,
                       ),
                     ),
                   ],
@@ -491,9 +485,7 @@ class _MenuRow extends StatelessWidget {
                   trailing!,
                   style: TextStyle(
                     fontSize: 13,
-                    color: proLocked
-                        ? proLockedMutedColor(context)
-                        : context.mutedText,
+                    color: context.mutedText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -503,9 +495,7 @@ class _MenuRow extends StatelessWidget {
               Icon(
                 LucideIcons.chevronRight,
                 size: 16,
-                color: proLocked
-                    ? proLockedMutedColor(context)
-                    : context.faintText,
+                color: context.faintText,
               ),
           ],
         ),

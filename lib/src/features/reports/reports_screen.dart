@@ -1383,23 +1383,13 @@ class _AiInsightCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (showPro)
-                ProIconMark(
-                  size: 28,
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    alignment: Alignment.center,
-                    child: Icon(
-                      LucideIcons.sparkles,
-                      size: 18,
-                      color: context.primaryText.withValues(alpha: 0.55),
-                    ),
-                  ),
-                )
-              else
-                Icon(LucideIcons.sparkles,
-                    size: 18, color: context.primaryText),
+              Icon(
+                LucideIcons.sparkles,
+                size: 18,
+                color: showPro
+                    ? context.primaryText.withValues(alpha: 0.55)
+                    : context.primaryText,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1413,6 +1403,10 @@ class _AiInsightCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (showPro) ...[
+                const SizedBox(width: 8),
+                const ProBadge(dense: true),
+              ],
             ],
           ),
           const SizedBox(height: 8),

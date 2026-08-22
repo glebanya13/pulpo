@@ -50,13 +50,26 @@ class _LockScreenState extends ConsumerState<LockScreen>
       if (!mounted) return;
       final lock = ref.read(lockControllerProvider);
       if (!lock.biometricsEnabled || !lock.needsLock) return;
-      // iOS needs a beat after launch/resume before the system sheet appears.
-      await Future<void>.delayed(const Duration(milliseconds: 300));
+      // Wait until the lock UI is stable; Face ID needs the app resumed.
+      await Future<void>.delayed(const Duration(milliseconds: 600));
       if (!mounted) return;
+      final still = ref.read(lockControllerProvider);
+      if (!still.biometricsEnabled || !still.needsLock) return;
       final tr = Tr.of(context);
-      await ref.read(lockControllerProvider.notifier).tryBiometrics(
+      final ok = await ref.read(lockControllerProvider.notifier).tryBiometrics(
             localizedReason: tr.biometricLockHint,
           );
+      // One auto-retry if the first prompt was cancelled by a lifecycle blip.
+      if (!ok && mounted) {
+        final again = ref.read(lockControllerProvider);
+        if (again.biometricsEnabled && again.needsLock) {
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+          if (!mounted) return;
+          await ref.read(lockControllerProvider.notifier).tryBiometrics(
+                localizedReason: tr.biometricLockHint,
+              );
+        }
+      }
     });
   }
 
@@ -191,8 +204,8 @@ class _LockGateState extends ConsumerState<LockGate> with WidgetsBindingObserver
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden) {
+    // Only lock when fully backgrounded. `inactive`/`hidden` fire during Face ID.
+    if (state == AppLifecycleState.paused) {
       ref.read(lockControllerProvider.notifier).onAppPaused();
     }
     if (state == AppLifecycleState.resumed) {

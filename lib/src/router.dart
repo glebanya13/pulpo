@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,37 +26,21 @@ import 'features/settings/backups_screen.dart';
 import 'features/settings/currency_picker_screen.dart';
 import 'features/settings/language_picker_screen.dart';
 import 'features/settings/theme_picker_screen.dart';
+import 'features/settings/reminders_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/shared_budget/shared_budget_screen.dart';
 import 'features/subscriptions/subscriptions_screen.dart';
 import 'features/transactions/add_transaction_screen.dart';
-import 'features/transactions/voice_ai_screen.dart';
 import 'features/transactions/transaction_detail_screen.dart';
 import 'features/transactions/transactions_screen.dart';
 import 'features/transactions/transfer_screen.dart';
 import 'shell/app_shell.dart';
 
-CustomTransitionPage<void> _fadePage(GoRouterState state, Widget child) {
-  return CustomTransitionPage<void>(
+/// Native-feeling push / pop (horizontal). Avoids the janky vertical micro-slide.
+Page<void> _fadePage(GoRouterState state, Widget child) {
+  return CupertinoPage<void>(
     key: state.pageKey,
     child: child,
-    transitionDuration: const Duration(milliseconds: 320),
-    reverseTransitionDuration: const Duration(milliseconds: 240),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      // Fade-from-zero left the initial route invisible on some iOS builds.
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      );
-      return SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.04),
-          end: Offset.zero,
-        ).animate(curved),
-        child: child,
-      );
-    },
   );
 }
 
@@ -154,8 +139,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/voice-ai',
-        pageBuilder: (context, state) =>
-            _fadePage(state, const VoiceAiScreen()),
+        // Legacy deep link — voice entry is the assistant chat now.
+        redirect: (context, state) => '/assistant',
       ),
       GoRoute(
         path: '/transfer',
@@ -278,6 +263,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'about',
             pageBuilder: (context, state) =>
                 _fadePage(state, const AboutScreen()),
+          ),
+          GoRoute(
+            path: 'reminders',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const RemindersScreen()),
           ),
         ],
       ),

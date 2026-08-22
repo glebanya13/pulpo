@@ -20,10 +20,10 @@ bool biometricsLikelyAvailable({
   required List<BiometricType> enrolled,
 }) {
   if (enrolled.isNotEmpty) return true;
+  // Prefer canCheck — deviceSupported alone is true for passcode-only devices
+  // and then biometricOnly / Face ID prompts fail.
   if (canCheck) return true;
-  // Last resort: passcode-capable device with biometric hardware but no types
-  // reported (seen on some iOS builds).
-  return deviceSupported;
+  return false;
 }
 
 @visibleForTesting
@@ -31,8 +31,14 @@ bool shouldAutoLockOnPause({
   required bool autoLock,
   required bool hasLock,
   required bool authInProgress,
+  DateTime? ignorePauseUntil,
+  DateTime? now,
 }) {
   if (authInProgress) return false;
+  final until = ignorePauseUntil;
+  if (until != null && (now ?? DateTime.now()).isBefore(until)) {
+    return false;
+  }
   return autoLock && hasLock;
 }
 
@@ -77,16 +83,21 @@ class LockState {
 }
 
 class LockController extends Notifier<LockState> {
-  LockController({LocalAuthentication? auth}) : _auth = auth ?? LocalAuthentication();
+  LockController({LocalAuthentication? auth})
+      : _auth = auth ?? LocalAuthentication();
 
   static const _kPinHash = 'lock_pin_hash';
   static const _kBio = 'lock_biometrics';
   static const _kPinLen = 'lock_pin_len';
   static const _kAuto = 'lock_autolock';
 
+  /// Face ID dismissal fires lifecycle pause after auth returns — ignore briefly.
+  static const _pauseGrace = Duration(seconds: 2);
+
   SharedPreferences get _prefs => ref.read(sharedPreferencesProvider);
   final LocalAuthentication _auth;
   var _authInProgress = false;
+  DateTime? _ignorePauseUntil;
 
   @visibleForTesting
   bool get authInProgress => _authInProgress;
@@ -142,6 +153,9 @@ class LockController extends Notifier<LockState> {
       final canCheck = await _auth.canCheckBiometrics;
       final supported = await _auth.isDeviceSupported();
       final types = await _auth.getAvailableBiometrics();
+      debugPrint(
+        'biometrics: canCheck=$canCheck supported=$supported types=$types',
+      );
       return biometricsLikelyAvailable(
         canCheck: canCheck,
         deviceSupported: supported,
@@ -159,15 +173,21 @@ class LockController extends Notifier<LockState> {
   }) async {
     _authInProgress = true;
     try {
-      return await _auth.authenticate(
+      // biometricOnly: false — iOS can fall back to device passcode; true
+      // often returns NotAvailable after cancel / failed Face ID.
+      final ok = await _auth.authenticate(
         localizedReason: localizedReason,
         options: AuthenticationOptions(
-          biometricOnly: true,
+          biometricOnly: false,
           stickyAuth: sticky,
           sensitiveTransaction: false,
           useErrorDialogs: true,
         ),
       );
+      if (ok) {
+        _ignorePauseUntil = DateTime.now().add(_pauseGrace);
+      }
+      return ok;
     } on PlatformException catch (e) {
       debugPrint('local_auth: ${e.code} ${e.message}');
       return false;
@@ -179,7 +199,12 @@ class LockController extends Notifier<LockState> {
   Future<bool> enableBiometrics({String localizedReason = 'Monedero'}) async {
     try {
       final available = await deviceHasBiometrics();
-      if (!available) return false;
+      if (!available) {
+        // Last resort: try authenticate anyway — iOS may still show Face ID
+        // when getAvailableBiometrics is empty but hardware exists.
+        final supported = await _auth.isDeviceSupported();
+        if (!supported) return false;
+      }
       final ok = await _authenticate(
         sticky: true,
         localizedReason: localizedReason,
@@ -220,6 +245,7 @@ class LockController extends Notifier<LockState> {
       autoLock: state.autoLock,
       hasLock: state.hasLock,
       authInProgress: _authInProgress,
+      ignorePauseUntil: _ignorePauseUntil,
     )) {
       lock();
     }

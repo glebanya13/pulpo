@@ -79,17 +79,24 @@ class _QuickActionsSheet extends ConsumerWidget {
           Pressable(
             onTap: () {
               Navigator.pop(context);
-              context.push('/voice-ai');
+              context.push('/assistant');
             },
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: AppColors.lime,
+                gradient: const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Color(0xFF8B7CFF),
+                    AppColors.violet,
+                  ],
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.lime.withValues(alpha: 0.35),
+                    color: AppColors.violet.withValues(alpha: 0.4),
                     blurRadius: 14,
                     offset: const Offset(0, 4),
                   ),
@@ -101,13 +108,13 @@ class _QuickActionsSheet extends ConsumerWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: AppColors.ink.withValues(alpha: 0.1),
+                      color: Colors.white.withValues(alpha: 0.22),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
-                      LucideIcons.sparkles,
+                      LucideIcons.bot,
                       size: 18,
-                      color: AppColors.ink,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -116,11 +123,11 @@ class _QuickActionsSheet extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          tr.aiVoiceEntry,
+                          tr.aiChatTitle,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.ink,
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -131,7 +138,7 @@ class _QuickActionsSheet extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 11,
                             height: 1.25,
-                            color: AppColors.ink.withValues(alpha: 0.65),
+                            color: Colors.white.withValues(alpha: 0.85),
                           ),
                         ),
                       ],
@@ -141,9 +148,9 @@ class _QuickActionsSheet extends ConsumerWidget {
                     const ProBadge(dense: true)
                   else
                     Icon(
-                      LucideIcons.sparkles,
+                      LucideIcons.mic,
                       size: 16,
-                      color: AppColors.ink.withValues(alpha: 0.75),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                 ],
               ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/ai/assistant_energy.dart';
 import '../../core/l10n/tr.dart';
 import '../../features/auth/cloud_auth.dart';
 import '../../features/pro/paywall_screen.dart';
@@ -28,12 +29,18 @@ Future<bool> requirePro(
   return ref.read(proControllerProvider).isPro;
 }
 
-/// AI features require Pro and a signed-in Firebase Auth user.
-Future<bool> requireAi(BuildContext context, WidgetRef ref) async {
+/// AI features require a signed-in user.
+///
+/// [allowFreeEnergy]: assistant chat may use the free energy quota;
+/// other AI surfaces stay Pro-only.
+Future<bool> requireAi(
+  BuildContext context,
+  WidgetRef ref, {
+  bool allowFreeEnergy = false,
+}) async {
   final tr = Tr.of(context);
   final isPro = ref.read(proControllerProvider).isPro;
   final signedIn = ref.read(authUserProvider).valueOrNull != null;
-  if (isPro && signedIn) return true;
   if (!signedIn) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(tr.proSignInRequired)),
@@ -41,9 +48,12 @@ Future<bool> requireAi(BuildContext context, WidgetRef ref) async {
     context.push('/settings/account');
     return false;
   }
+  if (isPro) return true;
+  if (allowFreeEnergy && ref.read(assistantEnergyProvider).hasEnergy) {
+    return true;
+  }
   await openPaywall(context, ProGate.ai);
-  return ref.read(proControllerProvider).isPro &&
-      ref.read(authUserProvider).valueOrNull != null;
+  return ref.read(proControllerProvider).isPro;
 }
 
 Future<bool> requireQuota(

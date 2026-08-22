@@ -230,7 +230,7 @@ class _SetupCard extends StatelessWidget {
               Text(tr.sharedBudgetCreate),
               if (showPro) ...[
                 const SizedBox(width: 8),
-                const ProBadge(dense: true),
+                const ProBadge(dense: true, onAccent: true),
               ],
             ],
           ),

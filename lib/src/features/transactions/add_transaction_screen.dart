@@ -253,7 +253,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   Future<void> _voiceEntry() async {
     if (!await requireAi(context, ref)) return;
     if (!mounted) return;
-    context.push('/voice-ai');
+    context.push('/assistant');
   }
 
   Future<void> _save() async {
@@ -939,14 +939,30 @@ class _AiQuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
+    final title = busy ? tr.aiBusy : tr.aiChatTitle;
     return Pressable(
       onTap: busy ? null : onVoice,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: context.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Color(0xFF8B7CFF),
+              AppColors.violet,
+              Color(0xFFC4B5FD),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.violet.withValues(alpha: 0.45),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -957,34 +973,54 @@ class _AiQuickActions extends StatelessWidget {
                   width: 28,
                   height: 28,
                   alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: Icon(
-                    LucideIcons.sparkles,
-                    size: 18,
-                    color: context.primaryText.withValues(alpha: 0.55),
+                    LucideIcons.bot,
+                    size: 16,
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               )
             else
-              Icon(
-                LucideIcons.sparkles,
-                size: 18,
-                color: context.primaryText,
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  LucideIcons.bot,
+                  size: 16,
+                  color: Colors.white,
+                ),
               ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                busy ? tr.aiBusy : tr.aiVoiceEntry,
+                title,
                 style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
                   color: showPro
-                      ? proLockedTextColor(context)
-                      : context.primaryText,
+                      ? Colors.white.withValues(alpha: 0.75)
+                      : Colors.white,
                 ),
               ),
             ),
-            if (!showPro)
-              Icon(LucideIcons.sparkles, size: 16, color: context.mutedText),
+            if (showPro)
+              const ProBadge(dense: true)
+            else
+              Icon(
+                LucideIcons.chevronRight,
+                size: 18,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
           ],
         ),
       ),

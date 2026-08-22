@@ -677,6 +677,7 @@ class Tr {
   String get aiPermissionDenied => _get('ai_permission_denied');
   String get aiQuotaExceeded => _get('ai_quota_exceeded');
   String get aiFilled => _get('ai_filled');
+  String get aiEnergyEmpty => _get('ai_energy_empty');
   String get importCsv => _get('import_csv');
   String get importCsvHint => _get('import_csv_hint');
   String get importPickFile => _get('import_pick_file');
@@ -688,8 +689,11 @@ class Tr {
   String importDone(int n) => _get('import_done').replaceAll('{}', '$n');
   String importDuplicatesSkipped(int n) =>
       _get('import_duplicates_skipped').replaceAll('{}', '$n');
+  String get remindersPageHint => _get('reminders_page_hint');
+  String get dailyReminderSection => _get('daily_reminder_section');
   String get smartReminders => _get('smart_reminders');
   String get smartRemindersHint => _get('smart_reminders_hint');
+  String get smartRemindersDesc => _get('smart_reminders_desc');
   String get smartDebtTitle => _get('smart_debt_title');
   String smartDebtBody(String name) =>
       _get('smart_debt_body').replaceAll('{}', name);
@@ -1078,7 +1082,7 @@ class Tr {
       'credit_limit': 'Límite de crédito',
       'credit_limit_hint': 'Opcional',
       'auto_cloud_backup': 'Copia en la nube',
-      'auto_cloud_backup_desc': 'Subida diaria automática (Pro)',
+      'auto_cloud_backup_desc': 'Subida diaria automática',
       'last_sync_prefix': 'Última sync: ',
       'never_synced': 'Aún no sincronizado',
       'cloud_restore_title': '¿Restaurar datos?',
@@ -1249,9 +1253,14 @@ class Tr {
       'import_confirm': 'Importar',
       'import_failed': 'No se pudo importar el archivo',
       'import_done': 'Importadas {} transacciones',
+      'reminders_page_hint':
+          'Elige cuándo recordar gastos. Los avisos inteligentes son solo Pro.',
+      'daily_reminder_section': 'Recordatorio diario',
       'smart_reminders': 'Recordatorios inteligentes',
       'smart_reminders_hint':
-          'Avisos de deudas, suscripciones y metas (Pro)',
+          'Deudas, suscripciones y metas',
+      'smart_reminders_desc':
+          'Avisos el día del pago, un día antes de la suscripción y recordatorios de metas y presupuestos.',
       'smart_debt_title': 'Pago pendiente',
       'smart_debt_body': 'Hoy vence un pago con {}',
       'smart_sub_title': 'Suscripción',
@@ -1310,7 +1319,7 @@ class Tr {
       'ai_insight_title': 'Insight de IA',
       'ai_insight_generate': 'Generar insight',
       'ai_insight_hint':
-          'Un resumen breve a partir de los totales del periodo (Pro).',
+          'Un resumen breve a partir de los totales del periodo. Los movimientos en bruto no se envían.',
       'ai_chat_title': 'Asistente',
       'ai_chat_hint': 'Voz, foto o texto — registra gastos e ingresos.',
       'ai_chat_placeholder': 'Mensaje…',
@@ -1329,9 +1338,11 @@ class Tr {
       'ai_api_not_enabled':
           'Activa Gemini / Firebase AI Logic en la consola de Firebase.',
       'ai_permission_denied':
-          'Firebase rechazó la petición de IA (App Check o permisos).',
+          'Firebase rechazó la petición de IA (App Check). En debug: registra el token de App Check en la consola de Firebase.',
       'ai_quota_exceeded': 'Se alcanzó el límite de uso de IA. Prueba más tarde.',
       'ai_filled': 'Campos rellenados con IA',
+      'ai_energy_empty':
+          'Sin energía. Pasa a Premium para usar el asistente sin límites.',
     },
     'ru': {
       // common
@@ -1660,7 +1671,7 @@ class Tr {
       'credit_limit': 'Кредитный лимит',
       'credit_limit_hint': 'Необязательно',
       'auto_cloud_backup': 'Облачный бэкап',
-      'auto_cloud_backup_desc': 'Ежедневная автозагрузка (Pro)',
+      'auto_cloud_backup_desc': 'Ежедневная автозагрузка',
       'last_sync_prefix': 'Последняя sync: ',
       'never_synced': 'Ещё не синхронизировано',
       'cloud_restore_title': 'Восстановить данные?',
@@ -1831,9 +1842,14 @@ class Tr {
       'import_confirm': 'Импортировать',
       'import_failed': 'Не удалось импортировать файл',
       'import_done': 'Импортировано {} операций',
+      'reminders_page_hint':
+          'Настрой, когда напоминать о расходах. Умные уведомления — только в Pro.',
+      'daily_reminder_section': 'Ежедневное напоминание',
       'smart_reminders': 'Умные напоминания',
       'smart_reminders_hint':
-          'Платежи, подписки и цели (Pro)',
+          'Платежи, подписки и цели',
+      'smart_reminders_desc':
+          'Напомним в день долга, за день до списания подписки и по целям с бюджетами.',
       'smart_debt_title': 'Платёж',
       'smart_debt_body': 'Сегодня срок платежа: {}',
       'smart_sub_title': 'Подписка',
@@ -1892,7 +1908,7 @@ class Tr {
       'ai_insight_title': 'ИИ-инсайт',
       'ai_insight_generate': 'Сгенерировать',
       'ai_insight_hint':
-          'Краткий текст по итогам периода (Pro). Сырые операции не отправляются.',
+          'Краткий текст по итогам периода. Сырые операции не отправляются.',
       'ai_chat_title': 'Ассистент',
       'ai_chat_hint': 'Голос, фото или текст — запишу расходы и доходы.',
       'ai_chat_placeholder': 'Сообщение…',
@@ -1911,9 +1927,11 @@ class Tr {
       'ai_api_not_enabled':
           'Включите Gemini / Firebase AI Logic в консоли Firebase.',
       'ai_permission_denied':
-          'Firebase отклонил запрос ИИ (App Check или права доступа).',
+          'Firebase отклонил запрос ИИ (App Check). В debug: зарегистрируйте токен App Check в консоли Firebase.',
       'ai_quota_exceeded': 'Лимит ИИ исчерпан. Попробуйте позже.',
       'ai_filled': 'Поля заполнены с помощью ИИ',
+      'ai_energy_empty':
+          'Энергия закончилась. Перейдите на Premium для безлимитного ассистента.',
     },
     'en': {
       // common
@@ -2242,7 +2260,7 @@ class Tr {
       'credit_limit': 'Credit limit',
       'credit_limit_hint': 'Optional',
       'auto_cloud_backup': 'Cloud backup',
-      'auto_cloud_backup_desc': 'Daily automatic upload (Pro)',
+      'auto_cloud_backup_desc': 'Daily automatic upload',
       'last_sync_prefix': 'Last sync: ',
       'never_synced': 'Not synced yet',
       'cloud_restore_title': 'Restore data?',
@@ -2413,9 +2431,14 @@ class Tr {
       'import_confirm': 'Import',
       'import_failed': 'Could not import the file',
       'import_done': 'Imported {} transactions',
+      'reminders_page_hint':
+          'Choose when to log expenses. Smart alerts are Pro only.',
+      'daily_reminder_section': 'Daily reminder',
       'smart_reminders': 'Smart reminders',
       'smart_reminders_hint':
-          'Debts, subscriptions and goals (Pro)',
+          'Debts, subscriptions and goals',
+      'smart_reminders_desc':
+          'Alerts on debt due dates, a day before subscriptions, and goal or budget nudges.',
       'smart_debt_title': 'Payment due',
       'smart_debt_body': 'A payment with {} is due today',
       'smart_sub_title': 'Subscription',
@@ -2474,7 +2497,7 @@ class Tr {
       'ai_insight_title': 'AI insight',
       'ai_insight_generate': 'Generate insight',
       'ai_insight_hint':
-          'A short summary from period totals (Pro). Raw transactions are not sent.',
+          'A short summary from period totals. Raw transactions are not sent.',
       'ai_chat_title': 'Assistant',
       'ai_chat_hint': 'Voice, photo, or text — log expenses and income.',
       'ai_chat_placeholder': 'Message…',
@@ -2493,9 +2516,11 @@ class Tr {
       'ai_api_not_enabled':
           'Enable Gemini / Firebase AI Logic in the Firebase console.',
       'ai_permission_denied':
-          'Firebase rejected the AI request (App Check or permissions).',
+          'Firebase rejected the AI request (App Check). In debug: register the App Check debug token in the Firebase console.',
       'ai_quota_exceeded': 'AI usage limit reached. Try again later.',
       'ai_filled': 'Fields filled with AI',
+      'ai_energy_empty':
+          'Out of energy. Upgrade to Premium for unlimited assistant use.',
     },
   };
 }

@@ -257,6 +257,7 @@ class _HomeLinks extends ConsumerWidget {
       (LucideIcons.tv, tr.subscriptions, '/subscriptions', const Color(0xFF7C6CFF), false),
       (LucideIcons.repeat, tr.recurringOps, '/recurring', const Color(0xFF2EB5FF), false),
       (LucideIcons.target, tr.goals, '/goals', const Color(0xFFCDFF3A), false),
+      (LucideIcons.layers, tr.categories, '/categories', const Color(0xFFD4F5E0), false),
     ];
     Widget tile((IconData, String, String, Color, bool) i) {
       final showPro = i.$5 && !isPro;
@@ -334,6 +335,8 @@ class _HomeLinks extends ConsumerWidget {
         Row(
           children: [
             Expanded(child: tile(items[6])),
+            const SizedBox(width: 6),
+            Expanded(child: tile(items[7])),
           ],
         ),
       ],
