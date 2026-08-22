@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/l10n/tr.dart';
@@ -144,6 +145,52 @@ class ScreenTitlePill extends StatelessWidget {
     );
     if (expand) return child;
     return Align(alignment: Alignment.centerLeft, child: child);
+  }
+}
+
+/// Profile shortcut: avatar icon + localized “My account” label.
+class MyAccountChip extends StatelessWidget {
+  const MyAccountChip({super.key, this.dense = false});
+
+  final bool dense;
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = Tr.of(context);
+    final iconColor = context.isDark ? AppColors.lime : AppColors.ink;
+    return Pressable(
+      onTap: () => context.push('/profile'),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: dense ? 8 : 10,
+          vertical: dense ? 6 : 8,
+        ),
+        decoration: BoxDecoration(
+          color: context.isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : AppColors.ink.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(LucideIcons.user, size: dense ? 16 : 18, color: iconColor),
+            SizedBox(width: dense ? 5 : 6),
+            Text(
+              tr.myAccount,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: dense ? 11 : 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.1,
+                color: context.primaryText,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -153,7 +153,7 @@ class LockController extends Notifier<LockState> {
     _authInProgress = true;
     try {
       return await _auth.authenticate(
-        localizedReason: 'Pulpo',
+        localizedReason: 'Monedero',
         options: AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: sticky,

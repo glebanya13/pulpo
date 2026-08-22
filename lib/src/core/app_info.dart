@@ -1,5 +1,11 @@
 class AppInfo {
   static const version = '1.0.1';
+  /// Shown under the icon on the home screen (iOS/Android).
+  static const displayName = 'Monedero';
+  /// Set in App Store Connect — not read from the binary.
+  static const appStoreName = 'Monedero: Control de gastos';
+  /// Internal identifier; not shown to App Store users.
+  static const bundleId = 'com.pulpo.app';
   /// Flip when the client provides google-services.json / GoogleService-Info.plist.
   static const firebaseConfigured = true;
   static const firebaseProjectId = 'pulpo-mobi';

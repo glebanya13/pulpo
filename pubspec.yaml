@@ -1,7 +1,7 @@
 name: pulpo
-description: "Pulpo — personal offline-first budget tracker for Android and iOS."
+description: "Monedero — control de gastos personal offline-first para Android e iOS."
 publish_to: 'none'
-version: 1.0.1+22
+version: 1.0.1+24
 
 environment:
   sdk: ^3.10.0
@@ -65,13 +65,12 @@ flutter_launcher_icons:
   ios: true
   macos:
     generate: true
-    image_path: assets/logo_mark.png
-  image_path: assets/logo_mark.png
-  # Light (default): white plate. Dark (iOS 18+): transparent mark on system dark plate.
-  image_path_ios_dark_transparent: assets/logo_mark.png
+    image_path: assets/icon_light.png
+  image_path: assets/icon_light.png
+  image_path_ios_dark_transparent: assets/icon_dark.png
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: assets/logo_mark.png
-  adaptive_icon_foreground_inset: 0
+  adaptive_icon_foreground: assets/icon_dark.png
+  adaptive_icon_foreground_inset: 16
   remove_alpha_ios: true
   background_color_ios: "#FFFFFF"
 

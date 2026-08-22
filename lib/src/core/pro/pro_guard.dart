@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../features/auth/cloud_auth.dart';
 import '../../features/pro/paywall_screen.dart';
@@ -54,3 +55,8 @@ String quotaLabel({
   required int limit,
 }) =>
     isPro ? '$used' : '$used/$limit';
+
+String formatProExpiryDate(BuildContext context, DateTime date) {
+  final locale = Localizations.localeOf(context).languageCode;
+  return DateFormat('d MMMM y', locale).format(date.toLocal());
+}

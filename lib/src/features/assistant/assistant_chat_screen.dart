@@ -1,24 +1,44 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../core/ai/ai_errors.dart';
+import '../../core/ai/ai_models.dart';
 import '../../core/ai/pulpo_ai_service.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/money_format.dart';
+import '../../data/db/app_database.dart' as db;
+import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
-import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import 'app_chat_context.dart';
+import 'assistant_transactions.dart';
 
 class _ChatMsg {
-  const _ChatMsg({required this.fromUser, required this.text});
+  const _ChatMsg({
+    required this.fromUser,
+    required this.text,
+    this.imagePath,
+    this.time = const TimeOfDay(hour: 0, minute: 0),
+  });
+
   final bool fromUser;
   final String text;
+  final String? imagePath;
+  final TimeOfDay time;
 }
 
 class AssistantChatScreen extends ConsumerStatefulWidget {
@@ -32,18 +52,26 @@ class AssistantChatScreen extends ConsumerStatefulWidget {
 class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   final _input = TextEditingController();
   final _listCtrl = ScrollController();
+  final _speech = stt.SpeechToText();
   final _messages = <_ChatMsg>[];
+  db.Account? _account;
   bool _busy = false;
   bool _gateChecked = false;
+  bool _listening = false;
+  int _listenSeconds = 0;
+  Timer? _listenTimer;
 
   @override
   void initState() {
     super.initState();
+    _input.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureAccess());
   }
 
   @override
   void dispose() {
+    unawaited(_speech.cancel());
+    _listenTimer?.cancel();
     _input.dispose();
     _listCtrl.dispose();
     super.dispose();
@@ -60,61 +88,403 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     }
     if (_messages.isEmpty) {
       setState(() {
-        _messages.add(_ChatMsg(fromUser: false, text: Tr.of(context).aiChatWelcome));
+        _messages.add(_ChatMsg(
+          fromUser: false,
+          text: Tr.of(context).aiChatWelcome,
+          time: TimeOfDay.now(),
+        ));
       });
     }
   }
 
-  Future<void> _send() async {
-    final text = _input.text.trim();
+  String _localeId(String locale) => switch (locale) {
+        'ru' => 'ru_RU',
+        'en' => 'en_US',
+        _ => 'es_ES',
+      };
+
+  Future<void> _toggleListening() async {
+    if (_busy) return;
+    if (_listening) {
+      await _stopListening();
+      final text = _input.text.trim();
+      if (text.isNotEmpty) await _send(text);
+      return;
+    }
+
+    final tr = Tr.of(context);
+    final available = await _speech.initialize(
+      onError: (_) {
+        if (mounted) _stopListening();
+      },
+      onStatus: (status) {
+        if (status == 'done' || status == 'notListening') {
+          if (mounted && _listening) _stopListening();
+        }
+      },
+    );
+    if (!available) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr.aiSpeechUnavailable)),
+      );
+      return;
+    }
+
+    final preferred = _localeId(ref.read(settingsControllerProvider).locale);
+    final locales = await _speech.locales();
+    final matched = locales
+        .where((l) =>
+            l.localeId == preferred ||
+            l.localeId.startsWith(preferred.split('_').first))
+        .map((l) => l.localeId)
+        .firstOrNull;
+
+    setState(() {
+      _listening = true;
+      _listenSeconds = 0;
+    });
+    _listenTimer?.cancel();
+    _listenTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _listenSeconds++);
+    });
+
+    await _speech.listen(
+      onResult: (result) {
+        if (!mounted) return;
+        setState(() => _input.text = result.recognizedWords);
+      },
+      listenOptions: stt.SpeechListenOptions(
+        localeId: matched ?? preferred,
+        listenFor: const Duration(seconds: 60),
+        pauseFor: const Duration(seconds: 4),
+        partialResults: true,
+        listenMode: stt.ListenMode.dictation,
+        cancelOnError: true,
+      ),
+    );
+  }
+
+  Future<void> _stopListening() async {
+    _listenTimer?.cancel();
+    _listenTimer = null;
+    await _speech.stop();
+    if (mounted) {
+      setState(() {
+        _listening = false;
+        _listenSeconds = 0;
+      });
+    }
+  }
+
+  Future<db.Account?> _resolveAccount() async {
+    final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+    if (accounts.isEmpty) return null;
+    return _account ?? accounts.first;
+  }
+
+  Future<void> _send([String? overrideText]) async {
+    final text = (overrideText ?? _input.text).trim();
     if (text.isEmpty || _busy) return;
 
     final ok = await requireAi(context, ref);
     if (!mounted || !ok) return;
 
-    if (_messages.isEmpty) {
-      _messages.add(_ChatMsg(fromUser: false, text: Tr.of(context).aiChatWelcome));
-    }
+    await _stopListening();
 
     setState(() {
-      _messages.add(_ChatMsg(fromUser: true, text: text));
+      _messages.add(_ChatMsg(fromUser: true, text: text, time: TimeOfDay.now()));
       _input.clear();
       _busy = true;
     });
     _scrollToEnd();
 
     try {
-      final locale = ref.read(settingsControllerProvider).locale;
-      final welcome = Tr.of(context).aiChatWelcome;
-      final prior = <({String role, String text})>[];
-      for (var i = 0; i < _messages.length - 1; i++) {
-        final m = _messages[i];
-        if (!m.fromUser && m.text == welcome) continue;
-        prior.add((role: m.fromUser ? 'user' : 'model', text: m.text));
-      }
-
-      final reply = await ref.read(pulpoAiServiceProvider).chatAboutApp(
-            userMessage: text,
-            appContext: buildAppChatContext(ref),
-            locale: locale,
-            history: prior,
-          );
-      if (!mounted) return;
-      setState(() {
-        _messages.add(_ChatMsg(fromUser: false, text: reply.trim()));
-        _busy = false;
-      });
-      _scrollToEnd();
+      await _handleUserText(text);
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _messages.add(
-          _ChatMsg(fromUser: false, text: describeAiError(Tr.of(context), e)),
-        );
-        _busy = false;
+        _messages.add(_ChatMsg(
+          fromUser: false,
+          text: describeAiError(Tr.of(context), e),
+          time: TimeOfDay.now(),
+        ));
       });
+    } finally {
+      if (mounted) setState(() => _busy = false);
       _scrollToEnd();
     }
+  }
+
+  Future<void> _handleUserText(String text) async {
+    final tr = Tr.of(context);
+    final locale = ref.read(settingsControllerProvider).locale;
+    final welcome = tr.aiChatWelcome;
+    final prior = _chatHistory(welcome);
+    final cats = ref.read(categoriesProvider).valueOrNull ?? [];
+    final names = cats.map((c) => tr.categoryName(c.name)).toList();
+    final account = await _resolveAccount();
+    final currencyHint = account?.currency ??
+        ref.read(settingsControllerProvider).baseCurrency;
+
+    var turn = await ref.read(pulpoAiServiceProvider).assistantTurn(
+          userMessage: text,
+          appContext: buildAppChatContext(ref),
+          locale: locale,
+          categoryNames: names,
+          currencyHint: currencyHint,
+          history: prior,
+        );
+
+    if (turn.intent == 'record' && turn.transactions.isEmpty) {
+      try {
+        final drafts =
+            await ref.read(pulpoAiServiceProvider).parseNaturalLanguageBatch(
+                  text,
+                  locale: locale,
+                  categoryNames: names,
+                  currencyHint: currencyHint,
+                );
+        turn = AssistantTurnResult(
+          intent: 'record',
+          reply: turn.reply.isNotEmpty ? turn.reply : tr.aiBusy,
+          transactions: drafts,
+        );
+      } catch (_) {
+        // keep question-style reply
+      }
+    }
+
+    if (turn.isRecord) {
+      if (account == null) {
+        setState(() {
+          _messages.add(_ChatMsg(
+            fromUser: false,
+            text: tr.addAccountFirst,
+            time: TimeOfDay.now(),
+          ));
+        });
+        return;
+      }
+
+      if (!mounted) return;
+      final approved = await confirmAssistantDrafts(
+        context: context,
+        drafts: turn.transactions,
+        account: account,
+        categories: cats,
+        tr: tr,
+      );
+      if (!mounted || !approved) {
+        setState(() {
+          _messages.add(_ChatMsg(
+            fromUser: false,
+            text: tr.cancel,
+            time: TimeOfDay.now(),
+          ));
+        });
+        return;
+      }
+
+      await saveAssistantDrafts(
+        ref: ref,
+        drafts: turn.transactions,
+        account: account,
+        tr: tr,
+      );
+      if (!mounted) return;
+
+      final total = turn.transactions.fold<double>(
+        0,
+        (sum, d) => sum + (d.amount ?? 0),
+      );
+      final reply = turn.reply.trim().isNotEmpty
+          ? turn.reply.trim()
+          : tr.aiAssistantRecorded(
+              turn.transactions.length,
+              formatMoney(total, currencyHint),
+            );
+
+      setState(() {
+        _messages.add(_ChatMsg(
+          fromUser: false,
+          text: reply,
+          time: TimeOfDay.now(),
+        ));
+      });
+      return;
+    }
+
+    final reply = turn.reply.trim().isNotEmpty
+        ? turn.reply.trim()
+        : await ref.read(pulpoAiServiceProvider).chatAboutApp(
+              userMessage: text,
+              appContext: buildAppChatContext(ref),
+              locale: locale,
+              history: prior,
+            );
+
+    if (!mounted) return;
+    setState(() {
+      _messages.add(_ChatMsg(
+        fromUser: false,
+        text: reply.trim(),
+        time: TimeOfDay.now(),
+      ));
+    });
+  }
+
+  List<({String role, String text})> _chatHistory(String welcome) {
+    final prior = <({String role, String text})>[];
+    for (var i = 0; i < _messages.length - 1; i++) {
+      final m = _messages[i];
+      if (!m.fromUser && m.text == welcome) continue;
+      prior.add((role: m.fromUser ? 'user' : 'model', text: m.text));
+    }
+    return prior;
+  }
+
+  Future<void> _pickReceipt(ImageSource source) async {
+    if (_busy) return;
+    final ok = await requireAi(context, ref);
+    if (!mounted || !ok) return;
+
+    final tr = Tr.of(context);
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 1200,
+      imageQuality: 80,
+    );
+    if (picked == null || !mounted) return;
+
+    final dir = await getApplicationDocumentsDirectory();
+    final receiptsDir = Directory(p.join(dir.path, 'receipts'));
+    if (!receiptsDir.existsSync()) receiptsDir.createSync(recursive: true);
+    final name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final dest = p.join(receiptsDir.path, name);
+    await File(picked.path).copy(dest);
+
+    setState(() {
+      _messages.add(_ChatMsg(
+        fromUser: true,
+        text: tr.aiChatReceiptSent,
+        imagePath: dest,
+        time: TimeOfDay.now(),
+      ));
+      _busy = true;
+    });
+    _scrollToEnd();
+
+    try {
+      final locale = ref.read(settingsControllerProvider).locale;
+      final cats = ref.read(categoriesProvider).valueOrNull ?? [];
+      final names = cats.map((c) => tr.categoryName(c.name)).toList();
+      final account = await _resolveAccount();
+      if (account == null) {
+        setState(() {
+          _messages.add(_ChatMsg(
+            fromUser: false,
+            text: tr.addAccountFirst,
+            time: TimeOfDay.now(),
+          ));
+        });
+        return;
+      }
+
+      final receipt = await ref.read(pulpoAiServiceProvider).analyzeReceipt(
+            File(dest),
+            locale: locale,
+            categoryNames: names,
+            currencyHint: account.currency,
+          );
+
+      if (receipt.amount == null || receipt.amount! <= 0) {
+        setState(() {
+          _messages.add(_ChatMsg(
+            fromUser: false,
+            text: tr.aiReceiptUnreadable,
+            time: TimeOfDay.now(),
+          ));
+        });
+        return;
+      }
+
+      final draft = receiptToDraft(receipt);
+      if (!mounted) return;
+      final approved = await confirmAssistantDrafts(
+        context: context,
+        drafts: [draft],
+        account: account,
+        categories: cats,
+        tr: tr,
+      );
+      if (!mounted || !approved) return;
+
+      await saveAssistantDrafts(
+        ref: ref,
+        drafts: [draft],
+        account: account,
+        tr: tr,
+        receiptPath: dest,
+      );
+      if (!mounted) return;
+
+      setState(() {
+        _messages.add(_ChatMsg(
+          fromUser: false,
+          text: tr.aiAssistantReceiptSaved(
+            formatMoney(receipt.amount!, receipt.currency ?? account.currency),
+          ),
+          time: TimeOfDay.now(),
+        ));
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(_ChatMsg(
+          fromUser: false,
+          text: describeAiError(tr, e),
+          time: TimeOfDay.now(),
+        ));
+      });
+    } finally {
+      if (mounted) setState(() => _busy = false);
+      _scrollToEnd();
+    }
+  }
+
+  Future<void> _showPhotoOptions() async {
+    final tr = Tr.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(LucideIcons.camera),
+              title: Text(tr.receiptCamera),
+              onTap: () {
+                Navigator.pop(ctx);
+                unawaited(_pickReceipt(ImageSource.camera));
+              },
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.image),
+              title: Text(tr.receiptGallery),
+              onTap: () {
+                Navigator.pop(ctx);
+                unawaited(_pickReceipt(ImageSource.gallery));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _scrollToEnd() {
@@ -128,11 +498,20 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     });
   }
 
+  String _formatListenTime() {
+    final m = _listenSeconds ~/ 60;
+    final s = _listenSeconds % 60;
+    return '$m:${s.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final hasText = _input.text.trim().isNotEmpty;
+    final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
+    final account = _account ?? accounts.firstOrNull;
 
     return Scaffold(
       body: SafeArea(
@@ -148,20 +527,92 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  PageHeader(
-                    first: tr.aiChatTitle,
-                    onBack: () => context.pop(),
+                  Row(
+                    children: [
+                      if (context.canPop())
+                        Pressable(
+                          onTap: () => context.pop(),
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: context.surface,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(LucideIcons.arrowLeft,
+                                size: 18, color: context.primaryText),
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 42),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text(
+                              tr.aiAssistantEyebrow,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.6,
+                                color: context.mutedText,
+                              ),
+                            ),
+                            Text(
+                              tr.aiChatTitle,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                                color: context.primaryText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 42),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    tr.aiChatHint,
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.35,
-                      color: context.mutedText,
-                      fontWeight: FontWeight.w500,
+                  if (account != null) ...[
+                    const SizedBox(height: 8),
+                    Pressable(
+                      onTap: () async {
+                        final picked =
+                            await pickAssistantAccount(context, ref);
+                        if (picked != null) {
+                          setState(() => _account = picked);
+                        }
+                      },
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.surface,
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LucideIcons.wallet,
+                                  size: 14, color: context.mutedText),
+                              const SizedBox(width: 6),
+                              Text(
+                                account.name,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.primaryText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -173,8 +624,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                 itemCount: _messages.length + (_busy ? 1 : 0),
                 itemBuilder: (context, i) {
                   if (_busy && i == _messages.length) {
-                    return _Bubble(
-                      fromUser: false,
+                    return _AssistantBubble(
                       child: Text(
                         tr.aiBusy,
                         style: TextStyle(
@@ -186,14 +636,17 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                     );
                   }
                   final m = _messages[i];
-                  return _Bubble(
+                  return _AssistantBubble(
                     fromUser: m.fromUser,
+                    time: m.time,
+                    imagePath: m.imagePath,
                     child: Text(
                       m.text,
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.4,
-                        color: m.fromUser ? AppColors.ink : context.primaryText,
+                        color:
+                            m.fromUser ? AppColors.ink : context.primaryText,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -201,6 +654,51 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                 },
               ),
             ),
+            if (_listening)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: context.surface,
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: AppColors.danger.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.danger,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatListenTime(),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: context.primaryText,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        tr.aiRecording,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.mutedText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Padding(
               padding: EdgeInsets.fromLTRB(
                 AppSpacing.lg,
@@ -209,7 +707,22 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                 12 + bottomInset + keyboard,
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  Pressable(
+                    onTap: _busy ? null : _showPhotoOptions,
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: context.surface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(LucideIcons.camera,
+                          size: 18, color: context.primaryText),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
                       controller: _input,
@@ -234,25 +747,41 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   ),
                   const SizedBox(width: 8),
                   Pressable(
-                    onTap: _busy ? null : _send,
+                    onTap: _busy
+                        ? null
+                        : () {
+                            if (hasText) {
+                              unawaited(_send());
+                            } else {
+                              unawaited(_toggleListening());
+                            }
+                          },
                     child: Container(
                       width: 46,
                       height: 46,
                       decoration: BoxDecoration(
-                        color: AppColors.lime,
+                        color: _listening
+                            ? AppColors.danger.withValues(alpha: 0.85)
+                            : (hasText ? AppColors.lime : context.surface),
                         shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.lime.withValues(alpha: 0.35),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        boxShadow: hasText && !_listening
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.lime.withValues(alpha: 0.35),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
                       ),
-                      child: const Icon(
-                        LucideIcons.send,
+                      child: Icon(
+                        hasText
+                            ? LucideIcons.send
+                            : (_listening ? LucideIcons.square : LucideIcons.mic),
                         size: 18,
-                        color: AppColors.ink,
+                        color: hasText || _listening
+                            ? AppColors.ink
+                            : context.primaryText,
                       ),
                     ),
                   ),
@@ -266,34 +795,97 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   }
 }
 
-class _Bubble extends StatelessWidget {
-  const _Bubble({required this.fromUser, required this.child});
+class _AssistantBubble extends StatelessWidget {
+  const _AssistantBubble({
+    this.fromUser = false,
+    required this.child,
+    this.time,
+    this.imagePath,
+  });
 
   final bool fromUser;
   final Widget child;
+  final TimeOfDay? time;
+  final String? imagePath;
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: fromUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.82,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: fromUser
-              ? AppColors.lime
-              : context.surface,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(fromUser ? 16 : 4),
-            bottomRight: Radius.circular(fromUser ? 4 : 16),
+    final timeLabel = time == null
+        ? null
+        : '${time!.hour.toString().padLeft(2, '0')}:${time!.minute.toString().padLeft(2, '0')}';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment:
+            fromUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!fromUser) ...[
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: AppColors.lime.withValues(alpha: 0.35),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(LucideIcons.sparkles,
+                  size: 14, color: AppColors.ink),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.sizeOf(context).width * 0.72,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: fromUser ? AppColors.lime : context.surface,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(16),
+                  topRight: const Radius.circular(16),
+                  bottomLeft: Radius.circular(fromUser ? 16 : 4),
+                  bottomRight: Radius.circular(fromUser ? 4 : 16),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (imagePath != null &&
+                      File(imagePath!).existsSync()) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        File(imagePath!),
+                        height: 120,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  child,
+                  if (timeLabel != null) ...[
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: Text(
+                        timeLabel,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: fromUser
+                              ? AppColors.ink.withValues(alpha: 0.55)
+                              : context.faintText,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
-        ),
-        child: child,
+        ],
       ),
     );
   }

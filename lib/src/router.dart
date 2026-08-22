@@ -42,22 +42,27 @@ CustomTransitionPage<void> _fadePage(GoRouterState state, Widget child) {
     transitionDuration: const Duration(milliseconds: 320),
     reverseTransitionDuration: const Duration(milliseconds: 240),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      // Fade-from-zero left the initial route invisible on some iOS builds.
       final curved = CurvedAnimation(
         parent: animation,
         curve: Curves.easeOutCubic,
         reverseCurve: Curves.easeInCubic,
       );
-      return FadeTransition(
-        opacity: curved,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.04),
-            end: Offset.zero,
-          ).animate(curved),
-          child: child,
-        ),
+      return SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.04),
+          end: Offset.zero,
+        ).animate(curved),
+        child: child,
       );
     },
+  );
+}
+
+Page<void> _instantPage(GoRouterState state, Widget child) {
+  return MaterialPage<void>(
+    key: state.pageKey,
+    child: child,
   );
 }
 
@@ -88,12 +93,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/onboarding',
         pageBuilder: (context, state) =>
-            _fadePage(state, const OnboardingScreen()),
+            _instantPage(state, const OnboardingScreen()),
         routes: [
           GoRoute(
             path: 'setup',
             pageBuilder: (context, state) =>
-                _fadePage(state, const OnboardingSetupScreen()),
+                _instantPage(state, const OnboardingSetupScreen()),
           ),
         ],
       ),

@@ -43,6 +43,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   String? _aiInsightForPeriod;
   bool _aiInsightBusy = false;
 
+  void _resetToInitial() {
+    setState(() => _tab = 0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
@@ -86,6 +90,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
     return ResetScrollWhenObscured(
       tabPath: '/reports',
+      onBecameVisible: _resetToInitial,
       builder: (context, scroll) => ListView(
       controller: scroll,
       padding: AppSpacing.tabPagePadding(context),
@@ -95,6 +100,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           subtitle: tr.analyticsSubtitle,
           large: true,
           expand: true,
+          trailing: const MyAccountChip(dense: true),
         ),
         const SizedBox(height: 16),
         _PeriodDropdownButton(

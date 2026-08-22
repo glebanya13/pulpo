@@ -16,6 +16,7 @@ import '../../data/repositories/transaction_repository.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/transaction_tile.dart';
+import '../../widgets/reset_scroll_when_obscured.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   const TransactionsScreen({super.key});
@@ -30,6 +31,23 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   TxType? _filterType;
   int? _accountId;
   int? _categoryId;
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _resetToInitial() {
+    _searchCtrl.clear();
+    setState(() {
+      _query = '';
+      _filterType = null;
+      _accountId = null;
+      _categoryId = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,34 +75,18 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     );
     final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
-    return ListView(
+    return ResetScrollWhenObscured(
+      tabPath: '/transactions',
+      onBecameVisible: _resetToInitial,
+      builder: (context, scroll) => ListView(
+      controller: scroll,
       padding: AppSpacing.tabPagePadding(context),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: ScreenTitlePill(
-                title: tr.transactions,
-                large: true,
-                expand: true,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Pressable(
-              onTap: () => context.push('/accounts'),
-              child: Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: context.surface,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(LucideIcons.wallet,
-                    size: 18,
-                    color: context.isDark ? Colors.white : AppColors.ink),
-              ),
-            ),
-          ],
+        ScreenTitlePill(
+          title: tr.transactions,
+          large: true,
+          expand: true,
+          trailing: const MyAccountChip(dense: true),
         ),
         const SizedBox(height: 16),
         Container(
@@ -100,6 +102,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
+                  controller: _searchCtrl,
                   decoration: InputDecoration(
                     hintText: tr.search,
                     border: InputBorder.none,
@@ -215,6 +218,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ),
           ],
       ],
+    ),
     );
   }
 

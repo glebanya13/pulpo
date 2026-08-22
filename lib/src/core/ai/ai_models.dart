@@ -84,3 +84,18 @@ class PeriodInsightInput {
   final double totalIncome;
   final List<({String name, double amount})> topCategories;
 }
+
+class AssistantTurnResult {
+  const AssistantTurnResult({
+    required this.intent,
+    required this.reply,
+    this.transactions = const [],
+  });
+
+  /// `record` — save transactions; `question` — answer from app data only.
+  final String intent;
+  final String reply;
+  final List<TransactionDraftFromAi> transactions;
+
+  bool get isRecord => intent == 'record' && transactions.isNotEmpty;
+}

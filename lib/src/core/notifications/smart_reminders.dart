@@ -159,7 +159,7 @@ Future<void> _schedule({
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
         _kSmartChannelId,
-        'Pulpo Pro',
+        'Monedero Pro',
         channelDescription: 'Payment, subscription and goal reminders',
         importance: Importance.high,
         priority: Priority.high,

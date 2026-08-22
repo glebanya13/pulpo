@@ -3,19 +3,22 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Keeps a page's scroll at the top whenever it is not the visible route
-/// (another tab or a pushed screen). Uses [ScrollController.jumpTo] so the
-/// user never sees a scroll animation on the way back.
+/// Resets scroll (and optional local state) whenever a tab page becomes visible
+/// again after the user left it — another bottom tab or a pushed route on top.
 class ResetScrollWhenObscured extends StatefulWidget {
   const ResetScrollWhenObscured({
     super.key,
     required this.tabPath,
     required this.builder,
+    this.onBecameVisible,
   });
 
   final String tabPath;
   final Widget Function(BuildContext context, ScrollController controller)
       builder;
+
+  /// Called when the user returns to [tabPath] — reset tabs, filters, etc.
+  final VoidCallback? onBecameVisible;
 
   @override
   State<ResetScrollWhenObscured> createState() =>
@@ -23,9 +26,10 @@ class ResetScrollWhenObscured extends StatefulWidget {
 }
 
 class _ResetScrollWhenObscuredState extends State<ResetScrollWhenObscured> {
-  final _scroll = ScrollController();
+  final _scroll = ScrollController(keepScrollOffset: false);
   GoRouterDelegate? _delegate;
   Timer? _delay;
+  var _visible = false;
 
   static const _tabPaths = {
     '/',
@@ -38,17 +42,17 @@ class _ResetScrollWhenObscuredState extends State<ResetScrollWhenObscured> {
     super.didChangeDependencies();
     final delegate = GoRouter.of(context).routerDelegate;
     if (!identical(_delegate, delegate)) {
-      _delegate?.removeListener(_resetIfObscured);
+      _delegate?.removeListener(_onRouteChange);
       _delegate = delegate;
-      _delegate!.addListener(_resetIfObscured);
+      _delegate!.addListener(_onRouteChange);
     }
-    _resetIfObscured();
+    _onRouteChange();
   }
 
   @override
   void dispose() {
     _delay?.cancel();
-    _delegate?.removeListener(_resetIfObscured);
+    _delegate?.removeListener(_onRouteChange);
     _scroll.dispose();
     super.dispose();
   }
@@ -59,22 +63,40 @@ class _ResetScrollWhenObscuredState extends State<ResetScrollWhenObscured> {
     _scroll.jumpTo(0);
   }
 
-  void _resetIfObscured() {
+  void _scheduleReset({required bool notifyVisible}) {
+    void run() {
+      _jump();
+      if (notifyVisible) widget.onBecameVisible?.call();
+    }
+
+    if (_scroll.hasClients) {
+      run();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) run();
+      });
+    }
+  }
+
+  void _onRouteChange() {
     _delay?.cancel();
     _delay = null;
     if (!mounted) return;
-    final path = GoRouter.of(context).state.uri.path;
-    if (path == widget.tabPath) return;
 
-    void run() {
-      if (_scroll.hasClients) {
-        _jump();
-      } else {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _jump();
-        });
+    final path = GoRouter.of(context).state.uri.path;
+    final isVisible = path == widget.tabPath;
+
+    if (isVisible) {
+      if (!_visible) {
+        _visible = true;
+        _scheduleReset(notifyVisible: true);
       }
+      return;
     }
+
+    _visible = false;
+
+    void run() => _jump();
 
     // Other tabs are Offstage — jump immediately. Pushed pages fade over
     // this one, so wait until the cover is fully on screen.

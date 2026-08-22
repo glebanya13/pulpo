@@ -229,7 +229,7 @@ class ProfileScreen extends ConsumerWidget {
         const SizedBox(height: 32),
         Center(
           child: Text(
-            'Pulpo · v${AppInfo.version}',
+            'Monedero · v${AppInfo.version}',
             style: TextStyle(
               fontSize: 11,
               color: context.faintText,

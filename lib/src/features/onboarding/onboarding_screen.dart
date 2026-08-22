@@ -51,7 +51,7 @@ class OnboardingScreen extends ConsumerWidget {
                         const BrandLogo(size: 44),
                         const SizedBox(width: 12),
                         Text(
-                          'PULPO',
+                          'MONEDERO',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 22,

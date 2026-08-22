@@ -115,7 +115,7 @@ Future<void> syncDailyReminder(SettingsState settings) async {
   const details = NotificationDetails(
     android: AndroidNotificationDetails(
       _kChannelId,
-      'Pulpo',
+      'Monedero',
       channelDescription: 'Daily reminder to log transactions',
       importance: Importance.high,
       priority: Priority.high,

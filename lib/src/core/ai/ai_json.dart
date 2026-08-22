@@ -121,3 +121,28 @@ List<TransactionDraftFromAi> parseTransactionDraftBatchJson(String raw) {
   return [single];
 }
 
+AssistantTurnResult parseAssistantTurnJson(String raw) {
+  final m = decodeAiJsonObject(raw);
+  final intent = (_asString(m['intent']) ?? 'question').toLowerCase();
+  final reply = _asString(m['reply']) ?? '';
+  var transactions = const <TransactionDraftFromAi>[];
+  if (intent == 'record') {
+    final list = m['transactions'] ?? m['items'] ?? m['drafts'];
+    if (list is List) {
+      final out = <TransactionDraftFromAi>[];
+      for (final item in list) {
+        if (item is! Map) continue;
+        final draft = _draftFromMap(Map<String, dynamic>.from(item));
+        if (draft.amount == null || draft.amount! <= 0) continue;
+        out.add(draft);
+      }
+      transactions = out;
+    }
+  }
+  return AssistantTurnResult(
+    intent: intent,
+    reply: reply,
+    transactions: transactions,
+  );
+}
+

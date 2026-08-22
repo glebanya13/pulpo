@@ -268,7 +268,7 @@ Future<void> _openGoalEditor(
       text: existing == null ? '' : existing.targetAmount.toString());
   final currentCtrl = TextEditingController(
       text: existing == null ? '' : existing.currentAmount.toString());
-  DateTime? targetDate = existing?.targetDate;
+  final targetDate = existing?.targetDate;
   final isEdit = existing != null;
   final currency = ref.read(settingsControllerProvider).baseCurrency;
 
@@ -278,8 +278,7 @@ Future<void> _openGoalEditor(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => Padding(
+    builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
           left: 20,
@@ -311,29 +310,6 @@ Future<void> _openGoalEditor(
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(labelText: Tr.of(ctx).goalSaved),
-            ),
-            const SizedBox(height: 12),
-            Pressable(
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: ctx,
-                  initialDate: targetDate ?? DateTime.now(),
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2100),
-                );
-                if (picked != null) setSt(() => targetDate = picked);
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  targetDate == null
-                      ? Tr.of(ctx).select
-                      : DateFormat.yMMMd(
-                              Localizations.localeOf(ctx).languageCode)
-                          .format(targetDate!),
-                  style: TextStyle(color: context.primaryText),
-                ),
-              ),
             ),
             const SizedBox(height: 12),
             ScaledFilledButton(
@@ -371,7 +347,6 @@ Future<void> _openGoalEditor(
           ],
         ),
       ),
-    ),
   );
   nameCtrl.dispose();
   targetCtrl.dispose();

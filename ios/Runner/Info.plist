@@ -28,7 +28,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>es</string>
 		<key>CFBundleDisplayName</key>
-		<string>Pulpo</string>
+		<string>Monedero</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -42,7 +42,7 @@
 			<string>en</string>
 		</array>
 		<key>CFBundleName</key>
-		<string>Pulpo</string>
+		<string>Monedero</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -59,7 +59,7 @@
 			<string>mailto</string>
 		</array>
 		<key>NSFaceIDUsageDescription</key>
-		<string>Pulpo usa Face ID para desbloquear la app.</string>
+		<string>Monedero usa Face ID para desbloquear la app.</string>
 		<key>NSCameraUsageDescription</key>
 		<string>Usamos la cámara para adjuntar fotos de recibos a tus transacciones.</string>
 		<key>NSPhotoLibraryUsageDescription</key>

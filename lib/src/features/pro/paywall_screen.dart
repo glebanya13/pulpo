@@ -8,6 +8,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
+import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
@@ -82,56 +83,25 @@ class PaywallScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: context.surface,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      tr.paywallBody(gate),
-                      style: TextStyle(
-                        fontSize: 15,
-                        height: 1.4,
-                        fontWeight: FontWeight.w600,
-                        color: context.primaryText,
+                  if (!pro.isPro)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: context.surface,
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                    ),
-                  ),
-                  if (pro.isPro) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      tr.proActive,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    if (pro.subscriptionExpiresAt != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        tr.proExpires(
-                          MaterialLocalizations.of(context)
-                              .formatMediumDate(pro.subscriptionExpiresAt!),
-                        ),
-                        textAlign: TextAlign.center,
+                      child: Text(
+                        tr.paywallBody(gate),
                         style: TextStyle(
-                          fontSize: 13,
-                          color: context.mutedText,
+                          fontSize: 15,
+                          height: 1.4,
+                          fontWeight: FontWeight.w600,
+                          color: context.primaryText,
                         ),
                       ),
-                      if (pro.daysUntilExpiry != null &&
-                          pro.daysUntilExpiry! <= 14)
-                        Text(
-                          tr.proDaysLeft(pro.daysUntilExpiry!),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.warning,
-                          ),
-                        ),
-                    ],
+                    ),
+                  if (pro.isPro) ...[
+                    _ProActiveSection(pro: pro),
                     const SizedBox(height: 12),
                     ScaledOutlinedButton(
                       onPressed: () => openManageSubscriptions(context),
@@ -341,6 +311,92 @@ class PaywallScreen extends ConsumerWidget {
   String _errorText(Tr tr, String error) {
     if (error.contains('sign_in_required')) return tr.proSignInRequired;
     return tr.proBuyFailed;
+  }
+}
+
+class _ProActiveSection extends ConsumerStatefulWidget {
+  const _ProActiveSection({required this.pro});
+
+  final ProState pro;
+
+  @override
+  ConsumerState<_ProActiveSection> createState() => _ProActiveSectionState();
+}
+
+class _ProActiveSectionState extends ConsumerState<_ProActiveSection> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.pro.subscriptionExpiresAt == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(proControllerProvider.notifier).refresh();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = Tr.of(context);
+    final pro = ref.watch(proControllerProvider);
+    final expiresAt = pro.subscriptionExpiresAt;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.lime.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.lime.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        children: [
+          Icon(LucideIcons.badgeCheck, size: 28, color: AppColors.lime),
+          const SizedBox(height: 10),
+          Text(
+            tr.proActive,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: context.primaryText,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (expiresAt != null) ...[
+            Text(
+              tr.proValidUntil(formatProExpiryDate(context, expiresAt)),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+                color: context.primaryText,
+              ),
+            ),
+            if (pro.daysUntilExpiry != null && pro.daysUntilExpiry! <= 14) ...[
+              const SizedBox(height: 6),
+              Text(
+                tr.proDaysLeft(pro.daysUntilExpiry!),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.warning,
+                ),
+              ),
+            ],
+          ] else
+            Text(
+              tr.proExpiresLoading,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: context.mutedText,
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

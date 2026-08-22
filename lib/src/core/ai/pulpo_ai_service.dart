@@ -231,6 +231,52 @@ Top categories: $tops
     }, parsePeriodInsightJson);
   }
 
+  /// Record transactions or answer from app data — one assistant turn.
+  Future<AssistantTurnResult> assistantTurn({
+    required String userMessage,
+    required String appContext,
+    required String locale,
+    required List<String> categoryNames,
+    required String currencyHint,
+    required List<({String role, String text})> history,
+  }) {
+    final trimmed = userMessage.trim();
+    if (trimmed.isEmpty) {
+      throw const PulpoAiException('empty_input');
+    }
+    return _withRetryParse(() async {
+      final cats = categoryNames.take(40).join(', ');
+      final lang = _langName(locale);
+      final hist = history
+          .take(12)
+          .map((h) => '${h.role == 'user' ? 'User' : 'Assistant'}: ${h.text}')
+          .join('\n');
+      final prompt = '''
+You are Pulpo AI Assistant in a personal finance app. Reply in $lang with JSON only.
+
+Two intents:
+1) "record" — user wants to ADD expense(s) and/or income(s). Extract every transaction.
+   Fields per item: amount (>0), currency (ISO, default $currencyHint), date (ISO or null=today), note, merchant, categoryHint (from: [$cats]), type ("expense"|"income").
+   Include a short friendly "reply" confirming what will be recorded.
+2) "question" — user asks about data already in the app (balances, spending, budgets, goals). Use ONLY APP DATA. No financial/investment/tax advice.
+   Include "reply" with the answer. "transactions" must be [].
+
+If unsure, prefer "question" and ask to clarify in "reply".
+
+Recent chat:
+$hist
+
+APP DATA:
+$appContext
+
+User message: """$trimmed"""
+
+Reply JSON: {"intent":"record"|"question","reply":"...","transactions":[...]}
+''';
+      return _generate([Content.text(prompt)], label: 'assistant_turn');
+    }, parseAssistantTurnJson);
+  }
+
   /// Answers questions using only the provided app snapshot. No financial advice.
   Future<String> chatAboutApp({
     required String userMessage,

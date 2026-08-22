@@ -28,7 +28,7 @@ class AboutScreen extends StatelessWidget {
             const SizedBox(height: 12),
             const Center(
               child: Text(
-                'Pulpo',
+                'Monedero',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,

@@ -39,24 +39,7 @@ class DashboardScreen extends ConsumerWidget {
           eyebrow: tr.greetingForHour(DateTime.now().hour),
           large: true,
           expand: true,
-          trailing: Pressable(
-            onTap: () => context.push('/profile'),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: context.isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : AppColors.ink.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                LucideIcons.user,
-                size: 18,
-                color: context.isDark ? AppColors.lime : AppColors.ink,
-              ),
-            ),
-          ),
+          trailing: const MyAccountChip(dense: true),
         ),
         const SizedBox(height: 10),
         _BalanceCard(total: total, currency: currency),

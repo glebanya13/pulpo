@@ -405,6 +405,7 @@ class Tr {
 
   // ─────────────────────── ACCOUNTS ───────────────────────
   String get myAccounts => _get('my_accounts');
+  String get myAccount => _get('my_account');
   String get netWorth => _get('net_worth');
   String get inRealtime => _get('in_realtime');
   String get history12Weeks => _get('history_12_weeks');
@@ -572,6 +573,9 @@ class Tr {
   String get tagsLabel => _get('tags_label');
   String get tagsHint => _get('tags_hint');
   String proExpires(String date) => _get('pro_expires').replaceAll('{}', date);
+  String proValidUntil(String date) =>
+      _get('pro_valid_until').replaceAll('{}', date);
+  String get proExpiresLoading => _get('pro_expires_loading');
   String proDaysLeft(int n) => _get('pro_days_left').replaceAll('{}', '$n');
   String get proManageSubscription => _get('pro_manage_subscription');
   String get sharedBudgetTitle => _get('shared_budget_title');
@@ -646,6 +650,16 @@ class Tr {
   String get aiChatHint => _get('ai_chat_hint');
   String get aiChatPlaceholder => _get('ai_chat_placeholder');
   String get aiChatWelcome => _get('ai_chat_welcome');
+  String get aiAssistantEyebrow => _get('ai_assistant_eyebrow');
+  String get aiRecording => _get('ai_recording');
+  String get aiChatReceiptSent => _get('ai_chat_receipt_sent');
+  String get aiReceiptUnreadable => _get('ai_receipt_unreadable');
+  String aiAssistantRecorded(int count, String totalFormatted) =>
+      _get('ai_assistant_recorded')
+          .replaceFirst('{}', '$count')
+          .replaceFirst('{}', totalFormatted);
+  String aiAssistantReceiptSaved(String amount) =>
+      _get('ai_assistant_receipt_saved').replaceAll('{}', amount);
   String get aiBusy => _get('ai_busy');
   String get aiFailed => _get('ai_failed');
   String get aiSpeechUnavailable => _get('ai_speech_unavailable');
@@ -897,6 +911,7 @@ class Tr {
       'top_expenses': 'Principales gastos',
       // accounts
       'my_accounts': 'Mis cuentas',
+      'my_account': 'Mi cuenta',
       'net_worth': 'PATRIMONIO NETO',
       'in_realtime': '↑ en tiempo real',
       'history_12_weeks': '12 semanas',
@@ -1076,6 +1091,8 @@ class Tr {
       'tags_hint': 'viaje, trabajo…',
       'import_duplicates_skipped': 'Duplicados omitidos: {}',
       'pro_expires': 'Pro activo hasta {}',
+      'pro_valid_until': 'Válido hasta {}',
+      'pro_expires_loading': 'Cargando fecha de renovación…',
       'pro_days_left': '{} días restantes',
       'pro_manage_subscription': 'Gestionar suscripción',
       'shared_budget_title': 'Presupuesto compartido',
@@ -1181,7 +1198,7 @@ class Tr {
       'data_restored': 'Datos restaurados',
       'restore_failed': 'No se pudo restaurar',
       'account_section': 'Cuenta',
-      'pro_title': 'Pulpo Pro',
+      'pro_title': 'Monedero Pro',
       'pro_subtitle':
           'Sin límites en cuentas, metas, informes, IA (recibos y voz), importación y copias en la nube.',
       'pro_cta_subtitle': 'Acceso sin límites',
@@ -1196,7 +1213,7 @@ class Tr {
       'pro_semi_annual': '6 meses',
       'pro_yearly_save': 'Ahorra 44%',
       'pro_trial': '7 días de prueba gratis',
-      'pro_active': 'Pulpo Pro está activo',
+      'pro_active': 'Monedero Pro está activo',
       'pro_active_short': 'Activo',
       'pro_buy_failed': 'No se pudo completar la compra',
       'pro_store_empty':
@@ -1272,11 +1289,17 @@ class Tr {
       'ai_insight_generate': 'Generar insight',
       'ai_insight_hint':
           'Un resumen breve a partir de los totales del periodo (Pro).',
-      'ai_chat_title': 'Chat',
-      'ai_chat_hint': 'Sin consejos financieros.',
-      'ai_chat_placeholder': '¿Cuánto gasté este mes en…?',
+      'ai_chat_title': 'Asistente',
+      'ai_chat_hint': 'Voz, foto o texto — registra gastos e ingresos.',
+      'ai_chat_placeholder': 'Mensaje…',
       'ai_chat_welcome':
-          'Puedo ayudarte con saldos, movimientos, presupuestos, metas y deudas que ya están en la app. No doy consejos financieros.',
+          'Hola. Soy tu asistente financiero. Puedo registrar un gasto o ingreso — escribe «Café 60» o «Salario 25000». También puedes enviar una foto del recibo, hablar por micrófono o preguntar sobre tus datos en la app.',
+      'ai_assistant_eyebrow': 'AI',
+      'ai_recording': 'Grabando…',
+      'ai_chat_receipt_sent': '📷 Recibo',
+      'ai_receipt_unreadable': 'No pude leer el recibo. Prueba otra foto o escribe la operación.',
+      'ai_assistant_recorded': 'Registradas {} operaciones por {}',
+      'ai_assistant_receipt_saved': 'Gasto del recibo registrado: {}',
       'ai_busy': 'Pensando…',
       'ai_failed': 'No se pudo completar la solicitud de IA. Inténtalo de nuevo.',
       'ai_speech_unavailable':
@@ -1458,6 +1481,7 @@ class Tr {
       'top_expenses': 'Топ расходов',
       // accounts
       'my_accounts': 'Мои счета',
+      'my_account': 'Мой аккаунт',
       'net_worth': 'ЧИСТЫЙ КАПИТАЛ',
       'in_realtime': '↑ в реальном времени',
       'history_12_weeks': '12 недель',
@@ -1637,6 +1661,8 @@ class Tr {
       'tags_hint': 'отпуск, работа…',
       'import_duplicates_skipped': 'Пропущено дубликатов: {}',
       'pro_expires': 'Pro до {}',
+      'pro_valid_until': 'Действует до {}',
+      'pro_expires_loading': 'Загрузка даты продления…',
       'pro_days_left': 'Осталось {} дн.',
       'pro_manage_subscription': 'Управление подпиской',
       'shared_budget_title': 'Общий бюджет',
@@ -1742,7 +1768,7 @@ class Tr {
       'data_restored': 'Данные восстановлены',
       'restore_failed': 'Не удалось восстановить',
       'account_section': 'Аккаунт',
-      'pro_title': 'Pulpo Pro',
+      'pro_title': 'Monedero Pro',
       'pro_subtitle':
           'Без лимитов на счета, цели, отчёты, ИИ (чеки и голос), импорт и облачные копии.',
       'pro_cta_subtitle': 'Доступ без ограничений',
@@ -1757,7 +1783,7 @@ class Tr {
       'pro_semi_annual': '6 месяцев',
       'pro_yearly_save': '−44%',
       'pro_trial': '7 дней бесплатно',
-      'pro_active': 'Pulpo Pro активен',
+      'pro_active': 'Monedero Pro активен',
       'pro_active_short': 'Активен',
       'pro_buy_failed': 'Не удалось завершить покупку',
       'pro_store_empty':
@@ -1833,11 +1859,17 @@ class Tr {
       'ai_insight_generate': 'Сгенерировать',
       'ai_insight_hint':
           'Краткий текст по итогам периода (Pro). Сырые операции не отправляются.',
-      'ai_chat_title': 'Чат',
-      'ai_chat_hint': 'Без финансовых советов.',
-      'ai_chat_placeholder': 'Сколько я потратил на…?',
+      'ai_chat_title': 'Ассистент',
+      'ai_chat_hint': 'Голос, фото или текст — запишу расходы и доходы.',
+      'ai_chat_placeholder': 'Сообщение…',
       'ai_chat_welcome':
-          'Могу отвечать по балансам, операциям, бюджетам, целям и долгам из приложения. Финансовых советов не даю.',
+          'Привет! Я твой финансовый ассистент. Могу записать расход или доход — напиши «Кофе 60» или «Зарплата 25000». Можно отправить фото чека, сказать голосом или спросить про данные в приложении.',
+      'ai_assistant_eyebrow': 'AI',
+      'ai_recording': 'Записываю…',
+      'ai_chat_receipt_sent': '📷 Чек',
+      'ai_receipt_unreadable': 'Не удалось прочитать чек. Попробуй другое фото или напиши операцию текстом.',
+      'ai_assistant_recorded': 'Записано {} операций на {}',
+      'ai_assistant_receipt_saved': 'Расход по чеку записан: {}',
       'ai_busy': 'Думаю…',
       'ai_failed': 'Не удалось выполнить запрос к ИИ. Попробуйте ещё раз.',
       'ai_speech_unavailable':
@@ -2019,6 +2051,7 @@ class Tr {
       'top_expenses': 'Top expenses',
       // accounts
       'my_accounts': 'My accounts',
+      'my_account': 'My account',
       'net_worth': 'NET WORTH',
       'in_realtime': '↑ live',
       'history_12_weeks': '12 weeks',
@@ -2198,6 +2231,8 @@ class Tr {
       'tags_hint': 'trip, work…',
       'import_duplicates_skipped': 'Duplicates skipped: {}',
       'pro_expires': 'Pro until {}',
+      'pro_valid_until': 'Valid until {}',
+      'pro_expires_loading': 'Loading renewal date…',
       'pro_days_left': '{} days left',
       'pro_manage_subscription': 'Manage subscription',
       'shared_budget_title': 'Shared budget',
@@ -2303,7 +2338,7 @@ class Tr {
       'data_restored': 'Data restored',
       'restore_failed': 'Could not restore',
       'account_section': 'Account',
-      'pro_title': 'Pulpo Pro',
+      'pro_title': 'Monedero Pro',
       'pro_subtitle':
           'Unlimited accounts, goals, reports, AI (receipts & voice), import and cloud backups.',
       'pro_cta_subtitle': 'Unlimited access',
@@ -2318,7 +2353,7 @@ class Tr {
       'pro_semi_annual': '6 months',
       'pro_yearly_save': 'Save 44%',
       'pro_trial': '7-day free trial',
-      'pro_active': 'Pulpo Pro is active',
+      'pro_active': 'Monedero Pro is active',
       'pro_active_short': 'Active',
       'pro_buy_failed': 'Could not complete the purchase',
       'pro_store_empty':
@@ -2394,11 +2429,17 @@ class Tr {
       'ai_insight_generate': 'Generate insight',
       'ai_insight_hint':
           'A short summary from period totals (Pro). Raw transactions are not sent.',
-      'ai_chat_title': 'Chat',
-      'ai_chat_hint': 'No financial advice.',
-      'ai_chat_placeholder': 'How much did I spend on…?',
+      'ai_chat_title': 'Assistant',
+      'ai_chat_hint': 'Voice, photo, or text — log expenses and income.',
+      'ai_chat_placeholder': 'Message…',
       'ai_chat_welcome':
-          'I can answer about balances, transactions, budgets, goals, and debts already in the app. I don’t give financial advice.',
+          'Hi! I\'m your financial assistant. I can log an expense or income — try «Coffee 60» or «Salary 25000». Send a receipt photo, use the mic, or ask about your app data.',
+      'ai_assistant_eyebrow': 'AI',
+      'ai_recording': 'Recording…',
+      'ai_chat_receipt_sent': '📷 Receipt',
+      'ai_receipt_unreadable': 'Could not read the receipt. Try another photo or type the transaction.',
+      'ai_assistant_recorded': 'Saved {} transactions for {}',
+      'ai_assistant_receipt_saved': 'Receipt expense saved: {}',
       'ai_busy': 'Thinking…',
       'ai_failed': 'Could not complete the AI request. Try again.',
       'ai_speech_unavailable':
