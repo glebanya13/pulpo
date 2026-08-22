@@ -9,7 +9,9 @@ import 'package:flutter/foundation.dart';
 ///
 /// Debug builds use debug providers — register tokens in Firebase Console →
 /// App Check → Manage debug tokens. Release uses Play Integrity (Android) and
-/// App Attest with Device Check fallback (iOS).
+/// Device Check (iOS). App Attest requires an App ID capability + provisioning
+/// profile update; use [AppleProvider.appAttestWithDeviceCheckFallback] once
+/// «Pulpo» profile includes App Attest.
 Future<void> activateFirebaseAppCheck() async {
   await FirebaseAppCheck.instance.activate(
     androidProvider: kDebugMode
@@ -17,7 +19,7 @@ Future<void> activateFirebaseAppCheck() async {
         : AndroidProvider.playIntegrity,
     appleProvider: kDebugMode
         ? AppleProvider.debug
-        : AppleProvider.appAttestWithDeviceCheckFallback,
+        : AppleProvider.deviceCheck,
   );
 
   if (kDebugMode) {
