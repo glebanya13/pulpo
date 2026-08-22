@@ -16,6 +16,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/debt_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
@@ -33,7 +34,8 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final debts = ref.watch(debtsProvider).valueOrNull ?? const [];
+    final debtsAsync = ref.watch(debtsProvider);
+    final debts = debtsAsync.valueOrNull ?? const [];
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
     final isPro = ref.watch(proControllerProvider).isPro;
     final activeDebts = debts
@@ -43,23 +45,6 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
               paidAmount: d.paidAmount,
             ))
         .length;
-
-    final iOwe = debts.where((d) => d.direction == DebtDirection.iOwe.index);
-    final owedToMe =
-        debts.where((d) => d.direction == DebtDirection.owedToMe.index);
-
-    final iOweSum = iOwe.fold<double>(0, (a, d) => a + (d.amount - d.paidAmount));
-    final owedToMeSum =
-        owedToMe.fold<double>(0, (a, d) => a + (d.amount - d.paidAmount));
-
-    List<db.Debt> filtered;
-    if (_tab == 1) {
-      filtered = iOwe.toList();
-    } else if (_tab == 2) {
-      filtered = owedToMe.toList();
-    } else {
-      filtered = debts.toList();
-    }
 
     return Scaffold(
       body: SafeArea(
@@ -79,42 +64,78 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    label: tr.iOwe,
-                    value: formatMoney(iOweSum, currency),
-                    color: AppColors.danger,
-                    subtitle: tr.peopleCount(iOwe.length),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _StatCard(
-                    label: tr.owedToMe,
-                    value: formatMoney(owedToMeSum, currency),
-                    color: AppColors.limeAccent,
-                    subtitle: tr.peopleCount(owedToMe.length),
-                  ),
-                ),
-              ],
+            AsyncValuesGate(
+              values: [debtsAsync],
+              onRetry: () => ref.invalidate(debtsProvider),
+              child: Builder(
+                builder: (context) {
+                  final loaded = debtsAsync.requireValue;
+                  final iOwe = loaded
+                      .where((d) => d.direction == DebtDirection.iOwe.index);
+                  final owedToMe = loaded
+                      .where((d) => d.direction == DebtDirection.owedToMe.index);
+                  final iOweSum = iOwe.fold<double>(
+                    0,
+                    (a, d) => a + (d.amount - d.paidAmount),
+                  );
+                  final owedToMeSum = owedToMe.fold<double>(
+                    0,
+                    (a, d) => a + (d.amount - d.paidAmount),
+                  );
+
+                  final List<db.Debt> filtered;
+                  if (_tab == 1) {
+                    filtered = iOwe.toList();
+                  } else if (_tab == 2) {
+                    filtered = owedToMe.toList();
+                  } else {
+                    filtered = loaded.toList();
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _StatCard(
+                              label: tr.iOwe,
+                              value: formatMoney(iOweSum, currency),
+                              color: AppColors.danger,
+                              subtitle: tr.peopleCount(iOwe.length),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _StatCard(
+                              label: tr.owedToMe,
+                              value: formatMoney(owedToMeSum, currency),
+                              color: AppColors.limeAccent,
+                              subtitle: tr.peopleCount(owedToMe.length),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      TabsPill(
+                        tabs: [tr.all, tr.iOwe, tr.owedToMe],
+                        index: _tab,
+                        onChanged: (i) => setState(() => _tab = i),
+                      ),
+                      const SizedBox(height: 12),
+                      if (filtered.isEmpty)
+                        EmptyState(
+                          icon: LucideIcons.users,
+                          title: tr.debtsEmptyTitle,
+                          description: tr.debtsEmptyDesc,
+                        )
+                      else
+                        for (final d in filtered) _DebtCard(debt: d),
+                    ],
+                  );
+                },
+              ),
             ),
-            const SizedBox(height: 16),
-            TabsPill(
-              tabs: [tr.all, tr.iOwe, tr.owedToMe],
-              index: _tab,
-              onChanged: (i) => setState(() => _tab = i),
-            ),
-            const SizedBox(height: 12),
-            if (filtered.isEmpty)
-              EmptyState(
-                icon: LucideIcons.users,
-                title: tr.debtsEmptyTitle,
-                description: tr.debtsEmptyDesc,
-              )
-            else
-              for (final d in filtered) _DebtCard(debt: d),
           ],
         ),
       ),

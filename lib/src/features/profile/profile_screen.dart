@@ -14,6 +14,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../settings/settings_screen.dart' show openNameSheet;
+import '../settings/reminder_settings.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../auth/cloud_auth.dart';
@@ -160,6 +161,18 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             _MenuRow(
+              icon: LucideIcons.bellRing,
+              iconBg: AppColors.lime.withValues(alpha: 0.35),
+              label: tr.smartReminders,
+              subtitle: tr.smartRemindersHint,
+              proLocked: !isPro,
+              trailingWidget: Switch.adaptive(
+                value: settings.smartRemindersEnabled,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                onChanged: (v) => toggleSmartReminders(context, ref, tr, v),
+              ),
+            ),
+            _MenuRow(
               icon: LucideIcons.database,
               iconBg: const Color(0xFFF2F2F2),
               label: tr.dataBackups,
@@ -175,12 +188,7 @@ class ProfileScreen extends ConsumerWidget {
               icon: LucideIcons.upload,
               iconBg: const Color(0xFFE0F2FE),
               label: tr.importCsv,
-              proLocked: !isPro,
-              onTap: () async {
-                final ok = await requirePro(context, ref, ProGate.importCsv);
-                if (!ok || !context.mounted) return;
-                context.push('/settings/import');
-              },
+              onTap: () => context.push('/settings/import'),
             ),
             _MenuRow(
               icon: LucideIcons.info,
@@ -189,6 +197,18 @@ class ProfileScreen extends ConsumerWidget {
               onTap: () => context.push('/settings/about'),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        ReminderCtaButton(
+          enabled: settings.dailyReminderEnabled,
+          title: tr.dailyReminderCta,
+          subtitle: settings.dailyReminderEnabled
+              ? tr.dailyReminderCtaOn(formatReminderTime(
+                  settings.dailyReminderHour,
+                  settings.dailyReminderMinute,
+                ))
+              : tr.dailyReminderCtaOff,
+          onTap: () => openReminderSheet(context, ref, tr),
         ),
         if (authUser != null) ...[
           const SizedBox(height: 28),

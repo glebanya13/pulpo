@@ -13,6 +13,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/transaction_repository.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/transaction_tile.dart';
@@ -52,28 +53,17 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final txs = ref.watch(allTransactionsProvider).valueOrNull ?? const [];
-    final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
-    final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
+    final txsAsync = ref.watch(allTransactionsProvider);
+    final catsAsync = ref.watch(categoriesProvider);
+    final accountsAsync = ref.watch(accountsProvider);
+    final cats = catsAsync.valueOrNull ?? const [];
+    final accounts = accountsAsync.valueOrNull ?? const [];
 
-    final filtered = txs.where((t) {
-      if (_filterType != null && TxType.values[t.type] != _filterType) {
-        return false;
-      }
-      if (_accountId != null && t.accountId != _accountId) return false;
-      if (_categoryId != null && t.categoryId != _categoryId) return false;
-      if (_query.isEmpty) return true;
-      final q = _query.toLowerCase();
-      final cat = cats.firstWhereOrNull((c) => c.id == t.categoryId);
-      return (t.note ?? '').toLowerCase().contains(q) ||
-          (cat != null && tr.categoryName(cat.name).toLowerCase().contains(q));
-    }).toList();
-
-    final grouped = groupBy<db.Transaction, DateTime>(
-      filtered,
-      (t) => DateTime(t.date.year, t.date.month, t.date.day),
-    );
-    final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+    void retryLoad() {
+      ref.invalidate(allTransactionsProvider);
+      ref.invalidate(categoriesProvider);
+      ref.invalidate(accountsProvider);
+    }
 
     return ResetScrollWhenObscured(
       tabPath: '/transactions',
@@ -168,55 +158,99 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        if (filtered.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: context.surface,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Center(
-              child: Text(tr.emptyTransactionsList,
-                  style: TextStyle(color: context.mutedText)),
-            ),
-          )
-        else
-          for (final day in sortedKeys) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                _dayLabel(day, tr, context),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.mutedText,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ...grouped[day]!.map(
-              (t) => Dismissible(
-                key: ValueKey(t.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 24),
+        AsyncValuesGate(
+          values: [txsAsync, catsAsync, accountsAsync],
+          onRetry: retryLoad,
+          child: Builder(
+            builder: (context) {
+              final txs = txsAsync.requireValue;
+              final filtered = txs.where((t) {
+                if (_filterType != null &&
+                    TxType.values[t.type] != _filterType) {
+                  return false;
+                }
+                if (_accountId != null && t.accountId != _accountId) {
+                  return false;
+                }
+                if (_categoryId != null && t.categoryId != _categoryId) {
+                  return false;
+                }
+                if (_query.isEmpty) return true;
+                final q = _query.toLowerCase();
+                final cat =
+                    cats.firstWhereOrNull((c) => c.id == t.categoryId);
+                return (t.note ?? '').toLowerCase().contains(q) ||
+                    (cat != null &&
+                        tr.categoryName(cat.name).toLowerCase().contains(q));
+              }).toList();
+
+              final grouped = groupBy<db.Transaction, DateTime>(
+                filtered,
+                (t) => DateTime(t.date.year, t.date.month, t.date.day),
+              );
+              final sortedKeys = grouped.keys.toList()
+                ..sort((a, b) => b.compareTo(a));
+
+              if (filtered.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: AppColors.danger,
-                    borderRadius: BorderRadius.circular(18),
+                    color: context.surface,
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: const Icon(Icons.delete, color: Colors.white),
-                ),
-                onDismissed: (_) => ref
-                    .read(transactionRepositoryProvider)
-                    .delete(t.id),
-                child: Pressable(
-                  onTap: () => context.push('/tx/${t.id}'),
-                  child: TransactionTile(tx: t),
-                ),
-              ),
-            ),
-          ],
+                  child: Center(
+                    child: Text(
+                      tr.emptyTransactionsList,
+                      style: TextStyle(color: context.mutedText),
+                    ),
+                  ),
+                );
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final day in sortedKeys) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        _dayLabel(day, tr, context),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.mutedText,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    ...grouped[day]!.map(
+                      (t) => Dismissible(
+                        key: ValueKey(t.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 24),
+                          decoration: BoxDecoration(
+                            color: AppColors.danger,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        onDismissed: (_) => ref
+                            .read(transactionRepositoryProvider)
+                            .delete(t.id),
+                        child: Pressable(
+                          onTap: () => context.push('/tx/${t.id}'),
+                          child: TransactionTile(tx: t),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+        ),
       ],
     ),
     );

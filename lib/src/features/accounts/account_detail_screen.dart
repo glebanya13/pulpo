@@ -14,6 +14,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/providers.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/pressable.dart';
 
@@ -24,22 +25,68 @@ class AccountDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
-    final account = ref.watch(accountByIdProvider(accountId));
-    final balances = ref.watch(accountBalancesProvider);
-    final allTxs = ref.watch(allTransactionsProvider).valueOrNull ?? const [];
-    final txs = allTxs.where((t) => t.accountId == accountId).toList();
+    final accountsAsync = ref.watch(accountsProvider);
+    final txsAsync = ref.watch(allTransactionsProvider);
 
-    if (account == null) {
-      return Scaffold(
-        backgroundColor: AppColors.ink,
-        body: Center(
-          child: Text('${tr.account} · —',
-              style: const TextStyle(color: Colors.white)),
-        ),
-      );
-    }
+    return AsyncValuesGate(
+      values: [accountsAsync, txsAsync],
+      onRetry: () {
+        ref.invalidate(accountsProvider);
+        ref.invalidate(allTransactionsProvider);
+      },
+      child: Builder(
+        builder: (context) {
+          final account = ref.watch(accountByIdProvider(accountId));
+          final balances = ref.watch(accountBalancesProvider);
+          final allTxs = txsAsync.requireValue;
+          final txs =
+              allTxs.where((t) => t.accountId == accountId).toList();
 
-    // 12 недель истории
+          if (account == null) {
+            return Scaffold(
+              backgroundColor: AppColors.ink,
+              body: Center(
+                child: Text(
+                  '${tr.account} · —',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            );
+          }
+
+          return _AccountDetailBody(
+            tr: tr,
+            account: account,
+            balances: balances,
+            allTxs: allTxs,
+            txs: txs,
+            accountId: accountId,
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _AccountDetailBody extends ConsumerWidget {
+  const _AccountDetailBody({
+    required this.tr,
+    required this.account,
+    required this.balances,
+    required this.allTxs,
+    required this.txs,
+    required this.accountId,
+  });
+
+  final Tr tr;
+  final db.Account account;
+  final Map<int, double> balances;
+  final List<db.Transaction> allTxs;
+  final List<db.Transaction> txs;
+  final int accountId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final weeks = <double>[];
     var running = account.initialBalance;

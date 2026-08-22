@@ -16,25 +16,54 @@ class LockScreen extends ConsumerStatefulWidget {
   ConsumerState<LockScreen> createState() => _LockScreenState();
 }
 
-class _LockScreenState extends ConsumerState<LockScreen> {
+class _LockScreenState extends ConsumerState<LockScreen>
+    with WidgetsBindingObserver {
   String _pin = '';
   String? _error;
+  var _biometricPromptScheduled = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleBiometricPrompt();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _scheduleBiometricPrompt();
+    }
+  }
+
+  void _scheduleBiometricPrompt() {
+    if (_biometricPromptScheduled) return;
+    _biometricPromptScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _biometricPromptScheduled = false;
+      if (!mounted) return;
       final lock = ref.read(lockControllerProvider);
-      if (lock.biometricsEnabled) {
-        ref.read(lockControllerProvider.notifier).tryBiometrics();
-      }
+      if (!lock.biometricsEnabled || !lock.needsLock) return;
+      // iOS needs a beat after launch/resume before the system sheet appears.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+      final tr = Tr.of(context);
+      await ref.read(lockControllerProvider.notifier).tryBiometrics(
+            localizedReason: tr.biometricLockHint,
+          );
     });
   }
 
   void _onPin(String next) {
     final lock = ref.read(lockControllerProvider);
-      final knownLen = lock.pinLength;
-      final hasStoredLen = lock.pinLengthKnown;
+    final knownLen = lock.pinLength;
+    final hasStoredLen = lock.pinLengthKnown;
     setState(() {
       _pin = next;
       _error = null;
@@ -63,6 +92,13 @@ class _LockScreenState extends ConsumerState<LockScreen> {
         _pin = '';
       });
     }
+  }
+
+  Future<void> _retryBiometrics() async {
+    final tr = Tr.of(context);
+    await ref.read(lockControllerProvider.notifier).tryBiometrics(
+          localizedReason: tr.biometricLockHint,
+        );
   }
 
   @override
@@ -113,8 +149,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                 const Spacer(),
               if (lock.biometricsEnabled)
                 TextButton.icon(
-                  onPressed: () =>
-                      ref.read(lockControllerProvider.notifier).tryBiometrics(),
+                  onPressed: _retryBiometrics,
                   icon: const Icon(Icons.fingerprint, color: Colors.white70),
                   label: Text(
                     tr.useBiometrics,

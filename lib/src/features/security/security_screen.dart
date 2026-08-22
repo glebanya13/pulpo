@@ -102,7 +102,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       );
       return;
     }
-    final ok = await ctrl.enableBiometrics();
+    final ok = await ctrl.enableBiometrics(localizedReason: tr.biometricLockHint);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(tr.biometricsFailed)),

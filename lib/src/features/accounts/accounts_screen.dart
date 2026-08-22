@@ -18,6 +18,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
@@ -30,28 +31,14 @@ class AccountsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
-    final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
+    final accountsAsync = ref.watch(accountsProvider);
+    final accounts = accountsAsync.valueOrNull ?? const [];
     final balances = ref.watch(accountBalancesProvider);
     final total = ref.watch(totalBalanceProvider);
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
 
     final isPro = ref.watch(proControllerProvider).isPro;
-
-    final bankLike = accounts.where((a) {
-      final t = AccountType.values[a.type];
-      return t == AccountType.bankAccount ||
-          t == AccountType.card ||
-          t == AccountType.investment;
-    }).toList();
-    final cashLike = accounts.where((a) {
-      final t = AccountType.values[a.type];
-      return t == AccountType.cash ||
-          t == AccountType.eWallet ||
-          t == AccountType.crypto ||
-          t == AccountType.loan;
-    }).toList();
-    final currencies =
-        accounts.map((a) => a.currency).toSet().length;
+    final currencies = accounts.map((a) => a.currency).toSet().length;
 
     return Scaffold(
       body: SafeArea(
@@ -60,40 +47,68 @@ class AccountsScreen extends ConsumerWidget {
           builder: (context, scroll) => ListView(
             controller: scroll,
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(
-              first: tr.myAccounts,
-              subtitle:
-                  '${quotaLabel(isPro: isPro, used: accounts.length, limit: ProLimits.accounts)} · ${tr.currenciesCount(currencies)}',
-              onBack: () => context.pop(),
-              action: RoundIconButton(
-                icon: LucideIcons.plus,
-                onTap: () => _openAddAccount(context, ref),
+            children: [
+              PageHeader(
+                first: tr.myAccounts,
+                subtitle:
+                    '${quotaLabel(isPro: isPro, used: accounts.length, limit: ProLimits.accounts)} · ${tr.currenciesCount(currencies)}',
+                onBack: () => context.pop(),
+                action: RoundIconButton(
+                  icon: LucideIcons.plus,
+                  onTap: () => _openAddAccount(context, ref),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            _NetWorthCard(value: total, currency: currency),
-            const SizedBox(height: 16),
-            if (bankLike.isNotEmpty) ...[
-              SectTitle(title: tr.bankAccounts),
-              for (final a in bankLike)
-                _AccountCard(
-                  account: a,
-                  balance: balances[a.id] ?? 0,
+              const SizedBox(height: 16),
+              AsyncValuesGate(
+                values: [accountsAsync],
+                onRetry: () => ref.invalidate(accountsProvider),
+                child: Builder(
+                  builder: (context) {
+                    final loaded = accountsAsync.requireValue;
+                    final bankLike = loaded.where((a) {
+                      final t = AccountType.values[a.type];
+                      return t == AccountType.bankAccount ||
+                          t == AccountType.card ||
+                          t == AccountType.investment;
+                    }).toList();
+                    final cashLike = loaded.where((a) {
+                      final t = AccountType.values[a.type];
+                      return t == AccountType.cash ||
+                          t == AccountType.eWallet ||
+                          t == AccountType.crypto ||
+                          t == AccountType.loan;
+                    }).toList();
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _NetWorthCard(value: total, currency: currency),
+                        const SizedBox(height: 16),
+                        if (bankLike.isNotEmpty) ...[
+                          SectTitle(title: tr.bankAccounts),
+                          for (final a in bankLike)
+                            _AccountCard(
+                              account: a,
+                              balance: balances[a.id] ?? 0,
+                            ),
+                        ],
+                        if (cashLike.isNotEmpty) ...[
+                          SectTitle(title: tr.cashWallets),
+                          for (final a in cashLike)
+                            _AccountCard(
+                              account: a,
+                              balance: balances[a.id] ?? 0,
+                            ),
+                        ],
+                        const SizedBox(height: 12),
+                        _AddCard(onTap: () => _openAddAccount(context, ref)),
+                      ],
+                    );
+                  },
                 ),
+              ),
             ],
-            if (cashLike.isNotEmpty) ...[
-              SectTitle(title: tr.cashWallets),
-              for (final a in cashLike)
-                _AccountCard(
-                  account: a,
-                  balance: balances[a.id] ?? 0,
-                ),
-            ],
-            const SizedBox(height: 12),
-            _AddCard(onTap: () => _openAddAccount(context, ref)),
-          ],
-        ),
+          ),
         ),
       ),
     );

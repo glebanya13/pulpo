@@ -104,8 +104,11 @@ class _QuickActionsSheet extends ConsumerWidget {
                       color: AppColors.ink.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(LucideIcons.mic,
-                        size: 18, color: AppColors.ink),
+                    child: const Icon(
+                      LucideIcons.sparkles,
+                      size: 18,
+                      color: AppColors.ink,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -147,34 +150,37 @@ class _QuickActionsSheet extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _Action(
-                  icon: LucideIcons.arrowLeftRight,
-                  color: AppColors.info,
-                  label: tr.transferBetweenAccounts,
-                  hint: tr.transferBetweenHint,
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/add?type=transfer');
-                  },
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _Action(
+                    icon: LucideIcons.arrowLeftRight,
+                    color: AppColors.info,
+                    label: tr.transferBetweenAccounts,
+                    hint: tr.transferBetweenHint,
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/add?type=transfer');
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _Action(
-                  icon: LucideIcons.send,
-                  color: const Color(0xFFFFB020),
-                  label: tr.transferExternal,
-                  hint: tr.transferExternalHint,
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/add?type=expense&mode=external');
-                  },
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _Action(
+                    icon: LucideIcons.send,
+                    color: const Color(0xFFFFB020),
+                    label: tr.transferExternal,
+                    hint: tr.transferExternalHint,
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/add?type=expense&mode=external');
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -202,6 +208,7 @@ class _Action extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: context.scaffoldBg,
@@ -230,12 +237,17 @@ class _Action extends StatelessWidget {
             ),
             if (hint != null) ...[
               const SizedBox(height: 4),
-              Text(
-                hint!,
-                style: TextStyle(
-                  fontSize: 10,
-                  height: 1.3,
-                  color: context.mutedText,
+              Expanded(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    hint!,
+                    style: TextStyle(
+                      fontSize: 10,
+                      height: 1.3,
+                      color: context.mutedText,
+                    ),
+                  ),
                 ),
               ),
             ],

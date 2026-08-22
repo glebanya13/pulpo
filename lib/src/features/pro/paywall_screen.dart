@@ -85,7 +85,8 @@ class PaywallScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
                   if (!pro.isPro)
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(20),
+                      margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         color: context.surface,
                         borderRadius: BorderRadius.circular(20),
@@ -94,7 +95,7 @@ class PaywallScreen extends ConsumerWidget {
                         tr.paywallBody(gate),
                         style: TextStyle(
                           fontSize: 15,
-                          height: 1.4,
+                          height: 1.45,
                           fontWeight: FontWeight.w600,
                           color: context.primaryText,
                         ),
@@ -111,7 +112,7 @@ class PaywallScreen extends ConsumerWidget {
                     if (!signedIn)
                       Container(
                         margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: context.surface,
                           borderRadius: BorderRadius.circular(16),
@@ -123,10 +124,11 @@ class PaywallScreen extends ConsumerWidget {
                               tr.proSignInRequired,
                               style: TextStyle(
                                 fontSize: 14,
+                                height: 1.4,
                                 color: context.mutedText,
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 14),
                             ScaledElevatedButton(
                               onPressed: () => context.push('/settings/account'),
                               child: Text(tr.signIn),

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,8 +19,11 @@ bool biometricsLikelyAvailable({
   required bool deviceSupported,
   required List<BiometricType> enrolled,
 }) {
-  if (!canCheck && !deviceSupported) return false;
-  return enrolled.isNotEmpty || canCheck;
+  if (enrolled.isNotEmpty) return true;
+  if (canCheck) return true;
+  // Last resort: passcode-capable device with biometric hardware but no types
+  // reported (seen on some iOS builds).
+  return deviceSupported;
 }
 
 @visibleForTesting
@@ -149,27 +153,37 @@ class LockController extends Notifier<LockState> {
     }
   }
 
-  Future<bool> _authenticate({required bool sticky}) async {
+  Future<bool> _authenticate({
+    required bool sticky,
+    String localizedReason = 'Monedero',
+  }) async {
     _authInProgress = true;
     try {
       return await _auth.authenticate(
-        localizedReason: 'Monedero',
+        localizedReason: localizedReason,
         options: AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: sticky,
+          sensitiveTransaction: false,
           useErrorDialogs: true,
         ),
       );
+    } on PlatformException catch (e) {
+      debugPrint('local_auth: ${e.code} ${e.message}');
+      return false;
     } finally {
       _authInProgress = false;
     }
   }
 
-  Future<bool> enableBiometrics() async {
+  Future<bool> enableBiometrics({String localizedReason = 'Monedero'}) async {
     try {
       final available = await deviceHasBiometrics();
       if (!available) return false;
-      final ok = await _authenticate(sticky: true);
+      final ok = await _authenticate(
+        sticky: true,
+        localizedReason: localizedReason,
+      );
       if (!ok) return false;
       await _prefs.setBool(_kBio, true);
       state = state.copyWith(biometricsEnabled: true, unlocked: true);
@@ -211,10 +225,14 @@ class LockController extends Notifier<LockState> {
     }
   }
 
-  Future<bool> tryBiometrics() async {
-    if (!state.biometricsEnabled) return false;
+  Future<bool> tryBiometrics({String localizedReason = 'Monedero'}) async {
+    if (!state.biometricsEnabled || !state.needsLock) return false;
+    if (_authInProgress) return false;
     try {
-      final ok = await _authenticate(sticky: true);
+      final ok = await _authenticate(
+        sticky: true,
+        localizedReason: localizedReason,
+      );
       if (ok) state = state.copyWith(unlocked: true);
       return ok;
     } catch (e, st) {

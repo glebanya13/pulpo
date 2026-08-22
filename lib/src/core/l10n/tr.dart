@@ -144,6 +144,16 @@ class Tr {
   String get restoreLocal => _get('restore_local');
   String get dataRestored => _get('data_restored');
   String get restoreFailed => _get('restore_failed');
+  String get importBackupJson => _get('import_backup_json');
+  String get cloudBackupFailed => _get('cloud_backup_failed');
+  String get fxApproximateBalance => _get('fx_approximate_balance');
+  String get importNoAccounts => _get('import_no_accounts');
+  String get importNoRows => _get('import_no_rows');
+  String get dataLoadDbError => _get('data_load_db_error');
+  String get dataLoadNetworkError => _get('data_load_network_error');
+  String get dataLoadGenericError => _get('data_load_generic_error');
+  String get firebaseOfflineBanner => _get('firebase_offline_banner');
+  String get dataInitFailedBanner => _get('data_init_failed_banner');
   String get accountSection => _get('account_section');
 
   // ─────────────────────── BOTTOM NAV / SECTIONS ───────────────────────
@@ -1197,6 +1207,18 @@ class Tr {
       'restore_local': 'Restaurar',
       'data_restored': 'Datos restaurados',
       'restore_failed': 'No se pudo restaurar',
+      'import_backup_json': 'Importar copia JSON',
+      'cloud_backup_failed': 'No se pudo guardar la copia en la nube',
+      'fx_approximate_balance': 'Tipos de cambio no disponibles · total aproximado',
+      'import_no_accounts': 'Crea una cuenta antes de importar',
+      'import_no_rows': 'No se encontraron transacciones en el archivo',
+      'data_load_db_error': 'No se pudo leer la base de datos local',
+      'data_load_network_error': 'Error de red al cargar datos',
+      'data_load_generic_error': 'No se pudieron cargar los datos',
+      'firebase_offline_banner':
+          'Sin conexión a Firebase: entrada, nube e IA no están disponibles',
+      'data_init_failed_banner':
+          'Error al iniciar datos locales. Reinicia la app',
       'account_section': 'Cuenta',
       'pro_title': 'Monedero Pro',
       'pro_subtitle':
@@ -1269,12 +1291,12 @@ class Tr {
       'pro_gate_import':
           'Importar CSV y extractos está disponible en Pro.\nPasa a Pro para importar tus movimientos.',
       'pro_gate_ai':
-          'La IA de Pulpo (recibos, voz, chat e insights) está en Pro.\nInicia sesión y pasa a Pro para usarla.',
+          'El asistente IA (voz, recibos, chat) está en Pro.\nInicia sesión y pasa a Pro para usarlo.',
       'ai_recognize_receipt': 'Reconocer con IA',
-      'ai_voice_entry': 'Decir gasto',
+      'ai_voice_entry': 'Registrar con voz',
       'ai_voice_empty_title': 'Aún no hay operaciones',
       'ai_voice_empty_hint':
-          'Añádelas en segundos — con la voz, escaneando un recibo o a mano.',
+          'Asistente IA: di la operación y la guardo al instante.',
       'ai_voice_hint': 'Di algo como: gasté 10 en taxi y 20 en comida',
       'ai_voice_confirm_title': 'Confirmación',
       'ai_voice_confirm_count': '{} transacciones',
@@ -1767,6 +1789,18 @@ class Tr {
       'restore_local': 'Восстановить',
       'data_restored': 'Данные восстановлены',
       'restore_failed': 'Не удалось восстановить',
+      'import_backup_json': 'Импорт JSON-копии',
+      'cloud_backup_failed': 'Не удалось сохранить облачную копию',
+      'fx_approximate_balance': 'Курсы недоступны · баланс приблизительный',
+      'import_no_accounts': 'Сначала создайте счёт',
+      'import_no_rows': 'В файле не найдено операций',
+      'data_load_db_error': 'Не удалось прочитать локальную базу',
+      'data_load_network_error': 'Ошибка сети при загрузке данных',
+      'data_load_generic_error': 'Не удалось загрузить данные',
+      'firebase_offline_banner':
+          'Нет связи с Firebase: вход, облако и ИИ недоступны',
+      'data_init_failed_banner':
+          'Ошибка локальных данных. Перезапустите приложение',
       'account_section': 'Аккаунт',
       'pro_title': 'Monedero Pro',
       'pro_subtitle':
@@ -1839,12 +1873,12 @@ class Tr {
       'pro_gate_import':
           'Импорт CSV и выписок доступен в Pro.\nПерейдите на Pro, чтобы импортировать операции.',
       'pro_gate_ai':
-          'ИИ Pulpo (чеки, голос, чат и инсайты) доступен в Pro.\nВойдите в аккаунт и перейдите на Pro.',
+          'AI-ассистент (голос, чеки, чат) доступен в Pro.\nВойдите в аккаунт и перейдите на Pro.',
       'ai_recognize_receipt': 'Распознать с ИИ',
-      'ai_voice_entry': 'Сказать расход',
+      'ai_voice_entry': 'Записать голосом',
       'ai_voice_empty_title': 'Пока нет операций',
       'ai_voice_empty_hint':
-          'Добавьте их за пару секунд — голосом, сканированием чека или вручную.',
+          'AI-ассистент — скажи операцию, я сохраню.',
       'ai_voice_hint': 'Скажи: потратил 10 на такси и 20 на еду',
       'ai_voice_confirm_title': 'Подтверждение',
       'ai_voice_confirm_count': '{} транзакции',
@@ -2337,6 +2371,18 @@ class Tr {
       'restore_local': 'Restore',
       'data_restored': 'Data restored',
       'restore_failed': 'Could not restore',
+      'import_backup_json': 'Import JSON backup',
+      'cloud_backup_failed': 'Cloud backup failed',
+      'fx_approximate_balance': 'Exchange rates unavailable · approximate total',
+      'import_no_accounts': 'Create an account before importing',
+      'import_no_rows': 'No transactions found in the file',
+      'data_load_db_error': 'Could not read the local database',
+      'data_load_network_error': 'Network error while loading data',
+      'data_load_generic_error': 'Could not load data',
+      'firebase_offline_banner':
+          'Firebase unavailable: sign-in, cloud and AI are offline',
+      'data_init_failed_banner':
+          'Local data failed to start. Please restart the app',
       'account_section': 'Account',
       'pro_title': 'Monedero Pro',
       'pro_subtitle':
@@ -2409,12 +2455,12 @@ class Tr {
       'pro_gate_import':
           'CSV and statement import is available in Pro.\nGo Pro to import your transactions.',
       'pro_gate_ai':
-          'Pulpo AI (receipts, voice, chat and insights) is a Pro feature.\nSign in and go Pro to use it.',
+          'AI assistant (voice, receipts, chat) is a Pro feature.\nSign in and go Pro to use it.',
       'ai_recognize_receipt': 'Recognize with AI',
-      'ai_voice_entry': 'Say expense',
+      'ai_voice_entry': 'Record by voice',
       'ai_voice_empty_title': 'No transactions yet',
       'ai_voice_empty_hint':
-          'Add them in seconds — by voice, scanning a receipt, or manually.',
+          'AI assistant — say a transaction and I\'ll save it.',
       'ai_voice_hint': 'Say: I spent 10 on taxi and 20 on food',
       'ai_voice_confirm_title': 'Confirmation',
       'ai_voice_confirm_count': '{} transactions',

@@ -17,6 +17,7 @@ import '../../core/utils/money_format.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/transaction_repository.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 
@@ -27,19 +28,24 @@ class TransactionDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
-    final all = ref.watch(allTransactionsProvider).valueOrNull ?? const [];
-    final tx = all.where((t) => t.id == id).firstOrNull;
-    if (tx == null) {
-      return Scaffold(
-        body: Center(child: Text(tr.txNotFound)),
-      );
-    }
-    final category = ref.watch(categoryByIdProvider(tx.categoryId));
-    final account = ref.watch(accountByIdProvider(tx.accountId));
-    final type = TxType.values[tx.type];
-    final isIncome = type == TxType.income;
+    final txsAsync = ref.watch(allTransactionsProvider);
 
-    return Scaffold(
+    return AsyncValueView(
+      value: txsAsync,
+      onRetry: () => ref.invalidate(allTransactionsProvider),
+      data: (all) {
+        final tx = all.where((t) => t.id == id).firstOrNull;
+        if (tx == null) {
+          return Scaffold(
+            body: Center(child: Text(tr.txNotFound)),
+          );
+        }
+        final category = ref.watch(categoryByIdProvider(tx.categoryId));
+        final account = ref.watch(accountByIdProvider(tx.accountId));
+        final type = TxType.values[tx.type];
+        final isIncome = type == TxType.income;
+
+        return Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
@@ -262,6 +268,8 @@ class TransactionDetailScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+      },
     );
   }
 

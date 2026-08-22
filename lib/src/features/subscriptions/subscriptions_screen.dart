@@ -13,6 +13,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/settings_service.dart';
 import '../../data/repositories/subscription_repository.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
@@ -23,12 +24,11 @@ class SubscriptionsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
-    final subs = ref.watch(subscriptionsProvider).valueOrNull ?? const [];
+    final subsAsync = ref.watch(subscriptionsProvider);
+    final subs = subsAsync.valueOrNull ?? const [];
     final active = subs.where((s) => !s.isPaused).toList();
     final used = active.length;
     final isPro = ref.watch(proControllerProvider).isPro;
-    final monthly = _monthlyTotal(active);
-    final yearly = monthly * 12;
 
     return Scaffold(
       body: SafeArea(
@@ -48,56 +48,85 @@ class SubscriptionsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: _TotalCard(
-                    label: tr.perMonth,
-                    value: monthly,
-                    accent: true,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _TotalCard(
-                    label: tr.perYear,
-                    value: yearly,
-                    accent: false,
-                  ),
-                ),
-              ],
+            AsyncValuesGate(
+              values: [subsAsync],
+              onRetry: () => ref.invalidate(subscriptionsProvider),
+              child: Builder(
+                builder: (context) {
+                  final loaded = subsAsync.requireValue;
+                  final activeLoaded =
+                      loaded.where((s) => !s.isPaused).toList();
+                  final monthly = _monthlyTotal(activeLoaded);
+                  final yearly = monthly * 12;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _TotalCard(
+                              label: tr.perMonth,
+                              value: monthly,
+                              accent: true,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _TotalCard(
+                              label: tr.perYear,
+                              value: yearly,
+                              accent: false,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      if (loaded.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 40),
+                          child: EmptyState(
+                            icon: LucideIcons.tv,
+                            title: tr.subsEmptyTitle,
+                            description: tr.subsEmptyDesc,
+                            background: AppColors.bgFood,
+                          ),
+                        )
+                      else ...[
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            tr.nextPaymentLabel,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: context.mutedText,
+                            ),
+                          ),
+                        ),
+                        if (activeLoaded.isNotEmpty)
+                          _SubCard(
+                            sub: activeLoaded.first,
+                            highlighted: true,
+                          ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Text(
+                            tr.allSubscriptions,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: context.mutedText,
+                            ),
+                          ),
+                        ),
+                        for (final s in loaded)
+                          _SubCard(sub: s, highlighted: false),
+                      ],
+                    ],
+                  );
+                },
+              ),
             ),
-            const SizedBox(height: 20),
-            if (subs.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 40),
-                child: EmptyState(
-                  icon: LucideIcons.tv,
-                  title: tr.subsEmptyTitle,
-                  description: tr.subsEmptyDesc,
-                  background: AppColors.bgFood,
-                ),
-              )
-            else ...[
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Text(
-                  tr.nextPaymentLabel,
-                  style: TextStyle(fontSize: 12, color: context.mutedText),
-                ),
-              ),
-              if (active.isNotEmpty)
-                _SubCard(sub: active.first, highlighted: true),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Text(
-                  tr.allSubscriptions,
-                  style: TextStyle(fontSize: 12, color: context.mutedText),
-                ),
-              ),
-              for (final s in subs) _SubCard(sub: s, highlighted: false),
-            ],
           ],
         ),
       ),

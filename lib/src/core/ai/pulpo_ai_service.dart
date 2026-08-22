@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,10 +24,15 @@ class PulpoAiService {
   GenerativeModel? _model;
   GenerativeModel? _chatModel;
 
+  FirebaseAI get _firebaseAi => FirebaseAI.googleAI(
+        auth: _auth,
+        appCheck: FirebaseAppCheck.instance,
+      );
+
   static const _modelName = 'gemini-2.5-flash';
 
   GenerativeModel get _jsonModel {
-    return _model ??= FirebaseAI.googleAI(auth: _auth).generativeModel(
+    return _model ??= _firebaseAi.generativeModel(
       model: _modelName,
       generationConfig: GenerationConfig(
         temperature: 0.2,
@@ -36,7 +42,7 @@ class PulpoAiService {
   }
 
   GenerativeModel get _textModel {
-    return _chatModel ??= FirebaseAI.googleAI(auth: _auth).generativeModel(
+    return _chatModel ??= _firebaseAi.generativeModel(
       model: _modelName,
       generationConfig: GenerationConfig(temperature: 0.35),
     );

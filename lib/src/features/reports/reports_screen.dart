@@ -23,6 +23,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pro_badge.dart';
@@ -53,14 +54,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     final tabs = [tr.tabOverview, tr.tabTrends, tr.tabFlows];
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
     final range = ref.watch(statsPeriodProvider);
-    final txs = ref
-            .watch(transactionsInRangeProvider(
-                (start: range.start, end: range.end)))
-            .valueOrNull ??
-        const [];
-    final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
+    final txsAsync = ref.watch(
+      transactionsInRangeProvider((start: range.start, end: range.end)),
+    );
+    final catsAsync = ref.watch(categoriesProvider);
     final now = DateTime.now();
     final monthCount = monthsCovered(range.start, range.end);
+
+    void retryLoad() {
+      ref.invalidate(
+        transactionsInRangeProvider((start: range.start, end: range.end)),
+      );
+      ref.invalidate(categoriesProvider);
+    }
 
     String periodLabel(StatsPeriodKind k) {
       final t = Tr.of(context);
@@ -131,16 +137,27 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           },
         ),
         const SizedBox(height: 20),
-        ..._buildTabContent(
-          txs: txs,
-          cats: cats,
-          now: now,
-          rangeStart: range.start,
-          rangeEnd: range.end,
-          monthCount: monthCount,
-          currency: currency,
-          periodName: periodName,
-          periodKind: range.kind,
+        AsyncValuesGate(
+          values: [txsAsync, catsAsync],
+          onRetry: retryLoad,
+          child: Builder(
+            builder: (context) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _buildTabContent(
+                  txs: txsAsync.requireValue,
+                  cats: catsAsync.requireValue,
+                  now: now,
+                  rangeStart: range.start,
+                  rangeEnd: range.end,
+                  monthCount: monthCount,
+                  currency: currency,
+                  periodName: periodName,
+                  periodKind: range.kind,
+                ),
+              );
+            },
+          ),
         ),
       ],
     ),

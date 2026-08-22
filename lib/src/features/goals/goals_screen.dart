@@ -15,6 +15,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/goal_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
@@ -25,8 +26,10 @@ class GoalsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
-    final goals = ref.watch(goalsProvider).valueOrNull ?? const [];
-    final active = goals.where((g) => isActiveGoal(isCompleted: g.isCompleted)).length;
+    final goalsAsync = ref.watch(goalsProvider);
+    final goals = goalsAsync.valueOrNull ?? const [];
+    final active =
+        goals.where((g) => isActiveGoal(isCompleted: g.isCompleted)).length;
     final isPro = ref.watch(proControllerProvider).isPro;
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
 
@@ -53,24 +56,39 @@ class GoalsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            if (goals.isEmpty)
-              EmptyState(
-                icon: LucideIcons.target,
-                title: tr.goalsEmptyTitle,
-                description: tr.goalsEmptyDesc,
-              )
-            else
-              for (final g in goals)
-                _GoalCard(
-                  goal: g,
-                  fallbackCurrency: currency,
-                  onAdd: () => _openProgress(context, ref, g),
-                  onEdit: () =>
-                      _openGoalEditor(context, ref, existing: g),
-                  onDelete: () async {
-                    await ref.read(goalRepositoryProvider).delete(g.id);
-                  },
-                ),
+            AsyncValuesGate(
+              values: [goalsAsync],
+              onRetry: () => ref.invalidate(goalsProvider),
+              child: Builder(
+                builder: (context) {
+                  final loaded = goalsAsync.requireValue;
+                  if (loaded.isEmpty) {
+                    return EmptyState(
+                      icon: LucideIcons.target,
+                      title: tr.goalsEmptyTitle,
+                      description: tr.goalsEmptyDesc,
+                    );
+                  }
+                  return Column(
+                    children: [
+                      for (final g in loaded)
+                        _GoalCard(
+                          goal: g,
+                          fallbackCurrency: currency,
+                          onAdd: () => _openProgress(context, ref, g),
+                          onEdit: () =>
+                              _openGoalEditor(context, ref, existing: g),
+                          onDelete: () async {
+                            await ref
+                                .read(goalRepositoryProvider)
+                                .delete(g.id);
+                          },
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),

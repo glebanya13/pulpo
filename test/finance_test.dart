@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:pulpo/src/core/l10n/plural.dart';
@@ -95,7 +96,15 @@ void main() {
         deviceSupported: true,
         enrolled: const [],
       ),
-      isFalse,
+      isTrue,
+    );
+    expect(
+      biometricsLikelyAvailable(
+        canCheck: false,
+        deviceSupported: false,
+        enrolled: const [BiometricType.face],
+      ),
+      isTrue,
     );
   });
 
@@ -291,6 +300,45 @@ void main() {
       final restored = await db.select(db.accounts).get();
       expect(restored.single.name, 'Cash');
       expect(restored.single.initialBalance, 12);
+    });
+
+    test('backup includes tags', () async {
+      final accountId = await db.into(db.accounts).insert(
+            AccountsCompanion.insert(
+              name: 'Cash',
+              type: AccountType.cash.index,
+              currency: 'EUR',
+            ),
+          );
+      final txId = await db.into(db.transactions).insert(
+            TransactionsCompanion.insert(
+              accountId: accountId,
+              amount: 5,
+              currency: 'EUR',
+              type: TxType.expense.index,
+              date: DateTime(2026, 8, 1),
+            ),
+          );
+      final tagId =
+          await db.into(db.tags).insert(TagsCompanion.insert(name: 'trip'));
+      await db.into(db.transactionTags).insert(
+            TransactionTagsCompanion.insert(
+              transactionId: txId,
+              tagId: tagId,
+            ),
+          );
+
+      final backup = BackupService(db);
+      final snap = await backup.snapshot();
+      expect(snap['tags'], hasLength(1));
+      expect(snap['transactionTags'], hasLength(1));
+
+      await db.delete(db.transactionTags).go();
+      await db.delete(db.tags).go();
+      await db.delete(db.transactions).go();
+      await backup.restoreFromMap(snap);
+      expect((await db.select(db.tags).get()).single.name, 'trip');
+      expect((await db.select(db.transactionTags).get()), hasLength(1));
     });
 
     test('recurring posts due transaction', () async {

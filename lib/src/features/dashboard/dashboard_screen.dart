@@ -7,6 +7,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pro_badge.dart';
@@ -27,6 +28,14 @@ class DashboardScreen extends ConsumerWidget {
     final settings = ref.watch(settingsControllerProvider);
     final total = ref.watch(totalBalanceProvider);
     final currency = settings.baseCurrency;
+    final fxApprox = ref.watch(fxApproximateProvider);
+    final accountsAsync = ref.watch(accountsProvider);
+    final txsAsync = ref.watch(allTransactionsProvider);
+
+    void retryBalance() {
+      ref.invalidate(accountsProvider);
+      ref.invalidate(allTransactionsProvider);
+    }
 
     return ResetScrollWhenObscured(
       tabPath: '/',
@@ -42,7 +51,15 @@ class DashboardScreen extends ConsumerWidget {
           trailing: const MyAccountChip(dense: true),
         ),
         const SizedBox(height: 10),
-        _BalanceCard(total: total, currency: currency),
+        AsyncValuesGate(
+          values: [accountsAsync, txsAsync],
+          onRetry: retryBalance,
+          child: _BalanceCard(
+            total: total,
+            currency: currency,
+            fxApproximate: fxApprox.isNotEmpty,
+          ),
+        ),
         const SizedBox(height: 6),
         Column(
           children: [
@@ -162,9 +179,14 @@ class _QuickChip extends StatelessWidget {
 }
 
 class _BalanceCard extends StatelessWidget {
-  const _BalanceCard({required this.total, required this.currency});
+  const _BalanceCard({
+    required this.total,
+    required this.currency,
+    this.fxApproximate = false,
+  });
   final double total;
   final String currency;
+  final bool fxApproximate;
 
   @override
   Widget build(BuildContext context) {
@@ -202,6 +224,18 @@ class _BalanceCard extends StatelessWidget {
               letterSpacing: -1,
             ),
           ),
+          if (fxApproximate) ...[
+            const SizedBox(height: 6),
+            Text(
+              tr.fxApproximateBalance,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ],
       ),
     );

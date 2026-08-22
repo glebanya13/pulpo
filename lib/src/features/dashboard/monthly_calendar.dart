@@ -13,6 +13,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/transaction_tile.dart';
 import '../../widgets/pressable.dart';
 
@@ -45,62 +46,69 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
     final monthStart = _month;
     final monthEnd = DateTime(_month.year, _month.month + 1, 1);
-    final monthTxs = ref
-            .watch(transactionsInRangeProvider(
-                (start: monthStart, end: monthEnd)))
-            .valueOrNull ??
-        const <db.Transaction>[];
+    final monthTxsAsync = ref.watch(
+      transactionsInRangeProvider((start: monthStart, end: monthEnd)),
+    );
 
-    var income = 0.0;
-    var expense = 0.0;
-    final byDay = <int, ({double income, double expense})>{};
-    for (final t in monthTxs) {
-      final key = t.date.day;
-      final prev = byDay[key] ?? (income: 0.0, expense: 0.0);
-      final type = TxType.values[t.type];
-      if (type == TxType.income) {
-        income += t.amount;
-        byDay[key] = (income: prev.income + t.amount, expense: prev.expense);
-      } else if (type == TxType.expense) {
-        expense += t.amount;
-        byDay[key] = (income: prev.income, expense: prev.expense + t.amount);
-      }
-    }
-    final net = income - expense;
-
-    // Понедельник = 1 … воскресенье = 7 (DateTime.weekday).
-    final firstWeekday = monthStart.weekday; // 1..7 (Mon..Sun)
-    final leading = firstWeekday - 1; // сколько ячеек предыдущего месяца
-    final daysInMonth = DateTime(_month.year, _month.month + 1, 0).day;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.circular(18),
+    return AsyncValueView(
+      value: monthTxsAsync,
+      onRetry: () => ref.invalidate(
+        transactionsInRangeProvider((start: monthStart, end: monthEnd)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _Header(month: _month, onShift: _shiftMonth),
-          const SizedBox(height: 8),
-          _MonthTotals(
-            income: income,
-            expense: expense,
-            net: net,
-            currency: currency,
+      data: (monthTxs) {
+        var income = 0.0;
+        var expense = 0.0;
+        final byDay = <int, ({double income, double expense})>{};
+        for (final t in monthTxs) {
+          final key = t.date.day;
+          final prev = byDay[key] ?? (income: 0.0, expense: 0.0);
+          final type = TxType.values[t.type];
+          if (type == TxType.income) {
+            income += t.amount;
+            byDay[key] =
+                (income: prev.income + t.amount, expense: prev.expense);
+          } else if (type == TxType.expense) {
+            expense += t.amount;
+            byDay[key] =
+                (income: prev.income, expense: prev.expense + t.amount);
+          }
+        }
+        final net = income - expense;
+
+        final firstWeekday = monthStart.weekday;
+        final leading = firstWeekday - 1;
+        final daysInMonth = DateTime(_month.year, _month.month + 1, 0).day;
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
+          decoration: BoxDecoration(
+            color: context.surface,
+            borderRadius: BorderRadius.circular(18),
           ),
-          const SizedBox(height: 8),
-          _MonthTable(
-            month: _month,
-            leading: leading,
-            daysInMonth: daysInMonth,
-            byDay: byDay,
-            currency: currency,
-            onTapDay: (day) => _openDaySheet(context, day, monthTxs),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _Header(month: _month, onShift: _shiftMonth),
+              const SizedBox(height: 8),
+              _MonthTotals(
+                income: income,
+                expense: expense,
+                net: net,
+                currency: currency,
+              ),
+              const SizedBox(height: 8),
+              _MonthTable(
+                month: _month,
+                leading: leading,
+                daysInMonth: daysInMonth,
+                byDay: byDay,
+                currency: currency,
+                onTapDay: (day) => _openDaySheet(context, day, monthTxs),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

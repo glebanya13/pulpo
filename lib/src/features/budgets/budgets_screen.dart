@@ -19,6 +19,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/budget_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
@@ -30,36 +31,25 @@ class BudgetsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
-    final budgets = ref.watch(budgetsProvider).valueOrNull ?? const [];
+    final budgetsAsync = ref.watch(budgetsProvider);
+    final txsAsync = ref.watch(allTransactionsProvider);
+    final budgets = budgetsAsync.valueOrNull ?? const [];
     final settings = ref.watch(settingsControllerProvider);
     final currency = settings.baseCurrency;
 
     final now = DateTime.now();
-    final allTxs =
-        ref.watch(allTransactionsProvider).valueOrNull ?? const [];
-
-    var totalSpent = 0.0;
-    var totalBudget = 0.0;
-    for (final b in budgets) {
-      if (!isActiveBudget(endDate: b.endDate, now: now)) continue;
-      final range = currentBudgetRange(b, now);
-      final catIds = (jsonDecode(b.categoryIdsJson) as List).cast<int>();
-      final prev = previousBudgetRange(b, now);
-      final prevSpent = budgetSpentInRange(allTxs, prev, categoryIds: catIds);
-      final limit = effectiveBudgetLimit(budget: b, previousSpent: prevSpent);
-      totalBudget += limit;
-      totalSpent += budgetSpentInRange(allTxs, range, categoryIds: catIds);
-    }
-
-    final monthEnd = DateTime(now.year, now.month + 1, 1);
-
-    final progress = totalBudget > 0 ? (totalSpent / totalBudget).clamp(0, 1) : 0;
-    final leftAmount = (totalBudget - totalSpent).clamp(0, double.infinity);
-    final daysLeft = monthEnd.difference(DateTime.now()).inDays;
     final isPro = ref.watch(proControllerProvider).isPro;
     final activeBudgets = budgets
         .where((b) => isActiveBudget(endDate: b.endDate, now: now))
         .length;
+
+    final monthEnd = DateTime(now.year, now.month + 1, 1);
+    final daysLeft = monthEnd.difference(DateTime.now()).inDays;
+
+    void retryLoad() {
+      ref.invalidate(budgetsProvider);
+      ref.invalidate(allTransactionsProvider);
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -97,33 +87,78 @@ class BudgetsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
-            _Summary(
-              spent: totalSpent,
-              budget: totalBudget,
-              currency: currency,
-              progress: progress.toDouble(),
-              leftAmount: leftAmount.toDouble(),
-              daysLeft: daysLeft,
+            AsyncValuesGate(
+              values: [budgetsAsync, txsAsync],
+              onRetry: retryLoad,
+              child: Builder(
+                builder: (context) {
+                  final loadedBudgets = budgetsAsync.requireValue;
+                  final allTxs = txsAsync.requireValue;
+
+                  var totalSpent = 0.0;
+                  var totalBudget = 0.0;
+                  for (final b in loadedBudgets) {
+                    if (!isActiveBudget(endDate: b.endDate, now: now)) {
+                      continue;
+                    }
+                    final range = currentBudgetRange(b, now);
+                    final catIds =
+                        (jsonDecode(b.categoryIdsJson) as List).cast<int>();
+                    final prev = previousBudgetRange(b, now);
+                    final prevSpent =
+                        budgetSpentInRange(allTxs, prev, categoryIds: catIds);
+                    final limit = effectiveBudgetLimit(
+                      budget: b,
+                      previousSpent: prevSpent,
+                    );
+                    totalBudget += limit;
+                    totalSpent +=
+                        budgetSpentInRange(allTxs, range, categoryIds: catIds);
+                  }
+
+                  final progress = totalBudget > 0
+                      ? (totalSpent / totalBudget).clamp(0, 1)
+                      : 0;
+                  final leftAmount =
+                      (totalBudget - totalSpent).clamp(0, double.infinity);
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _Summary(
+                        spent: totalSpent,
+                        budget: totalBudget,
+                        currency: currency,
+                        progress: progress.toDouble(),
+                        leftAmount: leftAmount.toDouble(),
+                        daysLeft: daysLeft,
+                      ),
+                      const SizedBox(height: 20),
+                      if (loadedBudgets.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: context.surface,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Center(
+                            child: Text(
+                              tr.emptyBudgetsTitle,
+                              style: TextStyle(color: context.mutedText),
+                            ),
+                          ),
+                        )
+                      else
+                        for (final b in loadedBudgets)
+                          _BudgetItem(
+                            budget: b,
+                            allTxs: allTxs,
+                          ),
+                    ],
+                  );
+                },
+              ),
             ),
-            const SizedBox(height: 20),
-            if (budgets.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: context.surface,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Center(
-                  child: Text(tr.emptyBudgetsTitle,
-                      style: TextStyle(color: context.mutedText)),
-                ),
-              )
-            else
-              for (final b in budgets)
-                _BudgetItem(
-                  budget: b,
-                  allTxs: allTxs,
-                ),
           ],
         ),
       ),

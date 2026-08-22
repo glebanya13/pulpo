@@ -66,4 +66,13 @@ void main() {
     expect(result.rows[1].type, TxType.income);
     expect(result.rows[1].amount, closeTo(1200, 0.001));
   });
+
+  test('parses Russian CSV headers', () {
+    const csv = 'дата,тип,сумма,валюта,заметка\n'
+        '2026-08-01,expense,50,RUB,Кофе\n';
+    final result = parseTransactionCsv(csv, fallbackCurrency: 'RUB');
+    expect(result.rows.length, 1);
+    expect(result.rows.first.amount, 50);
+    expect(result.rows.first.note, 'Кофе');
+  });
 }

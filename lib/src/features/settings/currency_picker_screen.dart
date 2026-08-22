@@ -46,21 +46,7 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                RoundIconButton(
-                  icon: LucideIcons.arrowLeft,
-                  onTap: () => context.pop(),
-                ),
-                Text(tr.baseCurrency,
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: context.primaryText)),
-                const SizedBox(width: 42),
-              ],
-            ),
+            PageHeader(first: tr.baseCurrency, onBack: () => context.pop()),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 18),

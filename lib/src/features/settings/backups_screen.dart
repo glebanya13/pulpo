@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,8 +22,7 @@ import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_badge.dart';
 import '../auth/cloud_auth.dart';
-
-enum _CloudRestoreChoice { useCloud, keepLocal }
+import '../auth/cloud_restore_prompt.dart';
 
 class BackupsScreen extends ConsumerStatefulWidget {
   const BackupsScreen({super.key});
@@ -96,51 +96,26 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
       return;
     }
 
-    final choice = await showDialog<_CloudRestoreChoice>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(tr.cloudRestoreTitle),
-        content: Text(tr.cloudRestoreBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, _CloudRestoreChoice.keepLocal),
-            child: Text(tr.cloudRestoreKeepLocal),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, _CloudRestoreChoice.useCloud),
-            child: Text(tr.cloudRestoreUseCloud),
-          ),
-        ],
-      ),
-    );
-    if (choice == null || !mounted) return;
+    await showCloudRestoreDialog(context, ref);
+  }
 
+  Future<void> _importBackupFile() async {
+    final tr = Tr.of(context);
+    const group = XTypeGroup(label: 'JSON', extensions: ['json']);
+    final picked = await openFile(acceptedTypeGroups: const [group]);
+    if (picked == null || !mounted) return;
     try {
-      if (choice == _CloudRestoreChoice.useCloud) {
-        final ok = await cloud.downloadMoney();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(ok ? tr.cloudRestoreOk : tr.cloudEmpty)),
-          );
-        }
-      } else {
-        await cloud.uploadMoney();
-        final now = DateTime.now();
-        await ref.read(sharedPreferencesProvider).setString(
-              AutoBackupKeys.lastCloud,
-              now.toUtc().toIso8601String(),
-            );
-        if (mounted) {
-          setState(() => _lastCloud = now);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(tr.cloudBackupOk)),
-          );
-        }
+      await ref.read(backupServiceProvider).restoreFromFile(File(picked.path));
+      await _loadBackups();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.dataRestored)),
+        );
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr.errorTitle)),
+          SnackBar(content: Text(tr.restoreFailed)),
         );
       }
     }
@@ -312,6 +287,13 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               filled: false,
               showPro: !isPro,
               onTap: _cloudRestore,
+            ),
+            const SizedBox(height: 10),
+            _Action(
+              icon: LucideIcons.upload,
+              label: tr.importBackupJson,
+              filled: false,
+              onTap: _importBackupFile,
             ),
             const SizedBox(height: 10),
             _Action(

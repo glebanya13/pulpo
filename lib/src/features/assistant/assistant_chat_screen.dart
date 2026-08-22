@@ -24,6 +24,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/ai_assistant_mark.dart';
 import 'app_chat_context.dart';
 import 'assistant_transactions.dart';
 
@@ -504,6 +505,14 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 
+  void _closeChat() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
@@ -569,7 +578,22 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 42),
+                      Pressable(
+                        onTap: _closeChat,
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: context.surface,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            LucideIcons.x,
+                            size: 18,
+                            color: context.primaryText,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   if (account != null) ...[
@@ -822,16 +846,7 @@ class _AssistantBubble extends StatelessWidget {
             fromUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!fromUser) ...[
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: AppColors.lime.withValues(alpha: 0.35),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(LucideIcons.sparkles,
-                  size: 14, color: AppColors.ink),
-            ),
+            const AiAssistantMark(size: 28, iconSize: 13),
             const SizedBox(width: 8),
           ],
           Flexible(

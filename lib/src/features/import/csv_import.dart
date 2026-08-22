@@ -45,7 +45,7 @@ CsvParseResult parseTransactionCsv(String raw, {required String fallbackCurrency
   final headerCells = _splitCsvLine(lines.first, delimiter);
   if (_looksLikeHeader(headerCells)) {
     start = 1;
-    dateIdx = _headerIndex(headerCells, const ['date', 'fecha', 'fecha valor', 'booking', 'value date']) ?? 0;
+    dateIdx = _headerIndex(headerCells, const ['date', 'fecha', 'дата', 'fecha valor', 'booking', 'value date']) ?? 0;
     typeIdx = _headerIndex(headerCells, const ['type', 'tipo', 'тип']) ?? -1;
     amountIdx = _headerIndex(headerCells, const ['amount', 'importe', 'monto', 'сумма', 'value']) ?? 1;
     currencyIdx = _headerIndex(headerCells, const ['currency', 'moneda', 'валюта', 'divisa']) ?? -1;
@@ -105,10 +105,14 @@ bool _looksLikeHeader(List<String> cells) {
   final joined = cells.map((c) => c.toLowerCase().trim()).join(' ');
   return joined.contains('date') ||
       joined.contains('fecha') ||
+      joined.contains('дата') ||
       joined.contains('amount') ||
       joined.contains('importe') ||
+      joined.contains('monto') ||
+      joined.contains('сумма') ||
       joined.contains('type') ||
-      joined.contains('tipo');
+      joined.contains('tipo') ||
+      joined.contains('тип');
 }
 
 int? _headerIndex(List<String> cells, List<String> names) {

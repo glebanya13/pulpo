@@ -11,6 +11,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../../core/ai/ai_errors.dart';
 import '../../core/ai/ai_models.dart';
 import '../../core/ai/pulpo_ai_service.dart';
 import '../../core/l10n/tr.dart';
@@ -20,6 +21,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../../features/auth/cloud_auth.dart';
+import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_badge.dart';
 import '../../core/utils/lucide_icon_map.dart';
@@ -241,8 +243,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         type: result.type,
       );
       _snack(tr.aiFilled);
-    } catch (_) {
-      _snack(tr.aiFailed);
+    } catch (e) {
+      _snack(describeAiError(tr, e));
     } finally {
       if (mounted) setState(() => _aiBusy = false);
     }
@@ -441,31 +443,18 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         ),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _IconBtn(
-                  icon: LucideIcons.arrowLeft,
-                  onTap: () =>
-                      widget.editId != null ? context.pop() : context.go('/'),
-                ),
-                Text(
-                  widget.editId != null
-                      ? '${tr.edit} ${tr.transactionSingular}'
-                      : tr.newTransaction,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: context.primaryText,
-                  ),
-                ),
-                widget.editId != null
-                    ? _IconBtn(
-                        icon: LucideIcons.trash2,
-                        onTap: () => _confirmDelete(tr),
-                      )
-                    : const SizedBox(width: 42),
-              ],
+            PageHeader(
+              first: widget.editId != null
+                  ? '${tr.edit} ${tr.transactionSingular}'
+                  : tr.newTransaction,
+              onBack: () =>
+                  widget.editId != null ? context.pop() : context.go('/'),
+              action: widget.editId != null
+                  ? RoundIconButton(
+                      icon: LucideIcons.trash2,
+                      onTap: () => _confirmDelete(tr),
+                    )
+                  : null,
             ),
             const SizedBox(height: 10),
             if (widget.editId == null)
@@ -690,30 +679,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final dest = p.join(receiptsDir.path, name);
     await File(picked.path).copy(dest);
     setState(() => _receiptPath = dest);
-  }
-}
-
-class _IconBtn extends StatelessWidget {
-  const _IconBtn({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: context.surface,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon,
-            size: 18,
-            color: context.isDark ? Colors.white : AppColors.ink),
-      ),
-    );
   }
 }
 
@@ -993,7 +958,7 @@ class _AiQuickActions extends StatelessWidget {
                   height: 28,
                   alignment: Alignment.center,
                   child: Icon(
-                    LucideIcons.mic,
+                    LucideIcons.sparkles,
                     size: 18,
                     color: context.primaryText.withValues(alpha: 0.55),
                   ),
@@ -1001,7 +966,7 @@ class _AiQuickActions extends StatelessWidget {
               )
             else
               Icon(
-                LucideIcons.mic,
+                LucideIcons.sparkles,
                 size: 18,
                 color: context.primaryText,
               ),

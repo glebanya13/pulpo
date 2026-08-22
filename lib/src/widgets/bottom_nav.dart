@@ -4,6 +4,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/liquid_glass.dart';
+import 'ai_assistant_mark.dart';
 import 'pressable.dart';
 
 /// Pill bottom nav: home · txs · plus (bright FAB) · reports · chat (quiet).
@@ -58,11 +59,7 @@ class BudgetBottomNav extends StatelessWidget {
               active: currentIndex == 2,
               onTap: () => onTap(2),
             ),
-            _NavItem(
-              icon: LucideIcons.messageCircle,
-              active: false,
-              onTap: onChatTap,
-            ),
+            _AiNavItem(onTap: onChatTap),
           ],
         ),
       ),
@@ -100,6 +97,23 @@ class _NavItem extends StatelessWidget {
           size: 20,
           color: active ? AppColors.ink : idle,
         ),
+      ),
+    );
+  }
+}
+
+class _AiNavItem extends StatelessWidget {
+  const _AiNavItem({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: const AiAssistantMark(
+        size: 38,
+        iconSize: 17,
       ),
     );
   }

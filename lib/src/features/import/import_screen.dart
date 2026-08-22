@@ -7,13 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/tr.dart';
-import '../../core/pro/pro_guard.dart';
-import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/repositories/transaction_repository.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import 'csv_import.dart';
@@ -34,15 +33,19 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
+    final accountsAsync = ref.watch(accountsProvider);
     final base = ref.watch(settingsControllerProvider).baseCurrency;
+    final accounts = accountsAsync.valueOrNull ?? const [];
     _accountId ??= accounts.isEmpty ? null : accounts.first.id;
 
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
+        child: AsyncValueView(
+          value: accountsAsync,
+          onRetry: () => ref.invalidate(accountsProvider),
+          data: (_) => ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+            children: [
             PageHeader(first: tr.importCsv, onBack: () => context.pop()),
             const SizedBox(height: 12),
             Text(
@@ -50,7 +53,18 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               style: TextStyle(fontSize: 14, color: context.mutedText),
             ),
             const SizedBox(height: 20),
-            if (accounts.isNotEmpty) ...[
+            if (accounts.isEmpty) ...[
+              EmptyState(
+                icon: Icons.account_balance_wallet_outlined,
+                title: tr.importNoAccounts,
+                description: tr.addAccountFirst,
+              ),
+              const SizedBox(height: 12),
+              ScaledFilledButton(
+                onPressed: () => context.push('/accounts'),
+                child: Text(tr.accounts),
+              ),
+            ] else ...[
               Text(
                 tr.account,
                 style: TextStyle(
@@ -61,7 +75,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<int>(
-                initialValue: _accountId,
+                value: _accountId,
                 items: [
                   for (final a in accounts)
                     DropdownMenuItem(
@@ -74,11 +88,11 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                     : (v) => setState(() => _accountId = v),
               ),
               const SizedBox(height: 16),
+              ScaledFilledButton(
+                onPressed: _busy ? null : () => _pick(base),
+                child: Text(tr.importPickFile),
+              ),
             ],
-            ScaledFilledButton(
-              onPressed: _busy ? null : () => _pick(base),
-              child: Text(tr.importPickFile),
-            ),
             if (_fileName != null) ...[
               const SizedBox(height: 12),
               Text(
@@ -88,34 +102,45 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
             ],
             if (_parsed != null) ...[
               const SizedBox(height: 16),
-              Text(
-                tr.importPreview(_parsed!.rows.length, _parsed!.skipped),
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
+              if (_parsed!.rows.isEmpty)
+                Text(
+                  tr.importNoRows,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFE53E3E),
+                  ),
+                )
+              else ...[
+                Text(
+                  tr.importPreview(_parsed!.rows.length, _parsed!.skipped),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              ScaledElevatedButton(
-                onPressed: _busy || _parsed!.rows.isEmpty || _accountId == null
-                    ? null
-                    : _commit,
-                child: Text(tr.importConfirm),
-              ),
+                const SizedBox(height: 12),
+                ScaledElevatedButton(
+                  onPressed:
+                      _busy || _parsed!.rows.isEmpty || _accountId == null
+                          ? null
+                          : _commit,
+                  child: Text(tr.importConfirm),
+                ),
+              ],
             ],
             if (_busy) ...[
               const SizedBox(height: 16),
               const LinearProgressIndicator(minHeight: 2),
             ],
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Future<void> _pick(String fallbackCurrency) async {
-    final ok = await requirePro(context, ref, ProGate.importCsv);
-    if (!ok || !mounted) return;
     const group = XTypeGroup(
       label: 'CSV',
       extensions: ['csv', 'txt'],
@@ -126,11 +151,17 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     try {
       final bytes = await file.readAsBytes();
       final text = _decode(bytes);
-      final parsed = parseTransactionCsv(text, fallbackCurrency: fallbackCurrency);
+      final parsed =
+          parseTransactionCsv(text, fallbackCurrency: fallbackCurrency);
       setState(() {
         _fileName = file.name;
         _parsed = parsed;
       });
+      if (parsed.rows.isEmpty && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Tr.of(context).importNoRows)),
+        );
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -145,8 +176,6 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     final parsed = _parsed;
     final accountId = _accountId;
     if (parsed == null || accountId == null) return;
-    final ok = await requirePro(context, ref, ProGate.importCsv);
-    if (!ok || !mounted) return;
     setState(() => _busy = true);
     final repo = ref.read(transactionRepositoryProvider);
     final existing = ref.read(allTransactionsProvider).valueOrNull ?? const [];
@@ -170,6 +199,12 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         imported++;
       }
       if (!mounted) return;
+      if (imported == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Tr.of(context).importNoRows)),
+        );
+        return;
+      }
       final msg = skippedDup > 0
           ? '${Tr.of(context).importDone(imported)} · ${Tr.of(context).importDuplicatesSkipped(skippedDup)}'
           : Tr.of(context).importDone(imported);

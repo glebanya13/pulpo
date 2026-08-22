@@ -16,6 +16,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/recurring_repository.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
@@ -33,17 +34,10 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final rules = ref.watch(recurringRulesProvider).valueOrNull ?? const [];
+    final rulesAsync = ref.watch(recurringRulesProvider);
+    final rules = rulesAsync.valueOrNull ?? const [];
     final active = rules.where((r) => !r.isPaused).toList();
-    final paused = rules.where((r) => r.isPaused).toList();
     final isPro = ref.watch(proControllerProvider).isPro;
-
-    List<db.RecurringRule> current;
-    if (_tab == 1) {
-      current = paused;
-    } else {
-      current = active;
-    }
 
     return Scaffold(
       body: SafeArea(
@@ -63,20 +57,40 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            TabsPill(
-              tabs: [tr.activeTab, tr.pausedTab],
-              index: _tab,
-              onChanged: (i) => setState(() => _tab = i),
+            AsyncValuesGate(
+              values: [rulesAsync],
+              onRetry: () => ref.invalidate(recurringRulesProvider),
+              child: Builder(
+                builder: (context) {
+                  final loaded = rulesAsync.requireValue;
+                  final activeLoaded =
+                      loaded.where((r) => !r.isPaused).toList();
+                  final paused =
+                      loaded.where((r) => r.isPaused).toList();
+                  final current = _tab == 1 ? paused : activeLoaded;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TabsPill(
+                        tabs: [tr.activeTab, tr.pausedTab],
+                        index: _tab,
+                        onChanged: (i) => setState(() => _tab = i),
+                      ),
+                      const SizedBox(height: 16),
+                      if (current.isEmpty)
+                        EmptyState(
+                          icon: LucideIcons.repeat,
+                          title: tr.rulesEmptyTitle,
+                          description: tr.rulesEmptyDesc,
+                        )
+                      else
+                        for (final r in current) _RuleCard(rule: r),
+                    ],
+                  );
+                },
+              ),
             ),
-            const SizedBox(height: 16),
-            if (current.isEmpty)
-              EmptyState(
-                icon: LucideIcons.repeat,
-                title: tr.rulesEmptyTitle,
-                description: tr.rulesEmptyDesc,
-              )
-            else
-              for (final r in current) _RuleCard(rule: r),
           ],
         ),
       ),

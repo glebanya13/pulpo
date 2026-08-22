@@ -13,6 +13,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/category_repository.dart';
 import '../../data/repositories/providers.dart';
+import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
@@ -30,25 +31,12 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final all = ref.watch(categoriesProvider).valueOrNull ?? const [];
-    final txs = ref.watch(allTransactionsProvider).valueOrNull ?? const [];
+    final catsAsync = ref.watch(categoriesProvider);
+    final txsAsync = ref.watch(allTransactionsProvider);
 
-    final wantedType =
-        _tab == 0 ? CategoryType.expense.index : CategoryType.income.index;
-    final visible = all
-        .where((c) => c.type == wantedType || c.type == CategoryType.both.index)
-        .toList();
-
-    // group by parentId
-    final roots = visible.where((c) => c.parentId == null).toList();
-    final byParent =
-        groupBy<db.Category, int?>(visible, (c) => c.parentId);
-
-    final counts = <int, int>{};
-    for (final t in txs) {
-      if (t.categoryId != null) {
-        counts.update(t.categoryId!, (v) => v + 1, ifAbsent: () => 1);
-      }
+    void retryLoad() {
+      ref.invalidate(categoriesProvider);
+      ref.invalidate(allTransactionsProvider);
     }
 
     return Scaffold(
@@ -71,29 +59,60 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
               onChanged: (i) => setState(() => _tab = i),
             ),
             const SizedBox(height: 16),
-            SoftCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (var i = 0; i < roots.length; i++) ...[
-                    _CatRow(
-                      category: roots[i],
-                      count: counts[roots[i].id] ?? 0,
-                      onTap: () => _openCategoryEditor(context, ref,
-                          existing: roots[i]),
+            AsyncValuesGate(
+              values: [catsAsync, txsAsync],
+              onRetry: retryLoad,
+              child: Builder(
+                builder: (context) {
+                  final loadedCats = catsAsync.requireValue;
+                  final txs = txsAsync.requireValue;
+                  final wantedType = _tab == 0
+                      ? CategoryType.expense.index
+                      : CategoryType.income.index;
+                  final visible = loadedCats
+                      .where((c) =>
+                          c.type == wantedType ||
+                          c.type == CategoryType.both.index)
+                      .toList();
+                  final roots =
+                      visible.where((c) => c.parentId == null).toList();
+                  final byParent =
+                      groupBy<db.Category, int?>(visible, (c) => c.parentId);
+
+                  final counts = <int, int>{};
+                  for (final t in txs) {
+                    if (t.categoryId != null) {
+                      counts.update(t.categoryId!, (v) => v + 1,
+                          ifAbsent: () => 1);
+                    }
+                  }
+
+                  return SoftCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < roots.length; i++) ...[
+                          _CatRow(
+                            category: roots[i],
+                            count: counts[roots[i].id] ?? 0,
+                            onTap: () => _openCategoryEditor(context, ref,
+                                existing: roots[i]),
+                          ),
+                          for (final child in byParent[roots[i].id] ?? const [])
+                            _CatRow(
+                              category: child,
+                              count: counts[child.id] ?? 0,
+                              indent: true,
+                              onTap: () => _openCategoryEditor(context, ref,
+                                  existing: child),
+                            ),
+                          if (i != roots.length - 1)
+                            const Divider(height: 1, color: AppColors.divider),
+                        ],
+                      ],
                     ),
-                    for (final child in byParent[roots[i].id] ?? const [])
-                      _CatRow(
-                        category: child,
-                        count: counts[child.id] ?? 0,
-                        indent: true,
-                        onTap: () => _openCategoryEditor(context, ref,
-                            existing: child),
-                      ),
-                    if (i != roots.length - 1)
-                      const Divider(height: 1, color: AppColors.divider),
-                  ],
-                ],
+                  );
+                },
               ),
             ),
           ],

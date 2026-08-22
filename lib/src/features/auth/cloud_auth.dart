@@ -13,6 +13,7 @@ import '../../core/app_info.dart';
 import '../../data/repositories/backup_service.dart';
 import '../../data/repositories/settings_service.dart';
 import '../shared_budget/household_service.dart';
+import 'cloud_restore_prompt.dart';
 
 class CloudNotConfigured implements Exception {
   const CloudNotConfigured();
@@ -233,6 +234,8 @@ class CloudAuth {
     final remote = await _moneyRef(user.uid).get();
     if (!remote.exists) {
       await uploadMoney();
+    } else {
+      _ref.read(pendingCloudRestoreProvider.notifier).state = true;
     }
   }
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/l10n/tr.dart';
 import '../../features/auth/cloud_auth.dart';
 import '../../features/pro/paywall_screen.dart';
 import 'pro_controller.dart';
@@ -28,9 +30,17 @@ Future<bool> requirePro(
 
 /// AI features require Pro and a signed-in Firebase Auth user.
 Future<bool> requireAi(BuildContext context, WidgetRef ref) async {
+  final tr = Tr.of(context);
   final isPro = ref.read(proControllerProvider).isPro;
   final signedIn = ref.read(authUserProvider).valueOrNull != null;
   if (isPro && signedIn) return true;
+  if (!signedIn) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(tr.proSignInRequired)),
+    );
+    context.push('/settings/account');
+    return false;
+  }
   await openPaywall(context, ProGate.ai);
   return ref.read(proControllerProvider).isPro &&
       ref.read(authUserProvider).valueOrNull != null;

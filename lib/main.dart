@@ -9,6 +9,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'firebase_options.dart';
 import 'src/core/app_boot_fallback.dart';
+import 'src/core/firebase_app_check_bootstrap.dart';
 import 'src/core/auto_sync_binder.dart';
 import 'src/core/home_widget_sync.dart';
 import 'src/data/repositories/auto_backup_runner.dart';
@@ -23,7 +24,10 @@ import 'src/data/repositories/settings_service.dart';
 import 'src/data/repositories/scheduled_posting.dart';
 import 'src/data/repositories/subscription_repository.dart';
 import 'src/data/seed/seed_categories.dart';
+import 'src/core/app_startup.dart';
+import 'src/features/auth/cloud_restore_prompt.dart';
 import 'src/features/security/lock_screen.dart';
+import 'src/widgets/startup_banner.dart';
 import 'src/router.dart';
 
 Future<void> main() async {
@@ -34,9 +38,18 @@ Future<void> main() async {
     debugPrint('FlutterError: ${details.exceptionAsString()}');
   };
 
+  var firebaseReady = false;
+  String? firebaseError;
   try {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    firebaseReady = true;
+    try {
+      await activateFirebaseAppCheck();
+    } catch (e, st) {
+      debugPrint('App Check init failed: $e\n$st');
+    }
   } catch (e, st) {
+    firebaseError = e.toString();
     debugPrint('Firebase init failed (app continues offline): $e\n$st');
   }
 
@@ -96,9 +109,16 @@ Future<void> main() async {
       settingsBaseCurrencyProvider.overrideWith((ref) {
         return ref.watch(settingsControllerProvider).baseCurrency;
       }),
+      appStartupProvider.overrideWith(
+        (ref) => AppStartupState(
+          firebaseReady: firebaseReady,
+          firebaseError: firebaseError,
+        ),
+      ),
     ],
   );
 
+  String? dataInitError;
   try {
     final db = container.read(databaseProvider);
     await seedCategoriesIfEmpty(db);
@@ -109,7 +129,16 @@ Future<void> main() async {
     );
     await syncDailyReminder(container.read(settingsControllerProvider));
   } catch (e, st) {
+    dataInitError = e.toString();
     debugPrint('startup data init: $e\n$st');
+  }
+
+  if (dataInitError != null) {
+    container.read(appStartupProvider.notifier).state = AppStartupState(
+      firebaseReady: firebaseReady,
+      firebaseError: firebaseError,
+      dataInitError: dataInitError,
+    );
   }
 
   ErrorWidget.builder = (details) {
@@ -187,9 +216,15 @@ class BudgetTrackerApp extends ConsumerWidget {
               final focus = FocusManager.instance.primaryFocus;
               if (focus != null && focus.hasFocus) focus.unfocus();
             },
-            child: AutoSyncBinder(
-              child: HomeWidgetBinder(
-                child: LockGate(child: routed),
+            child: StartupBannerHost(
+              child: AutoSyncBinder(
+                child: CloudSyncFeedbackListener(
+                  child: CloudLoginSyncBinder(
+                    child: HomeWidgetBinder(
+                      child: LockGate(child: routed),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),

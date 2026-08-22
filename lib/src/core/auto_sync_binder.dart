@@ -5,6 +5,7 @@ import '../data/repositories/auto_backup_runner.dart';
 import '../data/repositories/backup_service.dart';
 import '../data/repositories/settings_service.dart';
 import '../features/auth/cloud_auth.dart';
+import '../features/auth/cloud_restore_prompt.dart';
 import '../core/pro/pro_controller.dart';
 
 /// Runs scheduled local/cloud backups when the app resumes.
@@ -58,7 +59,9 @@ class _AutoSyncBinderState extends ConsumerState<AutoSyncBinder>
         AutoBackupKeys.lastCloud,
         now.toUtc().toIso8601String(),
       );
-    } catch (_) {}
+    } catch (_) {
+      ref.read(cloudBackupFailedProvider.notifier).state = true;
+    }
   }
 
   @override

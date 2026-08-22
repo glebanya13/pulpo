@@ -4,8 +4,10 @@ class AppInfo {
   static const displayName = 'Monedero';
   /// Set in App Store Connect — not read from the binary.
   static const appStoreName = 'Monedero: Control de gastos';
-  /// Internal identifier; not shown to App Store users.
+  /// iOS / App Store bundle id.
   static const bundleId = 'com.pulpo.app';
+  /// Android applicationId (Play Console / Firebase Android app).
+  static const androidBundleId = 'com.pulpo.android';
   /// Flip when the client provides google-services.json / GoogleService-Info.plist.
   static const firebaseConfigured = true;
   static const firebaseProjectId = 'pulpo-mobi';

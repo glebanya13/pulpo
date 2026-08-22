@@ -135,19 +135,33 @@ final accountBalancesProvider = Provider<Map<int, double>>((ref) {
 });
 
 /// FX rates to base currency (base => 1.0).
+class FxRatesSnapshot {
+  const FxRatesSnapshot({required this.rates, required this.approximate});
+
+  final Map<String, double> rates;
+  /// Currencies where live rate was unavailable and 1.0 was used.
+  final Set<String> approximate;
+}
+
 final fxRatesToBaseProvider =
-    FutureProvider.family<Map<String, double>, String>((ref, baseCurrency) async {
+    FutureProvider.family<FxRatesSnapshot, String>((ref, baseCurrency) async {
   final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
   final base = baseCurrency.toUpperCase();
   final rates = <String, double>{base: 1.0};
+  final approximate = <String>{};
   final fx = FxRateService();
   for (final a in accounts) {
     final code = a.currency.toUpperCase();
     if (rates.containsKey(code)) continue;
     final rate = await fx.fetchRate(code, base);
-    rates[code] = rate ?? 1.0;
+    if (rate == null && code != base) {
+      approximate.add(code);
+      rates[code] = 1.0;
+    } else {
+      rates[code] = rate ?? 1.0;
+    }
   }
-  return rates;
+  return FxRatesSnapshot(rates: rates, approximate: approximate);
 });
 
 /// Общий баланс (сумма по счетам с includeInTotal) с конвертацией в базовую валюту.
@@ -155,7 +169,8 @@ final totalBalanceProvider = Provider<double>((ref) {
   final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
   final balances = ref.watch(accountBalancesProvider);
   final base = ref.watch(settingsBaseCurrencyProvider);
-  final rates = ref.watch(fxRatesToBaseProvider(base)).valueOrNull ?? {base: 1.0};
+  final fx = ref.watch(fxRatesToBaseProvider(base)).valueOrNull;
+  final rates = fx?.rates ?? {base: 1.0};
   var total = 0.0;
   for (final a in accounts) {
     if (!a.includeInTotal) continue;
@@ -164,6 +179,12 @@ final totalBalanceProvider = Provider<double>((ref) {
     total += bal * rate;
   }
   return total;
+});
+
+final fxApproximateProvider = Provider<Set<String>>((ref) {
+  final base = ref.watch(settingsBaseCurrencyProvider);
+  return ref.watch(fxRatesToBaseProvider(base)).valueOrNull?.approximate ??
+      const {};
 });
 
 /// Base currency without importing settings_controller (avoids circular deps).
