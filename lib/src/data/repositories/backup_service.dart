@@ -56,7 +56,7 @@ class BackupService {
     final file = await writeBackup();
     await Share.shareXFiles(
       [XFile(file.path)],
-      text: 'Pulpo backup',
+      text: 'Monedero backup',
     );
   }
 

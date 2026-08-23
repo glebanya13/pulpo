@@ -33,4 +33,9 @@ class AppSpacing {
       tabBodyBottom(context),
     );
   }
+
+  /// Bottom sheets on tab screens must clear the floating nav pill.
+  static EdgeInsets sheetOnTabScreen(BuildContext context) {
+    return EdgeInsets.fromLTRB(8, 10, 8, md + tabBodyBottom(context));
+  }
 }

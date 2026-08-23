@@ -211,7 +211,7 @@ class WhatsAppSupportChip extends StatelessWidget {
       onTap: () => openAppLink(context, AppInfo.whatsAppUri),
       child: Semantics(
         button: true,
-        label: 'WhatsApp ${AppInfo.whatsAppHandle}',
+        label: 'WhatsApp',
         child: Container(
           width: size,
           height: size,

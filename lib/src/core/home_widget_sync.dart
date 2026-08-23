@@ -21,7 +21,7 @@ const kHomeWidgetIosBudgetName = 'PulpoBudgetWidget';
 const kHomeWidgetIosChartName = 'PulpoChartWidget';
 
 Future<void> configureHomeWidget() async {
-  // iOS App Groups require regenerating the Codemagic/"Pulpo" provisioning
+  // iOS App Groups require regenerating the Codemagic/"Monedero" provisioning
   // profile after enabling the capability on com.pulpo.app. Until then,
   // keep Runner.entitlements free of application-groups so IPA signing works.
   if (kIsWeb) return;

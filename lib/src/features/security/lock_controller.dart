@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
+import 'package:local_auth_darwin/local_auth_darwin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/repositories/settings_service.dart';
@@ -92,7 +94,7 @@ class LockController extends Notifier<LockState> {
   static const _kAuto = 'lock_autolock';
 
   /// Face ID dismissal fires lifecycle pause after auth returns — ignore briefly.
-  static const _pauseGrace = Duration(seconds: 2);
+  static const _pauseGrace = Duration(seconds: 3);
 
   SharedPreferences get _prefs => ref.read(sharedPreferencesProvider);
   final LocalAuthentication _auth;
@@ -171,18 +173,31 @@ class LockController extends Notifier<LockState> {
     required bool sticky,
     String localizedReason = 'Monedero',
   }) async {
+    if (_authInProgress) return false;
     _authInProgress = true;
+    // Ignore pause events that Face ID itself triggers.
+    _ignorePauseUntil = DateTime.now().add(_pauseGrace);
     try {
-      // biometricOnly: true — Face ID / Touch ID only. With false, iOS often
-      // skips the face scan and shows the device passcode sheet instead.
-      // App PIN on LockScreen remains the in-app fallback.
+      try {
+        await _auth.stopAuthentication();
+      } catch (_) {}
+
+      // biometricOnly: Face ID / Touch ID only (no device passcode sheet).
+      // Empty fallback title hides the "Enter Passcode" button on iOS.
       final ok = await _auth.authenticate(
         localizedReason: localizedReason,
+        authMessages: <AuthMessages>[
+          IOSAuthMessages(
+            localizedFallbackTitle: '',
+            lockOut: localizedReason,
+          ),
+          const AndroidAuthMessages(),
+        ],
         options: AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: sticky,
           sensitiveTransaction: false,
-          useErrorDialogs: true,
+          useErrorDialogs: false,
         ),
       );
       if (ok) {
@@ -191,6 +206,7 @@ class LockController extends Notifier<LockState> {
       return ok;
     } on PlatformException catch (e) {
       debugPrint('local_auth: ${e.code} ${e.message}');
+      // Locked out / not interactive — caller may retry after resume.
       return false;
     } finally {
       _authInProgress = false;
@@ -199,13 +215,8 @@ class LockController extends Notifier<LockState> {
 
   Future<bool> enableBiometrics({String localizedReason = 'Monedero'}) async {
     try {
-      final available = await deviceHasBiometrics();
-      if (!available) {
-        // Last resort: try authenticate anyway — iOS may still show Face ID
-        // when getAvailableBiometrics is empty but hardware exists.
-        final supported = await _auth.isDeviceSupported();
-        if (!supported) return false;
-      }
+      // Always attempt Face ID / fingerprint. Availability APIs are unreliable
+      // on iOS (empty enrolled list / canCheck=false while Face ID still works).
       final ok = await _authenticate(
         sticky: true,
         localizedReason: localizedReason,

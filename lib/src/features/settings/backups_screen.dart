@@ -449,7 +449,7 @@ class _BackupRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(LucideIcons.fileJson,
-                size: 16, color: context.primaryText),
+                size: 16, color: AppColors.ink),
           ),
           const SizedBox(width: 12),
           Expanded(

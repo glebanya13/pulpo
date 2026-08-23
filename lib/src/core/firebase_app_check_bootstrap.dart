@@ -8,61 +8,51 @@ import 'package:flutter/foundation.dart';
 /// Android app id: `com.pulpo.android`.
 /// iOS bundle id: `com.pulpo.app`.
 ///
-/// - iOS **Simulator**: Apple debug provider (register token in Console).
-/// - iOS **physical device**: DeviceCheck (needs Apple key in Firebase App Check).
-/// - Android debug: debug provider; release: Play Integrity.
+/// **Debug builds** use the debug provider on every device (simulator + phone).
+/// Copy the printed token into Firebase Console → App Check → Manage debug tokens.
+///
+/// **Release / profile** use DeviceCheck (iOS) and Play Integrity (Android).
+/// Those providers must be registered in the Firebase Console before AI Logic
+/// enforcement will accept production traffic.
 Future<void> activateFirebaseAppCheck() async {
-  final appleDebug = _runningOnIosSimulator;
-  final androidDebug = kDebugMode;
+  final useDebug = kDebugMode;
 
   await FirebaseAppCheck.instance.activate(
     androidProvider:
-        androidDebug ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+        useDebug ? AndroidProvider.debug : AndroidProvider.playIntegrity,
     appleProvider:
-        appleDebug ? AppleProvider.debug : AppleProvider.deviceCheck,
+        useDebug ? AppleProvider.debug : AppleProvider.deviceCheck,
   );
 
   if (kDebugMode) {
-    final mode = appleDebug
-        ? 'Apple debug (simulator)'
-        : Platform.isIOS
-            ? 'Apple DeviceCheck (physical device)'
-            : androidDebug
-                ? 'Android debug'
-                : 'Play Integrity';
     try {
       final token = await FirebaseAppCheck.instance.getToken(true);
       if (token != null && token.isNotEmpty) {
-        if (appleDebug) {
-          debugPrint(
-            'App Check OK ($mode). Register this debug token in Firebase '
-            'Console → App Check → Manage debug tokens:\n$token',
-          );
-        } else {
-          debugPrint(
-            'App Check OK ($mode). Token length=${token.length}. '
-            'If AI still fails: Firebase Console → App Check → com.pulpo.app '
-            '→ DeviceCheck (Team ID + Apple .p8 key).',
-          );
-        }
+        debugPrint(
+          '═══════════════════════════════════════════════════════════\n'
+          'App Check DEBUG token (register in Firebase Console →\n'
+          'App Check → Apps → com.pulpo.app / com.pulpo.android →\n'
+          'Manage debug tokens). AI will fail until this is saved:\n'
+          '$token\n'
+          '═══════════════════════════════════════════════════════════',
+        );
       } else {
-        debugPrint('App Check getToken returned null ($mode). AI may fail.');
+        debugPrint(
+          'App Check getToken returned null. AI will fail until a debug '
+          'token is available (add -FIRDebugEnabled to the Xcode scheme).',
+        );
       }
     } catch (e, st) {
-      final hint = appleDebug
-          ? 'Fix: register debug token in Firebase Console.'
-          : 'Fix: Firebase Console → App Check → com.pulpo.app → DeviceCheck '
-              '(Apple Team ID VWYGQ2Z5FJ + private key .p8).';
       debugPrint(
-        'App Check getToken failed ($mode) — Firebase AI will likely reject '
-        'requests.\n$hint\nError: $e\n$st',
+        'App Check getToken failed — Firebase AI will reject requests.\n'
+        'Fix: Firebase Console → App Check → Manage debug tokens.\n'
+        'Error: $e\n$st',
       );
     }
+  } else if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
+    debugPrint(
+      'App Check production provider active '
+      '(${Platform.isIOS ? 'DeviceCheck' : 'Play Integrity'}).',
+    );
   }
-}
-
-bool get _runningOnIosSimulator {
-  if (kIsWeb || !Platform.isIOS) return false;
-  return Platform.environment.containsKey('SIMULATOR_DEVICE_NAME') ||
-      Platform.environment.containsKey('SIMULATOR_UDID');
 }

@@ -9,7 +9,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 import '../../core/theme/color_well.dart' show pastelColorRemap;
-import '../seed/seed_categories.dart' show legacyRuNameToSlug;
+import '../seed/seed_categories.dart' show legacyRuNameToSlug, normalizeCategorySortOrder;
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -36,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   /// Wipes every user-facing table. Keeps schema and settings intact.
   Future<void> resetAllData() async {
@@ -91,6 +91,9 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
               'ALTER TABLE transactions ADD COLUMN receipt_path TEXT',
             );
+          }
+          if (from < 6) {
+            await normalizeCategorySortOrder(this);
           }
         },
       );

@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
 import '../db/app_database.dart';
@@ -27,6 +28,87 @@ const incomeSeed = <_Cat>[
   _Cat('investments', 'trending-up', 0xFF3DDC84),
   _Cat('other_income', 'circle', 0xFF8A94A6),
 ];
+
+/// Canonical slug order for expense/income pickers and lists.
+const expenseCategorySlugs = [
+  'food',
+  'transport',
+  'housing',
+  'health',
+  'entertainment',
+  'clothing',
+  'communication',
+  'education',
+  'gifts',
+  'beauty',
+  'other_expense',
+];
+const incomeCategorySlugs = [
+  'salary',
+  'freelance',
+  'gift_income',
+  'investments',
+  'other_income',
+];
+
+int _categorySortKey(Category c) {
+  final seed = c.type == CategoryType.income.index
+      ? incomeCategorySlugs
+      : expenseCategorySlugs;
+  final otherSlug = seed.last;
+  if (c.name == otherSlug) return 1 << 20;
+  final idx = seed.indexOf(c.name);
+  if (idx >= 0) return idx * 100;
+  return 50000 + c.sortOrder;
+}
+
+/// Stable order: seed slugs → custom → «Другое» / other_* last.
+List<Category> sortCategories(List<Category> input) {
+  final out = [...input];
+  out.sort((a, b) {
+    final byType = a.type.compareTo(b.type);
+    if (byType != 0) return byType;
+    return _categorySortKey(a).compareTo(_categorySortKey(b));
+  });
+  return out;
+}
+
+/// Repairs legacy DB rows where «food» was appended after «other_expense».
+Future<void> normalizeCategorySortOrder(AppDatabase db) async {
+  final all = await db.select(db.categories).get();
+
+  Future<void> forType(List<String> seedSlugs, int type) async {
+    final otherSlug = seedSlugs.last;
+    final typeCats = all.where((c) => c.type == type).toList();
+    var order = 0;
+
+    for (final slug in seedSlugs) {
+      if (slug == otherSlug) continue;
+      final cat = typeCats.where((c) => c.name == slug).firstOrNull;
+      if (cat == null) continue;
+      await (db.update(db.categories)..where((c) => c.id.equals(cat.id)))
+          .write(CategoriesCompanion(sortOrder: Value(order++)));
+    }
+
+    final custom = typeCats
+        .where((c) => !seedSlugs.contains(c.name))
+        .toList()
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    for (final cat in custom) {
+      await (db.update(db.categories)..where((c) => c.id.equals(cat.id)))
+          .write(CategoriesCompanion(sortOrder: Value(order++)));
+    }
+
+    final other = typeCats.where((c) => c.name == otherSlug).firstOrNull;
+    if (other != null) {
+      await (db.update(db.categories)..where((c) => c.id.equals(other.id)))
+          .write(CategoriesCompanion(sortOrder: Value(order)));
+    }
+  }
+
+  await forType(expenseCategorySlugs, CategoryType.expense.index);
+  await forType(incomeCategorySlugs, CategoryType.income.index);
+}
 
 /// Идемпотентно добавляет системные категории по slug.
 ///
@@ -70,6 +152,8 @@ Future<void> seedCategoriesIfEmpty(AppDatabase db) async {
           ),
         );
   }
+
+  await normalizeCategorySortOrder(db);
 }
 
 /// Чинит артефакт миграции v3: она мапила ЛЮБУЮ категорию с именем «Другое»

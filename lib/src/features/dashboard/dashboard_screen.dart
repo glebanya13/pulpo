@@ -39,96 +39,112 @@ class DashboardScreen extends ConsumerWidget {
 
     return ResetScrollWhenObscured(
       tabPath: '/',
-      builder: (context, scroll) => ListView(
-      controller: scroll,
-      padding: AppSpacing.tabPagePadding(context),
-      children: [
-        ScreenTitlePill(
-          title: settings.userName,
-          eyebrow: tr.greetingForHour(DateTime.now().hour),
-          large: true,
-          expand: true,
-          trailing: const HeaderSupportActions(dense: true),
-        ),
-        const SizedBox(height: 10),
-        AsyncValuesGate(
-          values: [accountsAsync, txsAsync],
-          onRetry: retryBalance,
-          child: _BalanceCard(
-            total: total,
-            currency: currency,
-            fxApproximate: fxApprox.isNotEmpty,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Column(
+      builder: (context, scroll) {
+        final pad = AppSpacing.tabPagePadding(context);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                _QuickChip(
-                  icon: LucideIcons.plus,
-                  label: tr.income,
-                  onTap: () => context.push('/add?type=income'),
+            ColoredBox(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(pad.left, pad.top, pad.right, 10),
+                child: ScreenTitlePill(
+                  title: settings.userName,
+                  eyebrow: tr.greetingForHour(DateTime.now().hour),
+                  large: true,
+                  expand: true,
+                  trailing: const HeaderSupportActions(dense: true),
                 ),
-                const SizedBox(width: 6),
-                _QuickChip(
-                  icon: LucideIcons.minus,
-                  label: tr.expense,
-                  onTap: () => context.push('/add?type=expense'),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                _QuickChip(
-                  icon: LucideIcons.arrowLeftRight,
-                  label: tr.transferBetweenAccounts,
-                  onTap: () => context.push('/add?type=transfer'),
-                ),
-                const SizedBox(width: 6),
-                _QuickChip(
-                  icon: LucideIcons.send,
-                  label: tr.transferExternal,
-                  onTap: () => context.push('/add?type=expense&mode=external'),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        const _HomeLinks(),
-        const SizedBox(height: 10),
-        Row(
-          children: [
             Expanded(
-              child: Text(
-                tr.calendar,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: context.primaryText,
-                ),
-              ),
-            ),
-            Pressable(
-              onTap: () => context.go('/transactions'),
-              child: Text(
-                tr.viewHistory,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.limeAccent,
-                ),
+              child: ListView(
+                controller: scroll,
+                padding: EdgeInsets.fromLTRB(pad.left, 0, pad.right, pad.bottom),
+                children: [
+                  AsyncValuesGate(
+                    values: [accountsAsync, txsAsync],
+                    onRetry: retryBalance,
+                    child: _BalanceCard(
+                      total: total,
+                      currency: currency,
+                      fxApproximate: fxApprox.isNotEmpty,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Column(
+                    children: [
+                      Row(
+                        children: [
+                          _QuickChip(
+                            icon: LucideIcons.plus,
+                            label: tr.income,
+                            onTap: () => context.push('/add?type=income'),
+                          ),
+                          const SizedBox(width: 6),
+                          _QuickChip(
+                            icon: LucideIcons.minus,
+                            label: tr.expense,
+                            onTap: () => context.push('/add?type=expense'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          _QuickChip(
+                            icon: LucideIcons.arrowLeftRight,
+                            label: tr.transferBetweenAccounts,
+                            onTap: () => context.push('/add?type=transfer'),
+                          ),
+                          const SizedBox(width: 6),
+                          _QuickChip(
+                            icon: LucideIcons.send,
+                            label: tr.transferExternal,
+                            onTap: () =>
+                                context.push('/add?type=expense&mode=external'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const _HomeLinks(),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          tr.calendar,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: context.primaryText,
+                          ),
+                        ),
+                      ),
+                      Pressable(
+                        onTap: () => context.go('/transactions'),
+                        child: Text(
+                          tr.viewHistory,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.limeAccent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
+                  const MonthlyCalendar(),
+                ],
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 8),
-        const SizedBox(height: 6),
-        const MonthlyCalendar(),
-      ],
-    ),
+        );
+      },
     );
   }
 }

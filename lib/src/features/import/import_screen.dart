@@ -5,9 +5,12 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/db/app_database.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
@@ -73,19 +76,15 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                   color: context.mutedText,
                 ),
               ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<int>(
-                value: _accountId,
-                items: [
-                  for (final a in accounts)
-                    DropdownMenuItem(
-                      value: a.id,
-                      child: Text('${a.name} · ${a.currency}'),
-                    ),
-                ],
-                onChanged: _busy
+              const SizedBox(height: 12),
+              _AccountDropdownButton(
+                label: _accountLabel(tr, accounts),
+                onTap: _busy
                     ? null
-                    : (v) => setState(() => _accountId = v),
+                    : () => _openAccountPicker(
+                          context: context,
+                          accounts: accounts,
+                        ),
               ),
               const SizedBox(height: 16),
               ScaledFilledButton(
@@ -138,6 +137,81 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openAccountPicker({
+    required BuildContext context,
+    required List<Account> accounts,
+  }) async {
+    final tr = Tr.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        final maxH = MediaQuery.sizeOf(ctx).height * 0.65;
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxH),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(8, 10, 8, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: context.faintText.withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      tr.selectAccount,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: context.primaryText,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  for (final a in accounts)
+                    _AccountSheetTile(
+                      label: '${a.name} · ${a.currency}',
+                      selected: _accountId == a.id,
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        setState(() => _accountId = a.id);
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _accountLabel(Tr tr, List<Account> accounts) {
+    Account? selected;
+    for (final a in accounts) {
+      if (a.id == _accountId) {
+        selected = a;
+        break;
+      }
+    }
+    if (selected == null) return tr.selectAccount;
+    return '${selected.name} · ${selected.currency}';
   }
 
   Future<void> _pick(String fallbackCurrency) async {
@@ -246,4 +320,107 @@ bool _isDuplicate(List<dynamic> existing, int accountId, ImportedRow row) {
     if (a == b) return true;
   }
   return false;
+}
+
+class _AccountDropdownButton extends StatelessWidget {
+  const _AccountDropdownButton({
+    required this.label,
+    this.onTap,
+  });
+
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+        decoration: BoxDecoration(
+          color: context.surface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.lime.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                LucideIcons.wallet,
+                size: 16,
+                color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: context.primaryText,
+                ),
+              ),
+            ),
+            Icon(
+              LucideIcons.chevronDown,
+              size: 18,
+              color: context.mutedText,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountSheetTile extends StatelessWidget {
+  const _AccountSheetTile({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.lime.withValues(alpha: 0.22)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  color: context.primaryText,
+                ),
+              ),
+            ),
+            if (selected)
+              const Icon(LucideIcons.check, size: 18, color: AppColors.ink),
+          ],
+        ),
+      ),
+    );
+  }
 }

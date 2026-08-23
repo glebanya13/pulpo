@@ -23,11 +23,11 @@
       "localizations" : [
         {
           "description" : "",
-          "displayName" : "Pulpo Pro",
+          "displayName" : "Monedero Pro",
           "locale" : "en_US"
         }
       ],
-      "name" : "Pulpo Pro",
+      "name" : "Monedero Pro",
       "subscriptions" : [
         {
           "adHocOffers" : [
@@ -55,7 +55,7 @@
           ],
           "productID" : "pulpo_pro_1anual",
           "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Pulpo Pro Yearly",
+          "referenceName" : "Monedero Pro Yearly",
           "subscriptionGroupID" : "21481234",
           "type" : "RecurringSubscription"
         },
@@ -85,7 +85,7 @@
           ],
           "productID" : "pulpo_pro_mensual",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Pulpo Pro Monthly",
+          "referenceName" : "Monedero Pro Monthly",
           "subscriptionGroupID" : "21481234",
           "type" : "RecurringSubscription"
         },
@@ -115,7 +115,7 @@
           ],
           "productID" : "pulpo_pro_6_meses",
           "recurringSubscriptionPeriod" : "P6M",
-          "referenceName" : "Pulpo Pro 6 Months",
+          "referenceName" : "Monedero Pro 6 Months",
           "subscriptionGroupID" : "21481234",
           "type" : "RecurringSubscription"
         }

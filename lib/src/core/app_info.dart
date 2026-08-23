@@ -27,7 +27,6 @@ class AppInfo {
 
   /// WhatsApp username without @ — opens via wa.me (no phone number in the link).
   static const whatsAppUsername = 'monedero.mobi';
-  static const whatsAppHandle = '@$whatsAppUsername';
   static const whatsAppUrl = 'https://wa.me/$whatsAppUsername';
 
   static final privacyUri = Uri.parse(privacyUrl);

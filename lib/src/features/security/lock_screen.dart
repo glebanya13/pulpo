@@ -20,7 +20,8 @@ class _LockScreenState extends ConsumerState<LockScreen>
     with WidgetsBindingObserver {
   String _pin = '';
   String? _error;
-  var _biometricPromptScheduled = false;
+  var _promptGeneration = 0;
+  var _promptInFlight = false;
 
   @override
   void initState() {
@@ -43,47 +44,49 @@ class _LockScreenState extends ConsumerState<LockScreen>
   }
 
   void _scheduleBiometricPrompt() {
-    if (_biometricPromptScheduled) return;
-    _biometricPromptScheduled = true;
+    final gen = ++_promptGeneration;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _biometricPromptScheduled = false;
-      if (!mounted) return;
+      if (!mounted || gen != _promptGeneration || _promptInFlight) return;
       final lock = ref.read(lockControllerProvider);
       if (!lock.biometricsEnabled || !lock.needsLock) return;
-      // Face ID fails (or used to fall back to device passcode) if LAContext
-      // starts while the app is still inactive after unlock / cold start.
-      await _waitUntilResumed();
-      if (!mounted) return;
+
+      // Face ID fails with notInteractive if LAContext starts while inactive.
+      final ready = await _waitUntilResumed();
+      if (!ready || !mounted || gen != _promptGeneration) return;
+      // Extra settle after resume paint / transition.
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      if (!mounted || gen != _promptGeneration) return;
+      if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+        return;
+      }
+
       final still = ref.read(lockControllerProvider);
       if (!still.biometricsEnabled || !still.needsLock) return;
-      final tr = Tr.of(context);
-      final ok = await ref.read(lockControllerProvider.notifier).tryBiometrics(
-            localizedReason: tr.biometricLockHint,
-          );
-      // One auto-retry if the first prompt was cancelled by a lifecycle blip.
-      if (!ok && mounted) {
-        final again = ref.read(lockControllerProvider);
-        if (again.biometricsEnabled && again.needsLock) {
-          await _waitUntilResumed();
-          if (!mounted) return;
-          await ref.read(lockControllerProvider.notifier).tryBiometrics(
-                localizedReason: tr.biometricLockHint,
-              );
-        }
+
+      _promptInFlight = true;
+      try {
+        final tr = Tr.of(context);
+        await ref.read(lockControllerProvider.notifier).tryBiometrics(
+              localizedReason: tr.biometricLockHint,
+            );
+      } finally {
+        _promptInFlight = false;
       }
     });
   }
 
-  Future<void> _waitUntilResumed() async {
-    for (var i = 0; i < 20; i++) {
-      if (!mounted) return;
+  /// Returns false if the app never reached [AppLifecycleState.resumed].
+  Future<bool> _waitUntilResumed() async {
+    for (var i = 0; i < 40; i++) {
+      if (!mounted) return false;
       if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
-        // Brief settle so the first frame after resume is painted.
-        await Future<void>.delayed(const Duration(milliseconds: 250));
-        return;
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        return mounted &&
+            WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
       }
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
+    return false;
   }
 
   void _onPin(String next) {
@@ -121,6 +124,9 @@ class _LockScreenState extends ConsumerState<LockScreen>
   }
 
   Future<void> _retryBiometrics() async {
+    if (_promptInFlight) return;
+    final ready = await _waitUntilResumed();
+    if (!ready || !mounted) return;
     final tr = Tr.of(context);
     await ref.read(lockControllerProvider.notifier).tryBiometrics(
           localizedReason: tr.biometricLockHint,

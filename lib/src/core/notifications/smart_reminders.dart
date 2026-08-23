@@ -166,8 +166,16 @@ Future<void> _schedule({
         icon: 'ic_stat_pulpo',
         largeIcon: DrawableResourceAndroidBitmap('ic_notification_pulpo'),
       ),
-      iOS: DarwinNotificationDetails(),
-      macOS: DarwinNotificationDetails(),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+      macOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
     );
     try {
       await _plugin.zonedSchedule(
@@ -176,10 +184,21 @@ Future<void> _schedule({
         body: body,
         scheduledDate: when,
         notificationDetails: details,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
-    } catch (e, st) {
-      debugPrint('smart reminder: $e\n$st');
+    } catch (_) {
+      try {
+        await _plugin.zonedSchedule(
+          id: id,
+          title: title,
+          body: body,
+          scheduledDate: when,
+          notificationDetails: details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      } catch (e, st) {
+        debugPrint('smart reminder: $e\n$st');
+      }
     }
   }
 }

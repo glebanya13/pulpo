@@ -13,6 +13,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_badge.dart';
@@ -115,7 +116,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     required StatsPeriodKind current,
   }) async {
     final tr = Tr.of(context);
-    await showModalBottomSheet<void>(
+    await showAppBottomSheet<void>(
       context: context,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(

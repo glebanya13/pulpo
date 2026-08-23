@@ -61,14 +61,11 @@ class PulpoAiService {
   }) async {
     _requireSignedIn();
     try {
-      // Fresh Auth + App Check tokens (App Check is enforced for AI Logic).
+      // Fresh Auth ID token for Firebase AI.
       await _auth.currentUser?.getIdToken(true);
-      try {
-        await FirebaseAppCheck.instance.getToken(true);
-      } catch (e) {
-        debugPrint('PulpoAI[$label] App Check token: $e');
-        throw const PulpoAiException('permission_denied');
-      }
+      // Do NOT call App Check getToken() here: the SDK attaches one token per
+      // request. A preflight getToken() can burn/reuse tokens when App Check
+      // (or replay protection) is enforced and cause permission_denied.
       final model = json ? _jsonModel : _textModel;
       final response = await model.generateContent(contents);
       final text = response.text;
@@ -79,7 +76,7 @@ class PulpoAiService {
     } on PulpoAiException {
       rethrow;
     } catch (e, st) {
-      debugPrint('PulpoAI[$label]: $e');
+      debugPrint('MonederoAI[$label]: $e');
       debugPrint('$st');
       final msg = e.toString();
       if (msg.contains('API key') || msg.contains('InvalidApiKey')) {
@@ -95,7 +92,8 @@ class PulpoAiService {
           msg.contains('FirebaseAppCheck') ||
           msg.contains('403') ||
           msg.contains('UNAUTHENTICATED') ||
-          msg.contains('unauthenticated')) {
+          msg.contains('unauthenticated') ||
+          msg.contains('appCheck')) {
         throw const PulpoAiException('permission_denied');
       }
       if (msg.contains('Quota') || msg.contains('RESOURCE_EXHAUSTED')) {
@@ -116,7 +114,7 @@ class PulpoAiService {
         return parse(text);
       } on FormatException catch (e) {
         lastError = e;
-        debugPrint('PulpoAI parse retry: $e');
+        debugPrint('MonederoAI parse retry: $e');
       }
     }
     throw PulpoAiException('invalid_json: $lastError');
@@ -271,7 +269,7 @@ Top categories: $tops
           .map((h) => '${h.role == 'user' ? 'User' : 'Assistant'}: ${h.text}')
           .join('\n');
       final prompt = '''
-You are Pulpo AI Assistant in a personal finance app. Reply in $lang with JSON only.
+You are Monedero AI Assistant in a personal finance app. Reply in $lang with JSON only.
 
 Two intents:
 1) "record" — user wants to ADD expense(s) and/or income(s). Extract every transaction.
@@ -304,7 +302,7 @@ Reply JSON: {"intent":"record"|"question","reply":"...","transactions":[...]}
     required List<({String role, String text})> history,
   }) async {
     final system = '''
-You are Pulpo Assistant inside a personal budget app.
+You are Monedero Assistant inside a personal budget app.
 Reply in ${_langName(locale)}. Be concise and clear.
 
 Hard rules:

@@ -929,7 +929,7 @@ class Tr {
       'net_worth': 'PATRIMONIO NETO',
       'in_realtime': '↑ en tiempo real',
       'history_12_weeks': '12 semanas',
-      'offline_first_tag': 'Pulpo · offline-first',
+      'offline_first_tag': 'Monedero · offline-first',
       'tx_id': 'ID: txn_{}',
       'bank_accounts': 'Cuentas bancarias',
       'cash_wallets': 'Efectivo y carteras',
@@ -1247,7 +1247,7 @@ class Tr {
       'pro_debug_unlock': 'Desbloquear Pro (debug)',
       'import_csv': 'Importar CSV',
       'import_csv_hint':
-          'Importa un CSV de Pulpo o un extracto bancario con fecha e importe.',
+          'Importa un CSV de Monedero o un extracto bancario con fecha e importe.',
       'import_pick_file': 'Elegir archivo',
       'import_preview': '{n} movimientos listos · {s} filas omitidas',
       'import_confirm': 'Importar',
@@ -1338,7 +1338,7 @@ class Tr {
       'ai_api_not_enabled':
           'Activa Gemini / Firebase AI Logic en la consola de Firebase.',
       'ai_permission_denied':
-          'Firebase rechazó la petición de IA (App Check). En iPhone: revisa DeviceCheck en la consola. En simulador: registra el token debug.',
+          'Firebase rechazó la IA (App Check). En debug: copia el token de la consola y guárdalo en Firebase → App Check → Manage debug tokens.',
       'ai_quota_exceeded': 'Se alcanzó el límite de uso de IA. Prueba más tarde.',
       'ai_filled': 'Campos rellenados con IA',
       'ai_energy_empty':
@@ -1518,7 +1518,7 @@ class Tr {
       'net_worth': 'ЧИСТЫЙ КАПИТАЛ',
       'in_realtime': '↑ в реальном времени',
       'history_12_weeks': '12 недель',
-      'offline_first_tag': 'Pulpo · офлайн',
+      'offline_first_tag': 'Monedero · офлайн',
       'tx_id': 'ID: txn_{}',
       'bank_accounts': 'Банковские счета',
       'cash_wallets': 'Наличные и кошельки',
@@ -1836,7 +1836,7 @@ class Tr {
       'pro_debug_unlock': 'Открыть Pro (debug)',
       'import_csv': 'Импорт CSV',
       'import_csv_hint':
-          'Импортируйте CSV Pulpo или банковскую выписку с датой и суммой.',
+          'Импортируйте CSV Monedero или банковскую выписку с датой и суммой.',
       'import_pick_file': 'Выбрать файл',
       'import_preview': '{n} операций готово · {s} строк пропущено',
       'import_confirm': 'Импортировать',
@@ -1927,7 +1927,7 @@ class Tr {
       'ai_api_not_enabled':
           'Включите Gemini / Firebase AI Logic в консоли Firebase.',
       'ai_permission_denied':
-          'Firebase отклонил запрос ИИ (App Check). На iPhone: проверьте DeviceCheck в консоли Firebase. На симуляторе: зарегистрируйте debug-токен.',
+          'Firebase отклонил ИИ (App Check). В debug: скопируйте токен из логов и сохраните в Firebase → App Check → Manage debug tokens.',
       'ai_quota_exceeded': 'Лимит ИИ исчерпан. Попробуйте позже.',
       'ai_filled': 'Поля заполнены с помощью ИИ',
       'ai_energy_empty':
@@ -2107,7 +2107,7 @@ class Tr {
       'net_worth': 'NET WORTH',
       'in_realtime': '↑ live',
       'history_12_weeks': '12 weeks',
-      'offline_first_tag': 'Pulpo · offline-first',
+      'offline_first_tag': 'Monedero · offline-first',
       'tx_id': 'ID: txn_{}',
       'bank_accounts': 'Bank accounts',
       'cash_wallets': 'Cash & wallets',
@@ -2425,7 +2425,7 @@ class Tr {
       'pro_debug_unlock': 'Unlock Pro (debug)',
       'import_csv': 'Import CSV',
       'import_csv_hint':
-          'Import a Pulpo CSV or a bank statement with date and amount.',
+          'Import a Monedero CSV or a bank statement with date and amount.',
       'import_pick_file': 'Choose file',
       'import_preview': '{n} transactions ready · {s} rows skipped',
       'import_confirm': 'Import',
@@ -2516,7 +2516,7 @@ class Tr {
       'ai_api_not_enabled':
           'Enable Gemini / Firebase AI Logic in the Firebase console.',
       'ai_permission_denied':
-          'Firebase rejected the AI request (App Check). On iPhone: check DeviceCheck in the Firebase console. On simulator: register the debug token.',
+          'Firebase rejected AI (App Check). In debug: copy the token from logs and save it in Firebase → App Check → Manage debug tokens.',
       'ai_quota_exceeded': 'AI usage limit reached. Try again later.',
       'ai_filled': 'Fields filled with AI',
       'ai_energy_empty':

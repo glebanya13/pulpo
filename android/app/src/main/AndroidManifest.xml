@@ -2,9 +2,11 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
@@ -36,7 +38,7 @@
         <receiver
             android:name=".PulpoWidgetProvider"
             android:exported="true"
-            android:label="Pulpo">
+            android:label="Monedero">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -47,7 +49,7 @@
         <receiver
             android:name=".PulpoBudgetWidgetProvider"
             android:exported="true"
-            android:label="Pulpo Budget">
+            android:label="Monedero Budget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -58,7 +60,7 @@
         <receiver
             android:name=".PulpoChartWidgetProvider"
             android:exported="true"
-            android:label="Pulpo Chart">
+            android:label="Monedero Chart">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

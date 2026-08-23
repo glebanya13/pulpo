@@ -304,9 +304,17 @@ class CloudAuth {
 
   static String? _hiResPhoto(String? url) {
     if (url == null || url.trim().isEmpty) return null;
-    return url
-        .replaceAll(RegExp(r'=s\d+-c\b'), '=s256-c')
-        .replaceAll(RegExp(r'/s\d+-c/'), '/s256-c/');
+    var u = url.trim();
+    // Googleusercontent: force square crop + higher res for avatars.
+    if (u.contains('googleusercontent.com')) {
+      u = u
+          .replaceAll(RegExp(r'=s\d+-c?\b'), '=s256-c')
+          .replaceAll(RegExp(r'/s\d+-c?/'), '/s256-c/');
+      if (!RegExp(r'[=/]s\d').hasMatch(u)) {
+        u = u.contains('?') ? '$u&sz=256' : '$u=s256-c';
+      }
+    }
+    return u;
   }
 
   static String? _joinName(String? given, String? family) {

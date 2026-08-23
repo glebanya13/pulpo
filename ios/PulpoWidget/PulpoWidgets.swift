@@ -52,7 +52,7 @@ struct PulpoWidgetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Pulpo")
+            Text("Monedero")
                 .font(.caption.bold())
                 .foregroundStyle(Color(red: 0.80, green: 1, blue: 0.23))
             Text(entry.balanceLabel)
@@ -113,7 +113,7 @@ struct PulpoBudgetWidgetView: View {
             HStack {
                 Text(entry.month).font(.caption2).foregroundStyle(.secondary)
                 Spacer()
-                Text("Pulpo").font(.caption2.bold()).foregroundStyle(Color(red: 0.80, green: 1, blue: 0.23))
+                Text("Monedero").font(.caption2.bold()).foregroundStyle(Color(red: 0.80, green: 1, blue: 0.23))
             }
             Text(entry.leftLabel).font(.caption2).foregroundStyle(.secondary)
             Text(entry.left).font(.title.bold()).foregroundStyle(Color(red: 0.80, green: 1, blue: 0.23))
@@ -170,7 +170,7 @@ struct PulpoChartWidgetView: View {
             HStack {
                 Text(entry.month).font(.caption2).foregroundStyle(.secondary)
                 Spacer()
-                Text("Pulpo").font(.caption2.bold()).foregroundStyle(Color(red: 0.80, green: 1, blue: 0.23))
+                Text("Monedero").font(.caption2.bold()).foregroundStyle(Color(red: 0.80, green: 1, blue: 0.23))
             }
             Text(entry.expenseLabel).font(.caption2).foregroundStyle(.secondary)
             Text(entry.spent).font(.title3.bold()).foregroundStyle(Color(red: 1, green: 0.36, blue: 0.36))
@@ -203,7 +203,7 @@ struct PulpoWidget: Widget {
         StaticConfiguration(kind: kind, provider: PulpoProvider()) { entry in
             PulpoWidgetView(entry: entry)
         }
-        .configurationDisplayName("Pulpo")
+        .configurationDisplayName("Monedero")
         .description("Balance and monthly spending")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
@@ -215,7 +215,7 @@ struct PulpoBudgetWidget: Widget {
         StaticConfiguration(kind: kind, provider: PulpoBudgetProvider()) { entry in
             PulpoBudgetWidgetView(entry: entry)
         }
-        .configurationDisplayName("Pulpo Budget")
+        .configurationDisplayName("Monedero Budget")
         .description("Budget left and progress")
         .supportedFamilies([.systemSmall])
     }
@@ -227,7 +227,7 @@ struct PulpoChartWidget: Widget {
         StaticConfiguration(kind: kind, provider: PulpoChartProvider()) { entry in
             PulpoChartWidgetView(entry: entry)
         }
-        .configurationDisplayName("Pulpo Chart")
+        .configurationDisplayName("Monedero Chart")
         .description("Daily expense bars")
         .supportedFamilies([.systemMedium, .systemLarge])
     }

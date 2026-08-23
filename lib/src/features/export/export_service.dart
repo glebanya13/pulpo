@@ -41,14 +41,14 @@ class ExportService {
 
     switch (format) {
       case ExportFormat.csv:
-        final file = File('${dir.path}/pulpo-$range.csv');
+        final file = File('${dir.path}/monedero-$range.csv');
         await file.writeAsString(_toCsv(txs), flush: true);
         await Share.shareXFiles(
           [XFile(file.path, mimeType: 'text/csv')],
           sharePositionOrigin: shareOrigin,
         );
       case ExportFormat.excel:
-        final file = File('${dir.path}/pulpo-$range.xlsx');
+        final file = File('${dir.path}/monedero-$range.xlsx');
         await file.writeAsBytes(buildTransactionsXlsx(txs), flush: true);
         await Share.shareXFiles(
           [
@@ -71,7 +71,7 @@ class ExportService {
             theme: pw.ThemeData.withFont(base: font, bold: font),
             build: (ctx) => [
               pw.Text(
-                'Pulpo $stamp – $stamp2',
+                'Monedero $stamp – $stamp2',
                 style: pw.TextStyle(
                     fontSize: 16, fontWeight: pw.FontWeight.bold),
               ),
@@ -96,7 +96,7 @@ class ExportService {
             ],
           ),
         );
-        final file = File('${dir.path}/pulpo-$range.pdf');
+        final file = File('${dir.path}/monedero-$range.pdf');
         await file.writeAsBytes(await doc.save());
         await Share.shareXFiles(
           [XFile(file.path, mimeType: 'application/pdf')],
@@ -169,7 +169,7 @@ List<int> buildTransactionsXlsx(List<db.Transaction> txs) {
         '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-<sheets><sheet name="Pulpo" sheetId="1" r:id="rId1"/></sheets>
+<sheets><sheet name="Monedero" sheetId="1" r:id="rId1"/></sheets>
 </workbook>''',
     'xl/_rels/workbook.xml.rels':
         '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>

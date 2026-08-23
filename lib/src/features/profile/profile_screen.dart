@@ -341,20 +341,42 @@ class _ProfileAvatar extends StatelessWidget {
     final url = photoUrl?.trim();
     if (url == null || url.isEmpty) return fallback();
 
-    return ClipOval(
-      child: Image.network(
-        url,
-        width: 48,
-        height: 48,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => fallback(),
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return fallback();
-        },
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: ClipOval(
+        clipBehavior: Clip.antiAlias,
+        child: Image.network(
+          _avatarPhotoUrl(url),
+          width: 48,
+          height: 48,
+          fit: BoxFit.cover,
+          alignment: Alignment.center,
+          filterQuality: FilterQuality.medium,
+          gaplessPlayback: true,
+          errorBuilder: (_, __, ___) => fallback(),
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) return child;
+            return fallback();
+          },
+        ),
       ),
     );
   }
+}
+
+/// Google profile URLs need an explicit square crop (`sNNN-c`), otherwise
+/// the photo may letterbox or look uncropped inside a circle.
+String _avatarPhotoUrl(String url) {
+  var u = url.trim();
+  if (!u.contains('googleusercontent.com')) return u;
+  u = u
+      .replaceAll(RegExp(r'=s\d+-c?\b'), '=s256-c')
+      .replaceAll(RegExp(r'/s\d+-c?/'), '/s256-c/');
+  if (!RegExp(r'[=/]s\d').hasMatch(u)) {
+    u = u.contains('?') ? '$u&sz=256' : '$u=s256-c';
+  }
+  return u;
 }
 
 class _SectionLabel extends StatelessWidget {

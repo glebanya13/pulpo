@@ -14,6 +14,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../widgets/async_value_view.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/transaction_tile.dart';
@@ -317,48 +318,57 @@ Future<_SheetPick<T>> _openPickSheet<T>(
   required List<(T, String)> items,
   required T selected,
 }) async {
-  final picked = await showModalBottomSheet<_SheetPick<T>>(
+  final picked = await showAppBottomSheet<_SheetPick<T>>(
     context: context,
     backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
     builder: (ctx) {
-      return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      final bottomInset = MediaQuery.viewPaddingOf(ctx).bottom;
+      final maxH = MediaQuery.sizeOf(ctx).height * 0.72;
+
+      return Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxH),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: ctx.handleBar,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: ctx.primaryText,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: ctx.handleBar,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: ctx.primaryText,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(ctx).height * 0.5,
-                ),
+              Flexible(
                 child: ListView.separated(
-                  shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   itemCount: items.length,
-                  separatorBuilder: (_, _) => Divider(
+                  separatorBuilder: (context, index) => Divider(
                     height: 1,
                     color: ctx.divider,
                   ),
@@ -366,7 +376,8 @@ Future<_SheetPick<T>> _openPickSheet<T>(
                     final item = items[i];
                     final active = item.$1 == selected;
                     return Pressable(
-                      onTap: () => Navigator.pop(ctx, _SheetPick.ok(item.$1)),
+                      onTap: () =>
+                          Navigator.pop(ctx, _SheetPick.ok(item.$1)),
                       scale: 0.98,
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,
@@ -379,8 +390,11 @@ Future<_SheetPick<T>> _openPickSheet<T>(
                           ),
                         ),
                         trailing: active
-                            ? const Icon(LucideIcons.check,
-                                color: AppColors.limeAccent, size: 20)
+                            ? const Icon(
+                                LucideIcons.check,
+                                color: AppColors.limeAccent,
+                                size: 20,
+                              )
                             : null,
                       ),
                     );

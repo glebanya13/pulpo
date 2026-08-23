@@ -127,7 +127,16 @@ Future<void> main() async {
       prefs: prefs,
       backup: container.read(backupServiceProvider),
     );
-    await syncDailyReminder(container.read(settingsControllerProvider));
+    await syncDailyReminder(container.read(settingsControllerProvider)).then(
+      (result) async {
+        if (result != ReminderSyncResult.noPermission) return;
+        final s = container.read(settingsControllerProvider);
+        if (!s.dailyReminderEnabled) return;
+        await container
+            .read(settingsControllerProvider.notifier)
+            .setDailyReminderEnabled(false);
+      },
+    );
   } catch (e, st) {
     dataInitError = e.toString();
     debugPrint('startup data init: $e\n$st');
@@ -172,7 +181,13 @@ class BudgetTrackerApp extends ConsumerWidget {
     final settings = ref.watch(settingsControllerProvider);
     ref.listen<SettingsState>(settingsControllerProvider, (prev, next) {
       if (prev == next) return;
-      syncDailyReminder(next);
+      syncDailyReminder(next).then((result) async {
+        if (result != ReminderSyncResult.noPermission) return;
+        if (!ref.read(settingsControllerProvider).dailyReminderEnabled) return;
+        await ref
+            .read(settingsControllerProvider.notifier)
+            .setDailyReminderEnabled(false);
+      });
       _syncSmart(ref);
     });
     ref.listen<ProState>(proControllerProvider, (prev, next) {

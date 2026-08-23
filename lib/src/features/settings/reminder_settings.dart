@@ -167,10 +167,14 @@ Future<void> toggleDailyReminder(
   if (enabled) {
     await initDailyReminder();
     final ok = await requestReminderPermission();
-    if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr.reminderPermissionDenied)),
-      );
+    if (!ok) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.reminderPermissionDenied)),
+        );
+      }
+      // Keep toggle off — otherwise UI says "on" but nothing is scheduled.
+      return;
     }
   }
   await ref.read(settingsControllerProvider.notifier).setDailyReminderEnabled(
@@ -189,10 +193,13 @@ Future<void> toggleSmartReminders(
     if (!ok) return;
     await initDailyReminder();
     final allowed = await requestReminderPermission();
-    if (!allowed && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr.reminderPermissionDenied)),
-      );
+    if (!allowed) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.reminderPermissionDenied)),
+        );
+      }
+      return;
     }
   }
   await ref.read(settingsControllerProvider.notifier).setSmartRemindersEnabled(

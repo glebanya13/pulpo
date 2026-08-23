@@ -23,7 +23,7 @@ class CsvParseResult {
   final int skipped;
 }
 
-/// Parses Pulpo CSV (`date,type,amount,currency,note`) and simple bank CSVs.
+/// Parses Monedero CSV (`date,type,amount,currency,note`) and simple bank CSVs.
 CsvParseResult parseTransactionCsv(String raw, {required String fallbackCurrency}) {
   final text = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
   if (text.isEmpty) return const CsvParseResult(rows: [], skipped: 0);

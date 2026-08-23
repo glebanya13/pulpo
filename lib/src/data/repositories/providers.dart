@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../db/app_database.dart';
 import '../db/enums.dart';
+import '../seed/seed_categories.dart';
 import '../../core/fx_rate_service.dart';
 
 /// Синглтон-провайдер БД. Открывается один раз на всё приложение.
@@ -27,7 +28,8 @@ final categoriesProvider = StreamProvider<List<Category>>((ref) {
   return (db.select(db.categories)
         ..where((c) => c.isHidden.equals(false))
         ..orderBy([(c) => OrderingTerm.asc(c.sortOrder)]))
-      .watch();
+      .watch()
+      .map(sortCategories);
 });
 
 /// Все транзакции (по убыванию даты).

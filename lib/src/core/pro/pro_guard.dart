@@ -74,9 +74,7 @@ String quotaLabel({
   required int used,
   required int limit,
 }) =>
-    // Always show used/limit so free quotas read as 1/3, 2/3, 3/3.
-    // Pro keeps the same fraction against the free-tier reference limit.
-    '$used/$limit';
+    isPro ? '$used' : '$used/$limit';
 
 String formatProExpiryDate(BuildContext context, DateTime date) {
   final locale = Localizations.localeOf(context).languageCode;
