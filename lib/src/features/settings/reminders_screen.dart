@@ -69,10 +69,10 @@ class RemindersScreen extends ConsumerWidget {
                           color: const Color(0xFFE0F2FE),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           LucideIcons.bell,
                           size: 20,
-                          color: context.primaryText,
+                          color: AppColors.ink,
                         ),
                       ),
                       const SizedBox(width: 12),

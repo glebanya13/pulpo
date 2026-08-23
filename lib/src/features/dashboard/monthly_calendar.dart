@@ -46,16 +46,20 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
     final monthStart = _month;
     final monthEnd = DateTime(_month.year, _month.month + 1, 1);
-    final monthTxsAsync = ref.watch(
-      transactionsInRangeProvider((start: monthStart, end: monthEnd)),
-    );
+    // Use the full stream (already warm on dashboard) so month switches never
+    // flash a loading spinner / collapse height.
+    final allTxsAsync = ref.watch(allTransactionsProvider);
 
     return AsyncValueView(
-      value: monthTxsAsync,
-      onRetry: () => ref.invalidate(
-        transactionsInRangeProvider((start: monthStart, end: monthEnd)),
-      ),
-      data: (monthTxs) {
+      value: allTxsAsync,
+      onRetry: () => ref.invalidate(allTransactionsProvider),
+      data: (allTxs) {
+        final monthTxs = allTxs
+            .where(
+              (t) =>
+                  !t.date.isBefore(monthStart) && t.date.isBefore(monthEnd),
+            )
+            .toList();
         var income = 0.0;
         var expense = 0.0;
         final byDay = <int, ({double income, double expense})>{};
@@ -297,8 +301,8 @@ class _MonthTable extends StatelessWidget {
     final labels = Tr.of(context).weekdayShort;
     final prevMonthLast = DateTime(month.year, month.month, 0).day;
     final today = DateTime.now();
-    final totalDays = leading + daysInMonth;
-    final rowCount = (totalDays / 7).ceil();
+    // Always 6 weeks so month switches don't change calendar height.
+    const rowCount = 6;
 
     _DayCell cellAt(int i) {
       final dayIndex = i - leading + 1;
@@ -425,8 +429,10 @@ class _DayCell extends StatelessWidget {
                 ),
               ),
             ),
-            if (showIncome || showExpense)
-              Padding(
+            // Fixed slot for up to 2 pills — keeps every row the same height.
+            SizedBox(
+              height: 28,
+              child: Padding(
                 padding: const EdgeInsets.only(top: 1),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -447,6 +453,7 @@ class _DayCell extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
           ],
         ),
       ),
@@ -495,6 +502,15 @@ class _DaySheet extends StatelessWidget {
   const _DaySheet({required this.day, required this.txs});
   final DateTime day;
   final List<db.Transaction> txs;
+
+  void _openAdd(BuildContext context) {
+    final router = GoRouter.of(context);
+    final y = day.year.toString().padLeft(4, '0');
+    final m = day.month.toString().padLeft(2, '0');
+    final d = day.day.toString().padLeft(2, '0');
+    Navigator.of(context).pop();
+    router.push('/add?date=$y-$m-$d');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -554,7 +570,7 @@ class _DaySheet extends StatelessWidget {
           else
             ConstrainedBox(
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.6,
+                maxHeight: MediaQuery.of(context).size.height * 0.5,
               ),
               child: ListView.builder(
                 shrinkWrap: true,
@@ -571,6 +587,34 @@ class _DaySheet extends StatelessWidget {
                 },
               ),
             ),
+          const SizedBox(height: 14),
+          Pressable(
+            onTap: () => _openAdd(context),
+            scale: 0.97,
+            child: Container(
+              width: double.infinity,
+              height: 54,
+              decoration: BoxDecoration(
+                color: AppColors.lime,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(LucideIcons.plus, size: 22, color: AppColors.ink),
+                  const SizedBox(width: 8),
+                  Text(
+                    tr.newTransaction,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

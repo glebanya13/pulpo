@@ -18,14 +18,21 @@ class AppInfo {
   static const appleServicesId = 'com.pulpo.app.signin';
   static const googleServerClientId =
       '734611302573-l7occ13kr4q6r7el0l6uuoaoakrd5af1.apps.googleusercontent.com';
-  static const site = 'https://pulpo.mobi';
+
+  static const site = 'https://monedero.mobi';
   static const privacyUrl = '$site/privacy';
   static const termsUrl = '$site/terms';
   static const supportUrl = '$site/support';
-  static const supportEmail = 'support@pulpo.mobi';
+  static const supportEmail = 'hola@monedero.mobi';
+
+  /// WhatsApp username without @ — opens via wa.me (no phone number in the link).
+  static const whatsAppUsername = 'monedero.mobi';
+  static const whatsAppHandle = '@$whatsAppUsername';
+  static const whatsAppUrl = 'https://wa.me/$whatsAppUsername';
 
   static final privacyUri = Uri.parse(privacyUrl);
   static final termsUri = Uri.parse(termsUrl);
   static final supportUri = Uri.parse(supportUrl);
   static final mailtoUri = Uri.parse('mailto:$supportEmail');
+  static final whatsAppUri = Uri.parse(whatsAppUrl);
 }

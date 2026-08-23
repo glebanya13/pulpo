@@ -56,8 +56,14 @@ class SettingsScreen extends ConsumerWidget {
                 title: tr.proGo,
                 subtitle: tr.proCtaSubtitle,
                 onTap: () => openPaywall(context, ProGate.generic),
+              )
+            else
+              ProUpgradeCard(
+                title: tr.proTitle,
+                subtitle: tr.proActive,
+                onTap: () => openPaywall(context, ProGate.generic),
               ),
-            if (!pro.isPro) const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
             _Section(
               children: [

@@ -27,19 +27,24 @@ class ProUpgradeCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
           gradient: const LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFFB8F029),
+              Color(0xFFD4FF00),
               AppColors.lime,
-              Color(0xFFE8FF6A),
+              Color(0xFFF0FF7A),
             ],
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.lime.withValues(alpha: 0.55),
-              blurRadius: 22,
+              color: AppColors.lime.withValues(alpha: 0.65),
+              blurRadius: 26,
               offset: const Offset(0, 10),
+            ),
+            BoxShadow(
+              color: AppColors.lime.withValues(alpha: 0.35),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),

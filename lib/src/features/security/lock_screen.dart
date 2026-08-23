@@ -50,8 +50,9 @@ class _LockScreenState extends ConsumerState<LockScreen>
       if (!mounted) return;
       final lock = ref.read(lockControllerProvider);
       if (!lock.biometricsEnabled || !lock.needsLock) return;
-      // Wait until the lock UI is stable; Face ID needs the app resumed.
-      await Future<void>.delayed(const Duration(milliseconds: 600));
+      // Face ID fails (or used to fall back to device passcode) if LAContext
+      // starts while the app is still inactive after unlock / cold start.
+      await _waitUntilResumed();
       if (!mounted) return;
       final still = ref.read(lockControllerProvider);
       if (!still.biometricsEnabled || !still.needsLock) return;
@@ -63,7 +64,7 @@ class _LockScreenState extends ConsumerState<LockScreen>
       if (!ok && mounted) {
         final again = ref.read(lockControllerProvider);
         if (again.biometricsEnabled && again.needsLock) {
-          await Future<void>.delayed(const Duration(milliseconds: 400));
+          await _waitUntilResumed();
           if (!mounted) return;
           await ref.read(lockControllerProvider.notifier).tryBiometrics(
                 localizedReason: tr.biometricLockHint,
@@ -71,6 +72,18 @@ class _LockScreenState extends ConsumerState<LockScreen>
         }
       }
     });
+  }
+
+  Future<void> _waitUntilResumed() async {
+    for (var i = 0; i < 20; i++) {
+      if (!mounted) return;
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+        // Brief settle so the first frame after resume is painted.
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
   }
 
   void _onPin(String next) {

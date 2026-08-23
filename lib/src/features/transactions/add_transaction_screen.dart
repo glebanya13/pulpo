@@ -38,11 +38,14 @@ class AddTransactionScreen extends ConsumerStatefulWidget {
     super.key,
     this.initialType,
     this.initialMode,
+    this.initialDate,
     this.editId,
   });
 
   final String? initialType;
   final String? initialMode;
+  /// Prefill date (e.g. from calendar day sheet). Ignored when [editId] is set.
+  final DateTime? initialDate;
   final int? editId;
 
   @override
@@ -71,6 +74,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         break;
       default:
         _type = TxType.expense;
+    }
+    final seed = widget.initialDate;
+    if (seed != null && widget.editId == null) {
+      _date = DateTime(seed.year, seed.month, seed.day);
     }
   }
   db.Category? _category;

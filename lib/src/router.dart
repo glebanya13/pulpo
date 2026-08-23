@@ -129,13 +129,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/add',
-        pageBuilder: (context, state) => _fadePage(
-          state,
-          AddTransactionScreen(
-            initialType: state.uri.queryParameters['type'],
-            initialMode: state.uri.queryParameters['mode'],
-          ),
-        ),
+        pageBuilder: (context, state) {
+          final dateRaw = state.uri.queryParameters['date'];
+          DateTime? initialDate;
+          if (dateRaw != null && dateRaw.isNotEmpty) {
+            initialDate = DateTime.tryParse(dateRaw);
+          }
+          return _fadePage(
+            state,
+            AddTransactionScreen(
+              initialType: state.uri.queryParameters['type'],
+              initialMode: state.uri.queryParameters['mode'],
+              initialDate: initialDate,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/voice-ai',

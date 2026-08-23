@@ -106,7 +106,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           subtitle: tr.analyticsSubtitle,
           large: true,
           expand: true,
-          trailing: const MyAccountChip(dense: true),
+          trailing: const HeaderSupportActions(dense: true),
         ),
         const SizedBox(height: 16),
         _PeriodDropdownButton(

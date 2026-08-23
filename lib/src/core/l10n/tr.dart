@@ -1338,7 +1338,7 @@ class Tr {
       'ai_api_not_enabled':
           'Activa Gemini / Firebase AI Logic en la consola de Firebase.',
       'ai_permission_denied':
-          'Firebase rechazó la petición de IA (App Check). En debug: registra el token de App Check en la consola de Firebase.',
+          'Firebase rechazó la petición de IA (App Check). En iPhone: revisa DeviceCheck en la consola. En simulador: registra el token debug.',
       'ai_quota_exceeded': 'Se alcanzó el límite de uso de IA. Prueba más tarde.',
       'ai_filled': 'Campos rellenados con IA',
       'ai_energy_empty':
@@ -1927,7 +1927,7 @@ class Tr {
       'ai_api_not_enabled':
           'Включите Gemini / Firebase AI Logic в консоли Firebase.',
       'ai_permission_denied':
-          'Firebase отклонил запрос ИИ (App Check). В debug: зарегистрируйте токен App Check в консоли Firebase.',
+          'Firebase отклонил запрос ИИ (App Check). На iPhone: проверьте DeviceCheck в консоли Firebase. На симуляторе: зарегистрируйте debug-токен.',
       'ai_quota_exceeded': 'Лимит ИИ исчерпан. Попробуйте позже.',
       'ai_filled': 'Поля заполнены с помощью ИИ',
       'ai_energy_empty':
@@ -2516,7 +2516,7 @@ class Tr {
       'ai_api_not_enabled':
           'Enable Gemini / Firebase AI Logic in the Firebase console.',
       'ai_permission_denied':
-          'Firebase rejected the AI request (App Check). In debug: register the App Check debug token in the Firebase console.',
+          'Firebase rejected the AI request (App Check). On iPhone: check DeviceCheck in the Firebase console. On simulator: register the debug token.',
       'ai_quota_exceeded': 'AI usage limit reached. Try again later.',
       'ai_filled': 'Fields filled with AI',
       'ai_energy_empty':

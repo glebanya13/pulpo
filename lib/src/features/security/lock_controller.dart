@@ -173,12 +173,13 @@ class LockController extends Notifier<LockState> {
   }) async {
     _authInProgress = true;
     try {
-      // biometricOnly: false — iOS can fall back to device passcode; true
-      // often returns NotAvailable after cancel / failed Face ID.
+      // biometricOnly: true — Face ID / Touch ID only. With false, iOS often
+      // skips the face scan and shows the device passcode sheet instead.
+      // App PIN on LockScreen remains the in-app fallback.
       final ok = await _auth.authenticate(
         localizedReason: localizedReason,
         options: AuthenticationOptions(
-          biometricOnly: false,
+          biometricOnly: true,
           stickyAuth: sticky,
           sensitiveTransaction: false,
           useErrorDialogs: true,

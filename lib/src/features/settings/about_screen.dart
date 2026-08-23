@@ -61,6 +61,11 @@ class AboutScreen extends StatelessWidget {
                   onTap: () => openAppLink(context, AppInfo.supportUri),
                 ),
                 _LinkRow(
+                  icon: LucideIcons.messageCircle,
+                  title: 'WhatsApp ${AppInfo.whatsAppHandle}',
+                  onTap: () => openAppLink(context, AppInfo.whatsAppUri),
+                ),
+                _LinkRow(
                   icon: LucideIcons.mail,
                   title: AppInfo.supportEmail,
                   onTap: () => openAppLink(context, AppInfo.mailtoUri),

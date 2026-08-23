@@ -112,19 +112,18 @@ class ProfileScreen extends ConsumerWidget {
             onTap: () => openPaywall(context, ProGate.generic),
           ),
           const SizedBox(height: 20),
+        ] else ...[
+          ProUpgradeCard(
+            title: tr.proTitle,
+            subtitle: tr.proActive,
+            onTap: () => openPaywall(context, ProGate.generic),
+          ),
+          const SizedBox(height: 20),
         ],
 
         _SectionLabel(tr.sectionSettings),
         _MenuGroup(
           children: [
-            if (isPro)
-              _MenuRow(
-                icon: LucideIcons.rocket,
-                iconBg: AppColors.lime.withValues(alpha: 0.45),
-                label: tr.proTitle,
-                trailing: tr.proActiveShort,
-                onTap: () => openPaywall(context, ProGate.generic),
-              ),
             if (authUser == null)
               _MenuRow(
                 icon: LucideIcons.logIn,

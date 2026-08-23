@@ -76,7 +76,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           title: tr.transactions,
           large: true,
           expand: true,
-          trailing: const MyAccountChip(dense: true),
+          trailing: const HeaderSupportActions(dense: true),
         ),
         const SizedBox(height: 16),
         Container(

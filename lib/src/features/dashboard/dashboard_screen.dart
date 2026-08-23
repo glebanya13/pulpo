@@ -48,7 +48,7 @@ class DashboardScreen extends ConsumerWidget {
           eyebrow: tr.greetingForHour(DateTime.now().hour),
           large: true,
           expand: true,
-          trailing: const MyAccountChip(dense: true),
+          trailing: const HeaderSupportActions(dense: true),
         ),
         const SizedBox(height: 10),
         AsyncValuesGate(

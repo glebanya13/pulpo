@@ -57,6 +57,7 @@
 		<array>
 			<string>https</string>
 			<string>mailto</string>
+			<string>whatsapp</string>
 		</array>
 		<key>NSFaceIDUsageDescription</key>
 		<string>Monedero usa Face ID para desbloquear la app.</string>

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../core/app_info.dart';
 import '../core/l10n/tr.dart';
+import '../core/open_link.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
@@ -194,6 +196,60 @@ class MyAccountChip extends StatelessWidget {
   }
 }
 
+/// WhatsApp support — opens [AppInfo.whatsAppUri] (username, not phone).
+class WhatsAppSupportChip extends StatelessWidget {
+  const WhatsAppSupportChip({super.key, this.dense = false});
+
+  final bool dense;
+
+  static const _green = Color(0xFF25D366);
+
+  @override
+  Widget build(BuildContext context) {
+    final size = dense ? 34.0 : 40.0;
+    return Pressable(
+      onTap: () => openAppLink(context, AppInfo.whatsAppUri),
+      child: Semantics(
+        button: true,
+        label: 'WhatsApp ${AppInfo.whatsAppHandle}',
+        child: Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: _green,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            LucideIcons.messageCircle,
+            size: dense ? 18 : 22,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// WhatsApp + account chip pair for main tab headers.
+class HeaderSupportActions extends StatelessWidget {
+  const HeaderSupportActions({super.key, this.dense = true});
+
+  final bool dense;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        WhatsAppSupportChip(dense: dense),
+        SizedBox(width: dense ? 6 : 8),
+        MyAccountChip(dense: dense),
+      ],
+    );
+  }
+}
+
 /// Header страницы: back/action по краям, заголовок по центру в pill.
 class PageHeader extends StatelessWidget {
   const PageHeader({
@@ -285,10 +341,23 @@ class PageHeader extends StatelessWidget {
         ),
         if (subtitle != null) ...[
           const SizedBox(height: 8),
-          Text(
-            subtitle!,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: context.mutedText),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(
+                color: context.surface,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: context.mutedText,
+                ),
+              ),
+            ),
           ),
         ],
       ],
