@@ -141,3 +141,21 @@ class Subscriptions extends Table {
   BoolColumn get isPaused => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
+
+/// Persisted AI assistant chat (survives leaving the screen / relaunch).
+class AssistantMessages extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  BoolColumn get isFromUser => boolean()();
+  TextColumn get body => text()();
+  TextColumn get imagePath => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+/// Local error-only diagnostics (AI, auth, etc.). Not backed up to cloud.
+class ErrorLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get source => text().withLength(min: 1, max: 80)();
+  TextColumn get message => text()();
+  TextColumn get detail => text().nullable()();
+}

@@ -21,6 +21,7 @@ import 'features/auth/sign_in_screen.dart';
 import 'features/security/security_screen.dart';
 import 'features/export/export_screen.dart';
 import 'features/import/import_screen.dart';
+import 'features/settings/error_logs_screen.dart';
 import 'features/settings/about_screen.dart';
 import 'features/settings/backups_screen.dart';
 import 'features/settings/currency_picker_screen.dart';
@@ -271,6 +272,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'about',
             pageBuilder: (context, state) =>
                 _fadePage(state, const AboutScreen()),
+          ),
+          GoRoute(
+            path: 'error-logs',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const ErrorLogsScreen()),
           ),
           GoRoute(
             path: 'reminders',

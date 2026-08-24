@@ -24,6 +24,8 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
+import '../../data/repositories/assistant_chat_repository.dart';
+import '../../data/repositories/error_log_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/assistant_energy_chip.dart';
@@ -31,20 +33,6 @@ import '../../widgets/pressable.dart';
 import '../../widgets/ai_assistant_mark.dart';
 import 'app_chat_context.dart';
 import 'assistant_transactions.dart';
-
-class _ChatMsg {
-  const _ChatMsg({
-    required this.fromUser,
-    required this.text,
-    this.imagePath,
-    this.time = const TimeOfDay(hour: 0, minute: 0),
-  });
-
-  final bool fromUser;
-  final String text;
-  final String? imagePath;
-  final TimeOfDay time;
-}
 
 class AssistantChatScreen extends ConsumerStatefulWidget {
   const AssistantChatScreen({super.key});
@@ -58,7 +46,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   final _input = TextEditingController();
   final _listCtrl = ScrollController();
   final _speech = stt.SpeechToText();
-  final _messages = <_ChatMsg>[];
   db.Account? _account;
   bool _busy = false;
   bool _gateChecked = false;
@@ -68,11 +55,38 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   Timer? _burnTimer;
   DateTime? _burnAnchor;
 
+  AssistantChatRepository get _chat =>
+      ref.read(assistantChatRepositoryProvider);
+
+  Future<void> _append({
+    required bool isFromUser,
+    required String body,
+    String? imagePath,
+  }) {
+    return _chat.add(
+      isFromUser: isFromUser,
+      body: body,
+      imagePath: imagePath,
+    );
+  }
+
+  Future<void> _logError(Object error, [StackTrace? st]) {
+    return ref.read(errorLogRepositoryProvider).record(
+          source: 'assistant_chat',
+          error: error,
+          stackTrace: st,
+        );
+  }
+
   @override
   void initState() {
     super.initState();
     _input.addListener(() => setState(() {}));
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureAccess());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref.read(assistantChatSyncProvider.future);
+      if (!mounted) return;
+      await _ensureAccess();
+    });
   }
 
   @override
@@ -163,15 +177,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       if (context.canPop()) context.pop();
       return;
     }
-    if (_messages.isEmpty) {
-      setState(() {
-        _messages.add(_ChatMsg(
-          fromUser: false,
-          text: Tr.of(context).aiChatWelcome,
-          time: TimeOfDay.now(),
-        ));
-      });
-    }
+    await _chat.ensureWelcome(Tr.of(context).aiChatWelcome);
+    _scrollToEnd();
   }
 
   String _localeId(String locale) => switch (locale) {
@@ -276,25 +283,23 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     await _stopListening();
 
     setState(() {
-      _messages.add(_ChatMsg(fromUser: true, text: text, time: TimeOfDay.now()));
       _input.clear();
       _busy = true;
     });
+    await _append(isFromUser: true, body: text);
     _syncEnergyBurn();
     _scrollToEnd();
 
     try {
       await _handleUserText(text);
       await _chargeTextTurn();
-    } catch (e) {
+    } catch (e, st) {
+      await _logError(e, st);
       if (!mounted) return;
-      setState(() {
-        _messages.add(_ChatMsg(
-          fromUser: false,
-          text: describeAiError(Tr.of(context), e),
-          time: TimeOfDay.now(),
-        ));
-      });
+      await _append(
+        isFromUser: false,
+        body: describeAiError(Tr.of(context), e),
+      );
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -308,7 +313,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final tr = Tr.of(context);
     final locale = ref.read(settingsControllerProvider).locale;
     final welcome = tr.aiChatWelcome;
-    final prior = _chatHistory(welcome);
+    final stored = await _chat.all();
+    final prior = _chatHistory(stored, welcome);
     final cats = ref.read(categoriesProvider).valueOrNull ?? [];
     final names = cats.map((c) => tr.categoryName(c.name)).toList();
     final account = await _resolveAccount();
@@ -338,20 +344,14 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           reply: turn.reply.isNotEmpty ? turn.reply : tr.aiBusy,
           transactions: drafts,
         );
-      } catch (_) {
-        // keep question-style reply
+      } catch (e, st) {
+        await _logError(e, st);
       }
     }
 
     if (turn.isRecord) {
       if (account == null) {
-        setState(() {
-          _messages.add(_ChatMsg(
-            fromUser: false,
-            text: tr.addAccountFirst,
-            time: TimeOfDay.now(),
-          ));
-        });
+        await _append(isFromUser: false, body: tr.addAccountFirst);
         return;
       }
 
@@ -364,13 +364,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         tr: tr,
       );
       if (!mounted || !approved) {
-        setState(() {
-          _messages.add(_ChatMsg(
-            fromUser: false,
-            text: tr.cancel,
-            time: TimeOfDay.now(),
-          ));
-        });
+        await _append(isFromUser: false, body: tr.cancel);
         return;
       }
 
@@ -393,39 +387,28 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               formatMoney(total, currencyHint),
             );
 
-      setState(() {
-        _messages.add(_ChatMsg(
-          fromUser: false,
-          text: reply,
-          time: TimeOfDay.now(),
-        ));
-      });
+      await _append(isFromUser: false, body: reply);
       return;
     }
 
-    // assistantTurn already falls back to chatAboutApp when JSON fails;
-    // avoid a third network hop if the model returned an empty reply.
     final reply = turn.reply.trim();
     if (reply.isEmpty) {
       throw const PulpoAiException(AiErrorCode.emptyResponse);
     }
 
     if (!mounted) return;
-    setState(() {
-      _messages.add(_ChatMsg(
-        fromUser: false,
-        text: reply,
-        time: TimeOfDay.now(),
-      ));
-    });
+    await _append(isFromUser: false, body: reply);
   }
 
-  List<({String role, String text})> _chatHistory(String welcome) {
+  List<({String role, String text})> _chatHistory(
+    List<db.AssistantMessage> messages,
+    String welcome,
+  ) {
     final prior = <({String role, String text})>[];
-    for (var i = 0; i < _messages.length - 1; i++) {
-      final m = _messages[i];
-      if (!m.fromUser && m.text == welcome) continue;
-      prior.add((role: m.fromUser ? 'user' : 'model', text: m.text));
+    for (var i = 0; i < messages.length - 1; i++) {
+      final m = messages[i];
+      if (!m.isFromUser && m.body == welcome) continue;
+      prior.add((role: m.isFromUser ? 'user' : 'model', text: m.body));
     }
     return prior;
   }
@@ -451,14 +434,13 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     await File(picked.path).copy(dest);
 
     setState(() {
-      _messages.add(_ChatMsg(
-        fromUser: true,
-        text: tr.aiChatReceiptSent,
-        imagePath: dest,
-        time: TimeOfDay.now(),
-      ));
       _busy = true;
     });
+    await _append(
+      isFromUser: true,
+      body: tr.aiChatReceiptSent,
+      imagePath: dest,
+    );
     _syncEnergyBurn();
     _scrollToEnd();
 
@@ -468,13 +450,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       final names = cats.map((c) => tr.categoryName(c.name)).toList();
       final account = await _resolveAccount();
       if (account == null) {
-        setState(() {
-          _messages.add(_ChatMsg(
-            fromUser: false,
-            text: tr.addAccountFirst,
-            time: TimeOfDay.now(),
-          ));
-        });
+        await _append(isFromUser: false, body: tr.addAccountFirst);
         return;
       }
 
@@ -486,13 +462,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           );
 
       if (receipt.amount == null || receipt.amount! <= 0) {
-        setState(() {
-          _messages.add(_ChatMsg(
-            fromUser: false,
-            text: tr.aiReceiptUnreadable,
-            time: TimeOfDay.now(),
-          ));
-        });
+        await _append(isFromUser: false, body: tr.aiReceiptUnreadable);
         return;
       }
 
@@ -516,24 +486,16 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       );
       if (!mounted) return;
 
-      setState(() {
-        _messages.add(_ChatMsg(
-          fromUser: false,
-          text: tr.aiAssistantReceiptSaved(
-            formatMoney(receipt.amount!, receipt.currency ?? account.currency),
-          ),
-          time: TimeOfDay.now(),
-        ));
-      });
-    } catch (e) {
+      await _append(
+        isFromUser: false,
+        body: tr.aiAssistantReceiptSaved(
+          formatMoney(receipt.amount!, receipt.currency ?? account.currency),
+        ),
+      );
+    } catch (e, st) {
+      await _logError(e, st);
       if (!mounted) return;
-      setState(() {
-        _messages.add(_ChatMsg(
-          fromUser: false,
-          text: describeAiError(tr, e),
-          time: TimeOfDay.now(),
-        ));
-      });
+      await _append(isFromUser: false, body: describeAiError(tr, e));
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -606,6 +568,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final hasText = _input.text.trim().isNotEmpty;
+    final messages =
+        ref.watch(assistantMessagesProvider).valueOrNull ?? const [];
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
     final account = _account ?? accounts.firstOrNull;
     final isPro = ref.watch(proControllerProvider).isPro;
@@ -647,44 +611,33 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                         child: Center(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
+                              horizontal: 14,
+                              vertical: 10,
                             ),
                             decoration: BoxDecoration(
                               color: context.surface,
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  tr.aiAssistantEyebrow,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.6,
-                                    color: context.mutedText,
-                                  ),
-                                ),
-                                Text(
-                                  tr.aiChatTitle,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.3,
-                                    height: 1.15,
-                                    color: context.primaryText,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              tr.aiChatTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.3,
+                                height: 1.15,
+                                color: context.primaryText,
+                              ),
                             ),
                           ),
                         ),
                       ),
                       if (!isPro) ...[
+                        const SizedBox(width: 6),
                         const AssistantEnergyChip(),
-                        const SizedBox(width: 8),
                       ],
+                      const SizedBox(width: 6),
                       Pressable(
                         onTap: _closeChat,
                         child: Container(
@@ -752,9 +705,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               child: ListView.builder(
                 controller: _listCtrl,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                itemCount: _messages.length + (_busy ? 1 : 0),
+                itemCount: messages.length + (_busy ? 1 : 0),
                 itemBuilder: (context, i) {
-                  if (_busy && i == _messages.length) {
+                  if (_busy && i == messages.length) {
                     return _AssistantBubble(
                       child: Text(
                         tr.aiBusy,
@@ -766,18 +719,19 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                       ),
                     );
                   }
-                  final m = _messages[i];
+                  final m = messages[i];
                   return _AssistantBubble(
-                    fromUser: m.fromUser,
-                    time: m.time,
+                    fromUser: m.isFromUser,
+                    time: TimeOfDay.fromDateTime(m.createdAt),
                     imagePath: m.imagePath,
                     child: Text(
-                      m.text,
+                      m.body,
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.4,
-                        color:
-                            m.fromUser ? AppColors.ink : context.primaryText,
+                        color: m.isFromUser
+                            ? AppColors.ink
+                            : context.primaryText,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

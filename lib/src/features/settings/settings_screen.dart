@@ -46,7 +46,7 @@ class SettingsScreen extends ConsumerWidget {
                     ? null
                     : const AssistantEnergyChip(),
               ),
-            headerGap: 20,
+            headerGap: 16,
             children: [
 
             if (!pro.isPro)

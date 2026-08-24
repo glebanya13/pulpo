@@ -73,7 +73,7 @@ class BudgetsScreen extends ConsumerWidget {
                 },
               ),
             ),
-        headerGap: 4,
+        headerGap: 16,
         children: [
             Padding(
               padding: const EdgeInsets.only(left: 54),

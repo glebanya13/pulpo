@@ -42,7 +42,7 @@ class ProfileScreen extends ConsumerWidget {
           AppSpacing.lg,
           AppSpacing.xxl,
         ),
-        headerGap: 12,
+        headerGap: 16,
         header: PageHeader(
           first: tr.profile,
           onBack: () => context.pop(),

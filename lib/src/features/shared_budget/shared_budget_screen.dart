@@ -54,7 +54,7 @@ class _SharedBudgetScreenState extends ConsumerState<SharedBudgetScreen> {
               first: tr.sharedBudgetTitle,
               onBack: () => context.pop(),
             ),
-        headerGap: 8,
+        headerGap: 16,
         children: [
             Text(
               tr.sharedBudgetSubtitle,

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/l10n/tr.dart';
+import '../../features/auth/cloud_auth.dart';
 import '../db/app_database.dart';
 import '../db/enums.dart';
 import '../repositories/providers.dart';
@@ -248,8 +250,47 @@ Future<void> seedDemoData(
   });
 }
 
-/// Онбординг без логина: имя, EUR и готовые операции для модерации.
+Future<void> _clearStaleAuth(WidgetRef ref) async {
+  // iOS Keychain often keeps Firebase session after "delete app".
+  // Local / demo entry must not show someone else's Google email.
+  try {
+    await ref.read(cloudAuthProvider).signOut();
+  } catch (_) {}
+}
+
+/// Empty local workspace — no login, no sample transactions.
+Future<void> startWithoutAccount(BuildContext context, WidgetRef ref) async {
+  await _clearStaleAuth(ref);
+  final settings = ref.read(settingsControllerProvider);
+  final locale = settings.locale;
+  final tr = Tr.fromLang(locale);
+  final currency = settings.baseCurrency;
+  final country = settings.baseCurrencyCountry;
+  await ref.read(settingsControllerProvider.notifier).completeOnboarding(
+        name: tr.guestName,
+        currency: currency,
+        currencyCountry: country,
+        themeMode: settings.themeMode,
+        locale: locale,
+      );
+  final db = ref.read(databaseProvider);
+  final accounts = await db.select(db.accounts).get();
+  if (accounts.isEmpty) {
+    await ref.read(accountRepositoryProvider).add(
+          name: tr.accountTypeCash,
+          type: AccountType.cash,
+          currency: currency,
+          initialBalance: 0,
+          icon: 'wallet',
+          color: 0xFF3DDC84,
+        );
+  }
+  if (context.mounted) context.go('/');
+}
+
+/// Sample data for App Store / Play review (Alex + fake txs). Not a blank start.
 Future<void> startLocalDemo(BuildContext context, WidgetRef ref) async {
+  await _clearStaleAuth(ref);
   final settings = ref.read(settingsControllerProvider);
   final locale = settings.locale;
   final copy = _copyFor(locale);

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/theme/app_colors.dart';
+import 'pro_badge.dart';
 
-/// AI assistant mark — violet / bot; lime / rocket when free energy is empty.
+/// AI assistant mark — violet bot; when upgrade needed, violet + PRO chrome.
 class AiAssistantMark extends StatelessWidget {
   const AiAssistantMark({
     super.key,
@@ -15,64 +16,55 @@ class AiAssistantMark extends StatelessWidget {
   final double size;
   final double? iconSize;
 
-  /// Free quota spent — show Pro rocket CTA.
+  /// Free quota spent — show Pro chrome on the violet AI mark (not lime FAB twin).
   final bool needsUpgrade;
 
   @override
   Widget build(BuildContext context) {
     final icon = iconSize ?? size * 0.46;
 
-    if (needsUpgrade) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.lime,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.lime.withValues(alpha: 0.45),
-              blurRadius: size * 0.22,
-              offset: Offset(0, size * 0.06),
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: Icon(
-          LucideIcons.rocket,
-          size: icon,
-          color: AppColors.ink,
-        ),
-      );
-    }
-
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF8B7CFF),
-            AppColors.violet,
-            Color(0xFFC4B5FD),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.violet.withValues(alpha: 0.4),
-            blurRadius: size * 0.22,
-            offset: Offset(0, size * 0.06),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF8B7CFF),
+                  AppColors.violet,
+                  Color(0xFFC4B5FD),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.violet.withValues(alpha: 0.4),
+                  blurRadius: size * 0.22,
+                  offset: Offset(0, size * 0.06),
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              LucideIcons.bot,
+              size: icon,
+              color: Colors.white,
+            ),
           ),
+          if (needsUpgrade)
+            Positioned(
+              right: -3,
+              top: -3,
+              child: ProChromeMark(size: (size * 0.42).clamp(12.0, 16.0)),
+            ),
         ],
-      ),
-      alignment: Alignment.center,
-      child: Icon(
-        LucideIcons.bot,
-        size: icon,
-        color: Colors.white,
       ),
     );
   }

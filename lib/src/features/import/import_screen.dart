@@ -48,7 +48,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           onRetry: () => ref.invalidate(accountsProvider),
           data: (_) => StickyScrollPage(
             header: PageHeader(first: tr.importCsv, onBack: () => context.pop()),
-            headerGap: 12,
+            headerGap: 16,
             children: [
             Text(
               tr.importCsvHint,

@@ -4,7 +4,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 
-/// Solid lime rectangle — same accent as primary actions, with “PRO” inside.
+/// Solid lime pill — rocket + PRO (same mark as cloud backup rows).
 class ProBadge extends StatelessWidget {
   const ProBadge({
     super.key,
@@ -28,18 +28,18 @@ class ProBadge extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: dense ? 6 : 8,
-        vertical: dense ? 3 : 4,
+        horizontal: dense ? 7 : 9,
+        vertical: dense ? 4 : 5,
       ),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(dense ? 5 : 6),
+        borderRadius: BorderRadius.circular(dense ? 8 : 9),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(LucideIcons.rocket, size: dense ? 9 : 11, color: fg),
-          SizedBox(width: dense ? 3 : 4),
+          Icon(LucideIcons.rocket, size: dense ? 10 : 12, color: fg),
+          SizedBox(width: dense ? 4 : 5),
           if (showLock) ...[
             Icon(LucideIcons.lock, size: dense ? 9 : 11, color: fg),
             SizedBox(width: dense ? 3 : 4),
@@ -47,9 +47,9 @@ class ProBadge extends StatelessWidget {
           Text(
             'PRO',
             style: TextStyle(
-              fontSize: dense ? 9 : 10,
+              fontSize: dense ? 10 : 11,
               fontWeight: FontWeight.w900,
-              letterSpacing: 0.6,
+              letterSpacing: 0.5,
               height: 1,
               color: fg,
             ),
@@ -90,6 +90,16 @@ class ProIconMark extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Compact mark for chrome (tabs / icon overlays). Full [ProBadge] for lists.
+class ProChromeMark extends StatelessWidget {
+  const ProChromeMark({super.key, this.size = 14});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => ProRocketDot(size: size);
 }
 
 /// Standalone rocket chip for list trailing / compact marks.

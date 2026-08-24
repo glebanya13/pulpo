@@ -30,7 +30,7 @@ class RemindersScreen extends ConsumerWidget {
     return Scaffold(
       body: StickyScrollPage(
         header: PageHeader(first: tr.dailyReminderCta, onBack: () => context.pop()),
-        headerGap: 8,
+        headerGap: 16,
         children: [
             Text(
               tr.remindersPageHint,

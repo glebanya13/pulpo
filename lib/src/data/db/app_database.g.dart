@@ -5124,6 +5124,611 @@ class SubscriptionsCompanion extends UpdateCompanion<Subscription> {
   }
 }
 
+class $AssistantMessagesTable extends AssistantMessages
+    with TableInfo<$AssistantMessagesTable, AssistantMessage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AssistantMessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _isFromUserMeta =
+      const VerificationMeta('isFromUser');
+  @override
+  late final GeneratedColumn<bool> isFromUser = GeneratedColumn<bool>(
+      'is_from_user', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_from_user" IN (0, 1))'));
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+      'body', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _imagePathMeta =
+      const VerificationMeta('imagePath');
+  @override
+  late final GeneratedColumn<String> imagePath = GeneratedColumn<String>(
+      'image_path', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, isFromUser, body, imagePath, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'assistant_messages';
+  @override
+  VerificationContext validateIntegrity(Insertable<AssistantMessage> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('is_from_user')) {
+      context.handle(
+          _isFromUserMeta,
+          isFromUser.isAcceptableOrUnknown(
+              data['is_from_user']!, _isFromUserMeta));
+    } else if (isInserting) {
+      context.missing(_isFromUserMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+          _bodyMeta, body.isAcceptableOrUnknown(data['body']!, _bodyMeta));
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('image_path')) {
+      context.handle(_imagePathMeta,
+          imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AssistantMessage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AssistantMessage(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      isFromUser: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_from_user'])!,
+      body: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}body'])!,
+      imagePath: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}image_path']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $AssistantMessagesTable createAlias(String alias) {
+    return $AssistantMessagesTable(attachedDatabase, alias);
+  }
+}
+
+class AssistantMessage extends DataClass
+    implements Insertable<AssistantMessage> {
+  final int id;
+  final bool isFromUser;
+  final String body;
+  final String? imagePath;
+  final DateTime createdAt;
+  const AssistantMessage(
+      {required this.id,
+      required this.isFromUser,
+      required this.body,
+      this.imagePath,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['is_from_user'] = Variable<bool>(isFromUser);
+    map['body'] = Variable<String>(body);
+    if (!nullToAbsent || imagePath != null) {
+      map['image_path'] = Variable<String>(imagePath);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  AssistantMessagesCompanion toCompanion(bool nullToAbsent) {
+    return AssistantMessagesCompanion(
+      id: Value(id),
+      isFromUser: Value(isFromUser),
+      body: Value(body),
+      imagePath: imagePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imagePath),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory AssistantMessage.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AssistantMessage(
+      id: serializer.fromJson<int>(json['id']),
+      isFromUser: serializer.fromJson<bool>(json['isFromUser']),
+      body: serializer.fromJson<String>(json['body']),
+      imagePath: serializer.fromJson<String?>(json['imagePath']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'isFromUser': serializer.toJson<bool>(isFromUser),
+      'body': serializer.toJson<String>(body),
+      'imagePath': serializer.toJson<String?>(imagePath),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  AssistantMessage copyWith(
+          {int? id,
+          bool? isFromUser,
+          String? body,
+          Value<String?> imagePath = const Value.absent(),
+          DateTime? createdAt}) =>
+      AssistantMessage(
+        id: id ?? this.id,
+        isFromUser: isFromUser ?? this.isFromUser,
+        body: body ?? this.body,
+        imagePath: imagePath.present ? imagePath.value : this.imagePath,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  AssistantMessage copyWithCompanion(AssistantMessagesCompanion data) {
+    return AssistantMessage(
+      id: data.id.present ? data.id.value : this.id,
+      isFromUser:
+          data.isFromUser.present ? data.isFromUser.value : this.isFromUser,
+      body: data.body.present ? data.body.value : this.body,
+      imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AssistantMessage(')
+          ..write('id: $id, ')
+          ..write('isFromUser: $isFromUser, ')
+          ..write('body: $body, ')
+          ..write('imagePath: $imagePath, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, isFromUser, body, imagePath, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AssistantMessage &&
+          other.id == this.id &&
+          other.isFromUser == this.isFromUser &&
+          other.body == this.body &&
+          other.imagePath == this.imagePath &&
+          other.createdAt == this.createdAt);
+}
+
+class AssistantMessagesCompanion extends UpdateCompanion<AssistantMessage> {
+  final Value<int> id;
+  final Value<bool> isFromUser;
+  final Value<String> body;
+  final Value<String?> imagePath;
+  final Value<DateTime> createdAt;
+  const AssistantMessagesCompanion({
+    this.id = const Value.absent(),
+    this.isFromUser = const Value.absent(),
+    this.body = const Value.absent(),
+    this.imagePath = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  AssistantMessagesCompanion.insert({
+    this.id = const Value.absent(),
+    required bool isFromUser,
+    required String body,
+    this.imagePath = const Value.absent(),
+    required DateTime createdAt,
+  })  : isFromUser = Value(isFromUser),
+        body = Value(body),
+        createdAt = Value(createdAt);
+  static Insertable<AssistantMessage> custom({
+    Expression<int>? id,
+    Expression<bool>? isFromUser,
+    Expression<String>? body,
+    Expression<String>? imagePath,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (isFromUser != null) 'is_from_user': isFromUser,
+      if (body != null) 'body': body,
+      if (imagePath != null) 'image_path': imagePath,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  AssistantMessagesCompanion copyWith(
+      {Value<int>? id,
+      Value<bool>? isFromUser,
+      Value<String>? body,
+      Value<String?>? imagePath,
+      Value<DateTime>? createdAt}) {
+    return AssistantMessagesCompanion(
+      id: id ?? this.id,
+      isFromUser: isFromUser ?? this.isFromUser,
+      body: body ?? this.body,
+      imagePath: imagePath ?? this.imagePath,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (isFromUser.present) {
+      map['is_from_user'] = Variable<bool>(isFromUser.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (imagePath.present) {
+      map['image_path'] = Variable<String>(imagePath.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AssistantMessagesCompanion(')
+          ..write('id: $id, ')
+          ..write('isFromUser: $isFromUser, ')
+          ..write('body: $body, ')
+          ..write('imagePath: $imagePath, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ErrorLogsTable extends ErrorLogs
+    with TableInfo<$ErrorLogsTable, ErrorLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ErrorLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+      'source', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 80),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _messageMeta =
+      const VerificationMeta('message');
+  @override
+  late final GeneratedColumn<String> message = GeneratedColumn<String>(
+      'message', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _detailMeta = const VerificationMeta('detail');
+  @override
+  late final GeneratedColumn<String> detail = GeneratedColumn<String>(
+      'detail', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, createdAt, source, message, detail];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'error_logs';
+  @override
+  VerificationContext validateIntegrity(Insertable<ErrorLog> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('source')) {
+      context.handle(_sourceMeta,
+          source.isAcceptableOrUnknown(data['source']!, _sourceMeta));
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('message')) {
+      context.handle(_messageMeta,
+          message.isAcceptableOrUnknown(data['message']!, _messageMeta));
+    } else if (isInserting) {
+      context.missing(_messageMeta);
+    }
+    if (data.containsKey('detail')) {
+      context.handle(_detailMeta,
+          detail.isAcceptableOrUnknown(data['detail']!, _detailMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ErrorLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ErrorLog(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      source: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}source'])!,
+      message: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}message'])!,
+      detail: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}detail']),
+    );
+  }
+
+  @override
+  $ErrorLogsTable createAlias(String alias) {
+    return $ErrorLogsTable(attachedDatabase, alias);
+  }
+}
+
+class ErrorLog extends DataClass implements Insertable<ErrorLog> {
+  final int id;
+  final DateTime createdAt;
+  final String source;
+  final String message;
+  final String? detail;
+  const ErrorLog(
+      {required this.id,
+      required this.createdAt,
+      required this.source,
+      required this.message,
+      this.detail});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['source'] = Variable<String>(source);
+    map['message'] = Variable<String>(message);
+    if (!nullToAbsent || detail != null) {
+      map['detail'] = Variable<String>(detail);
+    }
+    return map;
+  }
+
+  ErrorLogsCompanion toCompanion(bool nullToAbsent) {
+    return ErrorLogsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      source: Value(source),
+      message: Value(message),
+      detail:
+          detail == null && nullToAbsent ? const Value.absent() : Value(detail),
+    );
+  }
+
+  factory ErrorLog.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ErrorLog(
+      id: serializer.fromJson<int>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      source: serializer.fromJson<String>(json['source']),
+      message: serializer.fromJson<String>(json['message']),
+      detail: serializer.fromJson<String?>(json['detail']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'source': serializer.toJson<String>(source),
+      'message': serializer.toJson<String>(message),
+      'detail': serializer.toJson<String?>(detail),
+    };
+  }
+
+  ErrorLog copyWith(
+          {int? id,
+          DateTime? createdAt,
+          String? source,
+          String? message,
+          Value<String?> detail = const Value.absent()}) =>
+      ErrorLog(
+        id: id ?? this.id,
+        createdAt: createdAt ?? this.createdAt,
+        source: source ?? this.source,
+        message: message ?? this.message,
+        detail: detail.present ? detail.value : this.detail,
+      );
+  ErrorLog copyWithCompanion(ErrorLogsCompanion data) {
+    return ErrorLog(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      source: data.source.present ? data.source.value : this.source,
+      message: data.message.present ? data.message.value : this.message,
+      detail: data.detail.present ? data.detail.value : this.detail,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ErrorLog(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('source: $source, ')
+          ..write('message: $message, ')
+          ..write('detail: $detail')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, createdAt, source, message, detail);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ErrorLog &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.source == this.source &&
+          other.message == this.message &&
+          other.detail == this.detail);
+}
+
+class ErrorLogsCompanion extends UpdateCompanion<ErrorLog> {
+  final Value<int> id;
+  final Value<DateTime> createdAt;
+  final Value<String> source;
+  final Value<String> message;
+  final Value<String?> detail;
+  const ErrorLogsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.source = const Value.absent(),
+    this.message = const Value.absent(),
+    this.detail = const Value.absent(),
+  });
+  ErrorLogsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    required String source,
+    required String message,
+    this.detail = const Value.absent(),
+  })  : source = Value(source),
+        message = Value(message);
+  static Insertable<ErrorLog> custom({
+    Expression<int>? id,
+    Expression<DateTime>? createdAt,
+    Expression<String>? source,
+    Expression<String>? message,
+    Expression<String>? detail,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (source != null) 'source': source,
+      if (message != null) 'message': message,
+      if (detail != null) 'detail': detail,
+    });
+  }
+
+  ErrorLogsCompanion copyWith(
+      {Value<int>? id,
+      Value<DateTime>? createdAt,
+      Value<String>? source,
+      Value<String>? message,
+      Value<String?>? detail}) {
+    return ErrorLogsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      source: source ?? this.source,
+      message: message ?? this.message,
+      detail: detail ?? this.detail,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (message.present) {
+      map['message'] = Variable<String>(message.value);
+    }
+    if (detail.present) {
+      map['detail'] = Variable<String>(detail.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ErrorLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('source: $source, ')
+          ..write('message: $message, ')
+          ..write('detail: $detail')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5140,6 +5745,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ExchangeRatesTable exchangeRates = $ExchangeRatesTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
   late final $SubscriptionsTable subscriptions = $SubscriptionsTable(this);
+  late final $AssistantMessagesTable assistantMessages =
+      $AssistantMessagesTable(this);
+  late final $ErrorLogsTable errorLogs = $ErrorLogsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5156,7 +5764,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         recurringRules,
         exchangeRates,
         settings,
-        subscriptions
+        subscriptions,
+        assistantMessages,
+        errorLogs
       ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
@@ -8982,6 +9592,334 @@ typedef $$SubscriptionsTableProcessedTableManager = ProcessedTableManager<
     (Subscription, $$SubscriptionsTableReferences),
     Subscription,
     PrefetchHooks Function({bool accountId, bool categoryId})>;
+typedef $$AssistantMessagesTableCreateCompanionBuilder
+    = AssistantMessagesCompanion Function({
+  Value<int> id,
+  required bool isFromUser,
+  required String body,
+  Value<String?> imagePath,
+  required DateTime createdAt,
+});
+typedef $$AssistantMessagesTableUpdateCompanionBuilder
+    = AssistantMessagesCompanion Function({
+  Value<int> id,
+  Value<bool> isFromUser,
+  Value<String> body,
+  Value<String?> imagePath,
+  Value<DateTime> createdAt,
+});
+
+class $$AssistantMessagesTableFilterComposer
+    extends Composer<_$AppDatabase, $AssistantMessagesTable> {
+  $$AssistantMessagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isFromUser => $composableBuilder(
+      column: $table.isFromUser, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get body => $composableBuilder(
+      column: $table.body, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get imagePath => $composableBuilder(
+      column: $table.imagePath, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$AssistantMessagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $AssistantMessagesTable> {
+  $$AssistantMessagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isFromUser => $composableBuilder(
+      column: $table.isFromUser, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get body => $composableBuilder(
+      column: $table.body, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get imagePath => $composableBuilder(
+      column: $table.imagePath, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$AssistantMessagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AssistantMessagesTable> {
+  $$AssistantMessagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<bool> get isFromUser => $composableBuilder(
+      column: $table.isFromUser, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get imagePath =>
+      $composableBuilder(column: $table.imagePath, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$AssistantMessagesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $AssistantMessagesTable,
+    AssistantMessage,
+    $$AssistantMessagesTableFilterComposer,
+    $$AssistantMessagesTableOrderingComposer,
+    $$AssistantMessagesTableAnnotationComposer,
+    $$AssistantMessagesTableCreateCompanionBuilder,
+    $$AssistantMessagesTableUpdateCompanionBuilder,
+    (
+      AssistantMessage,
+      BaseReferences<_$AppDatabase, $AssistantMessagesTable, AssistantMessage>
+    ),
+    AssistantMessage,
+    PrefetchHooks Function()> {
+  $$AssistantMessagesTableTableManager(
+      _$AppDatabase db, $AssistantMessagesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AssistantMessagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AssistantMessagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AssistantMessagesTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<bool> isFromUser = const Value.absent(),
+            Value<String> body = const Value.absent(),
+            Value<String?> imagePath = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              AssistantMessagesCompanion(
+            id: id,
+            isFromUser: isFromUser,
+            body: body,
+            imagePath: imagePath,
+            createdAt: createdAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required bool isFromUser,
+            required String body,
+            Value<String?> imagePath = const Value.absent(),
+            required DateTime createdAt,
+          }) =>
+              AssistantMessagesCompanion.insert(
+            id: id,
+            isFromUser: isFromUser,
+            body: body,
+            imagePath: imagePath,
+            createdAt: createdAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$AssistantMessagesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $AssistantMessagesTable,
+    AssistantMessage,
+    $$AssistantMessagesTableFilterComposer,
+    $$AssistantMessagesTableOrderingComposer,
+    $$AssistantMessagesTableAnnotationComposer,
+    $$AssistantMessagesTableCreateCompanionBuilder,
+    $$AssistantMessagesTableUpdateCompanionBuilder,
+    (
+      AssistantMessage,
+      BaseReferences<_$AppDatabase, $AssistantMessagesTable, AssistantMessage>
+    ),
+    AssistantMessage,
+    PrefetchHooks Function()>;
+typedef $$ErrorLogsTableCreateCompanionBuilder = ErrorLogsCompanion Function({
+  Value<int> id,
+  Value<DateTime> createdAt,
+  required String source,
+  required String message,
+  Value<String?> detail,
+});
+typedef $$ErrorLogsTableUpdateCompanionBuilder = ErrorLogsCompanion Function({
+  Value<int> id,
+  Value<DateTime> createdAt,
+  Value<String> source,
+  Value<String> message,
+  Value<String?> detail,
+});
+
+class $$ErrorLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $ErrorLogsTable> {
+  $$ErrorLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get source => $composableBuilder(
+      column: $table.source, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get message => $composableBuilder(
+      column: $table.message, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get detail => $composableBuilder(
+      column: $table.detail, builder: (column) => ColumnFilters(column));
+}
+
+class $$ErrorLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ErrorLogsTable> {
+  $$ErrorLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get source => $composableBuilder(
+      column: $table.source, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get message => $composableBuilder(
+      column: $table.message, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get detail => $composableBuilder(
+      column: $table.detail, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ErrorLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ErrorLogsTable> {
+  $$ErrorLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get message =>
+      $composableBuilder(column: $table.message, builder: (column) => column);
+
+  GeneratedColumn<String> get detail =>
+      $composableBuilder(column: $table.detail, builder: (column) => column);
+}
+
+class $$ErrorLogsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ErrorLogsTable,
+    ErrorLog,
+    $$ErrorLogsTableFilterComposer,
+    $$ErrorLogsTableOrderingComposer,
+    $$ErrorLogsTableAnnotationComposer,
+    $$ErrorLogsTableCreateCompanionBuilder,
+    $$ErrorLogsTableUpdateCompanionBuilder,
+    (ErrorLog, BaseReferences<_$AppDatabase, $ErrorLogsTable, ErrorLog>),
+    ErrorLog,
+    PrefetchHooks Function()> {
+  $$ErrorLogsTableTableManager(_$AppDatabase db, $ErrorLogsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ErrorLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ErrorLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ErrorLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<String> source = const Value.absent(),
+            Value<String> message = const Value.absent(),
+            Value<String?> detail = const Value.absent(),
+          }) =>
+              ErrorLogsCompanion(
+            id: id,
+            createdAt: createdAt,
+            source: source,
+            message: message,
+            detail: detail,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            required String source,
+            required String message,
+            Value<String?> detail = const Value.absent(),
+          }) =>
+              ErrorLogsCompanion.insert(
+            id: id,
+            createdAt: createdAt,
+            source: source,
+            message: message,
+            detail: detail,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ErrorLogsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ErrorLogsTable,
+    ErrorLog,
+    $$ErrorLogsTableFilterComposer,
+    $$ErrorLogsTableOrderingComposer,
+    $$ErrorLogsTableAnnotationComposer,
+    $$ErrorLogsTableCreateCompanionBuilder,
+    $$ErrorLogsTableUpdateCompanionBuilder,
+    (ErrorLog, BaseReferences<_$AppDatabase, $ErrorLogsTable, ErrorLog>),
+    ErrorLog,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9009,4 +9947,8 @@ class $AppDatabaseManager {
       $$SettingsTableTableManager(_db, _db.settings);
   $$SubscriptionsTableTableManager get subscriptions =>
       $$SubscriptionsTableTableManager(_db, _db.subscriptions);
+  $$AssistantMessagesTableTableManager get assistantMessages =>
+      $$AssistantMessagesTableTableManager(_db, _db.assistantMessages);
+  $$ErrorLogsTableTableManager get errorLogs =>
+      $$ErrorLogsTableTableManager(_db, _db.errorLogs);
 }

@@ -18,18 +18,26 @@ import '../../widgets/pressable.dart';
 import '../../core/open_link.dart';
 import '../../core/pro/subscription_links.dart';
 
-class PaywallScreen extends ConsumerWidget {
+class PaywallScreen extends ConsumerStatefulWidget {
   const PaywallScreen({super.key, this.gate = ProGate.generic});
 
   final ProGate gate;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PaywallScreen> createState() => _PaywallScreenState();
+}
+
+class _PaywallScreenState extends ConsumerState<PaywallScreen> {
+  ProductDetails? _selected;
+
+  @override
+  Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final pro = ref.watch(proControllerProvider);
     final signedIn = ref.watch(authUserProvider).valueOrNull != null;
     final yearly = pro.yearly;
     final monthly = pro.monthly;
+    final selected = _selected ?? yearly ?? pro.semiAnnual ?? monthly;
 
     return Scaffold(
       body: SafeArea(
@@ -92,7 +100,7 @@ class PaywallScreen extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        tr.paywallBody(gate),
+                        tr.paywallBody(widget.gate),
                         style: TextStyle(
                           fontSize: 15,
                           height: 1.45,
@@ -143,9 +151,9 @@ class PaywallScreen extends ConsumerWidget {
                         price: yearly.price,
                         badge: tr.proYearlySave,
                         subtitle: tr.proTrial,
-                        highlighted: true,
+                        highlighted: selected?.id == yearly.id,
                         busy: pro.purchasing,
-                        onTap: () => _buy(context, ref, tr, yearly),
+                        onTap: () => setState(() => _selected = yearly),
                       ),
                     if (pro.semiAnnual != null) ...[
                       const SizedBox(height: 10),
@@ -153,8 +161,10 @@ class PaywallScreen extends ConsumerWidget {
                         title: tr.proSemiAnnual,
                         price: pro.semiAnnual!.price,
                         subtitle: tr.proTrial,
+                        highlighted: selected?.id == pro.semiAnnual!.id,
                         busy: pro.purchasing,
-                        onTap: () => _buy(context, ref, tr, pro.semiAnnual),
+                        onTap: () =>
+                            setState(() => _selected = pro.semiAnnual),
                       ),
                     ],
                     if (monthly != null) ...[
@@ -163,15 +173,16 @@ class PaywallScreen extends ConsumerWidget {
                         title: tr.proMonthly,
                         price: monthly.price,
                         subtitle: tr.proTrial,
+                        highlighted: selected?.id == monthly.id,
                         busy: pro.purchasing,
-                        onTap: () => _buy(context, ref, tr, monthly),
+                        onTap: () => setState(() => _selected = monthly),
                       ),
                     ],
                     const SizedBox(height: 16),
                     ScaledElevatedButton(
-                      onPressed: pro.purchasing || yearly == null
+                      onPressed: pro.purchasing || selected == null
                           ? null
-                          : () => _buy(context, ref, tr, yearly),
+                          : () => _buy(context, ref, tr, selected),
                       child: Text(tr.proGo),
                     ),
                     const SizedBox(height: 8),

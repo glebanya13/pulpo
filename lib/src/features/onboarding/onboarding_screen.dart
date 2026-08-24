@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../widgets/common.dart';
-import '../../data/seed/seed_demo.dart';
 import '../../widgets/pressable.dart';
 
 class OnboardingScreen extends ConsumerWidget {
@@ -116,23 +115,6 @@ class OnboardingScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Pressable(
-                    onTap: () => startLocalDemo(context, ref),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Center(
-                        child: Text(
-                          tr.tryDemo,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.75),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
                 ),
@@ -194,76 +176,116 @@ class _Dot extends StatelessWidget {
   }
 }
 
-class _HeroCards extends StatelessWidget {
+class _HeroCards extends StatefulWidget {
   const _HeroCards();
+
+  @override
+  State<_HeroCards> createState() => _HeroCardsState();
+}
+
+class _HeroCardsState extends State<_HeroCards>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..forward();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       final w = constraints.maxWidth;
       final h = constraints.maxHeight;
-      // Base card size
       const cardW = 200.0;
-      // Center of container
       final cx = w / 2 - cardW / 2;
       final cy = h / 2 - 90;
+
+      Widget fadeSlide(double begin, Widget child) {
+        final curved = CurvedAnimation(
+          parent: _ctrl,
+          curve: Interval(begin, (begin + 0.45).clamp(0.0, 1.0),
+              curve: Curves.easeOutCubic),
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.08),
+              end: Offset.zero,
+            ).animate(curved),
+            child: child,
+          ),
+        );
+      }
+
       return Stack(
         clipBehavior: Clip.none,
         children: [
-          // c1 — Salary (lime, back)
           Positioned(
             left: cx,
             top: cy - 30,
-            child: Transform.rotate(
-              angle: -0.14, // ≈ -8deg
-              child: _Card(
-                label: Tr.of(context).categoryName('salary'),
-                amount: '€3,200',
-                sub: '+ 1',
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.lime, AppColors.limeDark],
+            child: fadeSlide(
+              0.0,
+              Transform.rotate(
+                angle: -0.14,
+                child: _Card(
+                  label: Tr.of(context).categoryName('salary'),
+                  amount: '€3,200',
+                  sub: '+ 1',
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.lime, AppColors.limeDark],
+                  ),
+                  textDark: true,
                 ),
-                textDark: true,
               ),
             ),
           ),
-          // c3 — Food (mid grey, middle layer)
           Positioned(
             left: cx - 30,
             top: cy + 80,
-            child: Transform.rotate(
-              angle: -0.035,
-              child: _Card(
-                label: Tr.of(context).categoryName('food'),
-                amount: '€420',
-                sub: Tr.of(context).periodThisMonth,
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF3A3A3A), Color(0xFF252525)],
+            child: fadeSlide(
+              0.12,
+              Transform.rotate(
+                angle: -0.035,
+                child: _Card(
+                  label: Tr.of(context).categoryName('food'),
+                  amount: '€420',
+                  sub: Tr.of(context).periodThisMonth,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF3A3A3A), Color(0xFF252525)],
+                  ),
+                  borderColor: Colors.white.withValues(alpha: 0.06),
                 ),
-                borderColor: Colors.white.withValues(alpha: 0.06),
               ),
             ),
           ),
-          // c2 — Savings (dark, front top)
           Positioned(
             left: cx + 40,
             top: cy + 40,
-            child: Transform.rotate(
-              angle: 0.105,
-              child: _Card(
-                label: Tr.of(context).goals,
-                amount: '€8,750',
-                sub: '68%',
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF2A2A2A), AppColors.ink2],
+            child: fadeSlide(
+              0.22,
+              Transform.rotate(
+                angle: 0.105,
+                child: _Card(
+                  label: Tr.of(context).goals,
+                  amount: '€8,750',
+                  sub: '68%',
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF2A2A2A), AppColors.ink2],
+                  ),
+                  borderColor: Colors.white.withValues(alpha: 0.08),
                 ),
-                borderColor: Colors.white.withValues(alpha: 0.08),
               ),
             ),
           ),

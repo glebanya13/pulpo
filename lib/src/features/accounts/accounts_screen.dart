@@ -211,20 +211,6 @@ class AccountsScreen extends ConsumerWidget {
                             ],
                             decoration: InputDecoration(
                               labelText: Tr.of(context).currency,
-                              suffixIcon: !isPro
-                                  ? const Padding(
-                                      padding: EdgeInsets.only(right: 10),
-                                      child: Align(
-                                        widthFactor: 1,
-                                        alignment: Alignment.centerRight,
-                                        child: ProBadge(dense: true),
-                                      ),
-                                    )
-                                  : null,
-                              suffixIconConstraints: const BoxConstraints(
-                                minWidth: 0,
-                                minHeight: 0,
-                              ),
                             ),
                             onChanged: (v) async {
                               final next = v ?? currency;

@@ -10,6 +10,8 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../firebase_options.dart';
 import '../../core/app_info.dart';
+import '../../data/repositories/assistant_chat_cloud.dart';
+import '../../data/repositories/assistant_chat_repository.dart';
 import '../../data/repositories/backup_service.dart';
 import '../../data/repositories/settings_service.dart';
 import '../shared_budget/household_service.dart';
@@ -123,6 +125,11 @@ class CloudAuth {
         serverClientId: AppInfo.googleServerClientId,
       ).signOut();
     } catch (_) {}
+    try {
+      await _ref
+          .read(assistantChatRepositoryProvider)
+          .clear(syncCloud: false);
+    } catch (_) {}
     await _auth.signOut();
   }
 
@@ -137,6 +144,9 @@ class CloudAuth {
     } catch (_) {}
     try {
       await _moneyRef(uid).delete();
+    } catch (_) {}
+    try {
+      await AssistantChatCloud().deleteForUid(uid);
     } catch (_) {}
     try {
       await _profileRef(uid).delete();
@@ -237,6 +247,9 @@ class CloudAuth {
     } else {
       _ref.read(pendingCloudRestoreProvider.notifier).state = true;
     }
+    try {
+      await _ref.read(assistantChatRepositoryProvider).syncWithCloud();
+    } catch (_) {}
   }
 
   Future<void> _afterSignIn(

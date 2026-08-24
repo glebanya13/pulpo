@@ -28,6 +28,8 @@ part 'app_database.g.dart';
     ExchangeRates,
     Settings,
     Subscriptions,
+    AssistantMessages,
+    ErrorLogs,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -36,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   /// Wipes every user-facing table. Keeps schema and settings intact.
   Future<void> resetAllData() async {
@@ -52,6 +54,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(exchangeRates).go();
       await delete(categories).go();
       await delete(accounts).go();
+      await delete(assistantMessages).go();
     });
   }
 
@@ -94,6 +97,10 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 6) {
             await normalizeCategorySortOrder(this);
+          }
+          if (from < 7) {
+            await m.createTable(assistantMessages);
+            await m.createTable(errorLogs);
           }
         },
       );

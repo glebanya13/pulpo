@@ -177,12 +177,12 @@ class _QuickChip extends StatelessWidget {
               Text(
                 label,
                 textAlign: TextAlign.center,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  height: 1.1,
+                  height: 1.15,
                   color: context.primaryText,
                 ),
               ),
@@ -304,7 +304,7 @@ class _HomeLinks extends ConsumerWidget {
                 child: Text(
                   i.$2,
                   maxLines: 2,
-                  overflow: TextOverflow.clip,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,

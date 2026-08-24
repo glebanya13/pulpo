@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_ai/firebase_ai.dart';
@@ -6,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/repositories/error_log_repository.dart';
 import 'ai_errors.dart';
 import 'ai_greeting.dart';
 import 'ai_json.dart';
@@ -13,10 +15,21 @@ import 'ai_models.dart';
 
 export 'ai_errors.dart' show PulpoAiException, AiErrorCode;
 
+typedef AiErrorLogger = Future<void> Function(
+  String source,
+  Object error,
+  StackTrace? stackTrace,
+);
+
 class PulpoAiService {
-  PulpoAiService({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
+  PulpoAiService({
+    FirebaseAuth? auth,
+    AiErrorLogger? onError,
+  })  : _auth = auth ?? FirebaseAuth.instance,
+        _onError = onError;
 
   final FirebaseAuth _auth;
+  final AiErrorLogger? _onError;
 
   FirebaseAI get _firebaseAi => FirebaseAI.googleAI(
         auth: _auth,
@@ -25,6 +38,18 @@ class PulpoAiService {
 
   static const _primaryModel = 'gemini-2.5-flash';
   static const _fallbackModel = 'gemini-2.0-flash';
+
+  Future<void> _logError(
+    String source,
+    Object error, [
+    StackTrace? stackTrace,
+  ]) async {
+    final logger = _onError;
+    if (logger == null) return;
+    try {
+      await logger(source, error, stackTrace);
+    } catch (_) {}
+  }
 
   GenerativeModel _model({
     required String name,
@@ -91,6 +116,11 @@ class PulpoAiService {
           'MonederoAI[$label] ${attempt.model} json=${attempt.json}: $e',
         );
         if (e.isRetryable && i < attempts.length - 1) continue;
+        await _logError(
+          'ai.$label',
+          e,
+          null,
+        );
         rethrow;
       } catch (e, st) {
         debugPrint(
@@ -103,19 +133,20 @@ class PulpoAiService {
         );
         lastError = mapped;
         if (mapped.isRetryable && i < attempts.length - 1) continue;
-        // JSON mime mode often fails even when plain text would work —
-        // try the next attempt that drops JSON or switches model.
         if (json &&
             attempt.json &&
             i < attempts.length - 1 &&
             mapped.code == AiErrorCode.requestFailed) {
           continue;
         }
+        await _logError('ai.$label', mapped, st);
         throw mapped;
       }
     }
-    throw lastError ??
+    final failed = lastError ??
         const PulpoAiException(AiErrorCode.requestFailed, 'no attempts');
+    await _logError('ai.$label', failed, null);
+    throw failed;
   }
 
   Future<T> _withRetryParse<T>(
@@ -132,7 +163,9 @@ class PulpoAiService {
         debugPrint('MonederoAI parse retry: $e');
       }
     }
-    throw PulpoAiException(AiErrorCode.invalidJson, '$lastError');
+    final err = PulpoAiException(AiErrorCode.invalidJson, '$lastError');
+    await _logError('ai.parse', err, null);
+    throw err;
   }
 
   String _langName(String locale) {
@@ -377,5 +410,14 @@ User message: """$trimmed"""
 }
 
 final pulpoAiServiceProvider = Provider<PulpoAiService>((ref) {
-  return PulpoAiService();
+  final logs = ref.watch(errorLogRepositoryProvider);
+  return PulpoAiService(
+    onError: (source, error, stackTrace) {
+      return logs.record(
+        source: source,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    },
+  );
 });

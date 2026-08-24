@@ -1,13 +1,12 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import 'auth_messages.dart';
 import 'cloud_auth.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -36,46 +35,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     try {
       await fn();
       if (mounted) context.pop();
-    } on SignInWithAppleAuthorizationException catch (e) {
-      if (e.code == AuthorizationErrorCode.canceled) return;
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'canceled') return;
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_authMessage(tr, e))),
-      );
     } catch (e) {
+      if (isAuthCanceled(e)) return;
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr.errorTitle)),
+        SnackBar(content: Text(authErrorMessage(tr, e))),
       );
     } finally {
       if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  String _authMessage(Tr tr, FirebaseAuthException e) {
-    switch (e.code) {
-      case 'invalid-email':
-        return tr.authInvalidEmail;
-      case 'weak-password':
-        return tr.authWeakPassword;
-      case 'wrong-password':
-      case 'invalid-credential':
-        return tr.authWrongPassword;
-      case 'user-disabled':
-        return tr.authUserDisabled;
-      case 'too-many-requests':
-        return tr.authTooMany;
-      case 'canceled':
-      case 'ERROR_ABORTED_BY_USER':
-        return tr.authCanceled;
-      default:
-        return e.message ?? tr.authFailed;
     }
   }
 
@@ -88,67 +55,67 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         header: PageHeader(first: tr.signIn, onBack: () => context.pop()),
         headerGap: 24,
         children: [
-            _Btn(
-              icon: Icons.apple,
-              label: tr.signInApple,
-              onTap: _busy ? null : () => _run(auth.signInWithApple),
-            ),
-            const SizedBox(height: 10),
-            _Btn(
-              icon: Icons.g_mobiledata,
-              label: tr.signInGoogle,
-              onTap: _busy ? null : () => _run(auth.signInWithGoogle),
-            ),
-            const SizedBox(height: 24),
-            Text(tr.signInEmail,
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              autocorrect: false,
-              decoration: InputDecoration(hintText: tr.email),
-            ),
-            TextField(
-              controller: _password,
-              obscureText: true,
-              decoration: InputDecoration(hintText: tr.password),
-            ),
-            const SizedBox(height: 12),
-            ScaledFilledButton(
-              onPressed: _busy
-                  ? null
-                  : () => _run(
-                        () => auth.signInWithEmail(
-                          _email.text,
-                          _password.text,
-                        ),
+          _Btn(
+            icon: Icons.apple,
+            label: tr.signInApple,
+            onTap: _busy ? null : () => _run(auth.signInWithApple),
+          ),
+          const SizedBox(height: 10),
+          _Btn(
+            icon: Icons.g_mobiledata,
+            label: tr.signInGoogle,
+            onTap: _busy ? null : () => _run(auth.signInWithGoogle),
+          ),
+          const SizedBox(height: 24),
+          Text(tr.signInEmail,
+              style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _email,
+            keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
+            decoration: InputDecoration(hintText: tr.email),
+          ),
+          TextField(
+            controller: _password,
+            obscureText: true,
+            decoration: InputDecoration(hintText: tr.password),
+          ),
+          const SizedBox(height: 12),
+          ScaledFilledButton(
+            onPressed: _busy
+                ? null
+                : () => _run(
+                      () => auth.signInWithEmail(
+                        _email.text,
+                        _password.text,
                       ),
-              child: Text(tr.signIn),
-            ),
-            const SizedBox(height: 8),
-            ScaledOutlinedButton(
-              onPressed: _busy
-                  ? null
-                  : () => _run(
-                        () => auth.registerWithEmail(
-                          _email.text,
-                          _password.text,
-                        ),
+                    ),
+            child: Text(tr.signIn),
+          ),
+          const SizedBox(height: 8),
+          ScaledOutlinedButton(
+            onPressed: _busy
+                ? null
+                : () => _run(
+                      () => auth.registerWithEmail(
+                        _email.text,
+                        _password.text,
                       ),
-              child: Text(tr.register),
-            ),
-            const SizedBox(height: 8),
-            ScaledTextButton(
-              onPressed: _busy ? null : () => context.pop(),
-              child: Text(tr.continueWithoutAccount),
-            ),
-            if (_busy) ...[
-              const SizedBox(height: 16),
-              const Center(child: CircularProgressIndicator()),
-            ],
+                    ),
+            child: Text(tr.register),
+          ),
+          const SizedBox(height: 8),
+          ScaledTextButton(
+            onPressed: _busy ? null : () => context.pop(),
+            child: Text(tr.continueWithoutAccount),
+          ),
+          if (_busy) ...[
+            const SizedBox(height: 16),
+            const Center(child: CircularProgressIndicator()),
           ],
-        ),
+        ],
+      ),
     );
   }
 }
@@ -175,11 +142,14 @@ class _Btn extends StatelessWidget {
             children: [
               Icon(icon, color: context.primaryText),
               const SizedBox(width: 12),
-              Text(label,
-                  style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                      color: context.primaryText)),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: context.primaryText,
+                ),
+              ),
             ],
           ),
         ),

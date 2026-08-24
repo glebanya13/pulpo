@@ -196,18 +196,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 ..sort((a, b) => b.compareTo(a));
 
               if (filtered.isEmpty) {
-                return Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: context.surface,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Center(
-                    child: Text(
-                      tr.emptyTransactionsList,
-                      style: TextStyle(color: context.mutedText),
-                    ),
-                  ),
+                return EmptyState(
+                  icon: LucideIcons.receipt,
+                  title: tr.emptyTransactionsList,
+                  description: tr.emptyTransactions,
+                  action: tr.expense,
+                  onAction: () => context.push('/add?type=expense'),
+                  background: AppColors.bgFood,
                 );
               }
 

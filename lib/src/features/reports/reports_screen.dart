@@ -388,9 +388,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         value: formatMoney(total6m, currency),
         child: total6m <= 0
             ? Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(
-                  Tr.of(context).empty,
+                  Tr.of(context).noExpensesForPeriod(periodName),
                   style: TextStyle(color: context.mutedText, fontSize: 14),
                 ),
               )
@@ -586,8 +586,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  getDrawingHorizontalLine: (v) => const FlLine(
-                    color: Color(0xFFECECEC),
+                  getDrawingHorizontalLine: (v) => FlLine(
+                    color: context.divider,
                     strokeWidth: 1,
                   ),
                 ),
@@ -776,8 +776,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                getDrawingHorizontalLine: (v) => const FlLine(
-                  color: Color(0xFFECECEC),
+                getDrawingHorizontalLine: (v) => FlLine(
+                  color: context.divider,
                   strokeWidth: 1,
                 ),
               ),
@@ -1261,6 +1261,8 @@ class _ReportsSegmentedTabs extends StatelessWidget {
         children: [
           for (var i = 0; i < labels.length; i++)
             Expanded(
+              // Equal width — chrome PRO mark is compact.
+              flex: 1,
               child: Pressable(
                 onTap: () => onSelect(i),
                 child: AnimatedContainer(
@@ -1274,40 +1276,35 @@ class _ReportsSegmentedTabs extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          labels[i],
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: index == i
-                                ? Colors.white
-                                : context.mutedText,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              labels[i],
+                              maxLines: 1,
+                              softWrap: false,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: index == i
+                                    ? Colors.white
+                                    : context.mutedText,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                      if (locked.contains(i)) ...[
-                        const SizedBox(width: 4),
-                        Text(
-                          'PRO',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                            height: 1,
-                            color: AppColors.lime,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const ProRocketDot(size: 14),
+                        if (locked.contains(i)) ...[
+                          const SizedBox(width: 4),
+                          const ProChromeMark(size: 13),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -1359,23 +1356,7 @@ class _PeriodSheetTile extends StatelessWidget {
               ),
             ),
             if (locked)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'PRO',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.6,
-                      height: 1,
-                      color: AppColors.lime,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const ProRocketDot(size: 18),
-                ],
-              )
+              const ProBadge(dense: true)
             else if (selected)
               const Icon(LucideIcons.check, size: 18, color: AppColors.ink),
           ],
@@ -1447,31 +1428,7 @@ class _AiInsightCard extends StatelessWidget {
               ),
               if (showPro) ...[
                 const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: accent,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(LucideIcons.rocket, size: 10, color: Colors.white),
-                      SizedBox(width: 4),
-                      Text(
-                        'PRO',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.6,
-                          height: 1,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                const ProBadge(dense: true),
               ],
             ],
           ),

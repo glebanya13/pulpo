@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -9,11 +10,11 @@ import '../../core/theme/app_theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends ConsumerWidget {
   const AboutScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
     return Scaffold(
       body: StickyScrollPage(
@@ -67,6 +68,11 @@ class AboutScreen extends StatelessWidget {
                   icon: LucideIcons.mail,
                   title: AppInfo.supportEmail,
                   onTap: () => openAppLink(context, AppInfo.mailtoUri),
+                ),
+                _LinkRow(
+                  icon: LucideIcons.bug,
+                  title: tr.errorLogsTitle,
+                  onTap: () => context.push('/settings/error-logs'),
                 ),
               ],
             ),
