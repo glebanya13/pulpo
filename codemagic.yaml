@@ -25,15 +25,19 @@ workflows:
       - name: Build IPA
         script: |
           set +e
+          LOG=/tmp/flutter_build_ipa.log
           flutter build ipa --release \
-            --export-options-plist=/Users/builder/export_options.plist
-          STATUS=$?
+            --export-options-plist=/Users/builder/export_options.plist \
+            2>&1 | tee "$LOG"
+          STATUS=${PIPESTATUS[0]}
           if [ $STATUS -ne 0 ]; then
-            echo "===== Xcode / Flutter errors ====="
-            grep -E "error:|Error \(Xcode\)|fatal error|CreateUniversalBinary|Command .* failed|Provisioning|signing" \
-              /tmp/xcodebuild_logs/*.log 2>/dev/null | tail -120
-            find /tmp -name "*flutter_ios_build*" -o -name "*xcresult*" 2>/dev/null | head
-            ls -la /tmp/xcodebuild_logs 2>/dev/null || true
+            echo "===== Flutter / Xcode errors (from build log) ====="
+            grep -E "Error \(Xcode\)|error: |fatal error|Provisioning|entitlement|code sign|CreateUniversalBinary|Command .* failed|does not include|doesn't include|doesn't support|requires a provisioning" \
+              "$LOG" /tmp/xcodebuild_logs/*.log 2>/dev/null | tail -160 || true
+            echo "===== Entitlements in project ====="
+            plutil -p ios/Runner/Runner.entitlements 2>/dev/null || cat ios/Runner/Runner.entitlements
+            echo "===== Signing identities ====="
+            security find-identity -v -p codesigning 2>/dev/null | tail -20 || true
           fi
           exit $STATUS
 

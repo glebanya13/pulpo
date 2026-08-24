@@ -7,6 +7,7 @@ import '../../core/l10n/tr.dart';
 import '../../features/auth/cloud_auth.dart';
 import '../db/app_database.dart';
 import '../db/enums.dart';
+import '../repositories/account_repository.dart';
 import '../repositories/providers.dart';
 import '../repositories/settings_service.dart';
 
