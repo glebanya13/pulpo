@@ -84,12 +84,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final tr = Tr.of(context);
     final auth = ref.read(cloudAuthProvider);
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(first: tr.signIn, onBack: () => context.pop()),
-            const SizedBox(height: 24),
+      body: StickyScrollPage(
+        header: PageHeader(first: tr.signIn, onBack: () => context.pop()),
+        headerGap: 24,
+        children: [
             _Btn(
               icon: Icons.apple,
               label: tr.signInApple,
@@ -151,7 +149,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ],
           ],
         ),
-      ),
     );
   }
 }

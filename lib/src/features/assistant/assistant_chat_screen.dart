@@ -87,7 +87,23 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
   bool get _shouldBurnEnergy {
     if (ref.read(proControllerProvider).isPro) return false;
-    return _listening || _busy;
+    // Only burn while the mic is live — not while waiting on the network.
+    return _listening;
+  }
+
+  /// Flat cost per successful assistant reply (~8s of the free quota).
+  static const _textTurnCostMs = 8000;
+
+  Future<void> _chargeTextTurn() async {
+    if (ref.read(proControllerProvider).isPro) return;
+    final left = await ref
+        .read(assistantEnergyProvider.notifier)
+        .consumeMs(_textTurnCostMs);
+    if (!mounted || left > 0) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(Tr.of(context).aiEnergyEmpty)),
+    );
+    await openPaywall(context, ProGate.ai);
   }
 
   void _syncEnergyBurn() {
@@ -159,6 +175,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   }
 
   String _localeId(String locale) => switch (locale) {
+        'uk' => 'uk_UA',
         'ru' => 'ru_RU',
         'en' => 'en_US',
         _ => 'es_ES',
@@ -268,6 +285,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
     try {
       await _handleUserText(text);
+      await _chargeTextTurn();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -385,20 +403,18 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       return;
     }
 
-    final reply = turn.reply.trim().isNotEmpty
-        ? turn.reply.trim()
-        : await ref.read(pulpoAiServiceProvider).chatAboutApp(
-              userMessage: text,
-              appContext: buildAppChatContext(ref),
-              locale: locale,
-              history: prior,
-            );
+    // assistantTurn already falls back to chatAboutApp when JSON fails;
+    // avoid a third network hop if the model returned an empty reply.
+    final reply = turn.reply.trim();
+    if (reply.isEmpty) {
+      throw const PulpoAiException(AiErrorCode.emptyResponse);
+    }
 
     if (!mounted) return;
     setState(() {
       _messages.add(_ChatMsg(
         fromUser: false,
-        text: reply.trim(),
+        text: reply,
         time: TimeOfDay.now(),
       ));
     });
@@ -589,14 +605,13 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
-    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final hasText = _input.text.trim().isNotEmpty;
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
     final account = _account ?? accounts.firstOrNull;
     final isPro = ref.watch(proControllerProvider).isPro;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
           children: [
@@ -629,27 +644,41 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                       else
                         const SizedBox(width: 42),
                       Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              tr.aiAssistantEyebrow,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.6,
-                                color: context.mutedText,
-                              ),
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
                             ),
-                            Text(
-                              tr.aiChatTitle,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
-                                color: context.primaryText,
-                              ),
+                            decoration: BoxDecoration(
+                              color: context.surface,
+                              borderRadius: BorderRadius.circular(999),
                             ),
-                          ],
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  tr.aiAssistantEyebrow,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.6,
+                                    color: context.mutedText,
+                                  ),
+                                ),
+                                Text(
+                                  tr.aiChatTitle,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.3,
+                                    height: 1.15,
+                                    color: context.primaryText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                       if (!isPro) ...[
@@ -801,12 +830,14 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   ),
                 ),
               ),
+            // Scaffold already shrinks for the keyboard — do not add
+            // viewInsets again or the composer floats with a huge gap.
             Padding(
-              padding: EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
                 8,
                 AppSpacing.lg,
-                12 + bottomInset + keyboard,
+                12,
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -879,7 +910,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                       child: Icon(
                         hasText
                             ? LucideIcons.send
-                            : (_listening ? LucideIcons.square : LucideIcons.mic),
+                            : (_listening
+                                ? LucideIcons.square
+                                : LucideIcons.mic),
                         size: 18,
                         color: hasText || _listening
                             ? AppColors.ink

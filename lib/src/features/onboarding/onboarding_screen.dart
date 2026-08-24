@@ -48,7 +48,7 @@ class OnboardingScreen extends ConsumerWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const BrandLogo(size: 44),
+                        const BrandLogo(size: 44, plate: false),
                         const SizedBox(width: 12),
                         Text(
                           'MONEDERO',

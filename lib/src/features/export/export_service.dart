@@ -25,6 +25,48 @@ String _txTypeLabel(Tr tr, TxType type) {
   }
 }
 
+class _ExportTotals {
+  const _ExportTotals({
+    required this.income,
+    required this.expense,
+    required this.currencyLabel,
+  });
+
+  final double income;
+  final double expense;
+  final String currencyLabel;
+
+  double get net => income - expense;
+
+  String money(double v) {
+    final n = v.toStringAsFixed(2);
+    return currencyLabel.isEmpty ? n : '$n $currencyLabel';
+  }
+}
+
+_ExportTotals _totalsOf(List<db.Transaction> txs) {
+  var income = 0.0;
+  var expense = 0.0;
+  final currencies = <String>{};
+  for (final t in txs) {
+    currencies.add(t.currency);
+    switch (TxType.values[t.type]) {
+      case TxType.income:
+        income += t.amount;
+      case TxType.expense:
+        expense += t.amount;
+      case TxType.transfer:
+        break;
+    }
+  }
+  final currencyLabel = currencies.length == 1 ? currencies.first : '';
+  return _ExportTotals(
+    income: income,
+    expense: expense,
+    currencyLabel: currencyLabel,
+  );
+}
+
 class ExportService {
   Future<void> shareTransactions({
     required List<db.Transaction> txs,
@@ -38,18 +80,23 @@ class ExportService {
     final stamp2 = DateFormat('yyyyMMdd').format(end);
     final dir = await getTemporaryDirectory();
     final range = '$stamp-$stamp2';
+    final tr = Tr.fromLang(locale);
+    final totals = _totalsOf(txs);
 
     switch (format) {
       case ExportFormat.csv:
         final file = File('${dir.path}/monedero-$range.csv');
-        await file.writeAsString(_toCsv(txs), flush: true);
+        await file.writeAsString(_toCsv(txs, tr, totals), flush: true);
         await Share.shareXFiles(
           [XFile(file.path, mimeType: 'text/csv')],
           sharePositionOrigin: shareOrigin,
         );
       case ExportFormat.excel:
         final file = File('${dir.path}/monedero-$range.xlsx');
-        await file.writeAsBytes(buildTransactionsXlsx(txs), flush: true);
+        await file.writeAsBytes(
+          buildTransactionsXlsx(txs, tr: tr),
+          flush: true,
+        );
         await Share.shareXFiles(
           [
             XFile(
@@ -64,7 +111,6 @@ class ExportService {
         final fontData =
             await rootBundle.load('assets/fonts/DejaVuSans.ttf');
         final font = pw.Font.ttf(fontData);
-        final tr = Tr.fromLang(locale);
         final doc = pw.Document();
         doc.addPage(
           pw.MultiPage(
@@ -93,6 +139,24 @@ class ExportService {
                     ],
                 ],
               ),
+              pw.SizedBox(height: 16),
+              pw.Text(
+                '${tr.exportTotalIncome}: ${totals.money(totals.income)}',
+                style: pw.TextStyle(
+                    fontSize: 12, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                '${tr.exportTotalExpense}: ${totals.money(totals.expense)}',
+                style: pw.TextStyle(
+                    fontSize: 12, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                '${tr.exportNet}: ${totals.money(totals.net)}',
+                style: pw.TextStyle(
+                    fontSize: 12, fontWeight: pw.FontWeight.bold),
+              ),
             ],
           ),
         );
@@ -105,7 +169,11 @@ class ExportService {
     }
   }
 
-  String _toCsv(List<db.Transaction> txs) {
+  String _toCsv(
+    List<db.Transaction> txs,
+    Tr tr,
+    _ExportTotals totals,
+  ) {
     final buf = StringBuffer('date,type,amount,currency,note\n');
     for (final t in txs) {
       final note = (t.note ?? '').replaceAll('"', '""');
@@ -113,6 +181,10 @@ class ExportService {
         '${t.date.toIso8601String()},${TxType.values[t.type].name},${t.amount},${t.currency},"$note"',
       );
     }
+    buf.writeln();
+    buf.writeln('${tr.exportTotalIncome},${totals.income.toStringAsFixed(2)},${totals.currencyLabel}');
+    buf.writeln('${tr.exportTotalExpense},${totals.expense.toStringAsFixed(2)},${totals.currencyLabel}');
+    buf.writeln('${tr.exportNet},${totals.net.toStringAsFixed(2)},${totals.currencyLabel}');
     return buf.toString();
   }
 }
@@ -132,7 +204,12 @@ String _num(String col, int row, double value) =>
     '<c r="$col$row" t="n"><v>${value.toStringAsFixed(2)}</v></c>';
 
 /// Office Open XML (.xlsx) workbook.
-List<int> buildTransactionsXlsx(List<db.Transaction> txs) {
+List<int> buildTransactionsXlsx(
+  List<db.Transaction> txs, {
+  Tr? tr,
+}) {
+  final labels = tr ?? Tr.fromLang('en');
+  final sums = _totalsOf(txs);
   final rows = StringBuffer();
   rows.writeln('<row r="1">');
   const headers = ['date', 'type', 'amount', 'currency', 'note'];
@@ -151,6 +228,22 @@ List<int> buildTransactionsXlsx(List<db.Transaction> txs) {
     rows.write(_inline(_col(4), row, t.note ?? ''));
     rows.writeln('</row>');
   }
+
+  var row = txs.length + 3;
+  void summaryRow(String label, double amount) {
+    rows.writeln('<row r="$row">');
+    rows.write(_inline(_col(0), row, label));
+    rows.write(_num(_col(1), row, amount));
+    if (sums.currencyLabel.isNotEmpty) {
+      rows.write(_inline(_col(2), row, sums.currencyLabel));
+    }
+    rows.writeln('</row>');
+    row++;
+  }
+
+  summaryRow(labels.exportTotalIncome, sums.income);
+  summaryRow(labels.exportTotalExpense, sums.expense);
+  summaryRow(labels.exportNet, sums.net);
 
   final files = <String, String>{
     '[Content_Types].xml':

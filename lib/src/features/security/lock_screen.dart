@@ -138,61 +138,199 @@ class _LockScreenState extends ConsumerState<LockScreen>
     final tr = Tr.of(context);
     final lock = ref.watch(lockControllerProvider);
     final showPin = lock.pinEnabled;
+
     return Scaffold(
       backgroundColor: AppColors.ink,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const SizedBox(height: 36),
-              const BrandLogo(size: 64),
-              const SizedBox(height: 24),
-              Text(
-                showPin ? tr.enterPin : tr.useBiometrics,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: showPin
+              ? _PinLockBody(
+                  title: tr.enterPin,
+                  error: _error,
+                  pinLength: lock.pinLengthKnown ? lock.pinLength : 8,
+                  pin: _pin,
+                  onPinChanged: _onPin,
+                  showBiometrics: lock.biometricsEnabled,
+                  onBiometrics: _retryBiometrics,
+                  biometricsLabel: tr.unlock,
+                )
+              : _BioLockBody(
+                  title: tr.unlock,
+                  hint: tr.unlockBiometricHint,
+                  error: _error,
+                  onUnlock: _retryBiometrics,
+                  unlockLabel: tr.unlock,
                 ),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _error!,
-                  style: const TextStyle(
-                    color: Color(0xFFFF6B6B),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-              if (showPin) ...[
-                const Spacer(),
-                PinPad(
-                  length: lock.pinLengthKnown ? lock.pinLength : 8,
-                  value: _pin,
-                  onChanged: _onPin,
-                  dark: true,
-                ),
-                const Spacer(),
-              ] else
-                const Spacer(),
-              if (lock.biometricsEnabled)
-                TextButton.icon(
-                  onPressed: _retryBiometrics,
-                  icon: const Icon(Icons.fingerprint, color: Colors.white70),
-                  label: Text(
-                    tr.useBiometrics,
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                ),
-              const SizedBox(height: 12),
-            ],
-          ),
         ),
       ),
+    );
+  }
+}
+
+class _BioLockBody extends StatelessWidget {
+  const _BioLockBody({
+    required this.title,
+    required this.hint,
+    required this.error,
+    required this.onUnlock,
+    required this.unlockLabel,
+  });
+
+  final String title;
+  final String hint;
+  final String? error;
+  final VoidCallback onUnlock;
+  final String unlockLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const Spacer(flex: 2),
+        const BrandLogo(size: 88, plate: false),
+        const SizedBox(height: 28),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.4,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          hint,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.55),
+            fontSize: 14,
+            height: 1.35,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            error!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFFF6B6B),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+        const SizedBox(height: 36),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onUnlock,
+            customBorder: const CircleBorder(),
+            child: Ink(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.08),
+                border: Border.all(
+                  color: AppColors.lime.withValues(alpha: 0.55),
+                  width: 1.5,
+                ),
+              ),
+              child: const Icon(
+                Icons.fingerprint,
+                size: 40,
+                color: AppColors.lime,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          unlockLabel,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const Spacer(flex: 3),
+      ],
+    );
+  }
+}
+
+class _PinLockBody extends StatelessWidget {
+  const _PinLockBody({
+    required this.title,
+    required this.error,
+    required this.pinLength,
+    required this.pin,
+    required this.onPinChanged,
+    required this.showBiometrics,
+    required this.onBiometrics,
+    required this.biometricsLabel,
+  });
+
+  final String title;
+  final String? error;
+  final int pinLength;
+  final String pin;
+  final ValueChanged<String> onPinChanged;
+  final bool showBiometrics;
+  final VoidCallback onBiometrics;
+  final String biometricsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: 28),
+        const BrandLogo(size: 64, plate: false),
+        const SizedBox(height: 22),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            error!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFFF6B6B),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+        const Spacer(),
+        PinPad(
+          length: pinLength,
+          value: pin,
+          onChanged: onPinChanged,
+          dark: true,
+        ),
+        const Spacer(),
+        if (showBiometrics)
+          TextButton.icon(
+            onPressed: onBiometrics,
+            icon: const Icon(Icons.fingerprint, color: Colors.white70),
+            label: Text(
+              biometricsLabel,
+              style: const TextStyle(color: Colors.white70),
+            ),
+          ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 }

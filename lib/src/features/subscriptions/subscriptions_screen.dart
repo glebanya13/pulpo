@@ -31,11 +31,8 @@ class SubscriptionsScreen extends ConsumerWidget {
     final isPro = ref.watch(proControllerProvider).isPro;
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(
+      body: StickyScrollPage(
+        header: PageHeader(
               first: tr.subscriptions,
               subtitle: quotaLabel(
                   isPro: isPro,
@@ -47,7 +44,7 @@ class SubscriptionsScreen extends ConsumerWidget {
                 onTap: () => _openAdd(context, ref, used),
               ),
             ),
-            const SizedBox(height: 20),
+        children: [
             AsyncValuesGate(
               values: [subsAsync],
               onRetry: () => ref.invalidate(subscriptionsProvider),
@@ -129,7 +126,6 @@ class SubscriptionsScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 

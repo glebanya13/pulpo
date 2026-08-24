@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/file_pick.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/db/app_database.dart';
@@ -42,15 +43,13 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     _accountId ??= accounts.isEmpty ? null : accounts.first.id;
 
     return Scaffold(
-      body: SafeArea(
-        child: AsyncValueView(
+      body: AsyncValueView(
           value: accountsAsync,
           onRetry: () => ref.invalidate(accountsProvider),
-          data: (_) => ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+          data: (_) => StickyScrollPage(
+            header: PageHeader(first: tr.importCsv, onBack: () => context.pop()),
+            headerGap: 12,
             children: [
-            PageHeader(first: tr.importCsv, onBack: () => context.pop()),
-            const SizedBox(height: 12),
             Text(
               tr.importCsvHint,
               style: TextStyle(fontSize: 14, color: context.mutedText),
@@ -135,7 +134,6 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 
@@ -215,20 +213,26 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   }
 
   Future<void> _pick(String fallbackCurrency) async {
-    const group = XTypeGroup(
-      label: 'CSV',
-      extensions: ['csv', 'txt'],
-    );
-    final file = await openFile(acceptedTypeGroups: const [group]);
+    final XFile? file;
+    try {
+      file = await openFile(acceptedTypeGroups: const [csvFileTypeGroup]);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Tr.of(context).importFailed)),
+      );
+      return;
+    }
     if (file == null || !mounted) return;
+    final picked = file;
     setState(() => _busy = true);
     try {
-      final bytes = await file.readAsBytes();
+      final bytes = await picked.readAsBytes();
       final text = _decode(bytes);
       final parsed =
           parseTransactionCsv(text, fallbackCurrency: fallbackCurrency);
       setState(() {
-        _fileName = file.name;
+        _fileName = picked.name;
         _parsed = parsed;
       });
       if (parsed.rows.isEmpty && mounted) {

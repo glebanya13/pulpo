@@ -22,12 +22,9 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
     final tr = Tr.of(context);
     final lock = ref.watch(lockControllerProvider);
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(first: tr.security, onBack: () => Navigator.pop(context)),
-            const SizedBox(height: 20),
+      body: StickyScrollPage(
+        header: PageHeader(first: tr.security, onBack: () => Navigator.pop(context)),
+        children: [
             Container(
               decoration: BoxDecoration(
                 color: context.surface,
@@ -76,7 +73,6 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 

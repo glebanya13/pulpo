@@ -35,21 +35,19 @@ class SettingsScreen extends ConsumerWidget {
     final pro = ref.watch(proControllerProvider);
 
     return Scaffold(
-      body: SafeArea(
-        child: ResetScrollWhenObscured(
+      body: ResetScrollWhenObscured(
           tabPath: '/settings',
-          builder: (context, scroll) => ListView(
+          builder: (context, scroll) => StickyScrollPage(
             controller: scroll,
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-              PageHeader(
+            header: PageHeader(
                 first: tr.settings,
                 onBack: () => context.pop(),
                 action: pro.isPro
                     ? null
                     : const AssistantEnergyChip(),
               ),
-            const SizedBox(height: 20),
+            headerGap: 20,
+            children: [
 
             if (!pro.isPro)
               ProUpgradeCard(
@@ -201,13 +199,14 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ],
         ),
-        ),
       ),
     );
   }
 
   String _langLabel(String code) {
     switch (code) {
+      case 'uk':
+        return 'Українська';
       case 'ru':
         return 'Русский';
       case 'en':

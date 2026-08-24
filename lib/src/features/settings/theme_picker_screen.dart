@@ -24,12 +24,9 @@ class ThemePickerScreen extends ConsumerWidget {
     ];
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(first: tr.theme, onBack: () => context.pop()),
-            const SizedBox(height: 20),
+      body: StickyScrollPage(
+        header: PageHeader(first: tr.theme, onBack: () => context.pop()),
+        children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Container(
@@ -88,7 +85,6 @@ class ThemePickerScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

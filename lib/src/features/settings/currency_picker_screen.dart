@@ -42,12 +42,9 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
     final items = appCurrencies.where(_match).toList(growable: false);
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(first: tr.baseCurrency, onBack: () => context.pop()),
-            const SizedBox(height: 20),
+      body: StickyScrollPage(
+        header: PageHeader(first: tr.baseCurrency, onBack: () => context.pop()),
+        children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               decoration: BoxDecoration(
@@ -101,7 +98,6 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 }

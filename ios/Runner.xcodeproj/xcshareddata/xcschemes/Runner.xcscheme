@@ -64,6 +64,12 @@
       enableGPUValidationMode = "1"
       allowLocationSimulation = "YES"
       storeKitConfigurationFileReference = "Runner/Pulpo.storekit">
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "-FIRDebugEnabled"
+            isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference

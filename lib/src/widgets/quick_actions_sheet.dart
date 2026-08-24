@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/l10n/tr.dart';
+import '../core/ai/assistant_energy.dart';
 import '../core/pro/pro_controller.dart';
+import '../core/pro/pro_guard.dart';
+import '../core/pro/pro_limits.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/color_well.dart';
@@ -28,6 +31,7 @@ class _QuickActionsSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
     final isPro = ref.watch(proControllerProvider).isPro;
+    final energy = ref.watch(assistantEnergyProvider);
     return LiquidGlass(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       padding: EdgeInsets.fromLTRB(
@@ -77,9 +81,13 @@ class _QuickActionsSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           Pressable(
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context);
-              context.push('/assistant');
+              if (!isPro && !energy.hasEnergy) {
+                await openPaywall(context, ProGate.ai);
+                return;
+              }
+              if (context.mounted) context.push('/assistant');
             },
             child: Container(
               width: double.infinity,
@@ -104,19 +112,37 @@ class _QuickActionsSheet extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(12),
+                  if (!isPro && !energy.hasEnergy)
+                    ProIconMark(
+                      size: 36,
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          LucideIcons.bot,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        LucideIcons.bot,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
-                    child: const Icon(
-                      LucideIcons.bot,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -144,8 +170,36 @@ class _QuickActionsSheet extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  if (!isPro)
+                  if (!isPro && !energy.hasEnergy)
                     const ProBadge(dense: true)
+                  else if (!isPro)
+                    Container(
+                      height: 28,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            LucideIcons.zap,
+                            size: 13,
+                            color: AppColors.lime,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${energy.units}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
                   else
                     Icon(
                       LucideIcons.mic,

@@ -47,11 +47,8 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
         .length;
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(
+      body: StickyScrollPage(
+        header: PageHeader(
               first: tr.debts,
               subtitle: quotaLabel(
                   isPro: isPro,
@@ -63,7 +60,8 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                 onTap: () => _openAdd(context),
               ),
             ),
-            const SizedBox(height: 16),
+        headerGap: 16,
+        children: [
             AsyncValuesGate(
               values: [debtsAsync],
               onRetry: () => ref.invalidate(debtsProvider),
@@ -138,7 +136,6 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 

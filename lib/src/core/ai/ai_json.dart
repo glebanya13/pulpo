@@ -42,7 +42,14 @@ String? _asString(Object? v) {
 
 String _normalizeType(Object? v) {
   final s = (_asString(v) ?? 'expense').toLowerCase();
-  if (s == 'income' || s == 'ingreso' || s == 'доход') return 'income';
+  if (s == 'income' ||
+      s == 'ingreso' ||
+      s == 'доход' ||
+      s == 'дохід' ||
+      s == 'зарплата' ||
+      s == 'salary') {
+    return 'income';
+  }
   return 'expense';
 }
 

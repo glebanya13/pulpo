@@ -19,8 +19,13 @@ String countPhrase({
   required String ruOne,
   required String ruFew,
   required String ruMany,
+  String? ukOne,
+  String? ukFew,
+  String? ukMany,
 }) {
   switch (lang) {
+    case 'uk':
+      return '$n ${ruPlural(n, ukOne ?? ruOne, ukFew ?? ruFew, ukMany ?? ruMany)}';
     case 'ru':
       return '$n ${ruPlural(n, ruOne, ruFew, ruMany)}';
     case 'en':

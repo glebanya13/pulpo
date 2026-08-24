@@ -17,6 +17,8 @@ class AppCurrency {
     switch (lang) {
       case 'en':
         return _countryEn[country] ?? country;
+      case 'uk':
+        return _countryUk[country] ?? _countryRu[country] ?? country;
       case 'ru':
         return _countryRu[country] ?? country;
       default:
@@ -90,6 +92,38 @@ const _countryRu = <String, String>{
   'Italia': 'Италия',
   'Canadá': 'Канада',
   'Suiza': 'Швейцария',
+};
+
+const _countryUk = <String, String>{
+  'España': 'Іспанія',
+  'México': 'Мексика',
+  'Colombia': 'Колумбія',
+  'Argentina': 'Аргентина',
+  'Perú': 'Перу',
+  'Venezuela': 'Венесуела',
+  'Chile': 'Чилі',
+  'Estados Unidos': 'США',
+  'Ecuador': 'Еквадор',
+  'Guatemala': 'Гватемала',
+  'Bolivia': 'Болівія',
+  'República Dominicana': 'Домініканська Республіка',
+  'Cuba': 'Куба',
+  'Honduras': 'Гондурас',
+  'Paraguay': 'Парагвай',
+  'Nicaragua': 'Нікарагуа',
+  'El Salvador': 'Сальвадор',
+  'Costa Rica': 'Коста-Рика',
+  'Panamá': 'Панама',
+  'Uruguay': 'Уругвай',
+  'Puerto Rico': 'Пуерто-Рико',
+  'Guinea Ecuatorial': 'Екваторіальна Гвінея',
+  'Brasil': 'Бразилія',
+  'Francia': 'Франція',
+  'Alemania': 'Німеччина',
+  'Reino Unido': 'Велика Британія',
+  'Italia': 'Італія',
+  'Canadá': 'Канада',
+  'Suiza': 'Швейцарія',
 };
 
 /// Countries and currencies in the required order.

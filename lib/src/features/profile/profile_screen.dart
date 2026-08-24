@@ -35,20 +35,19 @@ class ProfileScreen extends ConsumerWidget {
     final isPro = ref.watch(proControllerProvider).isPro;
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.xs,
-        AppSpacing.lg,
-        AppSpacing.xxl,
-      ),
-      children: [
-        PageHeader(
+      body: StickyScrollPage(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.xs,
+          AppSpacing.lg,
+          AppSpacing.xxl,
+        ),
+        headerGap: 12,
+        header: PageHeader(
           first: tr.profile,
           onBack: () => context.pop(),
         ),
-        const SizedBox(height: 12),
+        children: [
 
         Container(
           padding: const EdgeInsets.all(14),
@@ -257,7 +256,6 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 24),
       ],
-        ),
       ),
     );
   }

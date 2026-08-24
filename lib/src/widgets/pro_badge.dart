@@ -38,6 +38,8 @@ class ProBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Icon(LucideIcons.rocket, size: dense ? 9 : 11, color: fg),
+          SizedBox(width: dense ? 3 : 4),
           if (showLock) ...[
             Icon(LucideIcons.lock, size: dense ? 9 : 11, color: fg),
             SizedBox(width: dense ? 3 : 4),

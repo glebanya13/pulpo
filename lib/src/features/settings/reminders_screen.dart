@@ -28,12 +28,10 @@ class RemindersScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(first: tr.dailyReminderCta, onBack: () => context.pop()),
-            const SizedBox(height: 8),
+      body: StickyScrollPage(
+        header: PageHeader(first: tr.dailyReminderCta, onBack: () => context.pop()),
+        headerGap: 8,
+        children: [
             Text(
               tr.remindersPageHint,
               style: TextStyle(
@@ -177,7 +175,6 @@ class RemindersScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

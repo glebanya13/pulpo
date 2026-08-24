@@ -56,7 +56,7 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
   Future<void> _ensureAccess() async {
     if (_gateChecked) return;
     _gateChecked = true;
-    final ok = await requireAi(context, ref);
+    final ok = await requireAi(context, ref, allowFreeEnergy: true);
     if (!mounted) return;
     if (!ok) {
       context.pop();
@@ -66,6 +66,7 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
   }
 
   String _localeId(String locale) => switch (locale) {
+        'uk' => 'uk_UA',
         'ru' => 'ru_RU',
         'en' => 'en_US',
         _ => 'es_ES',
@@ -158,7 +159,7 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
     final text = _textCtrl.text.trim();
     if (text.isEmpty) return;
     await _stopListening();
-    if (!await requireAi(context, ref)) return;
+    if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
     if (!mounted) return;
 
     final accounts = ref.read(accountsProvider).valueOrNull ?? [];

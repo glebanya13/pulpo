@@ -69,17 +69,20 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     return ResetScrollWhenObscured(
       tabPath: '/transactions',
       onBecameVisible: _resetToInitial,
-      builder: (context, scroll) => ListView(
-      controller: scroll,
-      padding: AppSpacing.tabPagePadding(context),
-      children: [
-        ScreenTitlePill(
-          title: tr.transactions,
-          large: true,
-          expand: true,
-          trailing: const HeaderSupportActions(dense: true),
-        ),
-        const SizedBox(height: 16),
+      builder: (context, scroll) {
+        final pad = AppSpacing.tabPagePadding(context);
+        return StickyScrollPage(
+          useSafeArea: false,
+          controller: scroll,
+          padding: pad,
+          headerGap: 16,
+          header: ScreenTitlePill(
+            title: tr.transactions,
+            large: true,
+            expand: true,
+            trailing: const HeaderSupportActions(dense: true),
+          ),
+          children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           decoration: BoxDecoration(
@@ -252,8 +255,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             },
           ),
         ),
-      ],
-    ),
+          ],
+        );
+      },
     );
   }
 

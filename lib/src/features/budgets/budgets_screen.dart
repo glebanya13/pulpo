@@ -52,11 +52,8 @@ class BudgetsScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(
+      body: StickyScrollPage(
+        header: PageHeader(
               first: tr.budgets,
               subtitle: quotaLabel(
                 isPro: isPro,
@@ -76,7 +73,8 @@ class BudgetsScreen extends ConsumerWidget {
                 },
               ),
             ),
-            const SizedBox(height: 4),
+        headerGap: 4,
+        children: [
             Padding(
               padding: const EdgeInsets.only(left: 54),
               child: Text(
@@ -161,7 +159,6 @@ class BudgetsScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

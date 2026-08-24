@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/ai/ai_errors.dart';
 import '../../core/ai/ai_models.dart';
+import '../../core/ai/assistant_energy.dart';
 import '../../core/ai/pulpo_ai_service.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
@@ -29,7 +30,6 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
-import '../../data/repositories/tag_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import 'transfer_screen.dart';
 
@@ -84,7 +84,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   db.Account? _account;
   DateTime _date = DateTime.now();
   final _noteCtrl = TextEditingController();
-  final _tagsCtrl = TextEditingController();
   String? _receiptPath;
   String? _originalReceiptPath;
   bool _aiBusy = false;
@@ -95,7 +94,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   void dispose() {
     _categoryDebounce?.cancel();
     _noteCtrl.dispose();
-    _tagsCtrl.dispose();
     _amountCtrl.dispose();
     super.dispose();
   }
@@ -258,7 +256,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   }
 
   Future<void> _voiceEntry() async {
-    if (!await requireAi(context, ref)) return;
+    if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
     if (!mounted) return;
     context.push('/assistant');
   }
@@ -277,7 +275,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
     final note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
     final repo = ref.read(transactionRepositoryProvider);
-    final tagRepo = ref.read(tagRepositoryProvider);
     if (widget.editId != null) {
       final prevReceipt = _originalReceiptPath;
       await repo.update(
@@ -289,8 +286,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         note: note,
         receiptPath: Value(_receiptPath),
       );
-      final tagIds = await tagRepo.parseAndUpsert(_tagsCtrl.text);
-      await tagRepo.setTagsForTransaction(widget.editId!, tagIds);
       // If receipt changed during edit, delete the old file to avoid orphans.
       if (prevReceipt != null &&
           prevReceipt != _receiptPath &&
@@ -303,7 +298,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       }
       if (mounted) context.pop();
     } else {
-      final id = await repo.add(
+      await repo.add(
         accountId: selectedAccount.id,
         categoryId: _category?.id,
         amount: _amount,
@@ -313,8 +308,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         note: note,
         receiptPath: _receiptPath,
       );
-      final tagIds = await tagRepo.parseAndUpsert(_tagsCtrl.text);
-      await tagRepo.setTagsForTransaction(id, tagIds);
       if (mounted) context.go('/');
     }
   }
@@ -338,12 +331,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     _category = cats.where((c) => c.id == tx.categoryId).firstOrNull;
     final accs = ref.read(accountsProvider).valueOrNull ?? [];
     _account = accs.where((a) => a.id == tx.accountId).firstOrNull;
-    ref.read(tagRepositoryProvider).forTransaction(tx.id).then((tags) {
-      if (!mounted) return;
-      setState(() {
-        _tagsCtrl.text = tags.map((t) => t.name).join(', ');
-      });
-    });
   }
 
   Future<void> _pickCategory() async {
@@ -523,7 +510,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           const SizedBox(height: 12),
           _AiQuickActions(
             busy: _aiBusy,
-            showPro: !ref.watch(proControllerProvider).isPro,
             onVoice: _voiceEntry,
           ),
           if (_aiCategorySuggestion != null) ...[
@@ -574,12 +560,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 label: tr.note,
                 value: _noteCtrl.text.isEmpty ? tr.add : _noteCtrl.text,
                 onTap: _openNote,
-              ),
-              _FormRow(
-                icon: LucideIcons.hash,
-                label: tr.tagsLabel,
-                value: _tagsCtrl.text.isEmpty ? tr.tagsHint : _tagsCtrl.text,
-                onTap: _openTags,
               ),
             ],
           ),
@@ -641,35 +621,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       setState(() => _noteCtrl.text = result);
       _scheduleCategorySuggest(result);
     }
-  }
-
-  Future<void> _openTags() async {
-    final tr = Tr.of(context);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        final controller = TextEditingController(text: _tagsCtrl.text);
-        return AlertDialog(
-          title: Text(tr.tagsLabel),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(hintText: tr.tagsHint),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(tr.cancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, controller.text),
-              child: Text(tr.save),
-            ),
-          ],
-        );
-      },
-    );
-    if (result != null) setState(() => _tagsCtrl.text = result);
   }
 
   Future<void> _pickReceipt(ImageSource source) async {
@@ -932,21 +883,23 @@ class _FormRow extends StatelessWidget {
   }
 }
 
-class _AiQuickActions extends StatelessWidget {
+class _AiQuickActions extends ConsumerWidget {
   const _AiQuickActions({
     required this.busy,
     required this.onVoice,
-    this.showPro = false,
   });
 
   final bool busy;
   final VoidCallback onVoice;
-  final bool showPro;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
     final title = busy ? tr.aiBusy : tr.aiChatTitle;
+    final isPro = ref.watch(proControllerProvider).isPro;
+    final energy = ref.watch(assistantEnergyProvider);
+    final showEnergy = !isPro;
+
     return Pressable(
       onTap: busy ? null : onVoice,
       child: Container(
@@ -973,55 +926,62 @@ class _AiQuickActions extends StatelessWidget {
         ),
         child: Row(
           children: [
-            if (showPro)
-              ProIconMark(
-                size: 28,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    LucideIcons.bot,
-                    size: 16,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
-                ),
-              )
-            else
-              Container(
-                width: 28,
-                height: 28,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  LucideIcons.bot,
-                  size: 16,
-                  color: Colors.white,
-                ),
+            Container(
+              width: 28,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.22),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: const Icon(
+                LucideIcons.bot,
+                size: 16,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 title,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.2,
-                  color: showPro
-                      ? Colors.white.withValues(alpha: 0.75)
-                      : Colors.white,
+                  color: Colors.white,
                 ),
               ),
             ),
-            if (showPro)
-              const ProBadge(dense: true)
+            if (showEnergy)
+              energy.hasEnergy
+                  ? Container(
+                      height: 28,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            LucideIcons.zap,
+                            size: 13,
+                            color: AppColors.lime,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${energy.units}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : const ProBadge(dense: true)
             else
               Icon(
                 LucideIcons.chevronRight,

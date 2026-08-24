@@ -1,7 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/ai/assistant_energy.dart';
+import '../core/pro/pro_controller.dart';
+import '../core/pro/pro_guard.dart';
+import '../core/pro/pro_limits.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/quick_actions_sheet.dart';
 
@@ -17,13 +22,23 @@ bool get _useFloatingNav {
   }
 }
 
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
+  Future<void> _openAssistant(BuildContext context, WidgetRef ref) async {
+    final isPro = ref.read(proControllerProvider).isPro;
+    final hasEnergy = ref.read(assistantEnergyProvider).hasEnergy;
+    if (!isPro && !hasEnergy) {
+      await openPaywall(context, ProGate.ai);
+      return;
+    }
+    if (context.mounted) context.push('/assistant');
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       extendBody: _useFloatingNav,
       body: LayoutBuilder(
@@ -47,7 +62,7 @@ class AppShell extends StatelessWidget {
           initialLocation: true,
         ),
         onAddTap: () => showQuickActionsSheet(context),
-        onChatTap: () => context.push('/assistant'),
+        onChatTap: () => _openAssistant(context, ref),
       ),
     );
   }

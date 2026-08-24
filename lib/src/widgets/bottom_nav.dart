@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../core/ai/assistant_energy.dart';
+import '../core/pro/pro_controller.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/liquid_glass.dart';
@@ -102,18 +105,22 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-class _AiNavItem extends StatelessWidget {
+class _AiNavItem extends ConsumerWidget {
   const _AiNavItem({required this.onTap});
 
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPro = ref.watch(proControllerProvider).isPro;
+    final hasEnergy = ref.watch(assistantEnergyProvider).hasEnergy;
+    final needsUpgrade = !isPro && !hasEnergy;
     return Pressable(
       onTap: onTap,
-      child: const AiAssistantMark(
+      child: AiAssistantMark(
         size: 38,
         iconSize: 17,
+        needsUpgrade: needsUpgrade,
       ),
     );
   }

@@ -83,7 +83,7 @@ class AccountRepository {
   Future<void> relocalizeDefaultCashAccount(String locale) async {
     final target = Tr.fromLang(locale).accountTypeCash;
     final known = {
-      for (final lang in ['es', 'ru', 'en']) Tr.fromLang(lang).accountTypeCash,
+      for (final lang in ['es', 'uk', 'ru', 'en']) Tr.fromLang(lang).accountTypeCash,
     };
     final rows = await (_db.select(_db.accounts)
           ..where(

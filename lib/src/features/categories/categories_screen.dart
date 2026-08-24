@@ -40,11 +40,8 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     }
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(
+      body: StickyScrollPage(
+        header: PageHeader(
               first: tr.categories,
               onBack: () => context.pop(),
               action: RoundIconButton(
@@ -52,7 +49,8 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                 onTap: () => _openAdd(context),
               ),
             ),
-            const SizedBox(height: 16),
+        headerGap: 16,
+        children: [
             TabsPill(
               tabs: [tr.expense, tr.income],
               index: _tab,
@@ -117,7 +115,6 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 

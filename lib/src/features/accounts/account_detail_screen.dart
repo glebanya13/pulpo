@@ -16,6 +16,7 @@ import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
+import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 
 class AccountDetailScreen extends ConsumerWidget {
@@ -122,11 +123,8 @@ class _AccountDetailBody extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.ink,
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            Row(
+      body: StickyScrollPage(
+        header: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _CircleBtn(
@@ -142,7 +140,8 @@ class _AccountDetailBody extends ConsumerWidget {
                         _openAccountEditor(context, ref, existing: account)),
               ],
             ),
-            const SizedBox(height: 24),
+        headerGap: 24,
+        children: [
             Center(
               child: ColorWellIcon(
                 color: Color(account.color),
@@ -311,7 +310,6 @@ class _AccountDetailBody extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

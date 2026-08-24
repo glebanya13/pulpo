@@ -98,18 +98,21 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return ResetScrollWhenObscured(
       tabPath: '/reports',
       onBecameVisible: _resetToInitial,
-      builder: (context, scroll) => ListView(
-      controller: scroll,
-      padding: AppSpacing.tabPagePadding(context),
-      children: [
-        ScreenTitlePill(
-          title: tr.analytics,
-          subtitle: tr.analyticsSubtitle,
-          large: true,
-          expand: true,
-          trailing: const HeaderSupportActions(dense: true),
-        ),
-        const SizedBox(height: 16),
+      builder: (context, scroll) {
+        final pad = AppSpacing.tabPagePadding(context);
+        return StickyScrollPage(
+          useSafeArea: false,
+          controller: scroll,
+          padding: pad,
+          headerGap: 16,
+          header: ScreenTitlePill(
+            title: tr.analytics,
+            subtitle: tr.analyticsSubtitle,
+            large: true,
+            expand: true,
+            trailing: const HeaderSupportActions(dense: true),
+          ),
+          children: [
         _PeriodDropdownButton(
           label: customRangeLabel ?? periodName,
           onTap: () => _openPeriodPicker(
@@ -160,8 +163,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             },
           ),
         ),
-      ],
-    ),
+          ],
+        );
+      },
     );
   }
 
@@ -1290,6 +1294,17 @@ class _ReportsSegmentedTabs extends StatelessWidget {
                       ),
                       if (locked.contains(i)) ...[
                         const SizedBox(width: 4),
+                        Text(
+                          'PRO',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                            height: 1,
+                            color: AppColors.lime,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
                         const ProRocketDot(size: 14),
                       ],
                     ],
@@ -1344,7 +1359,23 @@ class _PeriodSheetTile extends StatelessWidget {
               ),
             ),
             if (locked)
-              const ProRocketDot(size: 18)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'PRO',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.6,
+                      height: 1,
+                      color: AppColors.lime,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const ProRocketDot(size: 18),
+                ],
+              )
             else if (selected)
               const Icon(LucideIcons.check, size: 18, color: AppColors.ink),
           ],
@@ -1367,15 +1398,29 @@ class _AiInsightCard extends StatelessWidget {
   final VoidCallback onGenerate;
   final bool showPro;
 
+  static const _assistantDeep = Color(0xFF8B7CFF);
+
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
+    final accent = AppColors.violet;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: context.surface,
         borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _assistantDeep.withValues(alpha: context.isDark ? 0.28 : 0.16),
+            accent.withValues(alpha: context.isDark ? 0.16 : 0.10),
+            context.surface,
+          ],
+        ),
+        border: Border.all(
+          color: accent.withValues(alpha: context.isDark ? 0.45 : 0.35),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1385,9 +1430,7 @@ class _AiInsightCard extends StatelessWidget {
               Icon(
                 LucideIcons.sparkles,
                 size: 18,
-                color: showPro
-                    ? context.primaryText.withValues(alpha: 0.55)
-                    : context.primaryText,
+                color: showPro ? accent.withValues(alpha: 0.55) : accent,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -1397,14 +1440,38 @@ class _AiInsightCard extends StatelessWidget {
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: showPro
-                        ? proLockedTextColor(context)
+                        ? context.primaryText.withValues(alpha: 0.55)
                         : context.primaryText,
                   ),
                 ),
               ),
               if (showPro) ...[
                 const SizedBox(width: 8),
-                const ProBadge(dense: true),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.rocket, size: 10, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'PRO',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.6,
+                          height: 1,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ],
           ),
@@ -1416,7 +1483,7 @@ class _AiInsightCard extends StatelessWidget {
                 fontSize: 13,
                 height: 1.35,
                 color: showPro
-                    ? proLockedMutedColor(context)
+                    ? context.mutedText.withValues(alpha: 0.7)
                     : context.mutedText,
               ),
             )
@@ -1431,11 +1498,28 @@ class _AiInsightCard extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ScaledOutlinedButton(
-              onPressed: busy ? null : onGenerate,
-              child: Text(busy ? tr.aiBusy : tr.aiInsightGenerate),
+          Pressable(
+            onTap: busy ? null : onGenerate,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(
+                  color: accent.withValues(alpha: busy ? 0.35 : 0.85),
+                  width: 1.5,
+                ),
+                color: accent.withValues(alpha: busy ? 0.08 : 0.14),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                busy ? tr.aiBusy : tr.aiInsightGenerate,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: accent.withValues(alpha: busy ? 0.45 : 1),
+                ),
+              ),
             ),
           ),
         ],

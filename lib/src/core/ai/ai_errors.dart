@@ -1,20 +1,123 @@
+import 'package:flutter/foundation.dart';
+
 import '../l10n/tr.dart';
-import 'pulpo_ai_service.dart';
+
+enum AiErrorCode {
+  signInRequired,
+  apiKey,
+  apiNotEnabled,
+  permissionDenied,
+  quota,
+  blocked,
+  emptyResponse,
+  emptyInput,
+  invalidJson,
+  missingModel,
+  network,
+  requestFailed,
+}
+
+class PulpoAiException implements Exception {
+  const PulpoAiException(this.code, [this.detail]);
+
+  final AiErrorCode code;
+  final String? detail;
+
+  /// Soft-fail assistant JSON turn into plain chat.
+  bool get allowsChatFallback =>
+      code == AiErrorCode.invalidJson ||
+      code == AiErrorCode.emptyResponse ||
+      code == AiErrorCode.requestFailed ||
+      code == AiErrorCode.network ||
+      code == AiErrorCode.missingModel;
+
+  bool get isRetryable =>
+      code == AiErrorCode.emptyResponse ||
+      code == AiErrorCode.permissionDenied ||
+      code == AiErrorCode.missingModel ||
+      code == AiErrorCode.network;
+
+  @override
+  String toString() {
+    final d = detail?.trim();
+    if (d == null || d.isEmpty) return 'PulpoAiException(${code.name})';
+    return 'PulpoAiException(${code.name}: $d)';
+  }
+}
+
+/// Map raw Firebase / Gemini exception text to a typed code.
+AiErrorCode classifyAiRawError(String msg) {
+  final m = msg.toLowerCase();
+
+  if (m.contains('blocked') ||
+      m.contains('safety') ||
+      m.contains('finishreason.safety')) {
+    return AiErrorCode.blocked;
+  }
+  if (m.contains('api key') || m.contains('invalidapikey')) {
+    return AiErrorCode.apiKey;
+  }
+  if (m.contains('not enabled') || m.contains('serviceapinotenabled')) {
+    return AiErrorCode.apiNotEnabled;
+  }
+  if (m.contains('quota') || m.contains('resource_exhausted')) {
+    return AiErrorCode.quota;
+  }
+  if (m.contains('not_found') ||
+      m.contains('not found') ||
+      m.contains('not supported') ||
+      m.contains('model_not_found')) {
+    return AiErrorCode.missingModel;
+  }
+  if (m.contains('permission') ||
+      m.contains('app check') ||
+      m.contains('app-check') ||
+      m.contains('firebaseappcheck') ||
+      m.contains('appcheck') ||
+      m.contains('unauthenticated') ||
+      RegExp(r'\b403\b').hasMatch(m)) {
+    return AiErrorCode.permissionDenied;
+  }
+  if (m.contains('unavailable') ||
+      m.contains('deadline') ||
+      m.contains('timeout') ||
+      m.contains('socket') ||
+      m.contains('network') ||
+      m.contains('connection') ||
+      RegExp(r'\b5\d\d\b').hasMatch(m) ||
+      m.contains('server error')) {
+    return AiErrorCode.network;
+  }
+  return AiErrorCode.requestFailed;
+}
 
 String describeAiError(Tr tr, Object error) {
   if (error is! PulpoAiException) return tr.aiFailed;
-  final code = error.message.split(':').first;
-  switch (code) {
-    case 'sign_in_required':
+  switch (error.code) {
+    case AiErrorCode.signInRequired:
       return tr.proSignInRequired;
-    case 'api_key':
-    case 'api_not_enabled':
+    case AiErrorCode.apiKey:
+    case AiErrorCode.apiNotEnabled:
       return tr.aiApiNotEnabled;
-    case 'permission_denied':
+    case AiErrorCode.permissionDenied:
       return tr.aiPermissionDenied;
-    case 'quota':
+    case AiErrorCode.quota:
       return tr.aiQuotaExceeded;
-    default:
-      return tr.aiFailed;
+    case AiErrorCode.blocked:
+      return tr.aiBlocked;
+    case AiErrorCode.emptyResponse:
+      return tr.aiEmptyResponse;
+    case AiErrorCode.invalidJson:
+      return tr.aiInvalidResponse;
+    case AiErrorCode.emptyInput:
+    case AiErrorCode.missingModel:
+    case AiErrorCode.network:
+    case AiErrorCode.requestFailed:
+      if (kReleaseMode) return tr.aiFailed;
+      final detail = error.detail?.trim() ?? '';
+      if (detail.isEmpty) return tr.aiFailed;
+      final short =
+          detail.length > 140 ? '${detail.substring(0, 140)}…' : detail;
+      return '${tr.aiFailed}\n$short';
   }
 }

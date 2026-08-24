@@ -41,14 +41,11 @@ class AccountsScreen extends ConsumerWidget {
     final currencies = accounts.map((a) => a.currency).toSet().length;
 
     return Scaffold(
-      body: SafeArea(
-        child: ResetScrollWhenObscured(
+      body: ResetScrollWhenObscured(
           tabPath: '/accounts',
-          builder: (context, scroll) => ListView(
+          builder: (context, scroll) => StickyScrollPage(
             controller: scroll,
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-            children: [
-              PageHeader(
+            header: PageHeader(
                 first: tr.myAccounts,
                 subtitle:
                     '${quotaLabel(isPro: isPro, used: accounts.length, limit: ProLimits.accounts)} · ${tr.currenciesCount(currencies)}',
@@ -58,7 +55,8 @@ class AccountsScreen extends ConsumerWidget {
                   onTap: () => _openAddAccount(context, ref),
                 ),
               ),
-              const SizedBox(height: 16),
+            headerGap: 16,
+            children: [
               AsyncValuesGate(
                 values: [accountsAsync],
                 onRetry: () => ref.invalidate(accountsProvider),
@@ -109,7 +107,6 @@ class AccountsScreen extends ConsumerWidget {
               ),
             ],
           ),
-        ),
       ),
     );
   }

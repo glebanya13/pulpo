@@ -13,8 +13,9 @@ import '../../widgets/pressable.dart';
 class LanguagePickerScreen extends ConsumerWidget {
   const LanguagePickerScreen({super.key});
 
-  static const _langs = [
+    static const _langs = [
     ('es', 'Español', '🇪🇸'),
+    ('uk', 'Українська', '🇺🇦'),
     ('ru', 'Русский', '🇷🇺'),
     ('en', 'English', '🇬🇧'),
   ];
@@ -25,12 +26,9 @@ class LanguagePickerScreen extends ConsumerWidget {
     final tr = Tr.of(context);
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(first: tr.language, onBack: () => context.pop()),
-            const SizedBox(height: 20),
+      body: StickyScrollPage(
+        header: PageHeader(first: tr.language, onBack: () => context.pop()),
+        children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Container(
@@ -87,7 +85,6 @@ class LanguagePickerScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

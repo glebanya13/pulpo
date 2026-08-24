@@ -9,25 +9,50 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
 
-/// Transparent wallet mark on a theme plate: white in light, soft in dark.
+/// Transparent wallet mark. Optional plate: white on light surfaces, soft on dark.
 class BrandLogo extends StatelessWidget {
-  const BrandLogo({super.key, required this.size});
+  const BrandLogo({
+    super.key,
+    required this.size,
+    this.plate = true,
+    this.onDarkSurface = false,
+  });
 
   final double size;
+  /// When false, only the transparent mark (no rounded square behind it).
+  final bool plate;
+  /// Use when the parent is dark even if the app theme is still light
+  /// (onboarding, lock screen).
+  final bool onDarkSurface;
 
   @override
   Widget build(BuildContext context) {
+    final mark = Image.asset(
+      'assets/logo_mark.png',
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      // Avoid black fringe from zero-RGB transparent pixels.
+      isAntiAlias: true,
+    );
+
+    if (!plate) {
+      return SizedBox(width: size, height: size, child: mark);
+    }
+
+    final dark = onDarkSurface || context.isDark;
     final radius = size * 0.22;
-    final plate = context.isDark
+    final plateColor = dark
         ? Colors.white.withValues(alpha: 0.12)
         : Colors.white;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: plate,
+        color: plateColor,
         borderRadius: BorderRadius.circular(radius),
-        boxShadow: context.isDark
+        boxShadow: dark
             ? null
             : [
                 BoxShadow(
@@ -40,15 +65,7 @@ class BrandLogo extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: EdgeInsets.all(size * 0.08),
-        child: Image.asset(
-          'assets/logo_mark.png',
-          width: size,
-          height: size,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.high,
-          // Avoid black fringe from zero-RGB transparent pixels.
-          isAntiAlias: true,
-        ),
+        child: mark,
       ),
     );
   }
@@ -147,6 +164,69 @@ class ScreenTitlePill extends StatelessWidget {
     );
     if (expand) return child;
     return Align(alignment: Alignment.centerLeft, child: child);
+  }
+}
+
+/// Pins [header] above a scrollable list (same pattern as the home tab).
+class StickyScrollPage extends StatelessWidget {
+  const StickyScrollPage({
+    super.key,
+    required this.header,
+    required this.children,
+    this.controller,
+    this.padding = const EdgeInsets.fromLTRB(20, 12, 20, 40),
+    this.headerGap = 20,
+    this.headerBottomPadding = 0,
+    this.useSafeArea = true,
+    this.physics,
+  });
+
+  final Widget header;
+  final List<Widget> children;
+  final ScrollController? controller;
+  final EdgeInsets padding;
+  /// Space between sticky header and first list child.
+  final double headerGap;
+  /// Extra padding under the header inside the sticky bar (dashboard uses 10).
+  final double headerBottomPadding;
+  final bool useSafeArea;
+  final ScrollPhysics? physics;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ColoredBox(
+          color: bg,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              padding.left,
+              padding.top,
+              padding.right,
+              headerBottomPadding,
+            ),
+            child: header,
+          ),
+        ),
+        Expanded(
+          child: ListView(
+            controller: controller,
+            physics: physics,
+            padding: EdgeInsets.fromLTRB(
+              padding.left,
+              headerGap,
+              padding.right,
+              padding.bottom,
+            ),
+            children: children,
+          ),
+        ),
+      ],
+    );
+    if (!useSafeArea) return content;
+    return SafeArea(child: content);
   }
 }
 

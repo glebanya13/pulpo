@@ -34,8 +34,14 @@ class AppSpacing {
     );
   }
 
-  /// Bottom sheets on tab screens must clear the floating nav pill.
+  /// Root modal sheets (`useRootNavigator`) cover the floating nav —
+  /// only clear the home-indicator / system inset, not the tab pill height.
   static EdgeInsets sheetOnTabScreen(BuildContext context) {
-    return EdgeInsets.fromLTRB(8, 10, 8, md + tabBodyBottom(context));
+    return EdgeInsets.fromLTRB(
+      8,
+      10,
+      8,
+      md + MediaQuery.viewPaddingOf(context).bottom,
+    );
   }
 }

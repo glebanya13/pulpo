@@ -49,15 +49,13 @@ class _SharedBudgetScreenState extends ConsumerState<SharedBudgetScreen> {
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(
+      body: StickyScrollPage(
+        header: PageHeader(
               first: tr.sharedBudgetTitle,
               onBack: () => context.pop(),
             ),
-            const SizedBox(height: 8),
+        headerGap: 8,
+        children: [
             Text(
               tr.sharedBudgetSubtitle,
               style: TextStyle(fontSize: 14, color: context.mutedText),
@@ -130,7 +128,6 @@ class _SharedBudgetScreenState extends ConsumerState<SharedBudgetScreen> {
               ),
           ],
         ),
-      ),
     );
   }
 

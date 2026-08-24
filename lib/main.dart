@@ -252,6 +252,7 @@ class BudgetTrackerApp extends ConsumerWidget {
       ],
       supportedLocales: const [
         Locale('es'),
+        Locale('uk'),
         Locale('ru'),
         Locale('en'),
       ],

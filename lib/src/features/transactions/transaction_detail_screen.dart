@@ -46,11 +46,9 @@ class TransactionDetailScreen extends ConsumerWidget {
         final isIncome = type == TxType.income;
 
         return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-          children: [
-            Row(
+      body: StickyScrollPage(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        header: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 RoundIconButton(
@@ -68,7 +66,8 @@ class TransactionDetailScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+        headerGap: 24,
+        children: [
             Center(
               child: Text(
                 (isIncome ? '+' : '−') + formatMoney(tx.amount, tx.currency),
@@ -115,9 +114,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                   context,
                   icon: LucideIcons.calendar,
                   label: tr.date,
-                  value: DateFormat('d MMMM y · HH:mm',
-                          Localizations.localeOf(context).languageCode)
-                      .format(tx.date),
+                  valueWidget: _DateValue(date: tx.date),
                 ),
                 if (tx.counterparty != null)
                   _row(
@@ -259,15 +256,8 @@ class TransactionDetailScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            Center(
-              child: Text(tr.txIdLabel(tx.id),
-                  style: TextStyle(
-                      fontSize: 10, color: context.faintText)),
-            ),
           ],
         ),
-      ),
     );
       },
     );
@@ -309,11 +299,20 @@ Widget _row(
   required IconData icon,
   Color? well,
   required String label,
-  required String value,
+  String? value,
+  Widget? valueWidget,
 }) {
+  assert(value != null || valueWidget != null);
+  final valueStyle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    height: 1.25,
+    color: context.primaryText,
+  );
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
     child: Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (well != null)
           ColorWellIcon(
@@ -326,22 +325,64 @@ Widget _row(
         else
           NeutralWellIcon(icon: icon),
         const SizedBox(width: 12),
-        Text(label,
-            style: TextStyle(fontSize: 13, color: context.mutedText)),
-        const Spacer(),
-        Flexible(
+        Expanded(
+          flex: 2,
           child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: context.primaryText),
+            label,
+            style: TextStyle(fontSize: 13, color: context.mutedText),
           ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 3,
+          child: valueWidget ??
+              Text(
+                value!,
+                textAlign: TextAlign.right,
+                style: valueStyle,
+              ),
         ),
       ],
     ),
   );
+}
+
+class _DateValue extends StatelessWidget {
+  const _DateValue({required this.date});
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = Localizations.localeOf(context).languageCode;
+    final day = DateFormat('d MMMM y', lang).format(date);
+    final time = DateFormat('HH:mm', lang).format(date);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          day,
+          textAlign: TextAlign.right,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            height: 1.25,
+            color: context.primaryText,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          time,
+          textAlign: TextAlign.right,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            height: 1.2,
+            color: context.mutedText,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _FormBlock extends StatelessWidget {

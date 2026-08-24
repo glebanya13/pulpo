@@ -40,11 +40,8 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
     final isPro = ref.watch(proControllerProvider).isPro;
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(
+      body: StickyScrollPage(
+        header: PageHeader(
               first: tr.recurringOps,
               subtitle: quotaLabel(
                   isPro: isPro,
@@ -56,7 +53,8 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
                 onTap: () => _openAdd(context),
               ),
             ),
-            const SizedBox(height: 16),
+        headerGap: 16,
+        children: [
             AsyncValuesGate(
               values: [rulesAsync],
               onRetry: () => ref.invalidate(recurringRulesProvider),
@@ -93,7 +91,6 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 

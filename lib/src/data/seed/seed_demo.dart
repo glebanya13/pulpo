@@ -38,6 +38,20 @@ class _DemoCopy {
 
 _DemoCopy _copyFor(String locale) {
   switch (locale) {
+    case 'uk':
+      return const _DemoCopy(
+        cash: 'Готівка',
+        card: 'Картка',
+        salary: 'Зарплата',
+        freelance: 'Фріланс',
+        groceries: 'Продукти',
+        coffee: 'Кава',
+        cinema: 'Кіно',
+        internet: 'Інтернет',
+        pharmacy: 'Аптека',
+        foodBudget: 'Їжа',
+        userName: 'Олекс',
+      );
     case 'ru':
       return const _DemoCopy(
         cash: 'Наличные',

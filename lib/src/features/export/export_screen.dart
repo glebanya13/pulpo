@@ -42,12 +42,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         : null;
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(first: tr.exportCsv, onBack: () => context.pop()),
-            const SizedBox(height: 24),
+      body: StickyScrollPage(
+        header: PageHeader(first: tr.exportCsv, onBack: () => context.pop()),
+        headerGap: 24,
+        children: [
             Text(
               tr.exportPeriod,
               style: TextStyle(
@@ -107,7 +105,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 

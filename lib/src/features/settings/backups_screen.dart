@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/file_pick.dart';
 import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
@@ -101,8 +102,17 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
 
   Future<void> _importBackupFile() async {
     final tr = Tr.of(context);
-    const group = XTypeGroup(label: 'JSON', extensions: ['json']);
-    final picked = await openFile(acceptedTypeGroups: const [group]);
+    final XFile? picked;
+    try {
+      picked = await openFile(acceptedTypeGroups: const [jsonFileTypeGroup]);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.restoreFailed)),
+        );
+      }
+      return;
+    }
     if (picked == null || !mounted) return;
     try {
       await ref.read(backupServiceProvider).restoreFromFile(File(picked.path));
@@ -133,15 +143,13 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
     final tr = Tr.of(context);
     final isPro = ref.watch(proControllerProvider).isPro;
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(
+      body: StickyScrollPage(
+        header: PageHeader(
               first: tr.backupsShort,
               onBack: () => context.pop(),
             ),
-            const SizedBox(height: 16),
+        headerGap: 16,
+        children: [
             SoftCard(
               child: Row(
                 children: [
@@ -342,7 +350,6 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                 ),
           ],
         ),
-      ),
     );
   }
 }

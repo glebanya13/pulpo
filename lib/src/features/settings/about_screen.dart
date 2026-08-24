@@ -16,12 +16,10 @@ class AboutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(first: tr.about, onBack: () => context.pop()),
-            const SizedBox(height: 24),
+      body: StickyScrollPage(
+        header: PageHeader(first: tr.about, onBack: () => context.pop()),
+        headerGap: 24,
+        children: [
             Center(
               child: BrandLogo(size: 72),
             ),
@@ -74,7 +72,6 @@ class AboutScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

@@ -34,11 +34,8 @@ class GoalsScreen extends ConsumerWidget {
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-          children: [
-            PageHeader(
+      body: StickyScrollPage(
+        header: PageHeader(
               first: tr.goals,
               subtitle: quotaLabel(
                   isPro: isPro, used: active, limit: ProLimits.goals),
@@ -55,7 +52,8 @@ class GoalsScreen extends ConsumerWidget {
                 },
               ),
             ),
-            const SizedBox(height: 16),
+        headerGap: 16,
+        children: [
             AsyncValuesGate(
               values: [goalsAsync],
               onRetry: () => ref.invalidate(goalsProvider),
@@ -91,7 +89,6 @@ class GoalsScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
