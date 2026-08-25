@@ -116,6 +116,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
     if (picked == null || !mounted) return;
     try {
       await ref.read(backupServiceProvider).restoreFromFile(File(picked.path));
+      refreshUiAfterMoneyRestore(ref);
       await _loadBackups();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -334,6 +335,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                   onRestore: () async {
                     try {
                       await ref.read(backupServiceProvider).restoreFromFile(f);
+                      refreshUiAfterMoneyRestore(ref);
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(tr.dataRestored)),

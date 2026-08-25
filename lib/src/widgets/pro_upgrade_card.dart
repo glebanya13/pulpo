@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/theme/app_colors.dart';
+import 'common.dart';
 import 'pressable.dart';
 
-/// Bright Pro CTA — lime gradient + rocket (distinct from AI assistant).
+/// Bright Pro CTA — lime card with brand mark.
 class ProUpgradeCard extends StatelessWidget {
   const ProUpgradeCard({
     super.key,
@@ -50,19 +51,7 @@ class ProUpgradeCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                LucideIcons.rocket,
-                size: 22,
-                color: AppColors.ink,
-              ),
-            ),
+            const BrandLogo(size: 44, plate: false),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

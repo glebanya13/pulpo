@@ -296,7 +296,9 @@ void main() {
               initialBalance: const Value(12),
             ),
           );
-      final backup = BackupService(db);
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final backup = BackupService(db, SettingsService(prefs));
       final snap = await backup.snapshot();
       await db.delete(db.accounts).go();
       expect((await db.select(db.accounts).get()), isEmpty);
@@ -332,10 +334,13 @@ void main() {
             ),
           );
 
-      final backup = BackupService(db);
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final backup = BackupService(db, SettingsService(prefs));
       final snap = await backup.snapshot();
       expect(snap['tags'], hasLength(1));
       expect(snap['transactionTags'], hasLength(1));
+      expect(snap['appPrefs'], isA<Map>());
 
       await db.delete(db.transactionTags).go();
       await db.delete(db.tags).go();

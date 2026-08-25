@@ -47,6 +47,11 @@ class _AutoSyncBinderState extends ConsumerState<AutoSyncBinder>
     if (!ref.read(proControllerProvider).isPro) return;
     if (!(prefs.getBool(AutoBackupKeys.cloudEnabled) ?? false)) return;
     if (ref.read(authUserProvider).valueOrNull == null) return;
+    // Don't overwrite cloud while the restore prompt / restore is open.
+    if (ref.read(cloudUploadHoldProvider) ||
+        ref.read(pendingCloudRestoreProvider)) {
+      return;
+    }
 
     final lastRaw = prefs.getString(AutoBackupKeys.lastCloud);
     final last = lastRaw != null ? DateTime.tryParse(lastRaw) : null;

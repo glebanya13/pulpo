@@ -4,8 +4,9 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../core/l10n/tr.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
+import 'common.dart';
 
-/// Solid lime pill — rocket + PRO (same mark as cloud backup rows).
+/// Solid lime pill — brand mark + PRO.
 class ProBadge extends StatelessWidget {
   const ProBadge({
     super.key,
@@ -39,7 +40,7 @@ class ProBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(LucideIcons.rocket, size: dense ? 10 : 12, color: fg),
+          BrandLogo(size: dense ? 12 : 14, plate: false),
           SizedBox(width: dense ? 4 : 5),
           if (showLock) ...[
             Icon(LucideIcons.lock, size: dense ? 9 : 11, color: fg),
@@ -61,7 +62,7 @@ class ProBadge extends StatelessWidget {
   }
 }
 
-/// Small rocket badge overlaid on a leading icon — readable without tapping.
+/// Small brand mark overlaid on a leading icon — readable without tapping.
 class ProIconMark extends StatelessWidget {
   const ProIconMark({
     super.key,
@@ -103,7 +104,7 @@ class ProChromeMark extends StatelessWidget {
   Widget build(BuildContext context) => ProRocketDot(size: size);
 }
 
-/// Standalone rocket chip for list trailing / compact marks.
+/// Standalone brand chip for list trailing / compact marks.
 class ProRocketDot extends StatelessWidget {
   const ProRocketDot({super.key, this.size = 16});
 
@@ -115,7 +116,6 @@ class ProRocketDot extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppColors.lime,
         shape: BoxShape.circle,
         border: Border.all(
           color: context.isDark ? AppColors.ink : Colors.white,
@@ -129,11 +129,7 @@ class ProRocketDot extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(
-        LucideIcons.rocket,
-        size: size * 0.55,
-        color: AppColors.ink,
-      ),
+      child: ClipOval(child: BrandLogo(size: size, plate: false)),
     );
   }
 }

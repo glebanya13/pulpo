@@ -9,7 +9,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
 
-/// Brand mark (lime burst + purple robot on black). Optional soft plate behind.
+/// Brand mark (lime plate + black M). Optional soft plate behind.
 class BrandLogo extends StatelessWidget {
   const BrandLogo({
     super.key,

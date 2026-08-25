@@ -48,6 +48,44 @@ class SettingsService {
   String get locale => _prefs.getString(_kLocale) ?? 'es';
   Future<void> setLocale(String v) => _prefs.setString(_kLocale, v);
 
+  /// Prefs included in cloud / JSON backups (not the Drift `settings` table).
+  Map<String, dynamic> exportAppPrefs() => {
+        'userName': userName,
+        'baseCurrency': baseCurrency,
+        'baseCurrencyCountry': baseCurrencyCountry,
+        'themeMode': themeMode,
+        'locale': locale,
+        'dailyReminderEnabled': dailyReminderEnabled,
+        'dailyReminderHour': dailyReminderHour,
+        'dailyReminderMinute': dailyReminderMinute,
+        'smartRemindersEnabled': smartRemindersEnabled,
+      };
+
+  Future<void> importAppPrefs(Map<String, dynamic> raw) async {
+    final name = raw['userName']?.toString().trim();
+    if (name != null && name.isNotEmpty) await setUserName(name);
+    final currency = raw['baseCurrency']?.toString().trim();
+    if (currency != null && currency.isNotEmpty) {
+      await setBaseCurrency(currency);
+    }
+    final country = raw['baseCurrencyCountry']?.toString().trim();
+    if (country != null && country.isNotEmpty) {
+      await setBaseCurrencyCountry(country);
+    }
+    final theme = raw['themeMode']?.toString().trim();
+    if (theme != null && theme.isNotEmpty) await setThemeMode(theme);
+    final locale = raw['locale']?.toString().trim();
+    if (locale != null && locale.isNotEmpty) await setLocale(locale);
+    final rem = raw['dailyReminderEnabled'];
+    if (rem is bool) await setDailyReminderEnabled(rem);
+    final hour = raw['dailyReminderHour'];
+    if (hour is num) await setDailyReminderHour(hour.toInt());
+    final minute = raw['dailyReminderMinute'];
+    if (minute is num) await setDailyReminderMinute(minute.toInt());
+    final smart = raw['smartRemindersEnabled'];
+    if (smart is bool) await setSmartRemindersEnabled(smart);
+  }
+
   bool get dailyReminderEnabled => _prefs.getBool(_kDailyReminder) ?? true;
   Future<void> setDailyReminderEnabled(bool v) =>
       _prefs.setBool(_kDailyReminder, v);
@@ -209,8 +247,26 @@ class SettingsController extends Notifier<SettingsState> {
   }
 
   Future<void> setUserName(String name) async {
-    await ref.read(settingsServiceProvider).setUserName(name);
+    // Update UI immediately; disk write can finish after.
     state = state.copyWith(userName: name);
+    await ref.read(settingsServiceProvider).setUserName(name);
+  }
+
+  /// Reload reactive state after importing SharedPreferences from a backup.
+  void reloadFromDisk() {
+    final s = ref.read(settingsServiceProvider);
+    state = SettingsState(
+      onboardingDone: s.onboardingDone,
+      userName: s.userName,
+      baseCurrency: s.baseCurrency,
+      baseCurrencyCountry: s.baseCurrencyCountry,
+      themeMode: s.themeMode,
+      locale: s.locale,
+      dailyReminderEnabled: s.dailyReminderEnabled,
+      dailyReminderHour: s.dailyReminderHour,
+      dailyReminderMinute: s.dailyReminderMinute,
+      smartRemindersEnabled: s.smartRemindersEnabled,
+    );
   }
 
   Future<void> setDailyReminderEnabled(bool enabled) async {

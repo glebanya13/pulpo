@@ -168,13 +168,18 @@ class CloudAuth {
     if (user == null) return;
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
-    if (user.displayName != trimmed) {
-      await user.updateDisplayName(trimmed);
+    try {
+      if (user.displayName != trimmed) {
+        await user.updateDisplayName(trimmed);
+      }
+      await _profileRef(user.uid).set({
+        'displayName': trimmed,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e, st) {
+      debugPrint('CloudAuth.updateDisplayName: $e\n$st');
+      rethrow;
     }
-    await _profileRef(user.uid).set({
-      'displayName': trimmed,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
   }
 
   Future<void> uploadBackup([String? _]) async {
@@ -184,7 +189,9 @@ class CloudAuth {
   Future<String?> downloadBackup() async {
     final user = _auth.currentUser;
     if (user == null) return null;
-    final snap = await _moneyRef(user.uid).get();
+    final snap = await _moneyRef(user.uid).get(
+      const GetOptions(source: Source.server),
+    );
     final data = snap.data();
     if (data == null) return null;
     final payload = data['payload'];
@@ -197,13 +204,17 @@ class CloudAuth {
     return null;
   }
 
-  Future<void> uploadMoney() async {
+  Future<void> uploadMoney({bool bypassHold = false}) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw FirebaseAuthException(
         code: 'no-current-user',
         message: 'Not signed in',
       );
+    }
+    if (!bypassHold && _ref.read(cloudUploadHoldProvider)) {
+      debugPrint('CloudAuth.uploadMoney: skipped (restore hold)');
+      return;
     }
     final snapshot = await _ref.read(backupServiceProvider).snapshot();
     final payload = jsonDecode(jsonEncode(snapshot)) as Map<String, dynamic>;
@@ -216,12 +227,25 @@ class CloudAuth {
   Future<bool> downloadMoney() async {
     final user = _auth.currentUser;
     if (user == null) return false;
-    final snap = await _moneyRef(user.uid).get();
+    DocumentSnapshot<Map<String, dynamic>> snap;
+    try {
+      snap = await _moneyRef(user.uid).get(
+        const GetOptions(source: Source.server),
+      );
+    } catch (e, st) {
+      debugPrint('CloudAuth.downloadMoney server read failed: $e\n$st');
+      snap = await _moneyRef(user.uid).get();
+    }
     final data = snap.data();
     if (data == null) return false;
     final raw = data['payload'];
     if (raw is! Map) return false;
     final payload = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
+    final txCount = (payload['transactions'] as List?)?.length ?? 0;
+    final accCount = (payload['accounts'] as List?)?.length ?? 0;
+    debugPrint(
+      'CloudAuth.downloadMoney: restoring accounts=$accCount txs=$txCount',
+    );
     await _ref.read(backupServiceProvider).restoreFromMap(payload);
     return true;
   }
@@ -229,7 +253,9 @@ class CloudAuth {
   Future<DateTime?> cloudSnapshotUpdatedAt() async {
     final user = _auth.currentUser;
     if (user == null) return null;
-    final snap = await _moneyRef(user.uid).get();
+    final snap = await _moneyRef(user.uid).get(
+      const GetOptions(source: Source.server),
+    );
     if (!snap.exists) return null;
     final updated = snap.data()?['updatedAt'];
     if (updated is Timestamp) return updated.toDate();
@@ -239,16 +265,33 @@ class CloudAuth {
   Future<bool> hasCloudSnapshot() async {
     final user = _auth.currentUser;
     if (user == null) return false;
-    return (await _moneyRef(user.uid).get()).exists;
+    try {
+      return (await _moneyRef(user.uid).get(
+            const GetOptions(source: Source.server),
+          ))
+          .exists;
+    } catch (_) {
+      return (await _moneyRef(user.uid).get()).exists;
+    }
   }
 
   Future<void> syncOnLogin() async {
     final user = _auth.currentUser;
     if (user == null) return;
-    final remote = await _moneyRef(user.uid).get();
+    DocumentSnapshot<Map<String, dynamic>> remote;
+    try {
+      remote = await _moneyRef(user.uid).get(
+        const GetOptions(source: Source.server),
+      );
+    } catch (e, st) {
+      debugPrint('CloudAuth.syncOnLogin server read failed: $e\n$st');
+      remote = await _moneyRef(user.uid).get();
+    }
     if (!remote.exists) {
       await uploadMoney();
     } else {
+      // Hold uploads until the user picks cloud vs local (see CloudLoginSyncBinder).
+      _ref.read(cloudUploadHoldProvider.notifier).state = true;
       _ref.read(pendingCloudRestoreProvider.notifier).state = true;
     }
     try {

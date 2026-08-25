@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -403,10 +405,16 @@ Future<void> openNameSheet(
                         await ref
                             .read(settingsControllerProvider.notifier)
                             .setUserName(name);
-                        await ref
-                            .read(cloudAuthProvider)
-                            .updateDisplayName(name);
                         if (ctx.mounted) Navigator.pop(ctx);
+                        // Firebase Auth + Firestore — never block the sheet.
+                        unawaited(
+                          ref
+                              .read(cloudAuthProvider)
+                              .updateDisplayName(name)
+                              .catchError((Object e, StackTrace st) {
+                            debugPrint('updateDisplayName: $e\n$st');
+                          }),
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16),
