@@ -84,10 +84,7 @@ class _QuickActionsSheet extends ConsumerWidget {
           Pressable(
             onTap: () async {
               Navigator.pop(context);
-              if (!isPro && !energy.hasEnergy) {
-                await openPaywall(context, ProGate.ai);
-                return;
-              }
+              if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
               if (context.mounted) context.push('/assistant');
             },
             child: Container(

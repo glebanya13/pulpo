@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/ai/assistant_energy.dart';
-import '../../core/l10n/tr.dart';
 import '../../features/auth/cloud_auth.dart';
 import '../../features/pro/paywall_screen.dart';
 import 'pro_controller.dart';
@@ -38,14 +37,10 @@ Future<bool> requireAi(
   WidgetRef ref, {
   bool allowFreeEnergy = false,
 }) async {
-  final tr = Tr.of(context);
   final isPro = ref.read(proControllerProvider).isPro;
   final signedIn = ref.read(authUserProvider).valueOrNull != null;
   if (!signedIn) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(tr.proSignInRequired)),
-    );
-    context.push('/settings/account');
+    if (context.mounted) context.push('/settings/account');
     return false;
   }
   if (isPro) return true;

@@ -45,7 +45,16 @@ class SettingsScreen extends ConsumerWidget {
                 action: pro.isPro
                     ? null
                     : AssistantEnergyChip(
-                        onHasEnergy: () => context.push('/assistant'),
+                        onHasEnergy: () async {
+                          if (!await requireAi(
+                            context,
+                            ref,
+                            allowFreeEnergy: true,
+                          )) {
+                            return;
+                          }
+                          if (context.mounted) context.push('/assistant');
+                        },
                       ),
               ),
             headerGap: 16,

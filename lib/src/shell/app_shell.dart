@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/ai/assistant_energy.dart';
-import '../core/pro/pro_controller.dart';
 import '../core/pro/pro_guard.dart';
-import '../core/pro/pro_limits.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/quick_actions_sheet.dart';
 
@@ -28,12 +25,7 @@ class AppShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   Future<void> _openAssistant(BuildContext context, WidgetRef ref) async {
-    final isPro = ref.read(proControllerProvider).isPro;
-    final hasEnergy = ref.read(assistantEnergyProvider).hasEnergy;
-    if (!isPro && !hasEnergy) {
-      await openPaywall(context, ProGate.ai);
-      return;
-    }
+    if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
     if (context.mounted) context.push('/assistant');
   }
 

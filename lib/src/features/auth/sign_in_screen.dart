@@ -76,12 +76,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             autocorrect: false,
             decoration: InputDecoration(hintText: tr.email),
           ),
+          const SizedBox(height: 12),
           TextField(
             controller: _password,
             obscureText: true,
             decoration: InputDecoration(hintText: tr.password),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           ScaledFilledButton(
             onPressed: _busy
                 ? null

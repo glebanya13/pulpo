@@ -36,11 +36,11 @@ class PulpoAiService {
         appCheck: FirebaseAppCheck.instance,
       );
 
-  static const _primaryModel = 'gemini-2.0-flash';
+  static const _primaryModel = 'gemini-3.6-flash';
   static const _fallbackModels = <String>[
+    'gemini-3-flash',
     'gemini-2.5-flash',
     'gemini-2.0-flash-lite',
-    'gemini-1.5-flash',
   ];
 
   Future<void> _logError(
