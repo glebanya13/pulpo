@@ -400,7 +400,10 @@ class PageHeader extends StatelessWidget {
             Expanded(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 260),
+                  // Leave room for side buttons; don't clip short titles oddly.
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.sizeOf(context).width - (_side * 2) - 32,
+                  ),
                   child: pill,
                 ),
               ),
