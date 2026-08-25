@@ -51,6 +51,26 @@ class TransactionDraftFromAi {
     if (raw == null || raw.isEmpty) return null;
     return DateTime.tryParse(raw);
   }
+
+  TransactionDraftFromAi copyWith({
+    double? amount,
+    String? currency,
+    String? dateIso,
+    String? note,
+    String? merchant,
+    String? categoryHint,
+    String? type,
+  }) {
+    return TransactionDraftFromAi(
+      amount: amount ?? this.amount,
+      currency: currency ?? this.currency,
+      dateIso: dateIso ?? this.dateIso,
+      note: note ?? this.note,
+      merchant: merchant ?? this.merchant,
+      categoryHint: categoryHint ?? this.categoryHint,
+      type: type ?? this.type,
+    );
+  }
 }
 
 class CategorySuggestion {

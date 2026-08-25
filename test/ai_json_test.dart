@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pulpo/src/core/ai/ai_errors.dart';
 import 'package:pulpo/src/core/ai/ai_greeting.dart';
 import 'package:pulpo/src/core/ai/ai_json.dart';
+import 'package:pulpo/src/core/ai/ai_local_parse.dart';
+import 'package:pulpo/src/core/ai/ai_record_hint.dart';
 import 'package:pulpo/src/core/ai/assistant_energy.dart';
 import 'package:pulpo/src/core/l10n/tr.dart';
 
@@ -176,5 +178,34 @@ void main() {
     expect(isCasualGreeting('сколько я потратил'), isFalse);
     expect(greetingReplyForLocale('ru'), contains('Привет'));
     expect(greetingReplyForLocale('uk'), contains('Привіт'));
+  });
+
+  test('looksLikeTransactionRecord and balance hints', () {
+    expect(looksLikeTransactionRecord('кофе 60 евро'), isTrue);
+    expect(looksLikeTransactionRecord('потратил 20 на еду'), isTrue);
+    expect(looksLikeTransactionRecord('сколько я потратил?'), isFalse);
+    expect(looksLikeBalanceQuestion('какой у меня баланс?'), isTrue);
+    expect(looksLikeBalanceQuestion('кофе 60'), isFalse);
+  });
+
+  test('local parse handles simple single amount', () {
+    final one = tryParseLocalTransactions(
+      'кофе 60€',
+      currencyHint: 'EUR',
+      categoryNames: const ['Еда', 'Транспорт'],
+    );
+    expect(one, isNotNull);
+    expect(one!, hasLength(1));
+    expect(one.first.amount, 60);
+    expect(one.first.currency, 'EUR');
+    expect(one.first.note?.toLowerCase(), contains('кофе'));
+
+    expect(
+      tryParseLocalTransactions(
+        'чай 20 евро ставки 10 евро',
+        currencyHint: 'EUR',
+      ),
+      isNull,
+    );
   });
 }

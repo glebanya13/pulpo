@@ -13,6 +13,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../core/ai/ai_errors.dart';
 import '../../core/ai/ai_models.dart';
+import '../../core/ai/ai_record_hint.dart';
 import '../../core/ai/assistant_energy.dart';
 import '../../core/ai/pulpo_ai_service.dart';
 import '../../core/l10n/tr.dart';
@@ -48,6 +49,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   final _speech = stt.SpeechToText();
   db.Account? _account;
   bool _busy = false;
+  String _busyLabel = '';
   bool _gateChecked = false;
   bool _listening = false;
   int _listenSeconds = 0;
@@ -85,6 +87,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ref.read(assistantChatSyncProvider.future);
       if (!mounted) return;
+      unawaited(ref.read(pulpoAiServiceProvider).prefetch());
       await _ensureAccess();
     });
   }
@@ -285,6 +288,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     setState(() {
       _input.clear();
       _busy = true;
+      _busyLabel = Tr.of(context).aiBusy;
     });
     await _append(isFromUser: true, body: text);
     _syncEnergyBurn();
@@ -302,7 +306,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       );
     } finally {
       if (mounted) {
-        setState(() => _busy = false);
+        setState(() {
+          _busy = false;
+          _busyLabel = '';
+        });
         _syncEnergyBurn();
       }
       _scrollToEnd();
@@ -313,24 +320,74 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final tr = Tr.of(context);
     final locale = ref.read(settingsControllerProvider).locale;
     final welcome = tr.aiChatWelcome;
-    final stored = await _chat.all();
-    final prior = _chatHistory(stored, welcome);
     final cats = ref.read(categoriesProvider).valueOrNull ?? [];
     final names = cats.map((c) => tr.categoryName(c.name)).toList();
     final account = await _resolveAccount();
     final currencyHint = account?.currency ??
         ref.read(settingsControllerProvider).baseCurrency;
 
-    var turn = await ref.read(pulpoAiServiceProvider).assistantTurn(
-          userMessage: text,
-          appContext: buildAppChatContext(ref),
-          locale: locale,
-          categoryNames: names,
-          currencyHint: currencyHint,
-          history: prior,
-        );
+    late AssistantTurnResult turn;
+    var alreadyParsedBatch = false;
 
-    if (turn.intent == 'record' && turn.transactions.isEmpty) {
+    // Record-looking messages: local/AI batch only — no full app snapshot.
+    if (looksLikeTransactionRecord(text)) {
+      if (mounted) {
+        setState(() => _busyLabel = tr.aiParsing);
+      }
+      try {
+        final drafts =
+            await ref.read(pulpoAiServiceProvider).parseNaturalLanguageBatch(
+                  text,
+                  locale: locale,
+                  categoryNames: names,
+                  currencyHint: currencyHint,
+                );
+        alreadyParsedBatch = true;
+        if (drafts.isNotEmpty) {
+          turn = AssistantTurnResult(
+            intent: 'record',
+            reply: '',
+            transactions: drafts,
+          );
+        } else {
+          turn = await _fullAssistantTurn(
+            text: text,
+            locale: locale,
+            welcome: welcome,
+            names: names,
+            currencyHint: currencyHint,
+          );
+        }
+      } catch (e, st) {
+        await _logError(e, st);
+        if (mounted) {
+          setState(() => _busyLabel = tr.aiBusy);
+        }
+        turn = await _fullAssistantTurn(
+          text: text,
+          locale: locale,
+          welcome: welcome,
+          names: names,
+          currencyHint: currencyHint,
+        );
+      }
+    } else {
+      turn = await _fullAssistantTurn(
+        text: text,
+        locale: locale,
+        welcome: welcome,
+        names: names,
+        currencyHint: currencyHint,
+      );
+    }
+
+    // Only retry batch once if the full turn claimed "record" with no txs.
+    if (!alreadyParsedBatch &&
+        turn.intent == 'record' &&
+        turn.transactions.isEmpty) {
+      if (mounted) {
+        setState(() => _busyLabel = tr.aiParsing);
+      }
       try {
         final drafts =
             await ref.read(pulpoAiServiceProvider).parseNaturalLanguageBatch(
@@ -356,34 +413,34 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       }
 
       if (!mounted) return;
-      final approved = await confirmAssistantDrafts(
+      final confirmed = await confirmAssistantDrafts(
         context: context,
         drafts: turn.transactions,
         account: account,
         categories: cats,
         tr: tr,
       );
-      if (!mounted || !approved) {
+      if (!mounted || confirmed == null) {
         await _append(isFromUser: false, body: tr.cancel);
         return;
       }
 
       await saveAssistantDrafts(
         ref: ref,
-        drafts: turn.transactions,
-        account: account,
+        drafts: confirmed.drafts,
+        accounts: confirmed.accounts,
         tr: tr,
       );
       if (!mounted) return;
 
-      final total = turn.transactions.fold<double>(
+      final total = confirmed.drafts.fold<double>(
         0,
         (sum, d) => sum + (d.amount ?? 0),
       );
       final reply = turn.reply.trim().isNotEmpty
           ? turn.reply.trim()
           : tr.aiAssistantRecorded(
-              turn.transactions.length,
+              confirmed.drafts.length,
               formatMoney(total, currencyHint),
             );
 
@@ -398,6 +455,28 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
     if (!mounted) return;
     await _append(isFromUser: false, body: reply);
+  }
+
+  Future<AssistantTurnResult> _fullAssistantTurn({
+    required String text,
+    required String locale,
+    required String welcome,
+    required List<String> names,
+    required String currencyHint,
+  }) async {
+    final stored = await _chat.all();
+    final prior = _chatHistory(stored, welcome);
+    final scope = looksLikeBalanceQuestion(text)
+        ? AppContextScope.balances
+        : AppContextScope.compact;
+    return ref.read(pulpoAiServiceProvider).assistantTurn(
+          userMessage: text,
+          appContext: buildAppChatContext(ref, scope: scope),
+          locale: locale,
+          categoryNames: names,
+          currencyHint: currencyHint,
+          history: prior,
+        );
   }
 
   List<({String role, String text})> _chatHistory(
@@ -435,6 +514,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
     setState(() {
       _busy = true;
+      _busyLabel = tr.aiBusy;
     });
     await _append(
       isFromUser: true,
@@ -468,19 +548,19 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
       final draft = receiptToDraft(receipt);
       if (!mounted) return;
-      final approved = await confirmAssistantDrafts(
+      final confirmed = await confirmAssistantDrafts(
         context: context,
         drafts: [draft],
         account: account,
         categories: cats,
         tr: tr,
       );
-      if (!mounted || !approved) return;
+      if (!mounted || confirmed == null) return;
 
       await saveAssistantDrafts(
         ref: ref,
-        drafts: [draft],
-        account: account,
+        drafts: confirmed.drafts,
+        accounts: confirmed.accounts,
         tr: tr,
         receiptPath: dest,
       );
@@ -498,7 +578,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       await _append(isFromUser: false, body: describeAiError(tr, e));
     } finally {
       if (mounted) {
-        setState(() => _busy = false);
+        setState(() {
+          _busy = false;
+          _busyLabel = '';
+        });
         _syncEnergyBurn();
       }
       _scrollToEnd();
@@ -710,7 +793,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   if (_busy && i == messages.length) {
                     return _AssistantBubble(
                       child: Text(
-                        tr.aiBusy,
+                        _busyLabel.isNotEmpty ? _busyLabel : tr.aiBusy,
                         style: TextStyle(
                           fontSize: 14,
                           color: context.mutedText,
@@ -811,23 +894,34 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextField(
-                      controller: _input,
-                      minLines: 1,
-                      maxLines: 4,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _send(),
-                      decoration: InputDecoration(
-                        hintText: tr.aiChatPlaceholder,
-                        filled: true,
-                        fillColor: context.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide.none,
+                    child: DefaultSelectionStyle(
+                      selectionColor: AppColors.lime.withValues(alpha: 0.45),
+                      cursorColor: AppColors.lime,
+                      child: TextField(
+                        controller: _input,
+                        minLines: 1,
+                        maxLines: 4,
+                        enableInteractiveSelection: true,
+                        cursorColor: AppColors.lime,
+                        style: TextStyle(
+                          color: context.primaryText,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _send(),
+                        decoration: InputDecoration(
+                          hintText: tr.aiChatPlaceholder,
+                          filled: true,
+                          fillColor: context.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ),

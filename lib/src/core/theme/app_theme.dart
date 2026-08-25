@@ -113,6 +113,11 @@ class AppTheme {
         }),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: AppColors.limeAccent,
+        selectionColor: AppColors.lime.withValues(alpha: 0.45),
+        selectionHandleColor: AppColors.limeAccent,
+      ),
     );
   }
 
@@ -271,6 +276,11 @@ class AppTheme {
           return Colors.white.withValues(alpha: 0.22);
         }),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: AppColors.lime,
+        selectionColor: AppColors.lime.withValues(alpha: 0.45),
+        selectionHandleColor: AppColors.lime,
       ),
     );
   }

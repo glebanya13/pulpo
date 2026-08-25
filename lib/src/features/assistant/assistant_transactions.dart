@@ -53,14 +53,24 @@ TransactionDraftFromAi receiptToDraft(ReceiptParseResult receipt) {
   );
 }
 
-Future<bool> confirmAssistantDrafts({
+class AssistantConfirmResult {
+  const AssistantConfirmResult({
+    required this.drafts,
+    required this.accounts,
+  });
+
+  final List<TransactionDraftFromAi> drafts;
+  final List<db.Account> accounts;
+}
+
+Future<AssistantConfirmResult?> confirmAssistantDrafts({
   required BuildContext context,
   required List<TransactionDraftFromAi> drafts,
   required db.Account account,
   required List<db.Category> categories,
   required Tr tr,
 }) {
-  return showModalBottomSheet<bool>(
+  return showModalBottomSheet<AssistantConfirmResult>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Theme.of(context).cardColor,
@@ -74,20 +84,22 @@ Future<bool> confirmAssistantDrafts({
       matchCategory: (hint, type) =>
           matchAiCategory(hint, categories, tr, type),
     ),
-  ).then((v) => v == true);
+  );
 }
 
 Future<int> saveAssistantDrafts({
   required WidgetRef ref,
   required List<TransactionDraftFromAi> drafts,
-  required db.Account account,
+  required List<db.Account> accounts,
   required Tr tr,
   String? receiptPath,
 }) async {
+  assert(drafts.length == accounts.length);
   final cats = ref.read(categoriesProvider).valueOrNull ?? [];
   final repo = ref.read(transactionRepositoryProvider);
   var i = 0;
   for (final draft in drafts) {
+    final account = accounts[i];
     final type = draft.type == 'income' ? TxType.income : TxType.expense;
     final cat = matchAiCategory(draft.categoryHint, cats, tr, type);
     final note = draft.note?.trim().isNotEmpty == true
@@ -110,11 +122,19 @@ Future<int> saveAssistantDrafts({
 
 Future<db.Account?> pickAssistantAccount(
   BuildContext context,
-  WidgetRef ref,
-) async {
+  WidgetRef ref, {
+  bool forcePicker = false,
+}) async {
   final accounts = ref.read(accountsProvider).valueOrNull ?? [];
   if (accounts.isEmpty) return null;
-  if (accounts.length == 1) return accounts.first;
+  if (!forcePicker && accounts.length == 1) return accounts.first;
+  return showAccountPickerSheet(context, accounts);
+}
+
+Future<db.Account?> showAccountPickerSheet(
+  BuildContext context,
+  List<db.Account> accounts,
+) {
   return showModalBottomSheet<db.Account>(
     context: context,
     backgroundColor: Theme.of(context).cardColor,
@@ -122,12 +142,32 @@ Future<db.Account?> pickAssistantAccount(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
     builder: (ctx) {
+      final tr = Tr.of(ctx);
       return SafeArea(
         child: ListView(
           shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: Text(
+                tr.selectAccount,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: ctx.primaryText,
+                ),
+              ),
+            ),
             for (final a in accounts)
               ListTile(
+                leading: ColorWellIcon(
+                  color: Color(a.color),
+                  icon: lucideByKey(a.icon),
+                  size: 40,
+                  iconSize: 18,
+                  radius: 12,
+                ),
                 title: Text(a.name),
                 subtitle: Text(a.currency),
                 onTap: () => Navigator.pop(ctx, a),
@@ -139,7 +179,7 @@ Future<db.Account?> pickAssistantAccount(
   );
 }
 
-class AssistantConfirmSheet extends StatelessWidget {
+class AssistantConfirmSheet extends ConsumerStatefulWidget {
   const AssistantConfirmSheet({
     super.key,
     required this.drafts,
@@ -154,9 +194,57 @@ class AssistantConfirmSheet extends StatelessWidget {
   final db.Category? Function(String? hint, TxType type) matchCategory;
 
   @override
+  ConsumerState<AssistantConfirmSheet> createState() =>
+      _AssistantConfirmSheetState();
+}
+
+class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
+  late List<TransactionDraftFromAi> _drafts;
+  late List<db.Account> _accounts;
+
+  @override
+  void initState() {
+    super.initState();
+    _drafts = List<TransactionDraftFromAi>.from(widget.drafts);
+    _accounts = List<db.Account>.filled(
+      widget.drafts.length,
+      widget.account,
+      growable: true,
+    );
+  }
+
+  Future<void> _pickAccount(int index) async {
+    final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+    if (accounts.isEmpty) return;
+    final picked = await showAccountPickerSheet(context, accounts);
+    if (picked == null || !mounted) return;
+    setState(() => _accounts[index] = picked);
+  }
+
+  Future<void> _pickDate(int index) async {
+    final current = _drafts[index].date ?? DateTime.now();
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 1),
+    );
+    if (picked == null || !mounted) return;
+    final iso =
+        '${picked.year.toString().padLeft(4, '0')}-'
+        '${picked.month.toString().padLeft(2, '0')}-'
+        '${picked.day.toString().padLeft(2, '0')}';
+    setState(() {
+      _drafts[index] = _drafts[index].copyWith(dateIso: iso);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final bottom = MediaQuery.paddingOf(context).bottom;
+    final locale = Localizations.localeOf(context).languageCode;
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottom),
       child: Column(
@@ -188,7 +276,7 @@ class AssistantConfirmSheet extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      tr.aiVoiceConfirmCount(drafts.length),
+                      tr.aiVoiceConfirmCount(_drafts.length),
                       style: TextStyle(
                         fontSize: 13,
                         color: context.mutedText,
@@ -198,7 +286,7 @@ class AssistantConfirmSheet extends StatelessWidget {
                 ),
               ),
               Pressable(
-                onTap: () => Navigator.pop(context, false),
+                onTap: () => Navigator.pop(context),
                 child: Icon(LucideIcons.x, color: context.mutedText),
               ),
             ],
@@ -210,13 +298,14 @@ class AssistantConfirmSheet extends StatelessWidget {
             ),
             child: ListView.separated(
               shrinkWrap: true,
-              itemCount: drafts.length,
+              itemCount: _drafts.length,
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, i) {
-                final d = drafts[i];
+                final d = _drafts[i];
+                final account = _accounts[i];
                 final type =
                     d.type == 'income' ? TxType.income : TxType.expense;
-                final cat = matchCategory(d.categoryHint, type);
+                final cat = widget.matchCategory(d.categoryHint, type);
                 final note = d.note?.trim().isNotEmpty == true
                     ? d.note!
                     : (d.merchant ?? '');
@@ -264,14 +353,15 @@ class AssistantConfirmSheet extends StatelessWidget {
                               spacing: 6,
                               runSpacing: 4,
                               children: [
-                                _Chip(text: account.name),
+                                _Chip(
+                                  text: account.name,
+                                  onTap: () => _pickAccount(i),
+                                ),
                                 if (note.isNotEmpty) _Chip(text: note),
                                 _Chip(
-                                  text: DateFormat(
-                                    'd MMM',
-                                    Localizations.localeOf(context)
-                                        .languageCode,
-                                  ).format(d.date ?? DateTime.now()),
+                                  text: DateFormat('d MMM', locale)
+                                      .format(d.date ?? DateTime.now()),
+                                  onTap: () => _pickDate(i),
                                 ),
                               ],
                             ),
@@ -296,7 +386,13 @@ class AssistantConfirmSheet extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ScaledElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(
+                context,
+                AssistantConfirmResult(
+                  drafts: List.unmodifiable(_drafts),
+                  accounts: List.unmodifiable(_accounts),
+                ),
+              ),
               child: Text(tr.aiVoiceApprove),
             ),
           ),
@@ -307,27 +403,48 @@ class AssistantConfirmSheet extends StatelessWidget {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.text});
+  const _Chip({required this.text, this.onTap});
   final String text;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final child = Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: context.surface,
         borderRadius: BorderRadius.circular(8),
+        border: onTap != null
+            ? Border.all(color: context.mutedText.withValues(alpha: 0.22))
+            : null,
       ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: context.mutedText,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: context.mutedText,
+              ),
+            ),
+          ),
+          if (onTap != null) ...[
+            const SizedBox(width: 2),
+            Icon(
+              LucideIcons.chevronDown,
+              size: 12,
+              color: context.mutedText,
+            ),
+          ],
+        ],
       ),
     );
+    if (onTap == null) return child;
+    return Pressable(onTap: onTap, child: child);
   }
 }

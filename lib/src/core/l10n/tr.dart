@@ -698,6 +698,7 @@ class Tr {
   String aiAssistantReceiptSaved(String amount) =>
       _get('ai_assistant_receipt_saved').replaceAll('{}', amount);
   String get aiBusy => _get('ai_busy');
+  String get aiParsing => _get('ai_parsing');
   String get aiFailed => _get('ai_failed');
   String get aiBlocked => _get('ai_blocked');
   String get aiEmptyResponse => _get('ai_empty_response');
@@ -1382,6 +1383,7 @@ class Tr {
       'ai_assistant_recorded': 'Registradas {} operaciones por {}',
       'ai_assistant_receipt_saved': 'Gasto del recibo registrado: {}',
       'ai_busy': 'Pensando…',
+      'ai_parsing': 'Leyendo operaciones…',
       'ai_failed': 'No se pudo completar la solicitud de IA. Inténtalo de nuevo.',
       'ai_blocked': 'La IA bloqueó la respuesta. Reformula el mensaje.',
       'ai_empty_response': 'La IA no devolvió texto. Inténtalo de nuevo.',
@@ -1994,6 +1996,7 @@ class Tr {
       'ai_assistant_recorded': 'Записано {} операций на {}',
       'ai_assistant_receipt_saved': 'Расход по чеку записан: {}',
       'ai_busy': 'Думаю…',
+      'ai_parsing': 'Разбираю операции…',
       'ai_failed': 'Не удалось выполнить запрос к ИИ. Попробуйте ещё раз.',
       'ai_blocked': 'ИИ заблокировал ответ. Переформулируйте сообщение.',
       'ai_empty_response': 'ИИ вернул пустой ответ. Попробуйте ещё раз.',
@@ -2606,6 +2609,7 @@ class Tr {
       'ai_assistant_recorded': 'Saved {} transactions for {}',
       'ai_assistant_receipt_saved': 'Receipt expense saved: {}',
       'ai_busy': 'Thinking…',
+      'ai_parsing': 'Parsing transactions…',
       'ai_failed': 'Could not complete the AI request. Try again.',
       'ai_blocked': 'The AI blocked that reply. Rephrase your message.',
       'ai_empty_response': 'The AI returned an empty reply. Try again.',
@@ -3150,6 +3154,7 @@ class Tr {
       'ai_assistant_recorded': 'Зафіксовано {} операцій на {}',
       'ai_assistant_receipt_saved': 'Зафіксовані витрати на отримання: {}',
       'ai_busy': 'Думаю.',
+      'ai_parsing': 'Розбираю операції…',
       'ai_failed': 'Не вдалося виконати запит до ШІ. Спробуйте ще раз.',
       'ai_blocked': 'ШІ заблокував відповідь. Будь ласка, переформулюйте повідомлення.',
       'ai_empty_response': 'ШІ повернув порожню відповідь. Спробуйте ще раз.',

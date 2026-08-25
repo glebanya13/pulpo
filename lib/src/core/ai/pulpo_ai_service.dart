@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_ai/firebase_ai.dart';
+// ThinkingConfig is not re-exported in firebase_ai 2.3.x.
+// ignore: implementation_imports
+import 'package:firebase_ai/src/api.dart' show ThinkingConfig;
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -11,6 +14,7 @@ import '../../data/repositories/error_log_repository.dart';
 import 'ai_errors.dart';
 import 'ai_greeting.dart';
 import 'ai_json.dart';
+import 'ai_local_parse.dart';
 import 'ai_models.dart';
 
 export 'ai_errors.dart' show PulpoAiException, AiErrorCode;
@@ -31,17 +35,24 @@ class PulpoAiService {
   final FirebaseAuth _auth;
   final AiErrorLogger? _onError;
 
-  FirebaseAI get _firebaseAi => FirebaseAI.googleAI(
-        auth: _auth,
-        appCheck: FirebaseAppCheck.instance,
-      );
-
-  static const _primaryModel = 'gemini-3.6-flash';
+  /// Primary: Flash-Lite (minimal thinking by default). One fast fallback.
+  static const _primaryModel = 'gemini-3.5-flash-lite';
   static const _fallbackModels = <String>[
-    'gemini-3-flash',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash-lite',
+    'gemini-2.5-flash-lite',
   ];
+
+  static const _attemptTimeout = Duration(seconds: 12);
+
+  FirebaseAI? _firebaseAi;
+  final _modelCache = <String, GenerativeModel>{};
+  DateTime? _lastTokenWarm;
+
+  FirebaseAI get _ai {
+    return _firebaseAi ??= FirebaseAI.googleAI(
+      auth: _auth,
+      appCheck: FirebaseAppCheck.instance,
+    );
+  }
 
   Future<void> _logError(
     String source,
@@ -55,17 +66,42 @@ class PulpoAiService {
     } catch (_) {}
   }
 
+  /// Warm auth + App Check when the assistant screen opens.
+  Future<void> prefetch() async {
+    try {
+      await _auth.currentUser?.getIdToken();
+      _lastTokenWarm = DateTime.now();
+    } catch (_) {}
+    try {
+      await FirebaseAppCheck.instance.getToken();
+    } catch (_) {}
+    // Touch primary model so the first user message is warmer.
+    _model(name: _primaryModel, json: true);
+  }
+
   GenerativeModel _model({
     required String name,
     required bool json,
   }) {
-    return _firebaseAi.generativeModel(
+    final key = '$name|json=$json';
+    final cached = _modelCache[key];
+    if (cached != null) return cached;
+
+    // Gemini 2.5 Flash*: thinkingBudget 0 disables thinking.
+    // Gemini 3.5 Flash-Lite already defaults to minimal thinking.
+    final disableThinking = name.contains('2.5-flash');
+    final created = _ai.generativeModel(
       model: name,
       generationConfig: GenerationConfig(
-        temperature: json ? 0.2 : 0.35,
+        temperature: json ? 0.1 : 0.3,
         responseMimeType: json ? 'application/json' : null,
+        maxOutputTokens: json ? 1536 : 768,
+        thinkingConfig:
+            disableThinking ? ThinkingConfig(thinkingBudget: 0) : null,
       ),
     );
+    _modelCache[key] = created;
+    return created;
   }
 
   void _requireSignedIn() {
@@ -74,21 +110,31 @@ class PulpoAiService {
     }
   }
 
+  Future<void> _ensureAuthWarm() async {
+    final last = _lastTokenWarm;
+    if (last != null &&
+        DateTime.now().difference(last) < const Duration(minutes: 45)) {
+      return;
+    }
+    await _auth.currentUser?.getIdToken();
+    _lastTokenWarm = DateTime.now();
+  }
+
   Future<String> _generate(
     List<Content> contents, {
     required String label,
     bool json = true,
   }) async {
     _requireSignedIn();
-    await _auth.currentUser?.getIdToken(true);
+    await _ensureAuthWarm();
 
-    // Primary + fallbacks; for JSON intents also retry without mime constraint.
+    // Primary → one fallback. Retry without JSON mime only after those fail.
     final attempts = <({String model, bool json})>[
       (model: _primaryModel, json: json),
-      if (json) (model: _primaryModel, json: false),
-      for (final m in _fallbackModels) ...[
-        (model: m, json: json),
-        if (json) (model: m, json: false),
+      for (final m in _fallbackModels) (model: m, json: json),
+      if (json) ...[
+        (model: _primaryModel, json: false),
+        for (final m in _fallbackModels) (model: m, json: false),
       ],
     ];
 
@@ -98,7 +144,7 @@ class PulpoAiService {
       try {
         if (i > 0) {
           try {
-            await FirebaseAppCheck.instance.getToken(true);
+            await FirebaseAppCheck.instance.getToken();
           } catch (e) {
             debugPrint('MonederoAI[$label] App Check refresh: $e');
           }
@@ -106,7 +152,7 @@ class PulpoAiService {
         final response = await _model(
           name: attempt.model,
           json: attempt.json,
-        ).generateContent(contents);
+        ).generateContent(contents).timeout(_attemptTimeout);
         final text = response.text;
         if (text == null || text.trim().isEmpty) {
           throw const PulpoAiException(AiErrorCode.emptyResponse);
@@ -117,17 +163,21 @@ class PulpoAiService {
           );
         }
         return text;
+      } on TimeoutException {
+        debugPrint(
+          'MonederoAI[$label] ${attempt.model} json=${attempt.json}: timeout',
+        );
+        lastError = const PulpoAiException(AiErrorCode.requestFailed, 'timeout');
+        if (i < attempts.length - 1) continue;
+        await _logError('ai.$label', lastError, null);
+        throw lastError;
       } on PulpoAiException catch (e) {
         lastError = e;
         debugPrint(
           'MonederoAI[$label] ${attempt.model} json=${attempt.json}: $e',
         );
         if (e.isRetryable && i < attempts.length - 1) continue;
-        await _logError(
-          'ai.$label',
-          e,
-          null,
-        );
+        await _logError('ai.$label', e, null);
         rethrow;
       } catch (e, st) {
         debugPrint(
@@ -188,6 +238,10 @@ class PulpoAiService {
     }
   }
 
+  String _catsForPrompt(List<String> categoryNames, {int limit = 12}) {
+    return categoryNames.take(limit).join(', ');
+  }
+
   Future<ReceiptParseResult> analyzeReceipt(
     File image, {
     required String locale,
@@ -199,7 +253,7 @@ class PulpoAiService {
       final mime = image.path.toLowerCase().endsWith('.png')
           ? 'image/png'
           : 'image/jpeg';
-      final cats = categoryNames.take(40).join(', ');
+      final cats = _catsForPrompt(categoryNames, limit: 20);
       final prompt = '''
 You are a receipt parser for a personal finance app.
 Reply with JSON only. Language for merchant/note/categoryHint: ${_langName(locale)}.
@@ -239,20 +293,29 @@ If unsure about a field, use null.
     required String locale,
     required List<String> categoryNames,
     String? currencyHint,
-  }) {
+  }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) {
       throw const PulpoAiException(AiErrorCode.emptyInput);
     }
+
+    final local = tryParseLocalTransactions(
+      trimmed,
+      currencyHint: currencyHint,
+      categoryNames: categoryNames,
+    );
+    if (local != null && local.isNotEmpty) {
+      debugPrint('MonederoAI[nl_batch] local parse (${local.length})');
+      return local;
+    }
+
     return _withRetryParse(() async {
-      final cats = categoryNames.take(40).join(', ');
+      final cats = _catsForPrompt(categoryNames);
       final prompt = '''
-Parse this user message into one or more personal finance transactions.
-The user may mention several expenses/incomes in one sentence.
-Reply with JSON only: {"transactions":[{...}, ...]}
-Each item fields: amount (number > 0), currency (ISO if mentioned${currencyHint != null ? ', else prefer $currencyHint' : ''}), date (ISO-8601 or null for today), note (short), merchant, categoryHint (best match from: [$cats] or null), type ("expense" or "income").
-Language for note/categoryHint: ${_langName(locale)}.
-User message: """$trimmed"""
+Parse into finance transactions. JSON only: {"transactions":[{amount,currency,date,note,merchant,categoryHint,type}]}
+amount>0; currency ISO${currencyHint != null ? ' (prefer $currencyHint)' : ''}; date ISO or null; type expense|income; categoryHint from [$cats] or null.
+Lang: ${_langName(locale)}.
+"""$trimmed"""
 ''';
       return _generate([Content.text(prompt)], label: 'nl_batch');
     }, parseTransactionDraftBatchJson);
@@ -267,12 +330,11 @@ User message: """$trimmed"""
     if (text.isEmpty || categoryNames.isEmpty) return null;
     try {
       return await _withRetryParse(() async {
-        final cats = categoryNames.take(40).join(', ');
+        final cats = _catsForPrompt(categoryNames, limit: 20);
         final prompt = '''
-Pick the best matching category name from the list for this note/merchant.
-Reply JSON: {"categoryName":"<exact name from list>","confidence":0.0-1.0}
+Pick best category from list. JSON: {"categoryName":"<exact>","confidence":0-1}
 List: [$cats]
-Locale hint: ${_langName(locale)}
+Locale: ${_langName(locale)}
 Text: """$text"""
 ''';
         return _generate([Content.text(prompt)], label: 'category');
@@ -328,34 +390,28 @@ Top categories: $tops
 
     try {
       return await _withRetryParse(() async {
-        final cats = categoryNames.take(40).join(', ');
+        final cats = _catsForPrompt(categoryNames);
         final lang = _langName(locale);
         final hist = history
-            .take(12)
+            .take(4)
             .map((h) =>
                 '${h.role == 'user' ? 'User' : 'Assistant'}: ${h.text}')
             .join('\n');
         final prompt = '''
-You are Monedero AI Assistant in a personal finance app. Reply in $lang with JSON only.
+Monedero AI. Reply in $lang, JSON only.
+intent "record": extract txs {amount,currency,date,note,merchant,categoryHint from [$cats],type}; short reply.
+intent "question": answer from APP DATA only; transactions=[].
+Prefer "question" if unsure.
 
-Two intents:
-1) "record" — user wants to ADD expense(s) and/or income(s). Extract every transaction.
-   Fields per item: amount (>0), currency (ISO, default $currencyHint), date (ISO or null=today), note, merchant, categoryHint (from: [$cats]), type ("expense"|"income").
-   Include a short friendly "reply" confirming what will be recorded.
-2) "question" — user asks about data already in the app (balances, spending, budgets, goals) OR greets / chats casually.
-   Include "reply" with the answer. "transactions" must be [].
-
-If unsure, prefer "question" and ask to clarify in "reply".
-
-Recent chat:
+Chat:
 $hist
 
 APP DATA:
 $appContext
 
-User message: """$trimmed"""
+User: """$trimmed"""
 
-Reply JSON: {"intent":"record"|"question","reply":"...","transactions":[...]}
+{"intent":"record"|"question","reply":"...","transactions":[...]}
 ''';
         return _generate([Content.text(prompt)], label: 'assistant_turn');
       }, parseAssistantTurnJson);
@@ -398,10 +454,8 @@ Hard rules:
 APP DATA:
 $appContext
 ''';
-    // Prefer a single text prompt — more reliable than system+history roles
-    // across Firebase AI Logic endpoints.
     final hist = history
-        .take(12)
+        .take(4)
         .map((h) => '${h.role == 'user' ? 'User' : 'Assistant'}: ${h.text}')
         .join('\n');
     final prompt = '''
