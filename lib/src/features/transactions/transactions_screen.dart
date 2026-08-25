@@ -41,14 +41,25 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     super.dispose();
   }
 
-  void _resetToInitial() {
-    _searchCtrl.clear();
-    setState(() {
-      _query = '';
-      _filterType = null;
-      _accountId = null;
-      _categoryId = null;
-    });
+  Future<void> _deleteWithUndo(db.Transaction tx) async {
+    final tr = Tr.of(context);
+    await ref.read(transactionRepositoryProvider).delete(tx.id);
+    ref.invalidate(allTransactionsProvider);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(tr.txDeleted),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: tr.undo,
+          onPressed: () async {
+            await ref.read(transactionRepositoryProvider).restore(tx);
+            ref.invalidate(allTransactionsProvider);
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -68,7 +79,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
     return ResetScrollWhenObscured(
       tabPath: '/transactions',
-      onBecameVisible: _resetToInitial,
       builder: (context, scroll) {
         final pad = AppSpacing.tabPagePadding(context);
         return StickyScrollPage(
@@ -200,8 +210,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   icon: LucideIcons.receipt,
                   title: tr.emptyTransactionsList,
                   description: tr.emptyTransactions,
-                  action: tr.expense,
-                  onAction: () => context.push('/add?type=expense'),
+                  action: tr.newTransaction,
+                  onAction: () => context.push('/add'),
                   background: AppColors.bgFood,
                 );
               }
@@ -235,9 +245,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                           margin: const EdgeInsets.only(bottom: 8),
                           child: const Icon(Icons.delete, color: Colors.white),
                         ),
-                        onDismissed: (_) => ref
-                            .read(transactionRepositoryProvider)
-                            .delete(t.id),
+                        onDismissed: (_) => _deleteWithUndo(t),
                         child: Pressable(
                           onTap: () => context.push('/tx/${t.id}'),
                           child: TransactionTile(tx: t),

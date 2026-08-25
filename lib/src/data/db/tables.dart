@@ -151,7 +151,7 @@ class AssistantMessages extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
-/// Local error-only diagnostics (AI, auth, etc.). Not backed up to cloud.
+/// Local + cloud error diagnostics (AI, auth, etc.). Synced to Firestore when signed in.
 class ErrorLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();

@@ -14,6 +14,7 @@ import '../core/theme/color_well.dart';
 import '../core/theme/liquid_glass.dart';
 import 'pressable.dart';
 import 'pro_badge.dart';
+import 'ai_assistant_mark.dart';
 
 Future<void> showQuickActionsSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -113,36 +114,12 @@ class _QuickActionsSheet extends ConsumerWidget {
               child: Row(
                 children: [
                   if (!isPro && !energy.hasEnergy)
-                    ProIconMark(
+                    const ProIconMark(
                       size: 36,
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.22),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          LucideIcons.bot,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                      ),
+                      child: AiAssistantMark(size: 36),
                     )
                   else
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        LucideIcons.bot,
-                        size: 18,
-                        color: Colors.white,
-                      ),
-                    ),
+                    const AiAssistantMark(size: 36),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

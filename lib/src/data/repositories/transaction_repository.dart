@@ -76,6 +76,24 @@ class TransactionRepository {
     await (_db.delete(_db.transactions)..where((t) => t.id.equals(id))).go();
   }
 
+  Future<int> restore(Transaction tx) {
+    return _db.into(_db.transactions).insert(
+          TransactionsCompanion.insert(
+            accountId: tx.accountId,
+            categoryId: Value(tx.categoryId),
+            amount: tx.amount,
+            currency: tx.currency,
+            type: tx.type,
+            date: tx.date,
+            note: Value(tx.note),
+            counterparty: Value(tx.counterparty),
+            transferGroupId: Value(tx.transferGroupId),
+            status: Value(tx.status),
+            receiptPath: Value(tx.receiptPath),
+          ),
+        );
+  }
+
   Future<void> update({
     required int id,
     double? amount,

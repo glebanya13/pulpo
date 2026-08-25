@@ -13,6 +13,7 @@ import '../../core/app_info.dart';
 import '../../data/repositories/assistant_chat_cloud.dart';
 import '../../data/repositories/assistant_chat_repository.dart';
 import '../../data/repositories/backup_service.dart';
+import '../../data/repositories/error_log_cloud.dart';
 import '../../data/repositories/settings_service.dart';
 import '../shared_budget/household_service.dart';
 import 'cloud_restore_prompt.dart';
@@ -147,6 +148,9 @@ class CloudAuth {
     } catch (_) {}
     try {
       await AssistantChatCloud().deleteForUid(uid);
+    } catch (_) {}
+    try {
+      await ErrorLogCloud().clearForUid(uid);
     } catch (_) {}
     try {
       await _profileRef(uid).delete();

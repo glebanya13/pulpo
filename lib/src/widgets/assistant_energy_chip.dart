@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/ai/assistant_energy.dart';
+import '../core/l10n/tr.dart';
 import '../core/pro/pro_controller.dart';
 import '../core/pro/pro_guard.dart';
 import '../core/pro/pro_limits.dart';
@@ -11,10 +12,13 @@ import 'pressable.dart';
 
 /// Compact ⚡N capsule for free users; hidden for Pro.
 class AssistantEnergyChip extends ConsumerWidget {
-  const AssistantEnergyChip({super.key, this.onEmpty});
+  const AssistantEnergyChip({super.key, this.onEmpty, this.onHasEnergy});
 
   /// Called when the user taps with 0 energy (defaults to paywall).
   final VoidCallback? onEmpty;
+
+  /// Called when the user taps with energy left (defaults to quota hint).
+  final VoidCallback? onHasEnergy;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,7 +43,14 @@ class AssistantEnergyChip extends ConsumerWidget {
           }
           return;
         }
-        await openPaywall(context, ProGate.ai);
+        if (onHasEnergy != null) {
+          onHasEnergy!();
+          return;
+        }
+        final tr = Tr.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr.aiEnergyHint(units))),
+        );
       },
       child: Container(
         height: 34,

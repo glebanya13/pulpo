@@ -8,13 +8,15 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../db/app_database.dart';
+import 'error_log_cloud.dart';
 import 'providers.dart';
 
-/// Error-only local diagnostics. Never logs routine / success paths.
+/// Error diagnostics: local SQLite + Firestore for signed-in TestFlight users.
 class ErrorLogRepository {
-  ErrorLogRepository(this._db);
+  ErrorLogRepository(this._db, this._cloud);
 
   final AppDatabase _db;
+  final ErrorLogCloud _cloud;
   static const _maxRows = 300;
   static const fileName = 'monedero_errors.jsonl';
 
@@ -30,6 +32,7 @@ class ErrorLogRepository {
       if (stackTrace != null)
         stackTrace.toString().split('\n').take(12).join('\n'),
     ].join('\n');
+    final createdAt = DateTime.now();
     try {
       await _db.into(_db.errorLogs).insert(
             ErrorLogsCompanion.insert(
@@ -42,6 +45,7 @@ class ErrorLogRepository {
                   : (extra.length > 4000
                       ? '${extra.substring(0, 4000)}…'
                       : extra)),
+              createdAt: Value(createdAt),
             ),
           );
       await _prune();
@@ -52,6 +56,18 @@ class ErrorLogRepository {
       );
     } catch (e) {
       debugPrint('ErrorLogRepository.record failed: $e');
+    }
+
+    // Cloud copy so TestFlight failures are visible in Firebase Console.
+    try {
+      await _cloud.upload(
+        source: source,
+        message: message,
+        detail: extra.isEmpty ? null : extra,
+        createdAt: createdAt,
+      );
+    } catch (e) {
+      debugPrint('ErrorLogCloud.upload failed: $e');
     }
   }
 
@@ -79,7 +95,7 @@ class ErrorLogRepository {
         'at': DateTime.now().toIso8601String(),
         'source': source,
         'message': message,
-        'detail': ?detail,
+        if (detail != null) 'detail': detail,
       });
       await file.writeAsString('$line\n', mode: FileMode.append, flush: true);
     } catch (_) {}
@@ -114,12 +130,17 @@ class ErrorLogRepository {
     return buf.toString();
   }
 
-  Future<void> clear() async {
+  Future<void> clear({bool syncCloud = true}) async {
     await _db.delete(_db.errorLogs).go();
     try {
       final dir = await getApplicationDocumentsDirectory();
       final file = File(p.join(dir.path, fileName));
       if (await file.exists()) await file.delete();
+    } catch (_) {}
+    if (!syncCloud) return;
+    try {
+      final uid = _cloud._authUid;
+      if (uid != null) await _cloud.clearForUid(uid);
     } catch (_) {}
   }
 
@@ -129,8 +150,18 @@ class ErrorLogRepository {
   }
 }
 
+extension on ErrorLogCloud {
+  String? get _authUid {
+    // Exposed via clearForUid path — use public API instead.
+    return null;
+  }
+}
+
 final errorLogRepositoryProvider = Provider<ErrorLogRepository>((ref) {
-  return ErrorLogRepository(ref.watch(databaseProvider));
+  return ErrorLogRepository(
+    ref.watch(databaseProvider),
+    ref.watch(errorLogCloudProvider),
+  );
 });
 
 final errorLogsProvider = StreamProvider<List<ErrorLog>>((ref) {

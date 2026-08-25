@@ -1,7 +1,7 @@
 name: pulpo
 description: "Monedero — control de gastos personal offline-first para Android e iOS."
 publish_to: 'none'
-version: 1.0.1+29
+version: 1.0.1+30
 
 environment:
   sdk: ^3.10.0
@@ -71,21 +71,21 @@ flutter_launcher_icons:
     image_path: assets/icon_light.png
   image_path: assets/icon_light.png
   image_path_ios_dark_transparent: assets/icon_dark.png
-  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_background: "#000000"
   adaptive_icon_foreground: assets/icon_dark.png
-  adaptive_icon_foreground_inset: 20
+  adaptive_icon_foreground_inset: 0
   remove_alpha_ios: true
-  background_color_ios: "#FFFFFF"
+  background_color_ios: "#000000"
 
 flutter_native_splash:
-  color: "#FFFFFF"
+  color: "#000000"
   image: assets/splash_icon.png
   color_dark: "#000000"
   image_dark: assets/splash_icon.png
   android_12:
-    color: "#FFFFFF"
+    color: "#000000"
     image: assets/splash_icon.png
-    icon_background_color: "#FFFFFF"
+    icon_background_color: "#000000"
     color_dark: "#000000"
     image_dark: assets/splash_icon.png
     icon_background_color_dark: "#000000"

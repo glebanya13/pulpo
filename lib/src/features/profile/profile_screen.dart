@@ -158,15 +158,10 @@ class ProfileScreen extends ConsumerWidget {
             _MenuRow(
               icon: LucideIcons.moon,
               iconBg: const Color(0xFFE8E4FF),
-              label: tr.themeDarkMode,
-              subtitle: tr.themeDarkHint,
-              trailingWidget: Switch.adaptive(
-                value: context.isDark,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                onChanged: (v) => ref
-                    .read(settingsControllerProvider.notifier)
-                    .setTheme(v ? 'dark' : 'light'),
-              ),
+              label: tr.theme,
+              subtitle: tr.themeLabel(settings.themeMode),
+              trailing: tr.themeLabel(settings.themeMode),
+              onTap: () => context.push('/settings/theme'),
             ),
             _MenuRow(
               icon: LucideIcons.database,
@@ -432,7 +427,6 @@ class _MenuRow extends StatelessWidget {
     required this.label,
     this.subtitle,
     this.trailing,
-    this.trailingWidget,
     this.onTap,
     this.danger = false,
   });
@@ -441,7 +435,6 @@ class _MenuRow extends StatelessWidget {
   final String label;
   final String? subtitle;
   final String? trailing;
-  final Widget? trailingWidget;
   final VoidCallback? onTap;
   final bool danger;
 
@@ -509,7 +502,6 @@ class _MenuRow extends StatelessWidget {
                   ),
                 ),
               ),
-            if (trailingWidget != null) trailingWidget!,
             if (onTap != null && !danger)
               Icon(
                 LucideIcons.chevronRight,

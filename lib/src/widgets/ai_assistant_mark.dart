@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_flutter/lucide_flutter.dart';
 
-import '../core/theme/app_colors.dart';
 import 'pro_badge.dart';
 
-/// AI assistant mark — violet bot; when upgrade needed, violet + PRO chrome.
+/// Brand AI assistant mark (lime star + violet bot art).
 class AiAssistantMark extends StatelessWidget {
   const AiAssistantMark({
     super.key,
@@ -14,48 +12,32 @@ class AiAssistantMark extends StatelessWidget {
   });
 
   final double size;
+
+  /// Unused — kept for call-site compatibility with the old Lucide mark.
   final double? iconSize;
 
-  /// Free quota spent — show Pro chrome on the violet AI mark (not lime FAB twin).
+  /// Free quota spent — show Pro chrome on the AI mark.
   final bool needsUpgrade;
+
+  static const assetPath = 'assets/ai_assistant.png';
 
   @override
   Widget build(BuildContext context) {
-    final icon = iconSize ?? size * 0.46;
-
     return SizedBox(
       width: size,
       height: size,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF8B7CFF),
-                  AppColors.violet,
-                  Color(0xFFC4B5FD),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.violet.withValues(alpha: 0.4),
-                  blurRadius: size * 0.22,
-                  offset: Offset(0, size * 0.06),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              LucideIcons.bot,
-              size: icon,
-              color: Colors.white,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(size * 0.22),
+            child: Image.asset(
+              assetPath,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.medium,
+              gaplessPlayback: true,
             ),
           ),
           if (needsUpgrade)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../core/l10n/tr.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 
@@ -45,7 +46,7 @@ class ProBadge extends StatelessWidget {
             SizedBox(width: dense ? 3 : 4),
           ],
           Text(
-            'PRO',
+            Tr.of(context).proBadge,
             style: TextStyle(
               fontSize: dense ? 10 : 11,
               fontWeight: FontWeight.w900,

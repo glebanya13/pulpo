@@ -36,8 +36,12 @@ class PulpoAiService {
         appCheck: FirebaseAppCheck.instance,
       );
 
-  static const _primaryModel = 'gemini-2.5-flash';
-  static const _fallbackModel = 'gemini-2.0-flash';
+  static const _primaryModel = 'gemini-2.0-flash';
+  static const _fallbackModels = <String>[
+    'gemini-2.5-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-1.5-flash',
+  ];
 
   Future<void> _logError(
     String source,
@@ -78,11 +82,14 @@ class PulpoAiService {
     _requireSignedIn();
     await _auth.currentUser?.getIdToken(true);
 
+    // Primary + fallbacks; for JSON intents also retry without mime constraint.
     final attempts = <({String model, bool json})>[
       (model: _primaryModel, json: json),
       if (json) (model: _primaryModel, json: false),
-      (model: _fallbackModel, json: json),
-      if (json) (model: _fallbackModel, json: false),
+      for (final m in _fallbackModels) ...[
+        (model: m, json: json),
+        if (json) (model: m, json: false),
+      ],
     ];
 
     PulpoAiException? lastError;

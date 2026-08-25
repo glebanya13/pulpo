@@ -85,11 +85,9 @@ class OnboardingScreen extends ConsumerWidget {
                   const SizedBox(height: 28),
 
                   // Dots
-                  Row(
+                  const Row(
                     children: [
                       _Dot(active: true),
-                      const SizedBox(width: 6),
-                      _Dot(active: false),
                     ],
                   ),
                   const SizedBox(height: 20),

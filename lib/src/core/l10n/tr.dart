@@ -61,6 +61,8 @@ class Tr {
   String get delete => _get('delete');
   String get deleteTxTitle => _get('delete_tx_title');
   String get deleteTxBody => _get('delete_tx_body');
+  String get txDeleted => _get('tx_deleted');
+  String get undo => _get('undo');
   String get edit => _get('edit');
   String get add => _get('add');
   String get select => _get('select');
@@ -706,6 +708,9 @@ class Tr {
   String get aiQuotaExceeded => _get('ai_quota_exceeded');
   String get aiFilled => _get('ai_filled');
   String get aiEnergyEmpty => _get('ai_energy_empty');
+  String aiEnergyHint(int units) =>
+      _get('ai_energy_hint').replaceAll('{}', '$units');
+  String get proBadge => _get('pro_badge');
   String get importCsv => _get('import_csv');
   String get importCsvHint => _get('import_csv_hint');
   String get importPickFile => _get('import_pick_file');
@@ -790,6 +795,8 @@ class Tr {
       'delete': 'Eliminar',
       'delete_tx_title': '¿Eliminar transacción?',
       'delete_tx_body': 'Esta acción no se puede deshacer.',
+      'tx_deleted': 'Transacción eliminada',
+      'undo': 'Deshacer',
       'edit': 'Editar',
       'add': 'Añadir',
       'select': 'Seleccionar',
@@ -1389,6 +1396,9 @@ class Tr {
       'ai_filled': 'Campos rellenados con IA',
       'ai_energy_empty':
           'Sin energía. Pasa a Premium para usar el asistente sin límites.',
+      'ai_energy_hint':
+          'Energía del asistente: {} de 100. Pasa a Premium para uso ilimitado.',
+      'pro_badge': 'PRO',
     },
     'ru': {
       // common
@@ -1397,6 +1407,8 @@ class Tr {
       'delete': 'Удалить',
       'delete_tx_title': 'Удалить транзакцию?',
       'delete_tx_body': 'Это действие нельзя отменить.',
+      'tx_deleted': 'Транзакция удалена',
+      'undo': 'Отменить',
       'edit': 'Изменить',
       'add': 'Добавить',
       'select': 'Выбрать',
@@ -1996,6 +2008,9 @@ class Tr {
       'ai_filled': 'Поля заполнены с помощью ИИ',
       'ai_energy_empty':
           'Энергия закончилась. Перейдите на Premium для безлимитного ассистента.',
+      'ai_energy_hint':
+          'Энергия ассистента: {} из 100. Premium — безлимитный доступ.',
+      'pro_badge': 'PRO',
     },
     'en': {
       // common
@@ -2004,6 +2019,8 @@ class Tr {
       'delete': 'Delete',
       'delete_tx_title': 'Delete transaction?',
       'delete_tx_body': 'This action cannot be undone.',
+      'tx_deleted': 'Transaction deleted',
+      'undo': 'Undo',
       'edit': 'Edit',
       'add': 'Add',
       'select': 'Select',
@@ -2603,6 +2620,9 @@ class Tr {
       'ai_filled': 'Fields filled with AI',
       'ai_energy_empty':
           'Out of energy. Upgrade to Premium for unlimited assistant use.',
+      'ai_energy_hint':
+          'Assistant energy: {} of 100. Upgrade to Premium for unlimited use.',
+      'pro_badge': 'PRO',
     },
         'uk': {
       'save': 'Зберегти',
@@ -2610,6 +2630,8 @@ class Tr {
       'delete': 'Видалити',
       'delete_tx_title': 'Видалити транзакцію?',
       'delete_tx_body': 'Цю дію неможливо скасувати.',
+      'tx_deleted': 'Транзакцію видалено',
+      'undo': 'Скасувати',
       'edit': 'Змінити',
       'add': 'Додати',
       'select': 'Вибрати',
@@ -3138,6 +3160,9 @@ class Tr {
       'ai_quota_exceeded': 'Обмеження ШІ вичерпано. Повторіть спробу пізніше.',
       'ai_filled': 'Поля, заповнені за допомогою ШІ',
       'ai_energy_empty': 'У вас немає електроенергії. Перейдіть на Premium, щоб отримати необмежену кількість помічників.',
+      'ai_energy_hint':
+          'Енергія помічника: {} з 100. Premium — безлімітний доступ.',
+      'pro_badge': 'PRO',
     },
   };
 }

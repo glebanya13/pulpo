@@ -374,13 +374,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         insight: _aiInsight,
         busy: _aiInsightBusy,
         showPro: !ref.watch(proControllerProvider).isPro,
-        onGenerate: () => _generateInsight(
-          periodName: periodName,
-          currency: currency,
-          totalExpense: monthTotal,
-          totalIncome: incomeTotal,
-          topCategories: topCategories,
-        ),
+        onGenerate: () async {
+          if (!ref.read(proControllerProvider).isPro) {
+            await openPaywall(context, ProGate.analytics);
+            return;
+          }
+          await _generateInsight(
+            periodName: periodName,
+            currency: currency,
+            totalExpense: monthTotal,
+            totalIncome: incomeTotal,
+            topCategories: topCategories,
+          );
+        },
       ),
       const SizedBox(height: 16),
       _ChartCard(
@@ -1463,10 +1469,12 @@ class _AiInsightCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(100),
                 border: Border.all(
-                  color: accent.withValues(alpha: busy ? 0.35 : 0.85),
+                  color: accent.withValues(
+                    alpha: busy || showPro ? 0.35 : 0.85,
+                  ),
                   width: 1.5,
                 ),
-                color: accent.withValues(alpha: busy ? 0.08 : 0.14),
+                color: accent.withValues(alpha: busy || showPro ? 0.08 : 0.14),
               ),
               alignment: Alignment.center,
               child: Text(
@@ -1474,7 +1482,7 @@ class _AiInsightCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: accent.withValues(alpha: busy ? 0.45 : 1),
+                  color: accent.withValues(alpha: busy || showPro ? 0.45 : 1),
                 ),
               ),
             ),

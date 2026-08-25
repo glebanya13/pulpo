@@ -44,7 +44,9 @@ class SettingsScreen extends ConsumerWidget {
                 onBack: () => context.pop(),
                 action: pro.isPro
                     ? null
-                    : const AssistantEnergyChip(),
+                    : AssistantEnergyChip(
+                        onHasEnergy: () => context.push('/assistant'),
+                      ),
               ),
             headerGap: 16,
             children: [
@@ -98,15 +100,10 @@ class SettingsScreen extends ConsumerWidget {
                 _SettingsRow(
                   icon: LucideIcons.moon,
                   iconBg: const Color(0xFFE8E4FF),
-                  title: tr.themeDarkMode,
-                  subtitle: tr.themeDarkHint,
-                  trailingWidget: Switch.adaptive(
-                    value: context.isDark,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    onChanged: (v) => ref
-                        .read(settingsControllerProvider.notifier)
-                        .setTheme(v ? 'dark' : 'light'),
-                  ),
+                  title: tr.theme,
+                  subtitle: tr.themeLabel(settings.themeMode),
+                  trailing: tr.themeLabel(settings.themeMode),
+                  onTap: () => context.push('/settings/theme'),
                 ),
               ],
             ),
@@ -463,7 +460,6 @@ class _SettingsRow extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.trailing,
-    this.trailingWidget,
     this.onTap,
     this.danger = false,
   });
@@ -472,7 +468,6 @@ class _SettingsRow extends StatelessWidget {
   final String title;
   final String? subtitle;
   final String? trailing;
-  final Widget? trailingWidget;
   final VoidCallback? onTap;
   final bool danger;
 
@@ -495,51 +490,44 @@ class _SettingsRow extends StatelessWidget {
     );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Pressable(
-              enabled: onTap != null,
-              onTap: onTap,
-              scale: 0.98,
-              child: Row(
+      child: Pressable(
+        enabled: onTap != null,
+        onTap: onTap,
+        scale: 0.98,
+        child: Row(
+          children: [
+            iconWell,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  iconWell,
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title,
-                            style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: titleColor)),
-                        if (subtitle != null) ...[
-                          const SizedBox(height: 2),
-                          Text(subtitle!,
-                              style: TextStyle(
-                                  fontSize: 11, color: context.faintText)),
-                        ],
-                      ],
-                    ),
-                  ),
-                  if (trailing != null)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: Text(trailing!,
-                          style: TextStyle(
-                              fontSize: 13, color: context.mutedText)),
-                    ),
-                  if (onTap != null && !danger)
-                    Icon(LucideIcons.chevronRight,
-                        size: 16, color: context.faintText),
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: titleColor)),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(subtitle!,
+                        style: TextStyle(
+                            fontSize: 11, color: context.faintText)),
+                  ],
                 ],
               ),
             ),
-          ),
-          if (trailingWidget != null) trailingWidget!,
-        ],
+            if (trailing != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Text(trailing!,
+                    style: TextStyle(
+                        fontSize: 13, color: context.mutedText)),
+              ),
+            if (onTap != null && !danger)
+              Icon(LucideIcons.chevronRight,
+                  size: 16, color: context.faintText),
+          ],
+        ),
       ),
     );
   }

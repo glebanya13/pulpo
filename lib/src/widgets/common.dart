@@ -9,7 +9,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
 
-/// Transparent wallet mark. Optional plate: white on light surfaces, soft on dark.
+/// Brand mark (lime burst + purple robot on black). Optional soft plate behind.
 class BrandLogo extends StatelessWidget {
   const BrandLogo({
     super.key,
@@ -19,7 +19,7 @@ class BrandLogo extends StatelessWidget {
   });
 
   final double size;
-  /// When false, only the transparent mark (no rounded square behind it).
+  /// When false, only the mark (no rounded plate behind it).
   final bool plate;
   /// Use when the parent is dark even if the app theme is still light
   /// (onboarding, lock screen).
@@ -27,14 +27,17 @@ class BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mark = Image.asset(
-      'assets/logo_mark.png',
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
-      filterQuality: FilterQuality.high,
-      // Avoid black fringe from zero-RGB transparent pixels.
-      isAntiAlias: true,
+    final radius = size * 0.22;
+    final mark = ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: Image.asset(
+        'assets/logo_mark.png',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
+      ),
     );
 
     if (!plate) {
@@ -42,31 +45,23 @@ class BrandLogo extends StatelessWidget {
     }
 
     final dark = onDarkSurface || context.isDark;
-    final radius = size * 0.22;
-    final plateColor = dark
-        ? Colors.white.withValues(alpha: 0.12)
-        : Colors.white;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: plateColor,
         borderRadius: BorderRadius.circular(radius),
         boxShadow: dark
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
                 ),
               ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: EdgeInsets.all(size * 0.08),
-        child: mark,
-      ),
+      child: mark,
     );
   }
 }
@@ -651,7 +646,7 @@ class BudgetToggle extends StatelessWidget {
         width: 46,
         height: 26,
         decoration: BoxDecoration(
-          color: value ? AppColors.lime : const Color(0xFFDDDDDD),
+          color: value ? AppColors.lime : (context.isDark ? const Color(0xFF444444) : const Color(0xFFDDDDDD)),
           borderRadius: BorderRadius.circular(13),
         ),
         child: AnimatedAlign(
@@ -705,7 +700,11 @@ class EmptyState extends StatelessWidget {
               width: 140,
               height: 140,
               decoration: BoxDecoration(color: background, shape: BoxShape.circle),
-              child: Icon(icon, size: 56, color: AppColors.ink),
+              child: Icon(
+                icon,
+                size: 56,
+                color: context.isDark ? Colors.white : AppColors.ink,
+              ),
             ),
             const SizedBox(height: 20),
             Text(
@@ -791,6 +790,8 @@ class _SkeletonState extends State<Skeleton>
 
   @override
   Widget build(BuildContext context) {
+    final base = context.isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE8E8E8);
+    final mid = context.isDark ? const Color(0xFF333333) : const Color(0xFFF2F2F2);
     return AnimatedBuilder(
       animation: _c,
       builder: (context, _) {
@@ -802,11 +803,7 @@ class _SkeletonState extends State<Skeleton>
             gradient: LinearGradient(
               begin: Alignment(-1 + 2 * _c.value, 0),
               end: Alignment(1 + 2 * _c.value, 0),
-              colors: const [
-                Color(0xFFE8E8E8),
-                Color(0xFFF2F2F2),
-                Color(0xFFE8E8E8),
-              ],
+              colors: [base, mid, base],
               stops: const [0.25, 0.5, 0.75],
             ),
           ),

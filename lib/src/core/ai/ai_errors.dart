@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../l10n/tr.dart';
 
 enum AiErrorCode {
@@ -92,7 +90,12 @@ AiErrorCode classifyAiRawError(String msg) {
 }
 
 String describeAiError(Tr tr, Object error) {
-  if (error is! PulpoAiException) return tr.aiFailed;
+  if (error is! PulpoAiException) {
+    final raw = error.toString().trim();
+    if (raw.isEmpty) return tr.aiFailed;
+    final short = raw.length > 160 ? '${raw.substring(0, 160)}…' : raw;
+    return '${tr.aiFailed}\n$short';
+  }
   switch (error.code) {
     case AiErrorCode.signInRequired:
       return tr.proSignInRequired;
@@ -113,11 +116,12 @@ String describeAiError(Tr tr, Object error) {
     case AiErrorCode.missingModel:
     case AiErrorCode.network:
     case AiErrorCode.requestFailed:
-      if (kReleaseMode) return tr.aiFailed;
       final detail = error.detail?.trim() ?? '';
       if (detail.isEmpty) return tr.aiFailed;
+      // Always surface a short backend reason — otherwise "aiFailed" alone
+      // is useless for TestFlight / customer reports.
       final short =
-          detail.length > 140 ? '${detail.substring(0, 140)}…' : detail;
+          detail.length > 160 ? '${detail.substring(0, 160)}…' : detail;
       return '${tr.aiFailed}\n$short';
   }
 }

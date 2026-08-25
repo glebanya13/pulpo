@@ -25,6 +25,7 @@ import '../../features/auth/cloud_auth.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_badge.dart';
+import '../../widgets/ai_assistant_mark.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
@@ -926,20 +927,7 @@ class _AiQuickActions extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 28,
-              height: 28,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.22),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                LucideIcons.bot,
-                size: 16,
-                color: Colors.white,
-              ),
-            ),
+            const AiAssistantMark(size: 28),
             const SizedBox(width: 10),
             Expanded(
               child: Text(

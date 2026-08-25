@@ -34,6 +34,20 @@ service cloud.firestore {
       match /assistant_messages/{messageId} {
         allow read, write: if isOwner(uid);
       }
+
+      // Diagnostics from the device (AI / network). Owner write+read.
+      match /error_logs/{logId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // Flat error table for Firebase Console when a TestFlight user hits a bug.
+    // Clients may only create their own rows; reads via Console / Admin SDK.
+    match /client_error_logs/{logId} {
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasAll(['uid', 'source', 'message', 'createdAt']);
+      allow read, update, delete: if false;
     }
 
     match /household_invites/{code} {

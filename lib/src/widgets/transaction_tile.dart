@@ -54,6 +54,8 @@ class TransactionTile extends ConsumerWidget {
                       : (category != null
                           ? Tr.of(context).categoryName(category.name)
                           : Tr.of(context).transactionSingular),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -63,6 +65,8 @@ class TransactionTile extends ConsumerWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${category != null ? Tr.of(context).categoryName(category.name) : _typeLabel(type, context)} · $dateStr',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11,
                     color: context.faintText,
