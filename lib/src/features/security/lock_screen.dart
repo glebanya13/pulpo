@@ -188,7 +188,7 @@ class _BioLockBody extends StatelessWidget {
     return Column(
       children: [
         const Spacer(flex: 2),
-        const BrandLogo(size: 88, plate: false),
+        const BrandLogo(size: 88, plate: false, onDarkSurface: true),
         const SizedBox(height: 28),
         Text(
           title,
@@ -289,7 +289,7 @@ class _PinLockBody extends StatelessWidget {
     return Column(
       children: [
         const SizedBox(height: 28),
-        const BrandLogo(size: 64, plate: false),
+        const BrandLogo(size: 64, plate: false, onDarkSurface: true),
         const SizedBox(height: 22),
         Text(
           title,

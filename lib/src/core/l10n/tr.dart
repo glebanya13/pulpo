@@ -657,7 +657,32 @@ class Tr {
   String get proMonthly => _get('pro_monthly');
   String get proSemiAnnual => _get('pro_semi_annual');
   String get proYearlySave => _get('pro_yearly_save');
+  String proYearlySavePercent(int pct) =>
+      _get('pro_yearly_save_pct').replaceAll('{}', '$pct');
   String get proTrial => _get('pro_trial');
+  String proTrialDays(int days) =>
+      _get('pro_trial_days').replaceAll('{}', '$days');
+  String cloudRestoreRemoteMeta(String date, int accounts, int txs) =>
+      _get('cloud_restore_remote_meta')
+          .replaceAll('{date}', date)
+          .replaceAll('{a}', '$accounts')
+          .replaceAll('{t}', '$txs');
+  String cloudRestoreLocalMeta(int accounts, int txs) =>
+      _get('cloud_restore_local_meta')
+          .replaceAll('{a}', '$accounts')
+          .replaceAll('{t}', '$txs');
+  String get cloudRestoreMerge => _get('cloud_restore_merge');
+  String get cloudRestoreMergeHint => _get('cloud_restore_merge_hint');
+  String get cloudRestoreMergedOk => _get('cloud_restore_merged_ok');
+  String get deleteCloudResetLocal => _get('delete_cloud_reset_local');
+  String get importMapColumns => _get('import_map_columns');
+  String get importColDate => _get('import_col_date');
+  String get importColAmount => _get('import_col_amount');
+  String get importColType => _get('import_col_type');
+  String get importColCurrency => _get('import_col_currency');
+  String get importColNote => _get('import_col_note');
+  String get importColNone => _get('import_col_none');
+  String get importSampleRows => _get('import_sample_rows');
   String get proActive => _get('pro_active');
   String get proActiveShort => _get('pro_active_short');
   String get proBuyFailed => _get('pro_buy_failed');
@@ -1134,8 +1159,25 @@ class Tr {
       'cloud_restore_title': '¿Restaurar datos?',
       'cloud_restore_body':
           'Puedes reemplazar los datos locales con la copia en la nube o subir los datos locales a la nube.',
+      'cloud_restore_remote_meta':
+          'Nube: {date} · {a} cuentas · {t} movimientos',
+      'cloud_restore_local_meta':
+          'Local (se reemplazará): {a} cuentas · {t} movimientos',
+      'cloud_restore_merge': 'Combinar',
+      'cloud_restore_merge_hint':
+          'Datos de la nube + movimientos locales que no están en la nube.',
+      'cloud_restore_merged_ok': 'Datos combinados y subidos a la nube',
       'cloud_restore_use_cloud': 'Usar nube',
       'cloud_restore_keep_local': 'Mantener local',
+      'delete_cloud_reset_local': 'También borrar datos de este dispositivo',
+      'import_map_columns': 'Columnas',
+      'import_col_date': 'Fecha',
+      'import_col_amount': 'Importe',
+      'import_col_type': 'Tipo',
+      'import_col_currency': 'Moneda',
+      'import_col_note': 'Nota',
+      'import_col_none': '—',
+      'import_sample_rows': 'Vista previa',
       'budget_categories': 'Categorías',
       'budget_categories_all': 'Todas',
       'budget_rollover': 'Arrastrar saldo',
@@ -1289,7 +1331,9 @@ class Tr {
       'pro_monthly': 'Mensual',
       'pro_semi_annual': '6 meses',
       'pro_yearly_save': 'Ahorra 44%',
+      'pro_yearly_save_pct': 'Ahorra {}%',
       'pro_trial': '7 días de prueba gratis',
+      'pro_trial_days': '{} días de prueba gratis',
       'pro_active': 'Monedero Pro está activo',
       'pro_active_short': 'Activo',
       'pro_buy_failed': 'No se pudo completar la compra',
@@ -1397,9 +1441,9 @@ class Tr {
       'ai_quota_exceeded': 'Se alcanzó el límite de uso de IA. Prueba más tarde.',
       'ai_filled': 'Campos rellenados con IA',
       'ai_energy_empty':
-          'Sin energía. Pasa a Premium para usar el asistente sin límites.',
+          'Sin energía. Pasa a Pro para usar el asistente sin límites.',
       'ai_energy_hint':
-          'Energía del asistente: {} de 100. Pasa a Premium para uso ilimitado.',
+          'Energía del asistente: {} de 100. Pasa a Pro para uso ilimitado.',
       'pro_badge': 'PRO',
     },
     'ru': {
@@ -1747,8 +1791,25 @@ class Tr {
       'cloud_restore_title': 'Восстановить данные?',
       'cloud_restore_body':
           'Можно заменить локальные данные облачной копией или загрузить локальные данные в облако.',
+      'cloud_restore_remote_meta':
+          'Облако: {date} · {a} счетов · {t} операций',
+      'cloud_restore_local_meta':
+          'Локально (будет заменено): {a} счетов · {t} операций',
+      'cloud_restore_merge': 'Объединить',
+      'cloud_restore_merge_hint':
+          'Данные из облака + локальные операции, которых нет в облаке.',
+      'cloud_restore_merged_ok': 'Данные объединены и загружены в облако',
       'cloud_restore_use_cloud': 'Из облака',
       'cloud_restore_keep_local': 'Оставить локальные',
+      'delete_cloud_reset_local': 'Также стереть данные на этом устройстве',
+      'import_map_columns': 'Столбцы',
+      'import_col_date': 'Дата',
+      'import_col_amount': 'Сумма',
+      'import_col_type': 'Тип',
+      'import_col_currency': 'Валюта',
+      'import_col_note': 'Заметка',
+      'import_col_none': '—',
+      'import_sample_rows': 'Превью',
       'budget_categories': 'Категории',
       'budget_categories_all': 'Все',
       'budget_rollover': 'Перенос остатка',
@@ -1902,7 +1963,9 @@ class Tr {
       'pro_monthly': 'На месяц',
       'pro_semi_annual': '6 месяцев',
       'pro_yearly_save': '−44%',
+      'pro_yearly_save_pct': '−{}%',
       'pro_trial': '7 дней бесплатно',
+      'pro_trial_days': '{} дней бесплатно',
       'pro_active': 'Monedero Pro активен',
       'pro_active_short': 'Активен',
       'pro_buy_failed': 'Не удалось завершить покупку',
@@ -2010,9 +2073,9 @@ class Tr {
       'ai_quota_exceeded': 'Лимит ИИ исчерпан. Попробуйте позже.',
       'ai_filled': 'Поля заполнены с помощью ИИ',
       'ai_energy_empty':
-          'Энергия закончилась. Перейдите на Premium для безлимитного ассистента.',
+          'Энергия закончилась. Перейдите на Pro для безлимитного ассистента.',
       'ai_energy_hint':
-          'Энергия ассистента: {} из 100. Premium — безлимитный доступ.',
+          'Энергия ассистента: {} из 100. Pro — безлимитный доступ.',
       'pro_badge': 'PRO',
     },
     'en': {
@@ -2360,8 +2423,25 @@ class Tr {
       'cloud_restore_title': 'Restore data?',
       'cloud_restore_body':
           'Replace local data with the cloud copy, or upload local data to the cloud.',
+      'cloud_restore_remote_meta':
+          'Cloud: {date} · {a} accounts · {t} transactions',
+      'cloud_restore_local_meta':
+          'Local (will be replaced): {a} accounts · {t} transactions',
+      'cloud_restore_merge': 'Merge',
+      'cloud_restore_merge_hint':
+          'Cloud data + local transactions that are not in the cloud.',
+      'cloud_restore_merged_ok': 'Data merged and uploaded to the cloud',
       'cloud_restore_use_cloud': 'Use cloud',
       'cloud_restore_keep_local': 'Keep local',
+      'delete_cloud_reset_local': 'Also erase data on this device',
+      'import_map_columns': 'Columns',
+      'import_col_date': 'Date',
+      'import_col_amount': 'Amount',
+      'import_col_type': 'Type',
+      'import_col_currency': 'Currency',
+      'import_col_note': 'Note',
+      'import_col_none': '—',
+      'import_sample_rows': 'Preview',
       'budget_categories': 'Categories',
       'budget_categories_all': 'All',
       'budget_rollover': 'Rollover',
@@ -2515,7 +2595,9 @@ class Tr {
       'pro_monthly': 'Monthly',
       'pro_semi_annual': '6 months',
       'pro_yearly_save': 'Save 44%',
+      'pro_yearly_save_pct': 'Save {}%',
       'pro_trial': '7-day free trial',
+      'pro_trial_days': '{}-day free trial',
       'pro_active': 'Monedero Pro is active',
       'pro_active_short': 'Active',
       'pro_buy_failed': 'Could not complete the purchase',
@@ -2623,9 +2705,9 @@ class Tr {
       'ai_quota_exceeded': 'AI usage limit reached. Try again later.',
       'ai_filled': 'Fields filled with AI',
       'ai_energy_empty':
-          'Out of energy. Upgrade to Premium for unlimited assistant use.',
+          'Out of energy. Upgrade to Pro for unlimited assistant use.',
       'ai_energy_hint':
-          'Assistant energy: {} of 100. Upgrade to Premium for unlimited use.',
+          'Assistant energy: {} of 100. Upgrade to Pro for unlimited use.',
       'pro_badge': 'PRO',
     },
         'uk': {
@@ -2937,9 +3019,27 @@ class Tr {
       'last_sync_prefix': 'Остання синхронізація:',
       'never_synced': 'Не синхронізовано',
       'cloud_restore_title': 'Відновити дані?',
-      'cloud_restore_body': 'Ви можете замінити локальні дані хмарною копією або завантажити локальні дані в хмару.',
+      'cloud_restore_body':
+          'Ви можете замінити локальні дані хмарною копією або завантажити локальні дані в хмару.',
+      'cloud_restore_remote_meta':
+          'Хмара: {date} · {a} рахунків · {t} операцій',
+      'cloud_restore_local_meta':
+          'Локально (буде замінено): {a} рахунків · {t} операцій',
+      'cloud_restore_merge': "Об'єднати",
+      'cloud_restore_merge_hint':
+          'Дані з хмари + локальні операції, яких немає в хмарі.',
+      'cloud_restore_merged_ok': "Дані об'єднано і завантажено в хмару",
       'cloud_restore_use_cloud': 'З хмари',
       'cloud_restore_keep_local': 'Залишити локальні',
+      'delete_cloud_reset_local': 'Також стерти дані на цьому пристрої',
+      'import_map_columns': 'Стовпці',
+      'import_col_date': 'Дата',
+      'import_col_amount': 'Сума',
+      'import_col_type': 'Тип',
+      'import_col_currency': 'Валюта',
+      'import_col_note': 'Нотатка',
+      'import_col_none': '—',
+      'import_sample_rows': 'Перегляд',
       'budget_categories': 'Категорії',
       'budget_categories_all': 'Усі',
       'budget_rollover': 'Перенесення залишку',
@@ -3084,8 +3184,10 @@ class Tr {
       'pro_yearly': 'На рік',
       'pro_monthly': 'На місяць',
       'pro_semi_annual': '6 місяців',
-      'pro_yearly_save': '44',
+      'pro_yearly_save': '−44%',
+      'pro_yearly_save_pct': '−{}%',
       'pro_trial': '7 днів безкоштовно',
+      'pro_trial_days': '{} днів безкоштовно',
       'pro_active': 'Monedero Pro активний',
       'pro_active_short': 'Активний',
       'pro_buy_failed': 'Не вдалося завершити покупку',
@@ -3164,9 +3266,9 @@ class Tr {
       'ai_permission_denied': 'Firebase відхилила ШІ (App Check). У debug: скопіюйте токен із логів і додайте в Firebase → App Check → Debug tokens.',
       'ai_quota_exceeded': 'Ліміт ШІ вичерпано. Спробуйте пізніше.',
       'ai_filled': 'Поля заповнено за допомогою ШІ',
-      'ai_energy_empty': 'Енергію вичерпано. Перейдіть на Premium для необмеженого асистента.',
+      'ai_energy_empty': 'Енергію вичерпано. Перейдіть на Pro для необмеженого асистента.',
       'ai_energy_hint':
-          'Енергія асистента: {} з 100. Premium — безліміт.',
+          'Енергія асистента: {} з 100. Pro — безліміт.',
       'pro_badge': 'PRO',
     },
   };

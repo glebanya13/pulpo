@@ -12,7 +12,7 @@ class AppBootFallback extends StatelessWidget {
     return const ColoredBox(
       color: AppColors.ink,
       child: Center(
-        child: BrandLogo(size: 72, plate: false),
+        child: BrandLogo(size: 72, plate: false, onDarkSurface: true),
       ),
     );
   }

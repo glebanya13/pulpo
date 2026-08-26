@@ -7,6 +7,9 @@ class AppColors {
   static const limeDark = Color(0xFFA8D82F);
   static const limeAccent = Color(0xFF7A9E1F);
 
+  /// Brand purple plate (light logo / splash / launcher).
+  static const brandPurple = Color(0xFF8C52FF);
+
   static const ink = Color(0xFF0F0F0F);
   static const ink2 = Color(0xFF1A1A1A);
   static const ink3 = Color(0xFF2A2A2A);

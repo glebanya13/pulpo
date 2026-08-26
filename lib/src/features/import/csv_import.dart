@@ -23,46 +23,115 @@ class CsvParseResult {
   final int skipped;
 }
 
-/// Parses Monedero CSV (`date,type,amount,currency,note`) and simple bank CSVs.
-CsvParseResult parseTransactionCsv(String raw, {required String fallbackCurrency}) {
+enum CsvField { date, amount, type, currency, note }
+
+class CsvColumnMapping {
+  const CsvColumnMapping({
+    required this.delimiter,
+    required this.hasHeader,
+    required this.indices,
+  });
+
+  final String delimiter;
+  final bool hasHeader;
+  final Map<CsvField, int?> indices;
+
+  CsvColumnMapping copyWithIndex(CsvField field, int? index) {
+    return CsvColumnMapping(
+      delimiter: delimiter,
+      hasHeader: hasHeader,
+      indices: {...indices, field: index},
+    );
+  }
+}
+
+class CsvInspectResult {
+  const CsvInspectResult({
+    required this.headers,
+    required this.sampleRows,
+    required this.detected,
+    required this.columnCount,
+  });
+
+  final List<String> headers;
+  final List<List<String>> sampleRows;
+  final CsvColumnMapping detected;
+  final int columnCount;
+}
+
+/// Inspect CSV structure for a mapping UI.
+CsvInspectResult inspectCsv(String raw) {
+  final text = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
+  if (text.isEmpty) {
+    return const CsvInspectResult(
+      headers: [],
+      sampleRows: [],
+      detected: CsvColumnMapping(
+        delimiter: ',',
+        hasHeader: false,
+        indices: {},
+      ),
+      columnCount: 0,
+    );
+  }
+
+  final lines = text.split('\n').where((l) => l.trim().isNotEmpty).toList();
+  final delimiter = _detectDelimiter(lines.first);
+  final first = _splitCsvLine(lines.first, delimiter);
+  final hasHeader = _looksLikeHeader(first);
+  final columnCount = first.length;
+  final headers = hasHeader
+      ? [
+          for (var i = 0; i < first.length; i++)
+            first[i].trim().isEmpty ? 'Col ${i + 1}' : first[i].trim(),
+        ]
+      : [for (var i = 0; i < columnCount; i++) 'Col ${i + 1}'];
+
+  final dataStart = hasHeader ? 1 : 0;
+  final sample = <List<String>>[];
+  for (var i = dataStart; i < lines.length && sample.length < 20; i++) {
+    sample.add(_splitCsvLine(lines[i], delimiter));
+  }
+
+  return CsvInspectResult(
+    headers: headers,
+    sampleRows: sample,
+    detected: _detectMapping(first, delimiter, hasHeader),
+    columnCount: columnCount,
+  );
+}
+
+/// Parses Monedero CSV and simple bank CSVs.
+CsvParseResult parseTransactionCsv(
+  String raw, {
+  required String fallbackCurrency,
+  CsvColumnMapping? mapping,
+}) {
   final text = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
   if (text.isEmpty) return const CsvParseResult(rows: [], skipped: 0);
 
   final lines = text.split('\n').where((l) => l.trim().isNotEmpty).toList();
   if (lines.isEmpty) return const CsvParseResult(rows: [], skipped: 0);
 
-  final delimiter = _detectDelimiter(lines.first);
-  var start = 0;
-  var dateIdx = 0;
-  var typeIdx = 1;
-  var amountIdx = 2;
-  var currencyIdx = 3;
-  var noteIdx = 4;
-  var hasType = true;
-  var hasCurrency = true;
-  var hasNote = true;
+  final map = mapping ??
+      () {
+        final delimiter = _detectDelimiter(lines.first);
+        final headerCells = _splitCsvLine(lines.first, delimiter);
+        final hasHeader = _looksLikeHeader(headerCells);
+        return _detectMapping(headerCells, delimiter, hasHeader);
+      }();
 
-  final headerCells = _splitCsvLine(lines.first, delimiter);
-  if (_looksLikeHeader(headerCells)) {
-    start = 1;
-    dateIdx = _headerIndex(headerCells, const ['date', 'fecha', 'дата', 'fecha valor', 'booking', 'value date']) ?? 0;
-    typeIdx = _headerIndex(headerCells, const ['type', 'tipo', 'тип']) ?? -1;
-    amountIdx = _headerIndex(headerCells, const ['amount', 'importe', 'monto', 'сумма', 'value']) ?? 1;
-    currencyIdx = _headerIndex(headerCells, const ['currency', 'moneda', 'валюта', 'divisa']) ?? -1;
-    noteIdx = _headerIndex(
-          headerCells,
-          const ['note', 'notes', 'concepto', 'description', 'descripcion', 'detalle', 'memo', 'заметка'],
-        ) ??
-        -1;
-    hasType = typeIdx >= 0;
-    hasCurrency = currencyIdx >= 0;
-    hasNote = noteIdx >= 0;
-  }
+  final start = map.hasHeader ? 1 : 0;
+  final dateIdx = map.indices[CsvField.date] ?? 0;
+  final amountIdx = map.indices[CsvField.amount] ?? 1;
+  final typeIdx = map.indices[CsvField.type];
+  final currencyIdx = map.indices[CsvField.currency];
+  final noteIdx = map.indices[CsvField.note];
 
   final rows = <ImportedRow>[];
   var skipped = 0;
   for (var i = start; i < lines.length; i++) {
-    final cells = _splitCsvLine(lines[i], delimiter);
+    final cells = _splitCsvLine(lines[i], map.delimiter);
     if (cells.isEmpty) {
       skipped++;
       continue;
@@ -73,17 +142,19 @@ CsvParseResult parseTransactionCsv(String raw, {required String fallbackCurrency
       skipped++;
       continue;
     }
-    TxType type;
-    if (hasType) {
+    final TxType type;
+    if (typeIdx != null && typeIdx >= 0) {
       type = _parseType(_cell(cells, typeIdx), amountRaw);
     } else {
       type = amountRaw < 0 ? TxType.expense : TxType.income;
     }
     final amount = amountRaw.abs();
-    final currency = hasCurrency
+    final currency = currencyIdx != null && currencyIdx >= 0
         ? _normalizeCurrency(_cell(cells, currencyIdx), fallbackCurrency)
         : fallbackCurrency;
-    final note = hasNote ? _nullIfEmpty(_cell(cells, noteIdx)) : null;
+    final note = noteIdx != null && noteIdx >= 0
+        ? _nullIfEmpty(_cell(cells, noteIdx))
+        : null;
     rows.add(ImportedRow(
       date: date,
       type: type,
@@ -93,6 +164,60 @@ CsvParseResult parseTransactionCsv(String raw, {required String fallbackCurrency
     ));
   }
   return CsvParseResult(rows: rows, skipped: skipped);
+}
+
+CsvColumnMapping _detectMapping(
+  List<String> headerCells,
+  String delimiter,
+  bool hasHeader,
+) {
+  if (!hasHeader) {
+    return CsvColumnMapping(
+      delimiter: delimiter,
+      hasHeader: false,
+      indices: const {
+        CsvField.date: 0,
+        CsvField.type: 1,
+        CsvField.amount: 2,
+        CsvField.currency: 3,
+        CsvField.note: 4,
+      },
+    );
+  }
+  return CsvColumnMapping(
+    delimiter: delimiter,
+    hasHeader: true,
+    indices: {
+      CsvField.date: _headerIndex(
+            headerCells,
+            const ['date', 'fecha', 'дата', 'fecha valor', 'booking', 'value date'],
+          ) ??
+          0,
+      CsvField.type: _headerIndex(headerCells, const ['type', 'tipo', 'тип']),
+      CsvField.amount: _headerIndex(
+            headerCells,
+            const ['amount', 'importe', 'monto', 'сумма', 'value'],
+          ) ??
+          1,
+      CsvField.currency: _headerIndex(
+        headerCells,
+        const ['currency', 'moneda', 'валюта', 'divisa'],
+      ),
+      CsvField.note: _headerIndex(
+        headerCells,
+        const [
+          'note',
+          'notes',
+          'concepto',
+          'description',
+          'descripcion',
+          'detalle',
+          'memo',
+          'заметка',
+        ],
+      ),
+    },
+  );
 }
 
 String _detectDelimiter(String line) {

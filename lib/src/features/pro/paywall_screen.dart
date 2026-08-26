@@ -10,6 +10,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
+import '../../core/pro/product_offer_info.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/auth/cloud_auth.dart';
@@ -149,8 +150,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       _PlanCard(
                         title: tr.proYearly,
                         price: yearly.price,
-                        badge: tr.proYearlySave,
-                        subtitle: tr.proTrial,
+                        badge: () {
+                          final pct = ProductOfferInfo.yearlySavePercent(
+                            monthly: monthly,
+                            yearly: yearly,
+                          );
+                          return pct != null
+                              ? tr.proYearlySavePercent(pct)
+                              : tr.proYearlySave;
+                        }(),
+                        subtitle: _trialSubtitle(tr, yearly),
                         highlighted: selected?.id == yearly.id,
                         busy: pro.purchasing,
                         onTap: () => setState(() => _selected = yearly),
@@ -160,7 +169,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       _PlanCard(
                         title: tr.proSemiAnnual,
                         price: pro.semiAnnual!.price,
-                        subtitle: tr.proTrial,
+                        subtitle: _trialSubtitle(tr, pro.semiAnnual!),
                         highlighted: selected?.id == pro.semiAnnual!.id,
                         busy: pro.purchasing,
                         onTap: () =>
@@ -172,7 +181,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       _PlanCard(
                         title: tr.proMonthly,
                         price: monthly.price,
-                        subtitle: tr.proTrial,
+                        subtitle: _trialSubtitle(tr, monthly),
                         highlighted: selected?.id == monthly.id,
                         busy: pro.purchasing,
                         onTap: () => setState(() => _selected = monthly),
@@ -308,17 +317,37 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     WidgetRef ref,
     Tr tr,
   ) async {
+    if (ref.read(authUserProvider).valueOrNull == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr.proSignInRequired)),
+      );
+      context.push('/settings/account');
+      return;
+    }
     final restored =
         await ref.read(proControllerProvider.notifier).restore();
     if (!context.mounted) return;
+    final err = ref.read(proControllerProvider).error;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(restored ? tr.proRestore : tr.proRestoreEmpty),
+        content: Text(
+          restored
+              ? tr.proRestore
+              : (err?.contains('sign_in_required') == true
+                  ? tr.proSignInRequired
+                  : tr.proRestoreEmpty),
+        ),
       ),
     );
     if (restored) {
       Navigator.pop(context);
     }
+  }
+
+  String _trialSubtitle(Tr tr, ProductDetails product) {
+    final days = ProductOfferInfo.trialDays(product);
+    if (days == null || days <= 0) return tr.proTrial;
+    return tr.proTrialDays(days);
   }
 
   String _errorText(Tr tr, String error) {

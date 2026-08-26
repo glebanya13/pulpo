@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../data/repositories/auto_backup_runner.dart';
@@ -19,7 +20,7 @@ final cloudUploadHoldProvider = StateProvider<bool>((ref) => false);
 /// One-shot flag for auto cloud backup failure snackbar per app session.
 final cloudBackupFailedProvider = StateProvider<bool>((ref) => false);
 
-enum CloudRestoreChoice { useCloud, keepLocal }
+enum CloudRestoreChoice { useCloud, keepLocal, merge }
 
 void refreshUiAfterMoneyRestore(WidgetRef ref) {
   ref.read(settingsControllerProvider.notifier).reloadFromDisk();
@@ -37,16 +38,66 @@ Future<void> showCloudRestoreDialog(BuildContext context, WidgetRef ref) async {
   final tr = Tr.of(context);
   ref.read(cloudUploadHoldProvider.notifier).state = true;
   try {
+    final cloud = ref.read(cloudAuthProvider);
+    final backup = ref.read(backupServiceProvider);
+    final results = await Future.wait([
+      cloud.peekCloudSnapshotMeta(),
+      backup.localCounts(),
+    ]);
+    final remote = results[0] as CloudSnapshotMeta?;
+    final local = results[1] as ({int accounts, int transactions});
+
+    if (!context.mounted) return;
+
+    final locale = Localizations.localeOf(context).toString();
+    final dateFmt = DateFormat.yMMMd(locale).add_Hm();
+    final remoteDate = remote?.updatedAt != null
+        ? dateFmt.format(remote!.updatedAt!.toLocal())
+        : '—';
+
     final choice = await showDialog<CloudRestoreChoice>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         title: Text(tr.cloudRestoreTitle),
-        content: Text(tr.cloudRestoreBody),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(tr.cloudRestoreBody),
+            const SizedBox(height: 12),
+            Text(
+              tr.cloudRestoreRemoteMeta(
+                remoteDate,
+                remote?.accounts ?? 0,
+                remote?.transactions ?? 0,
+              ),
+              style: const TextStyle(fontWeight: FontWeight.w600, height: 1.35),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              tr.cloudRestoreLocalMeta(local.accounts, local.transactions),
+              style: const TextStyle(height: 1.35),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              tr.cloudRestoreMergeHint,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(ctx).textTheme.bodySmall?.color,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, CloudRestoreChoice.keepLocal),
             child: Text(tr.cloudRestoreKeepLocal),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, CloudRestoreChoice.merge),
+            child: Text(tr.cloudRestoreMerge),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, CloudRestoreChoice.useCloud),
@@ -57,7 +108,6 @@ Future<void> showCloudRestoreDialog(BuildContext context, WidgetRef ref) async {
     );
     if (!context.mounted || choice == null) return;
 
-    final cloud = ref.read(cloudAuthProvider);
     try {
       if (choice == CloudRestoreChoice.useCloud) {
         final ok = await cloud.downloadMoney();
@@ -67,10 +117,20 @@ Future<void> showCloudRestoreDialog(BuildContext context, WidgetRef ref) async {
             SnackBar(content: Text(ok ? tr.cloudRestoreOk : tr.cloudEmpty)),
           );
         }
+      } else if (choice == CloudRestoreChoice.merge) {
+        final kept = await cloud.mergeMoney();
+        if (kept >= 0) refreshUiAfterMoneyRestore(ref);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                kept >= 0 ? tr.cloudRestoreMergedOk : tr.cloudEmpty,
+              ),
+            ),
+          );
+        }
       } else {
-        // Never overwrite a cloud snapshot with an empty fresh install.
-        final hasLocal =
-            await ref.read(backupServiceProvider).hasLocalMoneyData();
+        final hasLocal = await backup.hasLocalMoneyData();
         if (hasLocal) {
           await cloud.uploadMoney(bypassHold: true);
           final now = DateTime.now();

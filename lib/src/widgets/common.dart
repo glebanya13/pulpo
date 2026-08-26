@@ -9,7 +9,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
 
-/// Brand mark (lime plate + black M). Optional soft plate behind.
+/// Brand mark: stacked MONEDERO — purple plate (light) / transparent lime (dark).
 class BrandLogo extends StatelessWidget {
   const BrandLogo({
     super.key,
@@ -19,7 +19,7 @@ class BrandLogo extends StatelessWidget {
   });
 
   final double size;
-  /// When false, only the mark (no rounded plate behind it).
+  /// When false, only the mark (no rounded plate / shadow behind it).
   final bool plate;
   /// Use when the parent is dark even if the app theme is still light
   /// (onboarding, lock screen).
@@ -28,10 +28,12 @@ class BrandLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = size * 0.22;
+    final dark = onDarkSurface || context.isDark;
+    final asset = dark ? 'assets/logo_dark.png' : 'assets/logo_light.png';
     final mark = ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: Image.asset(
-        'assets/logo_mark.png',
+        asset,
         width: size,
         height: size,
         fit: BoxFit.cover,
@@ -44,7 +46,6 @@ class BrandLogo extends StatelessWidget {
       return SizedBox(width: size, height: size, child: mark);
     }
 
-    final dark = onDarkSurface || context.isDark;
     return Container(
       width: size,
       height: size,

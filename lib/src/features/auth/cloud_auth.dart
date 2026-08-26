@@ -22,6 +22,20 @@ class CloudNotConfigured implements Exception {
   const CloudNotConfigured();
 }
 
+class CloudSnapshotMeta {
+  const CloudSnapshotMeta({
+    required this.updatedAt,
+    required this.accounts,
+    required this.transactions,
+    this.payload,
+  });
+
+  final DateTime? updatedAt;
+  final int accounts;
+  final int transactions;
+  final Map<String, dynamic>? payload;
+}
+
 class CloudAuth {
   CloudAuth(this._ref);
 
@@ -227,20 +241,8 @@ class CloudAuth {
   Future<bool> downloadMoney() async {
     final user = _auth.currentUser;
     if (user == null) return false;
-    DocumentSnapshot<Map<String, dynamic>> snap;
-    try {
-      snap = await _moneyRef(user.uid).get(
-        const GetOptions(source: Source.server),
-      );
-    } catch (e, st) {
-      debugPrint('CloudAuth.downloadMoney server read failed: $e\n$st');
-      snap = await _moneyRef(user.uid).get();
-    }
-    final data = snap.data();
-    if (data == null) return false;
-    final raw = data['payload'];
-    if (raw is! Map) return false;
-    final payload = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
+    final payload = await _readMoneyPayload();
+    if (payload == null) return false;
     final txCount = (payload['transactions'] as List?)?.length ?? 0;
     final accCount = (payload['accounts'] as List?)?.length ?? 0;
     debugPrint(
@@ -248,6 +250,74 @@ class CloudAuth {
     );
     await _ref.read(backupServiceProvider).restoreFromMap(payload);
     return true;
+  }
+
+  Future<CloudSnapshotMeta?> peekCloudSnapshotMeta() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    DocumentSnapshot<Map<String, dynamic>> snap;
+    try {
+      snap = await _moneyRef(user.uid).get(
+        const GetOptions(source: Source.server),
+      );
+    } catch (_) {
+      snap = await _moneyRef(user.uid).get();
+    }
+    if (!snap.exists) return null;
+    final data = snap.data();
+    if (data == null) return null;
+    DateTime? updated;
+    final rawUpdated = data['updatedAt'];
+    if (rawUpdated is Timestamp) updated = rawUpdated.toDate();
+    final raw = data['payload'];
+    if (raw is! Map) {
+      return CloudSnapshotMeta(
+        updatedAt: updated,
+        accounts: 0,
+        transactions: 0,
+      );
+    }
+    final payload = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
+    if (updated == null) {
+      updated = DateTime.tryParse(payload['exportedAt']?.toString() ?? '');
+    }
+    return CloudSnapshotMeta(
+      updatedAt: updated,
+      accounts: (payload['accounts'] as List?)?.length ?? 0,
+      transactions: (payload['transactions'] as List?)?.length ?? 0,
+      payload: payload,
+    );
+  }
+
+  /// Restore remote, keep local-only txs, then upload the union.
+  Future<int> mergeMoney() async {
+    final meta = await peekCloudSnapshotMeta();
+    final payload = meta?.payload;
+    if (payload == null) return -1;
+    final kept = await _ref
+        .read(backupServiceProvider)
+        .mergeRemoteKeepingLocalOnly(payload);
+    await uploadMoney(bypassHold: true);
+    return kept;
+  }
+
+  Future<Map<String, dynamic>?> _readMoneyPayload() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    DocumentSnapshot<Map<String, dynamic>> snap;
+    try {
+      snap = await _moneyRef(user.uid).get(
+        const GetOptions(source: Source.server),
+      );
+    } catch (e, st) {
+      debugPrint('CloudAuth._readMoneyPayload server read failed: $e\n$st');
+      snap = await _moneyRef(user.uid).get();
+    }
+    final data = snap.data();
+    if (data == null) return null;
+    final raw = data['payload'];
+    if (raw is! Map) return null;
+    return jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
   }
 
   Future<DateTime?> cloudSnapshotUpdatedAt() async {

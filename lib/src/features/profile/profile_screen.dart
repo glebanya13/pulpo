@@ -284,6 +284,35 @@ Future<void> _confirmDeleteAccount(
   if (confirmed != true) return;
   try {
     await ref.read(cloudAuthProvider).deleteCloudAccount();
+    if (!context.mounted) return;
+    final wipeLocal = await showDialog<bool>(
+      context: context,
+      builder: (dctx) => AlertDialog(
+        title: Text(tr.deleteCloudAccountTitle),
+        content: Text(tr.deleteCloudResetLocal),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dctx, false),
+            child: Text(tr.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFE53E3E),
+            ),
+            child: Text(tr.delete),
+          ),
+        ],
+      ),
+    );
+    if (wipeLocal == true && context.mounted) {
+      await ref.read(databaseProvider).resetAllData();
+      ref.read(settingsControllerProvider.notifier).reloadFromDisk();
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(tr.deleteCloudAccount)),
+    );
   } on FirebaseAuthException catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

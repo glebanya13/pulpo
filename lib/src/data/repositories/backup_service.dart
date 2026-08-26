@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../db/app_database.dart';
+import '../db/enums.dart';
 import 'providers.dart';
 import 'settings_service.dart';
 
@@ -53,6 +54,101 @@ class BackupService {
     final accounts = await _db.select(_db.accounts).get();
     // More than a single default cash account ⇒ user has set something up.
     return accounts.length > 1;
+  }
+
+  Future<({int accounts, int transactions})> localCounts() async {
+    final accounts = await _db.select(_db.accounts).get();
+    final txs = await _db.select(_db.transactions).get();
+    return (accounts: accounts.length, transactions: txs.length);
+  }
+
+  /// Remote becomes base; local transactions missing from remote are re-added
+  /// onto matching accounts (by name+currency), creating accounts if needed.
+  Future<int> mergeRemoteKeepingLocalOnly(Map<String, dynamic> remote) async {
+    final local = await snapshot();
+    final remoteTxs = (remote['transactions'] as List? ?? const [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+    final remoteFingerprints = {
+      for (final t in remoteTxs) _txFingerprint(t),
+    };
+
+    final localAccounts = (local['accounts'] as List? ?? const [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+    final localById = {
+      for (final a in localAccounts) a['id'] as int: a,
+    };
+
+    final localOnly = <({Map<String, dynamic> tx, Map<String, dynamic> account})>[];
+    for (final raw in (local['transactions'] as List? ?? const [])) {
+      final t = Map<String, dynamic>.from(raw as Map);
+      if (remoteFingerprints.contains(_txFingerprint(t))) continue;
+      final acc = localById[t['accountId'] as int?];
+      if (acc == null) continue;
+      localOnly.add((tx: t, account: acc));
+    }
+
+    await restoreFromMap(remote);
+
+    if (localOnly.isEmpty) return 0;
+
+    final accountIds = <String, int>{};
+    for (final a in await _db.select(_db.accounts).get()) {
+      final key =
+          '${a.name.trim().toLowerCase()}|${a.currency.trim().toUpperCase()}';
+      accountIds[key] = a.id;
+    }
+
+    var kept = 0;
+    for (final item in localOnly) {
+      final key =
+          '${(item.account['name'] as String? ?? '').trim().toLowerCase()}|'
+          '${(item.account['currency'] as String? ?? '').trim().toUpperCase()}';
+      var accountId = accountIds[key];
+      if (accountId == null) {
+        accountId = await _db.into(_db.accounts).insert(
+              AccountsCompanion.insert(
+                name: item.account['name'] as String? ?? 'Account',
+                type: (item.account['type'] as int?) ?? 0,
+                currency: item.account['currency'] as String? ?? 'EUR',
+                initialBalance: Value(
+                  (item.account['initialBalance'] as num?)?.toDouble() ?? 0,
+                ),
+              ),
+            );
+        accountIds[key] = accountId;
+      }
+
+      final type = (item.tx['type'] as int?) ?? 0;
+      if (type == TxType.transfer.index) continue;
+      await _db.into(_db.transactions).insert(
+            TransactionsCompanion.insert(
+              accountId: accountId,
+              amount: (item.tx['amount'] as num?)?.toDouble() ?? 0,
+              currency: item.tx['currency'] as String? ?? 'EUR',
+              type: type,
+              date: DateTime.tryParse(item.tx['date']?.toString() ?? '') ??
+                  DateTime.now(),
+              categoryId: Value(item.tx['categoryId'] as int?),
+              note: Value(item.tx['note'] as String?),
+            ),
+          );
+      kept++;
+    }
+    return kept;
+  }
+
+  static String _txFingerprint(Map<String, dynamic> t) {
+    final date = DateTime.tryParse(t['date']?.toString() ?? '');
+    final day = date == null
+        ? ''
+        : '${date.year}-${date.month}-${date.day}';
+    final amount = (t['amount'] as num?)?.toStringAsFixed(2) ?? '';
+    final currency = (t['currency']?.toString() ?? '').toUpperCase();
+    final type = '${t['type'] ?? ''}';
+    final note = (t['note']?.toString() ?? '').trim().toLowerCase();
+    return '$day|$amount|$currency|$type|$note';
   }
 
   Future<File> writeBackup() async {

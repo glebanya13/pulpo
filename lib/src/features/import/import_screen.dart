@@ -5,6 +5,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
@@ -31,6 +32,9 @@ class ImportScreen extends ConsumerStatefulWidget {
 class _ImportScreenState extends ConsumerState<ImportScreen> {
   bool _busy = false;
   String? _fileName;
+  String? _rawText;
+  CsvInspectResult? _inspect;
+  CsvColumnMapping? _mapping;
   CsvParseResult? _parsed;
   int? _accountId;
 
@@ -100,6 +104,58 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
             ],
             if (_parsed != null) ...[
               const SizedBox(height: 16),
+              if (_inspect != null && _mapping != null) ...[
+                Text(
+                  tr.importMapColumns,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: context.mutedText,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _ColumnMapRow(
+                  label: tr.importColDate,
+                  headers: _inspect!.headers,
+                  value: _mapping!.indices[CsvField.date],
+                  allowNone: false,
+                  noneLabel: tr.importColNone,
+                  onChanged: (v) => _reparse(base, CsvField.date, v),
+                ),
+                _ColumnMapRow(
+                  label: tr.importColAmount,
+                  headers: _inspect!.headers,
+                  value: _mapping!.indices[CsvField.amount],
+                  allowNone: false,
+                  noneLabel: tr.importColNone,
+                  onChanged: (v) => _reparse(base, CsvField.amount, v),
+                ),
+                _ColumnMapRow(
+                  label: tr.importColType,
+                  headers: _inspect!.headers,
+                  value: _mapping!.indices[CsvField.type],
+                  allowNone: true,
+                  noneLabel: tr.importColNone,
+                  onChanged: (v) => _reparse(base, CsvField.type, v),
+                ),
+                _ColumnMapRow(
+                  label: tr.importColCurrency,
+                  headers: _inspect!.headers,
+                  value: _mapping!.indices[CsvField.currency],
+                  allowNone: true,
+                  noneLabel: tr.importColNone,
+                  onChanged: (v) => _reparse(base, CsvField.currency, v),
+                ),
+                _ColumnMapRow(
+                  label: tr.importColNote,
+                  headers: _inspect!.headers,
+                  value: _mapping!.indices[CsvField.note],
+                  allowNone: true,
+                  noneLabel: tr.importColNone,
+                  onChanged: (v) => _reparse(base, CsvField.note, v),
+                ),
+                const SizedBox(height: 12),
+              ],
               if (_parsed!.rows.isEmpty)
                 Text(
                   tr.importNoRows,
@@ -117,6 +173,28 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  tr.importSampleRows,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: context.mutedText,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                for (final row in _parsed!.rows.take(12))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      '${DateFormat.yMd(Localizations.localeOf(context).toString()).format(row.date)} · '
+                      '${row.type.name} · ${row.amount.toStringAsFixed(2)} ${row.currency}'
+                      '${row.note == null || row.note!.isEmpty ? '' : ' · ${row.note}'}',
+                      style: TextStyle(fontSize: 12, color: context.mutedText),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 ScaledElevatedButton(
                   onPressed:
@@ -229,10 +307,18 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     try {
       final bytes = await picked.readAsBytes();
       final text = _decode(bytes);
-      final parsed =
-          parseTransactionCsv(text, fallbackCurrency: fallbackCurrency);
+      final inspect = inspectCsv(text);
+      final mapping = inspect.detected;
+      final parsed = parseTransactionCsv(
+        text,
+        fallbackCurrency: fallbackCurrency,
+        mapping: mapping,
+      );
       setState(() {
         _fileName = picked.name;
+        _rawText = text;
+        _inspect = inspect;
+        _mapping = mapping;
         _parsed = parsed;
       });
       if (parsed.rows.isEmpty && mounted) {
@@ -248,6 +334,22 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  void _reparse(String fallbackCurrency, CsvField field, int? index) {
+    final raw = _rawText;
+    final mapping = _mapping;
+    if (raw == null || mapping == null) return;
+    final next = mapping.copyWithIndex(field, index);
+    final parsed = parseTransactionCsv(
+      raw,
+      fallbackCurrency: fallbackCurrency,
+      mapping: next,
+    );
+    setState(() {
+      _mapping = next;
+      _parsed = parsed;
+    });
   }
 
   Future<void> _commit() async {
@@ -306,6 +408,79 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     } catch (_) {
       return latin1.decode(bytes);
     }
+  }
+}
+
+class _ColumnMapRow extends StatelessWidget {
+  const _ColumnMapRow({
+    required this.label,
+    required this.headers,
+    required this.value,
+    required this.allowNone,
+    required this.noneLabel,
+    required this.onChanged,
+  });
+
+  final String label;
+  final List<String> headers;
+  final int? value;
+  final bool allowNone;
+  final String noneLabel;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 88,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: context.mutedText,
+              ),
+            ),
+          ),
+          Expanded(
+            child: DropdownButtonFormField<int?>(
+              value: value,
+              isExpanded: true,
+              decoration: InputDecoration(
+                isDense: true,
+                filled: true,
+                fillColor: context.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              items: [
+                if (allowNone)
+                  DropdownMenuItem<int?>(
+                    value: null,
+                    child: Text(noneLabel),
+                  ),
+                for (var i = 0; i < headers.length; i++)
+                  DropdownMenuItem<int?>(
+                    value: i,
+                    child: Text(
+                      headers[i],
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

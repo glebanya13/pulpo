@@ -44,22 +44,10 @@ class OnboardingScreen extends ConsumerWidget {
                 children: [
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const BrandLogo(size: 52, plate: false),
-                        const SizedBox(width: 12),
-                        Text(
-                          'MONEDERO',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.6,
-                            height: 1,
-                          ),
-                        ),
-                      ],
+                    child: const BrandLogo(
+                      size: 56,
+                      plate: false,
+                      onDarkSurface: true,
                     ),
                   ),
 
@@ -83,14 +71,6 @@ class OnboardingScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 28),
-
-                  // Dots
-                  const Row(
-                    children: [
-                      _Dot(active: true),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
 
                   // Primary button
                   Pressable(
@@ -151,24 +131,6 @@ class _Title extends StatelessWidget {
             style: const TextStyle(color: AppColors.lime),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _Dot extends StatelessWidget {
-  const _Dot({required this.active});
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: active ? 22 : 6,
-      height: 6,
-      decoration: BoxDecoration(
-        color: active ? AppColors.lime : Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(3),
       ),
     );
   }
