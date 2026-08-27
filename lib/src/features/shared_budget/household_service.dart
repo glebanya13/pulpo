@@ -239,6 +239,7 @@ class HouseholdService {
     if (uid == null) {
       throw FirebaseAuthException(code: 'no-current-user');
     }
+    await clearOrphanHouseholdLink();
     final existing = await householdIdForUser();
     if (existing != null) {
       throw StateError('already_in_household');
@@ -295,6 +296,7 @@ class HouseholdService {
     final code = rawCode.trim().toUpperCase();
     if (code.length < 4) throw ArgumentError('invalid_code');
 
+    await clearOrphanHouseholdLink();
     final existing = await householdIdForUser();
     if (existing != null) {
       throw StateError('already_in_household');
@@ -375,6 +377,10 @@ class HouseholdService {
     if (uid == null) return;
 
     final householdRef = _households.doc(householdId);
+    // Read invite code before the transaction may delete the household doc.
+    final before = await householdRef.get();
+    final inviteCode = before.data()?['inviteCode'] as String?;
+
     await _db.runTransaction((tx) async {
       final h = await tx.get(householdRef);
       if (!h.exists) return;
@@ -400,14 +406,31 @@ class HouseholdService {
       }
     });
 
-    final code = (await householdRef.get()).data()?['inviteCode'] as String?;
-    if (code != null) {
+    if (inviteCode != null && inviteCode.isNotEmpty) {
       final remaining = await householdRef.get();
       if (!remaining.exists) {
-        await _db.collection('household_invites').doc(code).delete();
+        try {
+          await _db.collection('household_invites').doc(inviteCode).delete();
+        } catch (e, st) {
+          debugPrint('delete household invite: $e\n$st');
+        }
       }
     }
 
+    await _userRef(uid).set({
+      'householdId': FieldValue.delete(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  /// Clears a stale user.householdId when the household document is gone.
+  Future<void> clearOrphanHouseholdLink() async {
+    final uid = _uid;
+    if (uid == null) return;
+    final id = await householdIdForUser();
+    if (id == null || id.isEmpty) return;
+    final snap = await _households.doc(id).get();
+    if (snap.exists) return;
     await _userRef(uid).set({
       'householdId': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -506,16 +529,28 @@ class HouseholdService {
     required String currency,
     DateTime? monthStart,
     DateTime? monthEnd,
+    Map<String, double> ratesToBase = const {},
   }) {
+    final base = currency.toUpperCase();
+    double? inBase(SharedEntry e) {
+      final code = e.currency.toUpperCase();
+      if (code == base) return e.amount;
+      final rate = ratesToBase[code];
+      if (rate == null) return null; // skip unknown FX rather than mixing units
+      return e.amount * rate;
+    }
+
     var mine = 0.0;
     var theirs = 0.0;
     for (final e in entries) {
       if (monthStart != null && e.date.isBefore(monthStart)) continue;
       if (monthEnd != null && !e.date.isBefore(monthEnd)) continue;
+      final amount = inBase(e);
+      if (amount == null) continue;
       if (e.uid == myUid) {
-        mine += e.amount;
+        mine += amount;
       } else if (e.uid == partnerUid) {
-        theirs += e.amount;
+        theirs += amount;
       }
     }
     final diff = mine - theirs;

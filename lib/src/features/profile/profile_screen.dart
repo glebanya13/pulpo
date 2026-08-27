@@ -18,6 +18,7 @@ import '../settings/reminder_settings.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../auth/cloud_auth.dart';
+import '../auth/cloud_restore_prompt.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_upgrade_card.dart';
@@ -281,9 +282,41 @@ Future<void> _confirmDeleteAccount(
       ],
     ),
   );
-  if (confirmed != true) return;
+  if (confirmed != true || !context.mounted) return;
+
+  final cloud = ref.read(cloudAuthProvider);
+  final provider = cloud.primaryAuthProviderId();
+
+  // Soft notice before Apple/Google sheet or password prompt.
+  if (provider == 'apple.com' || provider == 'google.com') {
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (dctx) => AlertDialog(
+        title: Text(tr.deleteCloudAccountTitle),
+        content: Text(tr.deleteCloudConfirmIdentity),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dctx, false),
+            child: Text(tr.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dctx, true),
+            child: Text(tr.confirm),
+          ),
+        ],
+      ),
+    );
+    if (proceed != true || !context.mounted) return;
+  }
+
+  String? password;
+  if (provider == 'password') {
+    password = await _askDeletePassword(context, tr);
+    if (password == null || !context.mounted) return;
+  }
+
   try {
-    await ref.read(cloudAuthProvider).deleteCloudAccount();
+    await cloud.deleteCloudAccount(emailPassword: password);
     if (!context.mounted) return;
     final wipeLocal = await showDialog<bool>(
       context: context,
@@ -307,22 +340,17 @@ Future<void> _confirmDeleteAccount(
     );
     if (wipeLocal == true && context.mounted) {
       await ref.read(databaseProvider).resetAllData();
-      ref.read(settingsControllerProvider.notifier).reloadFromDisk();
+      refreshUiAfterMoneyRestore(ref);
     }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(tr.deleteCloudAccount)),
+      SnackBar(content: Text(tr.deleteCloudAccountOk)),
     );
+    context.go('/');
   } on FirebaseAuthException catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          e.code == 'requires-recent-login'
-              ? tr.deleteCloudAccountRelogin
-              : tr.deleteCloudAccountFailed,
-        ),
-      ),
+      SnackBar(content: Text(_deleteAccountError(tr, e))),
     );
   } catch (_) {
     if (!context.mounted) return;
@@ -330,6 +358,62 @@ Future<void> _confirmDeleteAccount(
       SnackBar(content: Text(tr.deleteCloudAccountFailed)),
     );
   }
+}
+
+String _deleteAccountError(Tr tr, FirebaseAuthException e) {
+  switch (e.code) {
+    case 'canceled':
+    case 'aborted':
+      return tr.authCanceled;
+    case 'wrong-password':
+    case 'invalid-credential':
+    case 'invalid-login-credentials':
+      return tr.authWrongPassword;
+    case 'requires-recent-login':
+    case 'password-required':
+    case 'no-reauth-provider':
+      return tr.deleteCloudAccountRelogin;
+    default:
+      return tr.deleteCloudAccountFailed;
+  }
+}
+
+Future<String?> _askDeletePassword(BuildContext context, Tr tr) async {
+  final controller = TextEditingController();
+  final result = await showDialog<String>(
+    context: context,
+    builder: (dctx) => AlertDialog(
+      title: Text(tr.deleteCloudAccountTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(tr.deleteCloudEnterPassword),
+          const SizedBox(height: 12),
+          TextField(
+            controller: controller,
+            obscureText: true,
+            autofocus: true,
+            decoration: InputDecoration(labelText: tr.password),
+            onSubmitted: (v) => Navigator.pop(dctx, v.trim()),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dctx),
+          child: Text(tr.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dctx, controller.text.trim()),
+          child: Text(tr.confirm),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  if (result == null || result.isEmpty) return null;
+  return result;
 }
 
 class _ProfileAvatar extends StatelessWidget {

@@ -20,6 +20,7 @@ class SettingsService {
   static const _kDailyReminderHour = 'daily_reminder_hour';
   static const _kDailyReminderMinute = 'daily_reminder_minute';
   static const _kSmartReminders = 'smart_reminders';
+  static const _kDemoData = 'is_demo_data';
 
   bool get onboardingDone => _prefs.getBool(_kOnboardingDone) ?? false;
   Future<void> setOnboardingDone(bool v) =>
@@ -101,6 +102,10 @@ class SettingsService {
   bool get smartRemindersEnabled => _prefs.getBool(_kSmartReminders) ?? false;
   Future<void> setSmartRemindersEnabled(bool v) =>
       _prefs.setBool(_kSmartReminders, v);
+
+  /// Sample / App Review seed — must never be uploaded as the user's cloud data.
+  bool get isDemoData => _prefs.getBool(_kDemoData) ?? false;
+  Future<void> setDemoData(bool v) => _prefs.setBool(_kDemoData, v);
 }
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(

@@ -20,11 +20,19 @@ const kHomeWidgetIosName = 'PulpoWidget';
 const kHomeWidgetIosBudgetName = 'PulpoBudgetWidget';
 const kHomeWidgetIosChartName = 'PulpoChartWidget';
 
+const kHomeWidgetAppGroup = 'group.com.pulpo.widget';
+
 Future<void> configureHomeWidget() async {
-  // iOS App Groups require regenerating the Codemagic/"Monedero" provisioning
-  // profile after enabling the capability on com.pulpo.app. Until then,
-  // keep Runner.entitlements free of application-groups so IPA signing works.
   if (kIsWeb) return;
+  // App Group `group.com.pulpo.widget` must exist on the Apple Developer
+  // App ID + provisioning profile before adding it to Runner.entitlements.
+  // Until then, skip setAppGroupId so IPA signing stays green.
+  if (Platform.isIOS) return;
+  try {
+    await HomeWidget.setAppGroupId(kHomeWidgetAppGroup);
+  } catch (e, st) {
+    debugPrint('home widget group: $e\n$st');
+  }
 }
 
 class HomeWidgetBinder extends ConsumerStatefulWidget {
@@ -98,7 +106,9 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
     required Tr tr,
     required WidgetSnapshot snap,
   }) async {
-    if (kIsWeb || Platform.isIOS) return;
+    if (kIsWeb) return;
+    // iOS WidgetKit needs App Groups on the signing profile; Android works now.
+    if (Platform.isIOS) return;
     try {
       await HomeWidget.saveWidgetData<String>('balance', snap.balance);
       await HomeWidget.saveWidgetData<String>('spent', snap.spent);

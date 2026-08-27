@@ -90,9 +90,17 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       await ctrl.setBiometrics(false);
       return;
     }
-    // Always attempt Face ID / fingerprint. iOS often reports empty enrolled
-    // biometrics even when Face ID works; blocking on canCheck alone was wrong.
-    final ok = await ctrl.enableBiometrics(localizedReason: tr.biometricLockHint);
+    // Face ID without a PIN has no in-app escape hatch if biometrics fail.
+    if (!ref.read(lockControllerProvider).pinEnabled) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr.biometricsNeedPin)),
+      );
+      final enabled = await _askPin();
+      if (enabled != true || !mounted) return;
+    }
+    final ok =
+        await ctrl.enableBiometrics(localizedReason: tr.biometricLockHint);
     if (!ok && mounted) {
       final available = await ctrl.deviceHasBiometrics();
       if (!mounted) return;

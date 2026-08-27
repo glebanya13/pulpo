@@ -43,10 +43,24 @@ class _SharedBudgetScreenState extends ConsumerState<SharedBudgetScreen> {
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final signedIn = ref.watch(authUserProvider).valueOrNull != null;
-    final householdId = ref.watch(householdIdProvider).valueOrNull;
-    final household = ref.watch(householdSnapshotProvider).valueOrNull;
+    final idAsync = ref.watch(householdIdProvider);
+    final hhAsync = ref.watch(householdSnapshotProvider);
+    final householdId = idAsync.valueOrNull;
+    final household = hhAsync.valueOrNull;
     final entries = ref.watch(sharedEntriesProvider).valueOrNull ?? const [];
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
+    final fx = ref.watch(fxRatesToBaseProvider(currency)).valueOrNull;
+
+    ref.listen(householdSnapshotProvider, (prev, next) {
+      final id = ref.read(householdIdProvider).valueOrNull;
+      if (id != null && next.hasValue && next.value == null) {
+        ref.read(householdServiceProvider).clearOrphanHouseholdLink();
+      }
+    });
+
+    final loadingHousehold = signedIn &&
+        (idAsync.isLoading ||
+            (householdId != null && hhAsync.isLoading && !hhAsync.hasValue));
 
     return Scaffold(
       body: StickyScrollPage(
@@ -67,6 +81,11 @@ class _SharedBudgetScreenState extends ConsumerState<SharedBudgetScreen> {
             const SizedBox(height: 20),
             if (!signedIn)
               _SignInCard(onTap: () => context.push('/settings/account'))
+            else if (loadingHousehold)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              )
             else if (householdId == null || household == null)
               _SetupCard(
                 codeCtrl: _codeCtrl,
@@ -92,6 +111,7 @@ class _SharedBudgetScreenState extends ConsumerState<SharedBudgetScreen> {
                 household: household,
                 entries: entries,
                 currency: currency,
+                ratesToBase: fx?.rates ?? {currency.toUpperCase(): 1.0},
                 busy: _busy,
                 onSync: () => _syncExpenses(household.id),
                 onLeave: () => _run(() async {
@@ -144,7 +164,7 @@ class _SharedBudgetScreenState extends ConsumerState<SharedBudgetScreen> {
         _ when '$e'.contains('household_full') => tr.sharedBudgetFull,
         _ when '$e'.contains('already_in_household') =>
           tr.sharedBudgetAlreadyJoined,
-        _ => tr.errorTitle,
+        _ => tr.sharedBudgetFailed,
       };
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
@@ -269,6 +289,7 @@ class _ActiveHouseholdView extends ConsumerWidget {
     required this.household,
     required this.entries,
     required this.currency,
+    required this.ratesToBase,
     required this.busy,
     required this.onSync,
     required this.onLeave,
@@ -278,6 +299,7 @@ class _ActiveHouseholdView extends ConsumerWidget {
   final HouseholdSnapshot household;
   final List<SharedEntry> entries;
   final String currency;
+  final Map<String, double> ratesToBase;
   final bool busy;
   final VoidCallback onSync;
   final VoidCallback onLeave;
@@ -304,6 +326,7 @@ class _ActiveHouseholdView extends ConsumerWidget {
       currency: currency,
       monthStart: monthStart,
       monthEnd: monthEnd,
+      ratesToBase: ratesToBase,
     );
 
     final myCats = HouseholdService.topCategoriesForUser(entries, myUid);

@@ -299,7 +299,7 @@ Future<void> _openEditor(
                     if (name.isEmpty || amount <= 0) {
                       if (!ctx.mounted) return;
                       ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(content: Text(tr.errorTitle)),
+                        SnackBar(content: Text(tr.formIncomplete)),
                       );
                       return;
                     }

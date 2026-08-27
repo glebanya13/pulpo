@@ -104,7 +104,7 @@ class _LockScreenState extends ConsumerState<LockScreen>
     if (next.length >= 4) {
       final ok = ref.read(lockControllerProvider.notifier).checkPin(next);
       if (ok) return;
-      if (next.length >= 8) {
+      if (next.length >= 6) {
         setState(() {
           _error = Tr.of(context).pinWrong;
           _pin = '';
@@ -148,7 +148,7 @@ class _LockScreenState extends ConsumerState<LockScreen>
               ? _PinLockBody(
                   title: tr.enterPin,
                   error: _error,
-                  pinLength: lock.pinLengthKnown ? lock.pinLength : 8,
+                  pinLength: lock.pinLengthKnown ? lock.pinLength : 6,
                   pin: _pin,
                   onPinChanged: _onPin,
                   showBiometrics: lock.biometricsEnabled,

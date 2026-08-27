@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -148,11 +149,96 @@ class CloudAuth {
     await _auth.signOut();
   }
 
-  Future<void> deleteCloudAccount() async {
+  /// Fresh credential required by Apple/Firebase before [User.delete].
+  Future<void> reauthenticate({String? emailPassword}) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw FirebaseAuthException(code: 'no-current-user');
     }
+
+    final providers = user.providerData.map((p) => p.providerId).toSet();
+
+    if (providers.contains('apple.com')) {
+      await _reauthApple(user);
+      return;
+    }
+    if (providers.contains('google.com')) {
+      await _reauthGoogle(user);
+      return;
+    }
+    if (providers.contains('password')) {
+      final email = user.email?.trim();
+      final password = emailPassword?.trim();
+      if (email == null || email.isEmpty || password == null || password.isEmpty) {
+        throw FirebaseAuthException(code: 'password-required');
+      }
+      final cred = EmailAuthProvider.credential(email: email, password: password);
+      await user.reauthenticateWithCredential(cred);
+      return;
+    }
+
+    throw FirebaseAuthException(code: 'no-reauth-provider');
+  }
+
+  Future<void> _reauthApple(User user) async {
+    if (!kIsWeb && Platform.isIOS) {
+      final apple = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+      final oauth = OAuthProvider('apple.com').credential(
+        idToken: apple.identityToken,
+        accessToken: apple.authorizationCode,
+      );
+      await user.reauthenticateWithCredential(oauth);
+      return;
+    }
+    final provider = AppleAuthProvider()
+      ..addScope('email')
+      ..addScope('name');
+    await user.reauthenticateWithProvider(provider);
+  }
+
+  Future<void> _reauthGoogle(User user) async {
+    final google = GoogleSignIn(
+      scopes: const ['email', 'profile'],
+      serverClientId: AppInfo.googleServerClientId,
+      clientId: !kIsWeb && Platform.isIOS
+          ? DefaultFirebaseOptions.ios.iosClientId
+          : null,
+    );
+    final account = await google.signIn();
+    if (account == null) {
+      throw FirebaseAuthException(code: 'canceled');
+    }
+    final tokens = await account.authentication;
+    final cred = GoogleAuthProvider.credential(
+      idToken: tokens.idToken,
+      accessToken: tokens.accessToken,
+    );
+    await user.reauthenticateWithCredential(cred);
+  }
+
+  /// Primary sign-in provider for UI (apple / google / password).
+  String? primaryAuthProviderId() {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    final ids = user.providerData.map((p) => p.providerId).toSet();
+    if (ids.contains('apple.com')) return 'apple.com';
+    if (ids.contains('google.com')) return 'google.com';
+    if (ids.contains('password')) return 'password';
+    return ids.isEmpty ? null : ids.first;
+  }
+
+  Future<void> deleteCloudAccount({String? emailPassword}) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(code: 'no-current-user');
+    }
+    // Always reauth first — Apple/Firebase reject stale sessions on delete.
+    await reauthenticate(emailPassword: emailPassword);
     final uid = user.uid;
     try {
       await _ref.read(householdServiceProvider).purgeUserSharedData();
@@ -230,11 +316,24 @@ class CloudAuth {
       debugPrint('CloudAuth.uploadMoney: skipped (restore hold)');
       return;
     }
-    final snapshot = await _ref.read(backupServiceProvider).snapshot();
+    final backup = _ref.read(backupServiceProvider);
+    if (await backup.looksLikeDemoData()) {
+      debugPrint('CloudAuth.uploadMoney: skipped (demo data)');
+      return;
+    }
+    // After scrubbing demo we briefly have a single empty cash account —
+    // never push that over a real cloud snapshot.
+    if (!await backup.hasLocalMoneyData()) {
+      debugPrint('CloudAuth.uploadMoney: skipped (no real local money)');
+      return;
+    }
+    final snapshot = await backup.snapshot();
     final payload = jsonDecode(jsonEncode(snapshot)) as Map<String, dynamic>;
     await _moneyRef(user.uid).set({
       'updatedAt': FieldValue.serverTimestamp(),
       'payload': payload,
+      'accountCount': (payload['accounts'] as List?)?.length ?? 0,
+      'transactionCount': (payload['transactions'] as List?)?.length ?? 0,
     });
   }
 
@@ -243,12 +342,28 @@ class CloudAuth {
     if (user == null) return false;
     final payload = await _readMoneyPayload();
     if (payload == null) return false;
+    return _restoreMoneyPayload(user.uid, payload);
+  }
+
+  /// Restore an already-fetched payload (avoids a second Firestore round-trip).
+  Future<bool> _restoreMoneyPayload(
+    String uid,
+    Map<String, dynamic> payload,
+  ) async {
+    if (BackupService.payloadLooksLikeDemo(payload)) {
+      debugPrint('CloudAuth._restoreMoneyPayload: remote is demo — discarding');
+      try {
+        await _moneyRef(uid).delete();
+      } catch (_) {}
+      return false;
+    }
     final txCount = (payload['transactions'] as List?)?.length ?? 0;
     final accCount = (payload['accounts'] as List?)?.length ?? 0;
     debugPrint(
-      'CloudAuth.downloadMoney: restoring accounts=$accCount txs=$txCount',
+      'CloudAuth._restoreMoneyPayload: restoring accounts=$accCount txs=$txCount',
     );
     await _ref.read(backupServiceProvider).restoreFromMap(payload);
+    await _ref.read(settingsServiceProvider).setDemoData(false);
     return true;
   }
 
@@ -345,9 +460,39 @@ class CloudAuth {
     }
   }
 
+  /// If the signed-in device still has sample data (e.g. demo was restored
+  /// before this fix), wipe it and prefer a real cloud snapshot.
+  Future<void> scrubDemoIfSignedIn() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    final backup = _ref.read(backupServiceProvider);
+    if (!await backup.looksLikeDemoData()) return;
+    debugPrint('CloudAuth.scrubDemoIfSignedIn: clearing leftover demo');
+    await backup.clearDemoData();
+    final meta = await peekCloudSnapshotMeta();
+    final payload = meta?.payload;
+    if (payload != null && !BackupService.payloadLooksLikeDemo(payload)) {
+      await _restoreMoneyPayload(user.uid, payload);
+    } else if (payload != null && BackupService.payloadLooksLikeDemo(payload)) {
+      try {
+        await _moneyRef(user.uid).delete();
+      } catch (_) {}
+    }
+    refreshUiAfterMoneyRestoreRef(_ref);
+  }
+
   Future<void> syncOnLogin() async {
     final user = _auth.currentUser;
     if (user == null) return;
+    final backup = _ref.read(backupServiceProvider);
+
+    // Sample / review data must never become the signed-in user's cloud data.
+    final localWasDemo = await backup.looksLikeDemoData();
+    if (localWasDemo) {
+      debugPrint('CloudAuth.syncOnLogin: clearing local demo before sync');
+      await backup.clearDemoData();
+    }
+
     DocumentSnapshot<Map<String, dynamic>> remote;
     try {
       remote = await _moneyRef(user.uid).get(
@@ -357,13 +502,55 @@ class CloudAuth {
       debugPrint('CloudAuth.syncOnLogin server read failed: $e\n$st');
       remote = await _moneyRef(user.uid).get();
     }
-    if (!remote.exists) {
-      await uploadMoney();
-    } else {
-      // Hold uploads until the user picks cloud vs local (see CloudLoginSyncBinder).
-      _ref.read(cloudUploadHoldProvider.notifier).state = true;
-      _ref.read(pendingCloudRestoreProvider.notifier).state = true;
+
+    Map<String, dynamic>? remotePayload;
+    var hasRealCloud = remote.exists;
+    if (hasRealCloud) {
+      final raw = remote.data()?['payload'];
+      if (raw is Map) {
+        remotePayload = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
+        if (BackupService.payloadLooksLikeDemo(remotePayload)) {
+          debugPrint('CloudAuth.syncOnLogin: deleting demo cloud snapshot');
+          try {
+            await _moneyRef(user.uid).delete();
+          } catch (_) {}
+          hasRealCloud = false;
+          remotePayload = null;
+        }
+      }
     }
+
+    var refreshed = false;
+    if (hasRealCloud) {
+      // After clearDemo, hasLocalMoneyData is false (single empty cash) —
+      // treat that like a fresh login and take cloud without a conflict dialog.
+      if (localWasDemo || !await backup.hasLocalMoneyData()) {
+        final ok = remotePayload != null
+            ? await _restoreMoneyPayload(user.uid, remotePayload)
+            : await downloadMoney();
+        if (ok) {
+          refreshUiAfterMoneyRestoreRef(_ref);
+          refreshed = true;
+        }
+      } else {
+        _ref.read(cloudUploadHoldProvider.notifier).state = true;
+        _ref.read(pendingCloudRestoreProvider.notifier).state = true;
+      }
+    } else if (await backup.hasLocalMoneyData()) {
+      await uploadMoney();
+    }
+
+    // clearDemo leaves one cash account (hasLocalMoneyData == false), so the
+    // branches above may not refresh — always refresh after wiping demo.
+    if (localWasDemo && !refreshed) {
+      refreshUiAfterMoneyRestoreRef(_ref);
+    }
+
+    // Don't block sign-in on assistant history — chat screen syncs on open.
+    unawaited(_syncAssistantQuietly());
+  }
+
+  Future<void> _syncAssistantQuietly() async {
     try {
       await _ref.read(assistantChatRepositoryProvider).syncWithCloud();
     } catch (_) {}

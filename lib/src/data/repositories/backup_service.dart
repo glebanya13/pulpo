@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/l10n/tr.dart';
 import '../db/app_database.dart';
 import '../db/enums.dart';
 import 'providers.dart';
@@ -49,11 +50,68 @@ class BackupService {
   }
 
   Future<bool> hasLocalMoneyData() async {
+    if (_settings.isDemoData) return false;
+    if (await looksLikeDemoData()) return false;
     final txs = await (_db.select(_db.transactions)..limit(1)).get();
     if (txs.isNotEmpty) return true;
     final accounts = await _db.select(_db.accounts).get();
     // More than a single default cash account ⇒ user has set something up.
     return accounts.length > 1;
+  }
+
+  /// True when local DB matches the App Review sample (or the demo flag is set).
+  Future<bool> looksLikeDemoData() async {
+    if (_settings.isDemoData) return true;
+    final accounts = await _db.select(_db.accounts).get();
+    if (accounts.length != 2) return false;
+    final balances = accounts.map((a) => a.initialBalance).toSet();
+    if (!balances.contains(420) || !balances.contains(1860)) return false;
+    final txs = await _db.select(_db.transactions).get();
+    if (txs.length < 5 || txs.length > 12) return false;
+    return true;
+  }
+
+  /// Wipe sample money data and clear the demo flag. Leaves categories.
+  Future<void> clearDemoData() async {
+    await _db.transaction(() async {
+      await _db.delete(_db.transactionTags).go();
+      await _db.delete(_db.tags).go();
+      await _db.delete(_db.transactions).go();
+      await _db.delete(_db.budgets).go();
+      await _db.delete(_db.goals).go();
+      await _db.delete(_db.debts).go();
+      await _db.delete(_db.recurringRules).go();
+      await _db.delete(_db.subscriptions).go();
+      await _db.delete(_db.accounts).go();
+    });
+    await _settings.setDemoData(false);
+    // One empty cash account so the app isn't a blank crash pad.
+    final currency = _settings.baseCurrency;
+    final cashName = Tr.fromLang(_settings.locale).accountTypeCash;
+    await _db.into(_db.accounts).insert(
+          AccountsCompanion.insert(
+            name: cashName,
+            type: 0, // AccountType.cash
+            currency: currency,
+            initialBalance: const Value(0),
+            icon: const Value('wallet'),
+            color: const Value(0xFF3DDC84),
+          ),
+        );
+  }
+
+  static bool payloadLooksLikeDemo(Map<String, dynamic> payload) {
+    final accounts = (payload['accounts'] as List? ?? const [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+    if (accounts.length != 2) return false;
+    final balances = accounts
+        .map((a) => (a['initialBalance'] as num?)?.toDouble() ?? 0)
+        .toSet();
+    if (!balances.contains(420) || !balances.contains(1860)) return false;
+    final txs = payload['transactions'] as List? ?? const [];
+    if (txs.length < 5 || txs.length > 12) return false;
+    return true;
   }
 
   Future<({int accounts, int transactions})> localCounts() async {

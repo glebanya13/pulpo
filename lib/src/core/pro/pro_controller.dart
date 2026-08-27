@@ -102,6 +102,7 @@ class ProState {
 class ProController extends Notifier<ProState> {
   StreamSubscription<List<PurchaseDetails>>? _sub;
   var _listening = false;
+  Completer<bool>? _restoreWait;
 
   SharedPreferences get _prefs => ref.read(sharedPreferencesProvider);
 
@@ -282,9 +283,12 @@ class ProController extends Notifier<ProState> {
     for (final p in purchases) {
       if (!ProProducts.ids.contains(p.productID)) continue;
 
+      var finishPurchase = false;
+
       if (p.status == PurchaseStatus.purchased ||
           p.status == PurchaseStatus.restored) {
         if (FirebaseAuth.instance.currentUser == null) {
+          // Keep pending so a later signed-in restore can still verify.
           error = 'sign_in_required';
         } else {
           try {
@@ -299,6 +303,7 @@ class ProController extends Notifier<ProState> {
                     );
             if (result.entitled && result.expiresAt != null) {
               verifiedAny = true;
+              finishPurchase = true;
               await _writeLocalEntitlement(
                 entitled: true,
                 productId: result.productId ?? p.productID,
@@ -310,22 +315,37 @@ class ProController extends Notifier<ProState> {
                 purchasing: false,
                 clearError: true,
               );
+            } else {
+              // Store accepted it but backend denied — finish to avoid loops.
+              finishPurchase = true;
             }
           } catch (e, st) {
             debugPrint('verify purchase: $e\n$st');
             error = e.toString();
+            // Network / verify failure: do not completePurchase so it retries.
           }
         }
       } else if (p.status == PurchaseStatus.error) {
         error = p.error?.message ?? 'purchase error';
+        finishPurchase = true;
+      } else if (p.status == PurchaseStatus.canceled) {
+        finishPurchase = true;
       }
 
-      if (p.pendingCompletePurchase) {
+      if (finishPurchase && p.pendingCompletePurchase) {
         try {
           await InAppPurchase.instance.completePurchase(p);
         } catch (e, st) {
           debugPrint('iap complete: $e\n$st');
         }
+      }
+    }
+
+    final wait = _restoreWait;
+    if (wait != null && !wait.isCompleted) {
+      final relevant = purchases.any((p) => ProProducts.ids.contains(p.productID));
+      if (relevant || verifiedAny) {
+        wait.complete(verifiedAny || state.isPro);
       }
     }
 
@@ -372,16 +392,23 @@ class ProController extends Notifier<ProState> {
     }
 
     state = state.copyWith(purchasing: true, clearError: true);
+    final wait = Completer<bool>();
+    _restoreWait = wait;
     try {
       await InAppPurchase.instance.restorePurchases();
-      await Future<void>.delayed(const Duration(milliseconds: 1200));
-      final isProNow = ref.read(proControllerProvider).isPro;
+      final ok = await wait.future.timeout(
+        const Duration(seconds: 8),
+        onTimeout: () => state.isPro,
+      );
       state = state.copyWith(purchasing: false);
-      return isProNow;
+      return ok || state.isPro;
     } catch (e, st) {
       debugPrint('iap restore: $e\n$st');
       state = state.copyWith(purchasing: false, error: e.toString());
       return false;
+    } finally {
+      if (identical(_restoreWait, wait)) _restoreWait = null;
+      if (!wait.isCompleted) wait.complete(state.isPro);
     }
   }
 

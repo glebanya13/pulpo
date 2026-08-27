@@ -283,7 +283,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(tr.errorTitle)),
+                      SnackBar(content: Text(tr.cloudBackupFailed)),
                     );
                   }
                 }

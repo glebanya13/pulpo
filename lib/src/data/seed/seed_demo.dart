@@ -286,6 +286,7 @@ Future<void> startWithoutAccount(BuildContext context, WidgetRef ref) async {
           color: 0xFF3DDC84,
         );
   }
+  await ref.read(settingsServiceProvider).setDemoData(false);
   if (context.mounted) context.go('/');
 }
 
@@ -307,5 +308,6 @@ Future<void> startLocalDemo(BuildContext context, WidgetRef ref) async {
     currency: 'EUR',
     locale: locale,
   );
+  await ref.read(settingsServiceProvider).setDemoData(true);
   if (context.mounted) context.go('/');
 }

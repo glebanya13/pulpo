@@ -105,6 +105,10 @@ class Tr {
   String get deleteCloudAccountBody => _get('delete_cloud_account_body');
   String get deleteCloudAccountRelogin => _get('delete_cloud_account_relogin');
   String get deleteCloudAccountFailed => _get('delete_cloud_account_failed');
+  String get deleteCloudAccountOk => _get('delete_cloud_account_ok');
+  String get deleteCloudConfirmIdentity =>
+      _get('delete_cloud_confirm_identity');
+  String get deleteCloudEnterPassword => _get('delete_cloud_enter_password');
   String get authFailed => _get('auth_failed');
   String get authInvalidEmail => _get('auth_invalid_email');
   String get authWeakPassword => _get('auth_weak_password');
@@ -132,6 +136,7 @@ class Tr {
   String get autoLockHint => _get('auto_lock_hint');
   String get biometricsUnavailable => _get('biometrics_unavailable');
   String get biometricsFailed => _get('biometrics_failed');
+  String get biometricsNeedPin => _get('biometrics_need_pin');
   String get enterPin => _get('enter_pin');
   String get setPin => _get('set_pin');
   String get confirmPin => _get('confirm_pin');
@@ -607,6 +612,8 @@ class Tr {
   String get exportTotalIncome => _get('export_total_income');
   String get exportTotalExpense => _get('export_total_expense');
   String get exportNet => _get('export_net');
+  String get exportFailed => _get('export_failed');
+  String get formIncomplete => _get('form_incomplete');
   String get tagsLabel => _get('tags_label');
   String get tagsHint => _get('tags_hint');
   String proExpires(String date) => _get('pro_expires').replaceAll('{}', date);
@@ -631,6 +638,7 @@ class Tr {
   String get sharedBudgetInvalidCode => _get('shared_budget_invalid_code');
   String get sharedBudgetFull => _get('shared_budget_full');
   String get sharedBudgetAlreadyJoined => _get('shared_budget_already_joined');
+  String get sharedBudgetFailed => _get('shared_budget_failed');
   String get sharedBudgetWaitingPartner => _get('shared_budget_waiting');
   String get youLabel => _get('you_label');
   String get widgetBudgetLeft => _get('widget_budget_left');
@@ -652,6 +660,7 @@ class Tr {
   String get proRestore => _get('pro_restore');
   String get proSignInRequired => _get('pro_sign_in_required');
   String get proRestoreEmpty => _get('pro_restore_empty');
+  String get proRestoreOk => _get('pro_restore_ok');
   String get proLegalNotice => _get('pro_legal_notice');
   String get proYearly => _get('pro_yearly');
   String get proMonthly => _get('pro_monthly');
@@ -1192,6 +1201,8 @@ class Tr {
       'export_total_income': 'Total ingresos',
       'export_total_expense': 'Total gastos',
       'export_net': 'Balance',
+      'export_failed': 'No se pudo exportar',
+      'form_incomplete': 'Revisa el nombre y el importe',
       'tags_label': 'Etiquetas',
       'tags_hint': 'viaje, trabajo…',
       'import_duplicates_skipped': 'Duplicados omitidos: {}',
@@ -1217,6 +1228,7 @@ class Tr {
       'shared_budget_invalid_code': 'Código no válido',
       'shared_budget_full': 'Este presupuesto ya tiene pareja',
       'shared_budget_already_joined': 'Ya estás en un presupuesto compartido',
+      'shared_budget_failed': 'No se pudo actualizar el presupuesto compartido',
       'shared_budget_waiting': 'Esperando pareja…',
       'shared_budget_synced': 'Sincronizados {} gastos',
       'shared_budget_partner_owes': 'Tu pareja te debe {}',
@@ -1253,8 +1265,12 @@ class Tr {
       'delete_cloud_account_body':
           'Se borrará el login (Apple, Google o email), la copia en la nube, tu participación en el presupuesto compartido y tus gastos compartidos. Los datos locales en este dispositivo se quedan. No se puede deshacer.',
       'delete_cloud_account_relogin':
-          'Por seguridad, inicia sesión otra vez y vuelve a intentar. Apple y Google piden una sesión reciente.',
+          'Confirma tu identidad (Apple, Google o contraseña) para eliminar la cuenta.',
+      'delete_cloud_confirm_identity':
+          'Para eliminar la cuenta debes confirmar el acceso. Continúa con el mismo método de inicio de sesión.',
+      'delete_cloud_enter_password': 'Introduce tu contraseña para confirmar',
       'delete_cloud_account_failed': 'No se pudo eliminar la cuenta',
+      'delete_cloud_account_ok': 'Cuenta eliminada',
       'auth_failed': 'No se pudo iniciar sesión',
       'auth_invalid_email': 'Email no válido',
       'auth_weak_password': 'La contraseña es demasiado corta',
@@ -1282,6 +1298,7 @@ class Tr {
       'auto_lock_hint': 'Bloquear al salir de la app',
       'biometrics_unavailable': 'La biometría no está disponible en este dispositivo',
       'biometrics_failed': 'No se pudo activar la biometría',
+      'biometrics_need_pin': 'Crea un PIN primero — es el respaldo si Face ID o la huella fallan',
       'enter_pin': 'Introduce el PIN',
       'set_pin': 'Crear PIN',
       'confirm_pin': 'Confirma el PIN',
@@ -1325,6 +1342,7 @@ class Tr {
       'pro_restore': 'Restaurar compras',
       'pro_sign_in_required': 'Inicia sesión para activar Pro',
       'pro_restore_empty': 'No se encontraron compras activas',
+      'pro_restore_ok': 'Compras restauradas',
       'pro_legal_notice':
           'El pago se carga a tu Apple ID. La suscripción se renueva automáticamente salvo que la canceles al menos 24 h antes del final del periodo. Gestiona o cancela en Ajustes → Apple ID → Suscripciones. Si compras durante la prueba, pierdes el resto de días gratis. Al continuar aceptas los Términos y la Política de privacidad.',
       'pro_yearly': 'Anual',
@@ -1824,6 +1842,8 @@ class Tr {
       'export_total_income': 'Всего доходов',
       'export_total_expense': 'Всего расходов',
       'export_net': 'Баланс',
+      'export_failed': 'Не удалось экспортировать',
+      'form_incomplete': 'Проверьте название и сумму',
       'tags_label': 'Теги',
       'tags_hint': 'отпуск, работа…',
       'import_duplicates_skipped': 'Пропущено дубликатов: {}',
@@ -1849,6 +1869,7 @@ class Tr {
       'shared_budget_invalid_code': 'Неверный код',
       'shared_budget_full': 'В этом бюджете уже есть партнёр',
       'shared_budget_already_joined': 'Вы уже в общем бюджете',
+      'shared_budget_failed': 'Не удалось обновить общий бюджет',
       'shared_budget_waiting': 'Ждём партнёра…',
       'shared_budget_synced': 'Синхронизировано {} трат',
       'shared_budget_partner_owes': 'Партнёр должен вам {}',
@@ -1885,8 +1906,12 @@ class Tr {
       'delete_cloud_account_body':
           'Будут удалены логин (Apple, Google или email), облачная копия, участие в общем бюджете и ваши общие расходы. Данные на этом телефоне останутся. Это нельзя отменить.',
       'delete_cloud_account_relogin':
-          'Из соображений безопасности войдите ещё раз и повторите. Apple и Google требуют недавний вход.',
+          'Подтвердите вход (Apple, Google или пароль), чтобы удалить аккаунт.',
+      'delete_cloud_confirm_identity':
+          'Чтобы удалить аккаунт, подтвердите доступ тем же способом входа.',
+      'delete_cloud_enter_password': 'Введите пароль для подтверждения',
       'delete_cloud_account_failed': 'Не удалось удалить аккаунт',
+      'delete_cloud_account_ok': 'Аккаунт удалён',
       'auth_failed': 'Не удалось войти',
       'auth_invalid_email': 'Некорректный email',
       'auth_weak_password': 'Пароль слишком короткий',
@@ -1914,6 +1939,7 @@ class Tr {
       'auto_lock_hint': 'Блокировать при выходе из приложения',
       'biometrics_unavailable': 'Биометрия на этом устройстве недоступна',
       'biometrics_failed': 'Не удалось включить биометрию',
+      'biometrics_need_pin': 'Сначала создайте PIN — запасной вход, если Face ID или отпечаток не сработают',
       'enter_pin': 'Введите PIN',
       'set_pin': 'Создать PIN',
       'confirm_pin': 'Повторите PIN',
@@ -1957,6 +1983,7 @@ class Tr {
       'pro_restore': 'Восстановить покупки',
       'pro_sign_in_required': 'Войдите в аккаунт, чтобы активировать Pro',
       'pro_restore_empty': 'Активных покупок не найдено',
+      'pro_restore_ok': 'Покупки восстановлены',
       'pro_legal_notice':
           'Оплата списывается с Apple ID. Подписка продлевается автоматически, если не отменить её минимум за 24 часа до конца периода. Управление: Настройки → Apple ID → Подписки. Покупка во время пробного периода отменяет оставшиеся дни триала. Продолжая, вы принимаете Условия использования и Политику конфиденциальности.',
       'pro_yearly': 'На год',
@@ -2456,6 +2483,8 @@ class Tr {
       'export_total_income': 'Total income',
       'export_total_expense': 'Total expenses',
       'export_net': 'Net',
+      'export_failed': 'Could not export',
+      'form_incomplete': 'Check the name and amount',
       'tags_label': 'Tags',
       'tags_hint': 'trip, work…',
       'import_duplicates_skipped': 'Duplicates skipped: {}',
@@ -2481,6 +2510,7 @@ class Tr {
       'shared_budget_invalid_code': 'Invalid code',
       'shared_budget_full': 'This budget already has a partner',
       'shared_budget_already_joined': 'You are already in a shared budget',
+      'shared_budget_failed': 'Could not update shared budget',
       'shared_budget_waiting': 'Waiting for partner…',
       'shared_budget_synced': 'Synced {} expenses',
       'shared_budget_partner_owes': 'Partner owes you {}',
@@ -2517,8 +2547,12 @@ class Tr {
       'delete_cloud_account_body':
           'Your Apple, Google or email login, cloud backup, shared-budget membership and your shared expenses will be removed from our servers. Data on this device stays. This cannot be undone.',
       'delete_cloud_account_relogin':
-          'For security, sign in again and retry. Apple and Google require a recent login.',
+          'Confirm your identity (Apple, Google, or password) to delete the account.',
+      'delete_cloud_confirm_identity':
+          'To delete the account, confirm access with the same sign-in method.',
+      'delete_cloud_enter_password': 'Enter your password to confirm',
       'delete_cloud_account_failed': 'Could not delete account',
+      'delete_cloud_account_ok': 'Account deleted',
       'auth_failed': 'Could not sign in',
       'auth_invalid_email': 'Invalid email',
       'auth_weak_password': 'Password is too short',
@@ -2546,6 +2580,7 @@ class Tr {
       'auto_lock_hint': 'Lock when you leave the app',
       'biometrics_unavailable': 'Biometrics are not available on this device',
       'biometrics_failed': 'Could not enable biometrics',
+      'biometrics_need_pin': 'Create a PIN first — it’s the backup if Face ID or fingerprint fails',
       'enter_pin': 'Enter PIN',
       'set_pin': 'Create PIN',
       'confirm_pin': 'Confirm PIN',
@@ -2589,6 +2624,7 @@ class Tr {
       'pro_restore': 'Restore purchases',
       'pro_sign_in_required': 'Sign in to activate Pro',
       'pro_restore_empty': 'No active purchases found',
+      'pro_restore_ok': 'Purchases restored',
       'pro_legal_notice':
           'Payment will be charged to your Apple ID. Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. Manage or cancel in Settings → Apple ID → Subscriptions. Any unused free trial is forfeited when you purchase. By continuing you agree to the Terms of Use and Privacy Policy.',
       'pro_yearly': 'Yearly',
@@ -3054,6 +3090,8 @@ class Tr {
       'export_total_income': 'Загальний дохід',
       'export_total_expense': 'Усього витрат',
       'export_net': 'Баланс',
+      'export_failed': 'Не вдалося експортувати',
+      'form_incomplete': 'Перевірте назву та суму',
       'tags_label': 'Теги',
       'tags_hint': 'відпустка, робота…',
       'import_duplicates_skipped': 'Пропущені дублікати: {}',
@@ -3078,6 +3116,7 @@ class Tr {
       'shared_budget_invalid_code': 'Невірний код',
       'shared_budget_full': 'У цьому бюджеті вже є партнер',
       'shared_budget_already_joined': 'Ви вже в загальному бюджеті',
+      'shared_budget_failed': 'Не вдалося оновити спільний бюджет',
       'shared_budget_waiting': 'Очікування партнера...',
       'shared_budget_synced': 'Синхронізовано {} витрат',
       'shared_budget_partner_owes': 'Партнер заборгував вам {}',
@@ -3111,8 +3150,11 @@ class Tr {
       'delete_cloud_account': 'Видалити хмарний акаунт',
       'delete_cloud_account_title': 'Видалити хмарний акаунт?',
       'delete_cloud_account_body': 'Логін (Apple, Google або електронна пошта), хмарна копія, участь у загальному бюджеті та ваші загальні витрати будуть видалені. Дані на цьому телефоні залишаться. Цю дію неможливо скасувати.',
-      'delete_cloud_account_relogin': 'З міркувань безпеки увійдіть ще раз і повторіть спробу. Apple і Google вимагають нещодавнього входу.',
+      'delete_cloud_account_relogin': 'Підтвердіть вхід (Apple, Google або пароль), щоб видалити акаунт.',
+      'delete_cloud_confirm_identity': 'Щоб видалити акаунт, підтвердіть доступ тим самим способом входу.',
+      'delete_cloud_enter_password': 'Введіть пароль для підтвердження',
       'delete_cloud_account_failed': 'Не вдалося видалити акаунт',
+      'delete_cloud_account_ok': 'Акаунт видалено',
       'auth_failed': 'Не вдалося увійти',
       'auth_invalid_email': 'Недійсна електронна адреса',
       'auth_weak_password': 'Пароль занадто короткий',
@@ -3140,6 +3182,7 @@ class Tr {
       'auto_lock_hint': 'Заблокувати під час виходу з додатка',
       'biometrics_unavailable': 'Біометрія на цьому пристрої недоступна',
       'biometrics_failed': 'Не вдалося ввімкнути біометрію',
+      'biometrics_need_pin': 'Спочатку створіть PIN — запасний вхід, якщо Face ID або відбиток не спрацюють',
       'enter_pin': 'Введіть PIN-код',
       'set_pin': 'Створити PIN-код',
       'confirm_pin': 'Повторіть PIN-код',
@@ -3180,6 +3223,7 @@ class Tr {
       'pro_restore': 'Відновити покупки',
       'pro_sign_in_required': 'Увійдіть в акаунт, щоб активувати Pro',
       'pro_restore_empty': 'Активних покупок не знайдено',
+      'pro_restore_ok': 'Покупки відновлено',
       'pro_legal_notice': 'Платіж буде стягнуто з вашого Apple ID. Підписка поновлюється автоматично, якщо її не скасовано принаймні за 24 години до закінчення періоду. Керування: налаштування → підписки → Apple ID. Придбання протягом пробного періоду скасує решту пробних днів. Продовжуючи, ви погоджуєтеся з Умовами використання та Політикою конфіденційності.',
       'pro_yearly': 'На рік',
       'pro_monthly': 'На місяць',

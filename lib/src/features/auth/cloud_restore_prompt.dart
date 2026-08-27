@@ -23,15 +23,35 @@ final cloudBackupFailedProvider = StateProvider<bool>((ref) => false);
 enum CloudRestoreChoice { useCloud, keepLocal, merge }
 
 void refreshUiAfterMoneyRestore(WidgetRef ref) {
-  ref.read(settingsControllerProvider.notifier).reloadFromDisk();
-  ref.invalidate(accountsProvider);
-  ref.invalidate(categoriesProvider);
-  ref.invalidate(allTransactionsProvider);
-  ref.invalidate(budgetsProvider);
-  ref.invalidate(goalsProvider);
-  ref.invalidate(debtsProvider);
-  ref.invalidate(recurringRulesProvider);
-  ref.invalidate(subscriptionsProvider);
+  _refreshMoneyUi(
+    reloadFromDisk: () =>
+        ref.read(settingsControllerProvider.notifier).reloadFromDisk(),
+    invalidate: ref.invalidate,
+  );
+}
+
+/// Same as [refreshUiAfterMoneyRestore] for non-widget [Ref] (e.g. CloudAuth).
+void refreshUiAfterMoneyRestoreRef(Ref ref) {
+  _refreshMoneyUi(
+    reloadFromDisk: () =>
+        ref.read(settingsControllerProvider.notifier).reloadFromDisk(),
+    invalidate: ref.invalidate,
+  );
+}
+
+void _refreshMoneyUi({
+  required void Function() reloadFromDisk,
+  required void Function(ProviderOrFamily provider) invalidate,
+}) {
+  reloadFromDisk();
+  invalidate(accountsProvider);
+  invalidate(categoriesProvider);
+  invalidate(allTransactionsProvider);
+  invalidate(budgetsProvider);
+  invalidate(goalsProvider);
+  invalidate(debtsProvider);
+  invalidate(recurringRulesProvider);
+  invalidate(subscriptionsProvider);
 }
 
 Future<void> showCloudRestoreDialog(BuildContext context, WidgetRef ref) async {
@@ -151,7 +171,7 @@ Future<void> showCloudRestoreDialog(BuildContext context, WidgetRef ref) async {
       debugPrint('showCloudRestoreDialog: $e\n$st');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr.errorTitle)),
+          SnackBar(content: Text(tr.restoreFailed)),
         );
       }
     }

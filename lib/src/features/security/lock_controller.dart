@@ -135,9 +135,12 @@ class LockController extends Notifier<LockState> {
   Future<void> clearPin() async {
     await _prefs.remove(_kPinHash);
     await _prefs.remove(_kPinLen);
+    // PIN is the escape hatch for Face ID failure — drop biometrics too.
+    await _prefs.setBool(_kBio, false);
     state = state.copyWith(
       pinEnabled: false,
-      unlocked: state.biometricsEnabled ? state.unlocked : true,
+      biometricsEnabled: false,
+      unlocked: true,
       pinLengthKnown: false,
     );
   }
@@ -146,7 +149,17 @@ class LockController extends Notifier<LockState> {
     final stored = _prefs.getString(_kPinHash);
     if (stored == null) return false;
     final ok = stored == _hash(pin);
-    if (ok) state = state.copyWith(unlocked: true);
+    if (ok) {
+      // Persist length so UI shows the right number of dots next time.
+      if (!state.pinLengthKnown) {
+        _prefs.setInt(_kPinLen, pin.length);
+      }
+      state = state.copyWith(
+        unlocked: true,
+        pinLength: pin.length,
+        pinLengthKnown: true,
+      );
+    }
     return ok;
   }
 
@@ -172,6 +185,7 @@ class LockController extends Notifier<LockState> {
   Future<bool> _authenticate({
     required bool sticky,
     String localizedReason = 'Monedero',
+    bool allowDeviceCredential = false,
   }) async {
     if (_authInProgress) return false;
     _authInProgress = true;
@@ -182,19 +196,19 @@ class LockController extends Notifier<LockState> {
         await _auth.stopAuthentication();
       } catch (_) {}
 
-      // biometricOnly: Face ID / Touch ID only (no device passcode sheet).
-      // Empty fallback title hides the "Enter Passcode" button on iOS.
+      // With a PIN set: Face ID only (PIN pad is the fallback).
+      // Bio-only legacy installs: allow device passcode so users aren't locked out.
       final ok = await _auth.authenticate(
         localizedReason: localizedReason,
         authMessages: <AuthMessages>[
           IOSAuthMessages(
-            localizedFallbackTitle: '',
+            localizedFallbackTitle: allowDeviceCredential ? 'Passcode' : '',
             lockOut: localizedReason,
           ),
           const AndroidAuthMessages(),
         ],
         options: AuthenticationOptions(
-          biometricOnly: true,
+          biometricOnly: !allowDeviceCredential,
           stickyAuth: sticky,
           sensitiveTransaction: false,
           useErrorDialogs: false,
@@ -206,7 +220,6 @@ class LockController extends Notifier<LockState> {
       return ok;
     } on PlatformException catch (e) {
       debugPrint('local_auth: ${e.code} ${e.message}');
-      // Locked out / not interactive — caller may retry after resume.
       return false;
     } finally {
       _authInProgress = false;
@@ -214,9 +227,11 @@ class LockController extends Notifier<LockState> {
   }
 
   Future<bool> enableBiometrics({String localizedReason = 'Monedero'}) async {
+    if (!state.pinEnabled) {
+      debugPrint('enableBiometrics: PIN required');
+      return false;
+    }
     try {
-      // Always attempt Face ID / fingerprint. Availability APIs are unreliable
-      // on iOS (empty enrolled list / canCheck=false while Face ID still works).
       final ok = await _authenticate(
         sticky: true,
         localizedReason: localizedReason,
@@ -270,6 +285,8 @@ class LockController extends Notifier<LockState> {
       final ok = await _authenticate(
         sticky: true,
         localizedReason: localizedReason,
+        // Legacy bio-without-PIN: device passcode escape hatch.
+        allowDeviceCredential: !state.pinEnabled,
       );
       if (ok) state = state.copyWith(unlocked: true);
       return ok;

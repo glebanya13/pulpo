@@ -207,7 +207,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(Tr.of(context).errorTitle)),
+        SnackBar(content: Text(Tr.of(context).exportFailed)),
       );
     } finally {
       if (mounted) setState(() => _busy = false);

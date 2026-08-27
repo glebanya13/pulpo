@@ -44,6 +44,12 @@ class _AutoSyncBinderState extends ConsumerState<AutoSyncBinder>
       backup: ref.read(backupServiceProvider),
     );
 
+    if (ref.read(authUserProvider).valueOrNull != null) {
+      try {
+        await ref.read(cloudAuthProvider).scrubDemoIfSignedIn();
+      } catch (_) {}
+    }
+
     if (!ref.read(proControllerProvider).isPro) return;
     if (!(prefs.getBool(AutoBackupKeys.cloudEnabled) ?? false)) return;
     if (ref.read(authUserProvider).valueOrNull == null) return;

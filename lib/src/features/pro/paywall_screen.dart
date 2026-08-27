@@ -332,7 +332,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       SnackBar(
         content: Text(
           restored
-              ? tr.proRestore
+              ? tr.proRestoreOk
               : (err?.contains('sign_in_required') == true
                   ? tr.proSignInRequired
                   : tr.proRestoreEmpty),
