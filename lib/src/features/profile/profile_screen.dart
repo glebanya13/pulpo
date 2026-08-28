@@ -44,71 +44,18 @@ class ProfileScreen extends ConsumerWidget {
           AppSpacing.lg,
           AppSpacing.xxl,
         ),
-        headerGap: 16,
-        header: PageHeader(
-          first: tr.profile,
+        headerGap: 20,
+        header: _ProfileStickyHeader(
           onBack: () => context.pop(),
+          userName: settings.userName,
+          subtitle: authUser?.email ??
+              '${tr.accountsCount(accounts.length)} · $currency',
+          localAvatarPath: settings.profileAvatarPath,
+          photoUrl: authUser?.photoURL,
+          onAvatarTap: () => openProfileAvatarSheet(context, ref),
+          onEditTap: () => openNameSheet(context, ref, tr),
         ),
         children: [
-
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: context.surface,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              ProfileAvatar(
-                name: settings.userName,
-                localPath: settings.profileAvatarPath,
-                photoUrl: authUser?.photoURL,
-                showEditBadge: true,
-                onTap: () => openProfileAvatarSheet(context, ref),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      settings.userName,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: context.primaryText,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      authUser?.email ??
-                          '${tr.accountsCount(accounts.length)} · $currency',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: context.mutedText,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Pressable(
-                onTap: () => openNameSheet(context, ref, tr),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: context.scaffoldBg,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(LucideIcons.pencil,
-                      size: 16, color: context.primaryText),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
         if (!isPro) ...[
           ProUpgradeCard(
             title: tr.proGo,
@@ -256,6 +203,109 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 24),
       ],
+      ),
+    );
+  }
+}
+
+class _ProfileStickyHeader extends StatelessWidget {
+  const _ProfileStickyHeader({
+    required this.onBack,
+    required this.userName,
+    required this.subtitle,
+    required this.localAvatarPath,
+    required this.photoUrl,
+    required this.onAvatarTap,
+    required this.onEditTap,
+  });
+
+  final VoidCallback onBack;
+  final String userName;
+  final String subtitle;
+  final String? localAvatarPath;
+  final String? photoUrl;
+  final VoidCallback onAvatarTap;
+  final VoidCallback onEditTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 10, 12, 12),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Pressable(
+            onTap: onBack,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: context.scaffoldBg,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                LucideIcons.arrowLeft,
+                size: 18,
+                color: context.primaryText,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          ProfileAvatar(
+            name: userName,
+            localPath: localAvatarPath,
+            photoUrl: photoUrl,
+            showEditBadge: true,
+            onTap: onAvatarTap,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  userName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: context.primaryText,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.mutedText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Pressable(
+            onTap: onEditTap,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: context.scaffoldBg,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                LucideIcons.pencil,
+                size: 16,
+                color: context.primaryText,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
