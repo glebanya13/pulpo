@@ -661,6 +661,14 @@ class Tr {
 
   String get proTitle => _get('pro_title');
   String get proSubtitle => _get('pro_subtitle');
+  String get proFeaturesHeading => _get('pro_features_heading');
+  String get proPaywallTrialFootnote => _get('pro_paywall_trial_footnote');
+  String get proStartFreeTrial => _get('pro_start_free_trial');
+  String proTrialBadge(int days) =>
+      _get('pro_trial_badge').replaceAll('{}', '$days');
+  String proDiscountBadge(int pct) =>
+      _get('pro_discount_badge').replaceAll('{}', '$pct');
+  String get proAllFeatures => _get('pro_all_features');
   List<String> get proFeatureBullets => [
         _get('pro_feature_accounts'),
         _get('pro_feature_ai'),
@@ -1360,7 +1368,14 @@ class Tr {
       'account_section': 'Cuenta',
       'pro_title': 'Monedero Pro',
       'pro_subtitle':
-          'Sin límites en cuentas, metas, informes, IA (recibos y voz), importación y copias en la nube.',
+          'Obtén acceso a todas las funciones de la aplicación sin restricciones.',
+      'pro_features_heading': 'FUNCIONES INCLUIDAS',
+      'pro_paywall_trial_footnote':
+          'Prueba gratis, luego renovación automática',
+      'pro_start_free_trial': 'Empezar prueba gratis',
+      'pro_trial_badge': '{} DÍAS GRATIS',
+      'pro_discount_badge': '−{}%',
+      'pro_all_features': 'Todas las funciones',
       'pro_feature_accounts': 'Cuentas, metas, presupuestos y deudas sin límite',
       'pro_feature_ai': 'Asistente IA: voz, recibos y chat',
       'pro_feature_reports': 'Informes, tendencias y flujos avanzados',
@@ -1378,7 +1393,7 @@ class Tr {
       'pro_yearly': 'Anual',
       'pro_monthly': 'Mensual',
       'pro_semi_annual': '6 meses',
-      'pro_yearly_save': 'Ahorra 44%',
+      'pro_yearly_save': 'Ahorra 48%',
       'pro_yearly_save_pct': 'Ahorra {}%',
       'pro_trial': '7 días de prueba gratis',
       'pro_trial_days': '{} días de prueba gratis',
@@ -2019,7 +2034,14 @@ class Tr {
       'account_section': 'Аккаунт',
       'pro_title': 'Monedero Pro',
       'pro_subtitle':
-          'Без лимитов на счета, цели, отчёты, ИИ (чеки и голос), импорт и облачные копии.',
+          'Получите доступ ко всем функциям приложения без ограничений.',
+      'pro_features_heading': 'ВКЛЮЧЁННЫЕ ФУНКЦИИ',
+      'pro_paywall_trial_footnote':
+          'Бесплатный период, затем автопродление',
+      'pro_start_free_trial': 'Начать бесплатный период',
+      'pro_trial_badge': '{} ДНЕЙ БЕСПЛАТНО',
+      'pro_discount_badge': '−{}%',
+      'pro_all_features': 'Все функции',
       'pro_feature_accounts': 'Счета, цели, бюджеты и долги без лимита',
       'pro_feature_ai': 'ИИ-ассистент: голос, чеки и чат',
       'pro_feature_reports': 'Отчёты, тренды и денежные потоки',
@@ -2037,7 +2059,7 @@ class Tr {
       'pro_yearly': 'На год',
       'pro_monthly': 'На месяц',
       'pro_semi_annual': '6 месяцев',
-      'pro_yearly_save': '−44%',
+      'pro_yearly_save': '−48%',
       'pro_yearly_save_pct': '−{}%',
       'pro_trial': '7 дней бесплатно',
       'pro_trial_days': '{} дней бесплатно',
@@ -2678,7 +2700,14 @@ class Tr {
       'account_section': 'Account',
       'pro_title': 'Monedero Pro',
       'pro_subtitle':
-          'Unlimited accounts, goals, reports, AI (receipts & voice), import and cloud backups.',
+          'Get access to all app features without restrictions.',
+      'pro_features_heading': 'INCLUDED FEATURES',
+      'pro_paywall_trial_footnote':
+          'Free trial, then auto-renewal',
+      'pro_start_free_trial': 'Start free trial',
+      'pro_trial_badge': '{} DAYS FREE',
+      'pro_discount_badge': '−{}%',
+      'pro_all_features': 'All features',
       'pro_feature_accounts': 'Unlimited accounts, goals, budgets and debts',
       'pro_feature_ai': 'AI assistant: voice, receipts and chat',
       'pro_feature_reports': 'Advanced reports, trends and cash flow',
@@ -2696,7 +2725,7 @@ class Tr {
       'pro_yearly': 'Yearly',
       'pro_monthly': 'Monthly',
       'pro_semi_annual': '6 months',
-      'pro_yearly_save': 'Save 44%',
+      'pro_yearly_save': 'Save 48%',
       'pro_yearly_save_pct': 'Save {}%',
       'pro_trial': '7-day free trial',
       'pro_trial_days': '{}-day free trial',
@@ -3295,7 +3324,15 @@ class Tr {
       'data_init_failed_banner': 'Помилка локальних даних, перезапустіть програму',
       'account_section': 'Акаунт',
       'pro_title': 'Monedero Pro',
-      'pro_subtitle': 'Без лімітів на рахунки, цілі, звіти, ШІ (чеки та голос), імпорт і хмарні копії.',
+      'pro_subtitle':
+          'Отримайте доступ до всіх функцій застосунку без обмежень.',
+      'pro_features_heading': 'ВКЛЮЧЕНІ ФУНКЦІЇ',
+      'pro_paywall_trial_footnote':
+          'Безкоштовний період, потім автопродовження',
+      'pro_start_free_trial': 'Почати безкоштовний період',
+      'pro_trial_badge': '{} ДНІВ БЕЗКОШТОВНО',
+      'pro_discount_badge': '−{}%',
+      'pro_all_features': 'Усі функції',
       'pro_feature_accounts': 'Рахунки, цілі, бюджети та борги без ліміту',
       'pro_feature_ai': 'ШІ-асистент: голос, чеки та чат',
       'pro_feature_reports': 'Звіти, тренди та грошові потоки',
@@ -3312,7 +3349,7 @@ class Tr {
       'pro_yearly': 'На рік',
       'pro_monthly': 'На місяць',
       'pro_semi_annual': '6 місяців',
-      'pro_yearly_save': '−44%',
+      'pro_yearly_save': '−48%',
       'pro_yearly_save_pct': '−{}%',
       'pro_trial': '7 днів безкоштовно',
       'pro_trial_days': '{} днів безкоштовно',

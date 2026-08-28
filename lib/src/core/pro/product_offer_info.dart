@@ -41,6 +41,32 @@ class ProductOfferInfo {
     return ((1 - y / full) * 100).round().clamp(1, 99);
   }
 
+  /// Percent saved vs 6× monthly.
+  static int? semiAnnualSavePercent({
+    required ProductDetails? monthly,
+    required ProductDetails? semiAnnual,
+  }) {
+    final m = monthly?.rawPrice ?? 0;
+    final s = semiAnnual?.rawPrice ?? 0;
+    if (m <= 0 || s <= 0) return null;
+    final full = m * 6;
+    if (full <= s) return null;
+    return ((1 - s / full) * 100).round().clamp(1, 99);
+  }
+
+  /// Strikethrough reference price (e.g. 12× monthly for yearly).
+  static String? comparePrice({
+    required ProductDetails? base,
+    required int multiplier,
+  }) {
+    if (base == null || multiplier <= 0) return null;
+    final total = base.rawPrice * multiplier;
+    if (total <= 0) return null;
+    final sym = base.currencySymbol;
+    final decimals = total == total.roundToDouble() ? 0 : 2;
+    return '$sym${total.toStringAsFixed(decimals)}';
+  }
+
   static int? _sk2TrialDays(ProductDetails product) {
     if (product is! AppStoreProduct2Details) return null;
     final offers = product.sk2Product.subscription?.promotionalOffers;

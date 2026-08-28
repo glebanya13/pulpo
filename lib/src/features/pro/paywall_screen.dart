@@ -14,7 +14,6 @@ import '../../core/pro/product_offer_info.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/auth/cloud_auth.dart';
-import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../core/open_link.dart';
 import '../../core/pro/subscription_links.dart';
@@ -38,250 +37,290 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final signedIn = ref.watch(authUserProvider).valueOrNull != null;
     final yearly = pro.yearly;
     final monthly = pro.monthly;
-    final selected = _selected ?? yearly ?? pro.semiAnnual ?? monthly;
+    final semiAnnual = pro.semiAnnual;
+    final selected = _selected ?? monthly ?? semiAnnual ?? yearly;
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-              child: Row(
-                children: [
-                  const Spacer(),
-                  Pressable(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: context.surface,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(LucideIcons.x,
-                          size: 18, color: context.primaryText),
-                    ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Pressable(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: context.surface,
+                    shape: BoxShape.circle,
                   ),
-                ],
+                  child: Icon(
+                    LucideIcons.x,
+                    size: 18,
+                    color: context.primaryText,
+                  ),
+                ),
               ),
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                children: [
-                  const Center(child: BrandLogo(size: 72)),
-                  const SizedBox(height: 16),
-                  Text(
-                    tr.proTitle,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1,
-                      color: context.primaryText,
-                    ),
+            const SizedBox(height: 8),
+            const Center(child: _PaywallProHero()),
+            const SizedBox(height: 18),
+            Text(
+              tr.proTitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.8,
+                color: context.primaryText,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              tr.proSubtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.4,
+                fontWeight: FontWeight.w500,
+                color: context.mutedText,
+              ),
+            ),
+            if (!pro.isPro && widget.gate != ProGate.generic) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: context.surface,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  tr.paywallBody(widget.gate),
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                    color: context.primaryText,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    tr.proSubtitle,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.35,
-                      color: context.mutedText,
-                    ),
+                ),
+              ),
+            ],
+            if (pro.isPro) ...[
+              const SizedBox(height: 20),
+              _ProActiveSection(pro: pro),
+              const SizedBox(height: 12),
+              ScaledOutlinedButton(
+                onPressed: () => openManageSubscriptions(context),
+                child: Text(tr.proManageSubscription),
+              ),
+            ] else ...[
+              if (!signedIn) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: context.surface,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(height: 20),
-                  _ProFeaturesCard(features: tr.proFeatureBullets),
-                  if (!pro.isPro && widget.gate != ProGate.generic) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: context.surface,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        tr.paywallBody(widget.gate),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        tr.proSignInRequired,
                         style: TextStyle(
                           fontSize: 14,
                           height: 1.4,
-                          fontWeight: FontWeight.w600,
-                          color: context.primaryText,
+                          color: context.mutedText,
                         ),
                       ),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  if (pro.isPro) ...[
-                    _ProActiveSection(pro: pro),
-                    const SizedBox(height: 12),
-                    ScaledOutlinedButton(
-                      onPressed: () => openManageSubscriptions(context),
-                      child: Text(tr.proManageSubscription),
-                    ),
-                  ] else ...[
-                    if (!signedIn)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: context.surface,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              tr.proSignInRequired,
-                              style: TextStyle(
-                                fontSize: 14,
-                                height: 1.4,
-                                color: context.mutedText,
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            ScaledElevatedButton(
-                              onPressed: () => context.push('/settings/account'),
-                              child: Text(tr.signIn),
-                            ),
-                          ],
-                        ),
-                      ),
-                    const SizedBox(height: 20),
-                    if (yearly != null)
-                      _PlanCard(
-                        title: tr.proYearly,
-                        price: yearly.price,
-                        badge: () {
-                          final pct = ProductOfferInfo.yearlySavePercent(
-                            monthly: monthly,
-                            yearly: yearly,
-                          );
-                          return pct != null
-                              ? tr.proYearlySavePercent(pct)
-                              : tr.proYearlySave;
-                        }(),
-                        subtitle: _trialSubtitle(tr, yearly),
-                        highlighted: selected?.id == yearly.id,
-                        busy: pro.purchasing,
-                        onTap: () => setState(() => _selected = yearly),
-                      ),
-                    if (pro.semiAnnual != null) ...[
-                      const SizedBox(height: 10),
-                      _PlanCard(
-                        title: tr.proSemiAnnual,
-                        price: pro.semiAnnual!.price,
-                        subtitle: _trialSubtitle(tr, pro.semiAnnual!),
-                        highlighted: selected?.id == pro.semiAnnual!.id,
-                        busy: pro.purchasing,
-                        onTap: () =>
-                            setState(() => _selected = pro.semiAnnual),
+                      const SizedBox(height: 14),
+                      ScaledElevatedButton(
+                        onPressed: () => context.push('/settings/account'),
+                        child: Text(tr.signIn),
                       ),
                     ],
-                    if (monthly != null) ...[
-                      const SizedBox(height: 10),
-                      _PlanCard(
-                        title: tr.proMonthly,
-                        price: monthly.price,
-                        subtitle: _trialSubtitle(tr, monthly),
-                        highlighted: selected?.id == monthly.id,
-                        busy: pro.purchasing,
-                        onTap: () => setState(() => _selected = monthly),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    ScaledElevatedButton(
-                      onPressed: pro.purchasing || selected == null
-                          ? null
-                          : () => _buy(context, ref, tr, selected),
-                      child: Text(tr.proGo),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              if (monthly != null)
+                _PaywallPlanCard(
+                  title: tr.proMonthly,
+                  price: monthly.price,
+                  allFeaturesLabel: tr.proAllFeatures,
+                  badge: () {
+                    final days = ProductOfferInfo.trialDays(monthly);
+                    if (days != null && days > 0) {
+                      return tr.proTrialBadge(days);
+                    }
+                    return null;
+                  }(),
+                  selected: selected?.id == monthly.id,
+                  busy: pro.purchasing,
+                  onTap: () => setState(() => _selected = monthly),
+                ),
+              if (semiAnnual != null) ...[
+                const SizedBox(height: 10),
+                _PaywallPlanCard(
+                  title: tr.proSemiAnnual,
+                  price: semiAnnual.price,
+                  allFeaturesLabel: tr.proAllFeatures,
+                  comparePrice: ProductOfferInfo.comparePrice(
+                    base: monthly,
+                    multiplier: 6,
+                  ),
+                  badge: () {
+                    final pct = ProductOfferInfo.semiAnnualSavePercent(
+                      monthly: monthly,
+                      semiAnnual: semiAnnual,
+                    );
+                    return pct != null ? tr.proDiscountBadge(pct) : null;
+                  }(),
+                  selected: selected?.id == semiAnnual.id,
+                  busy: pro.purchasing,
+                  onTap: () => setState(() => _selected = semiAnnual),
+                ),
+              ],
+              if (yearly != null) ...[
+                const SizedBox(height: 10),
+                _PaywallPlanCard(
+                  title: tr.proYearly,
+                  price: yearly.price,
+                  allFeaturesLabel: tr.proAllFeatures,
+                  comparePrice: ProductOfferInfo.comparePrice(
+                    base: monthly,
+                    multiplier: 12,
+                  ),
+                  badge: () {
+                    final pct = ProductOfferInfo.yearlySavePercent(
+                      monthly: monthly,
+                      yearly: yearly,
+                    );
+                    return pct != null ? tr.proDiscountBadge(pct) : null;
+                  }(),
+                  selected: selected?.id == yearly.id,
+                  busy: pro.purchasing,
+                  onTap: () => setState(() => _selected = yearly),
+                ),
+              ],
+              if (monthly != null &&
+                  ProductOfferInfo.trialDays(monthly) != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  tr.proPaywallTrialFootnote,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.mutedText,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  tr.proFeaturesHeading,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.1,
+                    color: context.mutedText,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              _ProFeaturesCard(features: tr.proFeatureBullets),
+              const SizedBox(height: 20),
+              ScaledElevatedButton(
+                onPressed: pro.purchasing || selected == null
+                    ? null
+                    : () => _buy(context, ref, tr, selected),
+                child: Text(_ctaLabel(tr, selected)),
+              ),
+              const SizedBox(height: 8),
+              ScaledTextButton(
+                onPressed: pro.purchasing
+                    ? null
+                    : () => _restore(context, ref, tr),
+                child: Text(tr.proRestore),
+              ),
+              if (pro.error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _errorText(tr, pro.error!),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.danger,
                     ),
-                    const SizedBox(height: 8),
-                    ScaledTextButton(
-                      onPressed: pro.purchasing
-                          ? null
-                          : () => _restore(context, ref, tr),
-                      child: Text(tr.proRestore),
-                    ),
-                    if (pro.error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          _errorText(tr, pro.error!),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.danger,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 12),
-                    Text(
-                      tr.proLegalNotice,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 11,
-                        height: 1.4,
-                        color: context.faintText,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 12,
-                      children: [
-                        ScaledTextButton(
-                          onPressed: () => openAppLink(context, AppInfo.termsUri),
-                          child: Text(tr.termsOfUse),
-                        ),
-                        ScaledTextButton(
-                          onPressed: () =>
-                              openAppLink(context, AppInfo.privacyUri),
-                          child: Text(tr.privacyPolicy),
-                        ),
-                      ],
-                    ),
-                    if (!pro.loading &&
-                        (pro.products.isEmpty || !pro.storeAvailable))
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Column(
-                          children: [
-                            Text(
-                              tr.proStoreEmpty,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: context.faintText,
-                              ),
-                            ),
-                            ScaledTextButton(
-                              onPressed: pro.purchasing
-                                  ? null
-                                  : () => ref
-                                      .read(proControllerProvider.notifier)
-                                      .refresh(),
-                              child: Text(tr.retry),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                  if (kDebugMode) ...[
-                    const SizedBox(height: 16),
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(tr.proDebugUnlock),
-                      value: pro.debugUnlock,
-                      onChanged: (v) => ref
-                          .read(proControllerProvider.notifier)
-                          .setDebugUnlock(v),
-                    ),
-                  ],
+                  ),
+                ),
+              const SizedBox(height: 12),
+              Text(
+                tr.proLegalNotice,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.4,
+                  color: context.faintText,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                children: [
+                  ScaledTextButton(
+                    onPressed: () => openAppLink(context, AppInfo.termsUri),
+                    child: Text(tr.termsOfUse),
+                  ),
+                  ScaledTextButton(
+                    onPressed: () =>
+                        openAppLink(context, AppInfo.privacyUri),
+                    child: Text(tr.privacyPolicy),
+                  ),
                 ],
               ),
-            ),
+              if (!pro.loading &&
+                  (pro.products.isEmpty || !pro.storeAvailable))
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Column(
+                    children: [
+                      Text(
+                        tr.proStoreEmpty,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.faintText,
+                        ),
+                      ),
+                      ScaledTextButton(
+                        onPressed: pro.purchasing
+                            ? null
+                            : () => ref
+                                .read(proControllerProvider.notifier)
+                                .refresh(),
+                        child: Text(tr.retry),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+            if (kDebugMode) ...[
+              const SizedBox(height: 16),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: Text(tr.proDebugUnlock),
+                value: pro.debugUnlock,
+                onChanged: (v) => ref
+                    .read(proControllerProvider.notifier)
+                    .setDebugUnlock(v),
+              ),
+            ],
           ],
         ),
       ),
@@ -347,15 +386,64 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     }
   }
 
-  String _trialSubtitle(Tr tr, ProductDetails product) {
+  String _ctaLabel(Tr tr, ProductDetails? product) {
+    if (product == null) return tr.proGo;
     final days = ProductOfferInfo.trialDays(product);
-    if (days == null || days <= 0) return tr.proTrial;
-    return tr.proTrialDays(days);
+    if (days != null && days > 0) return tr.proStartFreeTrial;
+    return tr.proGo;
   }
 
   String _errorText(Tr tr, String error) {
     if (error.contains('sign_in_required')) return tr.proSignInRequired;
     return tr.proBuyFailed;
+  }
+}
+
+class _PaywallProHero extends StatelessWidget {
+  const _PaywallProHero();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 104,
+      height: 104,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFD4FF00),
+            AppColors.lime,
+            Color(0xFFF0FF7A),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.lime.withValues(alpha: 0.55),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(LucideIcons.rocket, size: 44, color: AppColors.ink),
+          const SizedBox(height: 6),
+          Text(
+            Tr.of(context).proBadge,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.2,
+              height: 1,
+              color: AppColors.ink,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -501,22 +589,24 @@ class _ProActiveSectionState extends ConsumerState<_ProActiveSection> {
   }
 }
 
-class _PlanCard extends StatelessWidget {
-  const _PlanCard({
+class _PaywallPlanCard extends StatelessWidget {
+  const _PaywallPlanCard({
     required this.title,
     required this.price,
+    required this.allFeaturesLabel,
     required this.onTap,
     this.badge,
-    this.subtitle,
-    this.highlighted = false,
+    this.comparePrice,
+    this.selected = false,
     this.busy = false,
   });
 
   final String title;
   final String price;
+  final String allFeaturesLabel;
   final String? badge;
-  final String? subtitle;
-  final bool highlighted;
+  final String? comparePrice;
+  final bool selected;
   final bool busy;
   final VoidCallback onTap;
 
@@ -525,72 +615,109 @@ class _PlanCard extends StatelessWidget {
     return Pressable(
       enabled: !busy,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
+      scale: 0.98,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: EdgeInsets.fromLTRB(16, badge != null ? 22 : 16, 16, 16),
         decoration: BoxDecoration(
-          color: highlighted
-              ? AppColors.lime.withValues(alpha: 0.22)
+          color: selected
+              ? AppColors.lime.withValues(alpha: 0.18)
               : context.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: highlighted
-              ? Border.all(color: AppColors.lime, width: 2)
-              : null,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: selected ? AppColors.lime : context.divider,
+            width: selected ? 2 : 1,
+          ),
         ),
-        child: Row(
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            if (badge != null)
+              Positioned(
+                top: -30,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: selected ? AppColors.lime : AppColors.ink,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Text(
+                      badge!,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.4,
+                        color: selected ? AppColors.ink : Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
+                          color: context.primaryText,
                         ),
                       ),
-                      if (badge != null) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.ink,
-                            borderRadius: BorderRadius.circular(100),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            LucideIcons.zap,
+                            size: 12,
+                            color: context.mutedText,
                           ),
-                          child: Text(
-                            badge!,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                          const SizedBox(width: 4),
+                          Text(
+                            allFeaturesLabel,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: context.mutedText,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ],
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
                     Text(
-                      subtitle!,
+                      price,
                       style: TextStyle(
-                        fontSize: 12,
-                        color: context.mutedText,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: context.primaryText,
                       ),
                     ),
+                    if (comparePrice != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        comparePrice!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          decoration: TextDecoration.lineThrough,
+                          color: context.faintText,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            ),
-            Text(
-              price,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
+                ),
+              ],
             ),
           ],
         ),
