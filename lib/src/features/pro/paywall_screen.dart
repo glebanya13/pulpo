@@ -40,6 +40,29 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final semiAnnual = pro.semiAnnual;
     final selected = _selected ?? monthly ?? semiAnnual ?? yearly;
     final showPinnedCta = !pro.isPro && signedIn;
+    final hasTrialOffer = selected != null &&
+        (ProductOfferInfo.trialDaysForPaywall(selected) ?? 0) > 0;
+
+    String trialLabelFor(ProductDetails product) {
+      final days = ProductOfferInfo.trialDaysForPaywall(product);
+      if (days == null || days <= 0) return '';
+      return days == ProductOfferInfo.paywallTrialDays
+          ? tr.proTrial
+          : tr.proTrialDays(days);
+    }
+
+    Widget paywallCta() {
+      return ScaledElevatedButton(
+        expand: true,
+        onPressed: pro.purchasing || selected == null
+            ? null
+            : () => _buy(context, ref, tr, selected),
+        child: Text(
+          hasTrialOffer ? tr.proStartFreeTrial : _ctaLabel(tr, selected),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -135,13 +158,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   title: tr.proMonthly,
                   price: ProductOfferInfo.displayPrice(monthly),
                   allFeaturesLabel: tr.proAllFeatures,
-                  badge: () {
-                    final days = ProductOfferInfo.trialDays(monthly);
-                    if (days != null && days > 0) {
-                      return tr.proTrialBadge(days);
-                    }
-                    return null;
-                  }(),
+                  trialLabel: trialLabelFor(monthly),
                   selected: selected?.id == monthly.id,
                   busy: pro.purchasing,
                   onTap: () => setState(() => _selected = monthly),
@@ -152,6 +169,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   title: tr.proSemiAnnual,
                   price: ProductOfferInfo.displayPrice(semiAnnual),
                   allFeaturesLabel: tr.proAllFeatures,
+                  trialLabel: trialLabelFor(semiAnnual),
                   comparePrice: ProductOfferInfo.comparePrice(
                     base: monthly,
                     multiplier: 6,
@@ -174,6 +192,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   title: tr.proYearly,
                   price: ProductOfferInfo.displayPrice(yearly),
                   allFeaturesLabel: tr.proAllFeatures,
+                  trialLabel: trialLabelFor(yearly),
                   comparePrice: ProductOfferInfo.comparePrice(
                     base: monthly,
                     multiplier: 12,
@@ -188,18 +207,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   selected: selected?.id == yearly.id,
                   busy: pro.purchasing,
                   onTap: () => setState(() => _selected = yearly),
-                ),
-              ],
-              if (monthly != null &&
-                  ProductOfferInfo.trialDays(monthly) != null) ...[
-                const SizedBox(height: 10),
-                Text(
-                  tr.proPaywallTrialFootnote,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.mutedText,
-                  ),
                 ),
               ],
               const SizedBox(height: 24),
@@ -218,13 +225,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               const SizedBox(height: 10),
               _ProFeaturesCard(features: tr.proFeatureBullets),
               const SizedBox(height: 20),
-              if (!showPinnedCta)
-                ScaledElevatedButton(
-                  onPressed: pro.purchasing || selected == null
-                      ? null
-                      : () => _buy(context, ref, tr, selected),
-                  child: Text(_ctaLabel(tr, selected)),
-                ),
+              if (!showPinnedCta) paywallCta(),
               if (!showPinnedCta) const SizedBox(height: 8),
               ScaledTextButton(
                 onPressed: pro.purchasing
@@ -311,24 +312,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               ),
             ),
             if (showPinnedCta)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  border: Border(
-                    top: BorderSide(color: context.divider.withValues(alpha: 0.6)),
-                  ),
-                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ScaledElevatedButton(
-                      onPressed: pro.purchasing || selected == null
-                          ? null
-                          : () => _buy(context, ref, tr, selected),
-                      child: Text(_ctaLabel(tr, selected)),
-                    ),
+                    paywallCta(),
                     if (pro.error != null) ...[
                       const SizedBox(height: 8),
                       Text(
@@ -410,7 +400,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   String _ctaLabel(Tr tr, ProductDetails? product) {
     if (product == null) return tr.proGo;
-    final days = ProductOfferInfo.trialDays(product);
+    final days = ProductOfferInfo.trialDaysForPaywall(product);
     if (days != null && days > 0) return tr.proStartFreeTrial;
     return tr.proGo;
   }
@@ -617,6 +607,7 @@ class _PaywallPlanCard extends StatelessWidget {
     required this.price,
     required this.allFeaturesLabel,
     required this.onTap,
+    this.trialLabel,
     this.badge,
     this.comparePrice,
     this.selected = false,
@@ -626,6 +617,7 @@ class _PaywallPlanCard extends StatelessWidget {
   final String title;
   final String price;
   final String allFeaturesLabel;
+  final String? trialLabel;
   final String? badge;
   final String? comparePrice;
   final bool selected;
@@ -712,6 +704,19 @@ class _PaywallPlanCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (trialLabel != null && trialLabel!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          trialLabel!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: selected
+                                ? AppColors.lime
+                                : context.primaryText,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

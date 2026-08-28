@@ -51,6 +51,16 @@ class ProductOfferInfo {
     return null;
   }
 
+  /// Store trial when configured; otherwise marketing default for known SKUs.
+  static const paywallTrialDays = 7;
+
+  static int? trialDaysForPaywall(ProductDetails product) {
+    final fromStore = trialDays(product);
+    if (fromStore != null && fromStore > 0) return fromStore;
+    if (ProProducts.ids.contains(product.id)) return paywallTrialDays;
+    return null;
+  }
+
   /// Percent saved vs 12× monthly, or null if prices missing / not cheaper.
   static int? yearlySavePercent({
     required ProductDetails? monthly,

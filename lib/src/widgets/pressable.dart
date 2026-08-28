@@ -72,22 +72,36 @@ class ScaledElevatedButton extends StatelessWidget {
     super.key,
     required this.onPressed,
     required this.child,
+    this.expand = false,
   });
 
   final VoidCallback? onPressed;
   final Widget child;
+  final bool expand;
 
   @override
   Widget build(BuildContext context) {
+    final base = Theme.of(context).elevatedButtonTheme.style;
+    final style = expand
+        ? base?.copyWith(
+            minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)),
+          )
+        : base;
+
+    final button = ElevatedButton(
+      style: style,
+      onPressed: onPressed,
+      child: child,
+    );
+
     return Pressable(
       enabled: onPressed != null,
       onTap: onPressed,
       scale: 0.97,
       child: AbsorbPointer(
-        child: ElevatedButton(
-          onPressed: onPressed,
-          child: child,
-        ),
+        child: expand
+            ? SizedBox(width: double.infinity, child: button)
+            : button,
       ),
     );
   }
