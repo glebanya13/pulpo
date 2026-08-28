@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -648,6 +649,53 @@ class CloudAuth {
       if (v != null && v.trim().isNotEmpty) return v.trim();
     }
     return null;
+  }
+
+  /// Uploads a profile photo to Storage and syncs Auth + Firestore.
+  Future<void> uploadProfilePhoto(File file) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final storageRef =
+        FirebaseStorage.instance.ref().child('users/${user.uid}/avatar.jpg');
+    await storageRef.putFile(
+      file,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+    final url = await storageRef.getDownloadURL();
+
+    await user.updatePhotoURL(url);
+    await _profileRef(user.uid).set(
+      {
+        'photoUrl': url,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+    await user.reload();
+  }
+
+  /// Removes cloud avatar; local file is cleared by the caller.
+  Future<void> removeProfilePhoto() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await FirebaseStorage.instance
+          .ref()
+          .child('users/${user.uid}/avatar.jpg')
+          .delete();
+    } catch (_) {}
+
+    await user.updatePhotoURL(null);
+    await _profileRef(user.uid).set(
+      {
+        'photoUrl': FieldValue.delete(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+    await user.reload();
   }
 }
 

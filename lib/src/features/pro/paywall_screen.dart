@@ -92,10 +92,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  if (!pro.isPro)
+                  _ProFeaturesCard(features: tr.proFeatureBullets),
+                  if (!pro.isPro && widget.gate != ProGate.generic) ...[
+                    const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.all(20),
-                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: context.surface,
                         borderRadius: BorderRadius.circular(20),
@@ -103,13 +104,15 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       child: Text(
                         tr.paywallBody(widget.gate),
                         style: TextStyle(
-                          fontSize: 15,
-                          height: 1.45,
+                          fontSize: 14,
+                          height: 1.4,
                           fontWeight: FontWeight.w600,
                           color: context.primaryText,
                         ),
                       ),
                     ),
+                  ],
+                  const SizedBox(height: 12),
                   if (pro.isPro) ...[
                     _ProActiveSection(pro: pro),
                     const SizedBox(height: 12),
@@ -353,6 +356,62 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   String _errorText(Tr tr, String error) {
     if (error.contains('sign_in_required')) return tr.proSignInRequired;
     return tr.proBuyFailed;
+  }
+}
+
+class _ProFeaturesCard extends StatelessWidget {
+  const _ProFeaturesCard({required this.features});
+
+  final List<String> features;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < features.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 22,
+                  height: 22,
+                  margin: const EdgeInsets.only(top: 1),
+                  decoration: BoxDecoration(
+                    color: AppColors.lime.withValues(alpha: 0.35),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    LucideIcons.check,
+                    size: 14,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    features[i],
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.35,
+                      fontWeight: FontWeight.w600,
+                      color: context.primaryText,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

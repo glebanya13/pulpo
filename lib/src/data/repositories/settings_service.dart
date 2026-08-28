@@ -21,6 +21,7 @@ class SettingsService {
   static const _kDailyReminderMinute = 'daily_reminder_minute';
   static const _kSmartReminders = 'smart_reminders';
   static const _kDemoData = 'is_demo_data';
+  static const _kProfileAvatarPath = 'profile_avatar_path';
 
   bool get onboardingDone => _prefs.getBool(_kOnboardingDone) ?? false;
   Future<void> setOnboardingDone(bool v) =>
@@ -28,6 +29,16 @@ class SettingsService {
 
   String get userName => _prefs.getString(_kUserName) ?? 'User';
   Future<void> setUserName(String v) => _prefs.setString(_kUserName, v);
+
+  String? get profileAvatarPath => _prefs.getString(_kProfileAvatarPath);
+
+  Future<void> setProfileAvatarPath(String? path) async {
+    if (path == null || path.trim().isEmpty) {
+      await _prefs.remove(_kProfileAvatarPath);
+    } else {
+      await _prefs.setString(_kProfileAvatarPath, path);
+    }
+  }
 
   String get baseCurrency => _prefs.getString(_kBaseCurrency) ?? 'EUR';
 
@@ -129,6 +140,7 @@ class SettingsState {
     required this.dailyReminderHour,
     required this.dailyReminderMinute,
     required this.smartRemindersEnabled,
+    this.profileAvatarPath,
   });
 
   final bool onboardingDone;
@@ -141,6 +153,7 @@ class SettingsState {
   final int dailyReminderHour;
   final int dailyReminderMinute;
   final bool smartRemindersEnabled;
+  final String? profileAvatarPath;
 
   ThemeMode get materialThemeMode {
     switch (themeMode) {
@@ -164,6 +177,8 @@ class SettingsState {
     int? dailyReminderHour,
     int? dailyReminderMinute,
     bool? smartRemindersEnabled,
+    String? profileAvatarPath,
+    bool clearProfileAvatarPath = false,
   }) {
     return SettingsState(
       onboardingDone: onboardingDone ?? this.onboardingDone,
@@ -177,6 +192,9 @@ class SettingsState {
       dailyReminderMinute: dailyReminderMinute ?? this.dailyReminderMinute,
       smartRemindersEnabled:
           smartRemindersEnabled ?? this.smartRemindersEnabled,
+      profileAvatarPath: clearProfileAvatarPath
+          ? null
+          : (profileAvatarPath ?? this.profileAvatarPath),
     );
   }
 }
@@ -196,6 +214,7 @@ class SettingsController extends Notifier<SettingsState> {
       dailyReminderHour: s.dailyReminderHour,
       dailyReminderMinute: s.dailyReminderMinute,
       smartRemindersEnabled: s.smartRemindersEnabled,
+      profileAvatarPath: s.profileAvatarPath,
     );
   }
 
@@ -257,6 +276,13 @@ class SettingsController extends Notifier<SettingsState> {
     await ref.read(settingsServiceProvider).setUserName(name);
   }
 
+  Future<void> setProfileAvatarPath(String? path) async {
+    state = path == null
+        ? state.copyWith(clearProfileAvatarPath: true)
+        : state.copyWith(profileAvatarPath: path);
+    await ref.read(settingsServiceProvider).setProfileAvatarPath(path);
+  }
+
   /// Reload reactive state after importing SharedPreferences from a backup.
   void reloadFromDisk() {
     final s = ref.read(settingsServiceProvider);
@@ -271,6 +297,7 @@ class SettingsController extends Notifier<SettingsState> {
       dailyReminderHour: s.dailyReminderHour,
       dailyReminderMinute: s.dailyReminderMinute,
       smartRemindersEnabled: s.smartRemindersEnabled,
+      profileAvatarPath: s.profileAvatarPath,
     );
   }
 

@@ -13,6 +13,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
+import 'profile_avatar.dart';
 import '../settings/settings_screen.dart' show openNameSheet;
 import '../settings/reminder_settings.dart';
 import '../../data/repositories/providers.dart';
@@ -58,9 +59,12 @@ class ProfileScreen extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              _ProfileAvatar(
+              ProfileAvatar(
                 name: settings.userName,
+                localPath: settings.profileAvatarPath,
                 photoUrl: authUser?.photoURL,
+                showEditBadge: true,
+                onTap: () => openProfileAvatarSheet(context, ref),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -414,75 +418,6 @@ Future<String?> _askDeletePassword(BuildContext context, Tr tr) async {
   controller.dispose();
   if (result == null || result.isEmpty) return null;
   return result;
-}
-
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.name, this.photoUrl});
-  final String name;
-  final String? photoUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final letter = name.isNotEmpty ? name[0].toUpperCase() : 'U';
-    Widget fallback() => Container(
-          width: 48,
-          height: 48,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [AppColors.lime, AppColors.limeAccent],
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            letter,
-            style: const TextStyle(
-              color: AppColors.ink,
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        );
-
-    final url = photoUrl?.trim();
-    if (url == null || url.isEmpty) return fallback();
-
-    return SizedBox(
-      width: 48,
-      height: 48,
-      child: ClipOval(
-        clipBehavior: Clip.antiAlias,
-        child: Image.network(
-          _avatarPhotoUrl(url),
-          width: 48,
-          height: 48,
-          fit: BoxFit.cover,
-          alignment: Alignment.center,
-          filterQuality: FilterQuality.medium,
-          gaplessPlayback: true,
-          errorBuilder: (_, __, ___) => fallback(),
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) return child;
-            return fallback();
-          },
-        ),
-      ),
-    );
-  }
-}
-
-/// Google profile URLs need an explicit square crop (`sNNN-c`), otherwise
-/// the photo may letterbox or look uncropped inside a circle.
-String _avatarPhotoUrl(String url) {
-  var u = url.trim();
-  if (!u.contains('googleusercontent.com')) return u;
-  u = u
-      .replaceAll(RegExp(r'=s\d+-c?\b'), '=s256-c')
-      .replaceAll(RegExp(r'/s\d+-c?/'), '/s256-c/');
-  if (!RegExp(r'[=/]s\d').hasMatch(u)) {
-    u = u.contains('?') ? '$u&sz=256' : '$u=s256-c';
-  }
-  return u;
 }
 
 class _SectionLabel extends StatelessWidget {

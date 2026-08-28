@@ -7,7 +7,7 @@
 
   ],
   "settings" : {
-    "_applicationInternalID" : "0",
+    "_applicationInternalID" : "6801835373",
     "_developerTeamID" : "VWYGQ2Z5FJ",
     "_failTransactionsEnabled" : false,
     "_lastPurchasedProductID" : "",
@@ -19,12 +19,17 @@
   },
   "subscriptionGroups" : [
     {
-      "id" : "21481234",
+      "id" : "22339635",
       "localizations" : [
         {
-          "description" : "",
+          "description" : "Unlimited accounts, goals, reports, AI assistant, import and cloud backups.",
           "displayName" : "Monedero Pro",
           "locale" : "en_US"
+        },
+        {
+          "description" : "Sin límites en cuentas, metas, informes, asistente IA, importación y copias en la nube.",
+          "displayName" : "Monedero Pro",
+          "locale" : "es_ES"
         }
       ],
       "name" : "Monedero Pro",
@@ -39,24 +44,29 @@
           "displayPrice" : "24.99",
           "familyShareable" : false,
           "groupNumber" : 1,
-          "internalID" : "6748123401",
+          "internalID" : "6805970597",
           "introductoryOffer" : {
-            "internalID" : "6748123403",
+            "internalID" : "6805970598",
             "numberOfPeriods" : 1,
             "paymentMode" : "free",
             "subscriptionPeriod" : "P1W"
           },
           "localizations" : [
             {
-              "description" : "Unlimited accounts, reports, import and cloud backups.",
+              "description" : "Unlimited accounts, goals, reports, AI (receipts & voice), shared budget, import and cloud backups.",
               "displayName" : "Yearly",
               "locale" : "en_US"
+            },
+            {
+              "description" : "Sin límites: cuentas, metas, informes, IA (recibos y voz), presupuesto compartido, importación y nube.",
+              "displayName" : "Anual",
+              "locale" : "es_ES"
             }
           ],
-          "productID" : "pulpo_pro_1anual",
+          "productID" : "monedero_pro_anual",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Monedero Pro Yearly",
-          "subscriptionGroupID" : "21481234",
+          "subscriptionGroupID" : "22339635",
           "type" : "RecurringSubscription"
         },
         {
@@ -69,24 +79,29 @@
           "displayPrice" : "3.99",
           "familyShareable" : false,
           "groupNumber" : 2,
-          "internalID" : "6748123402",
+          "internalID" : "6805965087",
           "introductoryOffer" : {
-            "internalID" : "6748123405",
+            "internalID" : "6805965088",
             "numberOfPeriods" : 1,
             "paymentMode" : "free",
             "subscriptionPeriod" : "P1W"
           },
           "localizations" : [
             {
-              "description" : "Unlimited accounts, reports, import and cloud backups.",
+              "description" : "Unlimited accounts, goals, reports, AI (receipts & voice), shared budget, import and cloud backups.",
               "displayName" : "Monthly",
               "locale" : "en_US"
+            },
+            {
+              "description" : "Sin límites: cuentas, metas, informes, IA (recibos y voz), presupuesto compartido, importación y nube.",
+              "displayName" : "Mensual",
+              "locale" : "es_ES"
             }
           ],
-          "productID" : "pulpo_pro_mensual",
+          "productID" : "monedero_pro_mensual",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Monedero Pro Monthly",
-          "subscriptionGroupID" : "21481234",
+          "subscriptionGroupID" : "22339635",
           "type" : "RecurringSubscription"
         },
         {
@@ -99,24 +114,29 @@
           "displayPrice" : "14.99",
           "familyShareable" : false,
           "groupNumber" : 3,
-          "internalID" : "6748123406",
+          "internalID" : "6805968801",
           "introductoryOffer" : {
-            "internalID" : "6748123407",
+            "internalID" : "6805968802",
             "numberOfPeriods" : 1,
             "paymentMode" : "free",
             "subscriptionPeriod" : "P1W"
           },
           "localizations" : [
             {
-              "description" : "Unlimited accounts, reports, import and cloud backups.",
+              "description" : "Unlimited accounts, goals, reports, AI (receipts & voice), shared budget, import and cloud backups.",
               "displayName" : "6 Months",
               "locale" : "en_US"
+            },
+            {
+              "description" : "Sin límites: cuentas, metas, informes, IA (recibos y voz), presupuesto compartido, importación y nube.",
+              "displayName" : "6 meses",
+              "locale" : "es_ES"
             }
           ],
-          "productID" : "pulpo_pro_6_meses",
+          "productID" : "monedero_pro_6meses",
           "recurringSubscriptionPeriod" : "P6M",
           "referenceName" : "Monedero Pro 6 Months",
-          "subscriptionGroupID" : "21481234",
+          "subscriptionGroupID" : "22339635",
           "type" : "RecurringSubscription"
         }
       ]

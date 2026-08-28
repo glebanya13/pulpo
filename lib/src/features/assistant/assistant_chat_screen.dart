@@ -647,6 +647,35 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     }
   }
 
+  Future<void> _confirmClearChat() async {
+    if (_busy) return;
+    final tr = Tr.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tr.aiClearChatTitle),
+        content: Text(tr.aiClearChatBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(tr.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFE53E3E),
+            ),
+            child: Text(tr.aiClearChat),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    await _chat.clear();
+    if (!mounted) return;
+    await _chat.ensureWelcome(tr.aiChatWelcome);
+  }
+
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
@@ -720,6 +749,28 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                         const SizedBox(width: 6),
                         const AssistantEnergyChip(),
                       ],
+                      const SizedBox(width: 6),
+                      Pressable(
+                        onTap: messages.isEmpty || _busy
+                            ? null
+                            : _confirmClearChat,
+                        child: Opacity(
+                          opacity: messages.isEmpty || _busy ? 0.35 : 1,
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: context.surface,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              LucideIcons.trash2,
+                              size: 18,
+                              color: context.primaryText,
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 6),
                       Pressable(
                         onTap: _closeChat,

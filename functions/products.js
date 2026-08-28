@@ -1,4 +1,4 @@
-/** @typedef {'pulpo_pro_mensual' | 'pulpo_pro_6_meses' | 'pulpo_pro_1anual' | 'pulpo_pro_monthly' | 'pulpo_pro_6months' | 'pulpo_pro_yearly'} ProductId */
+/** @typedef {string} ProductId */
 
 /** Must match App Store Connect introductory offer (Free · 1 Week). */
 const INTRO_TRIAL_DAYS = 7;
@@ -9,10 +9,14 @@ const APPLE_OFFER_INTRODUCTORY = 1;
 /** @type {Set<string>} */
 const ALLOWED_PRODUCT_IDS = new Set([
   // App Store Connect (current)
+  'monedero_pro_mensual',
+  'monedero_pro_6meses',
+  'monedero_pro_anual',
+  // Previous store IDs (existing purchases / grants)
   'pulpo_pro_mensual',
   'pulpo_pro_6_meses',
   'pulpo_pro_1anual',
-  // Legacy IDs (existing grants / payments)
+  // Older English IDs
   'pulpo_pro_monthly',
   'pulpo_pro_6months',
   'pulpo_pro_yearly',
@@ -20,6 +24,9 @@ const ALLOWED_PRODUCT_IDS = new Set([
 
 /** @type {Record<string, { days: number, amount: number }>} */
 const PRODUCT_FALLBACK = {
+  monedero_pro_mensual: { days: 30, amount: 3.99 },
+  monedero_pro_6meses: { days: 183, amount: 14.99 },
+  monedero_pro_anual: { days: 365, amount: 24.99 },
   pulpo_pro_mensual: { days: 30, amount: 3.99 },
   pulpo_pro_6_meses: { days: 183, amount: 14.99 },
   pulpo_pro_1anual: { days: 365, amount: 24.99 },

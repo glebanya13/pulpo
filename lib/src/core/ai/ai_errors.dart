@@ -58,7 +58,12 @@ AiErrorCode classifyAiRawError(String msg) {
   if (m.contains('not enabled') || m.contains('serviceapinotenabled')) {
     return AiErrorCode.apiNotEnabled;
   }
-  if (m.contains('quota') || m.contains('resource_exhausted')) {
+  if (m.contains('quota') ||
+      m.contains('resource_exhausted') ||
+      m.contains('prepayment') ||
+      m.contains('depleted') ||
+      m.contains('billing account') ||
+      m.contains('no credits')) {
     return AiErrorCode.quota;
   }
   if (m.contains('not_found') ||
@@ -105,6 +110,13 @@ String describeAiError(Tr tr, Object error) {
     case AiErrorCode.permissionDenied:
       return tr.aiPermissionDenied;
     case AiErrorCode.quota:
+      final detail = (error.detail ?? '').toLowerCase();
+      if (detail.contains('prepayment') ||
+          detail.contains('depleted') ||
+          detail.contains('billing') ||
+          detail.contains('no credits')) {
+        return tr.aiBillingDepleted;
+      }
       return tr.aiQuotaExceeded;
     case AiErrorCode.blocked:
       return tr.aiBlocked;

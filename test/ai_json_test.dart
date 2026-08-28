@@ -102,6 +102,12 @@ void main() {
       AiErrorCode.quota,
     );
     expect(
+      classifyAiRawError(
+        'Your prepayment credits are depleted. Please go to AI Studio',
+      ),
+      AiErrorCode.quota,
+    );
+    expect(
       classifyAiRawError('FinishReason.safety blocked'),
       AiErrorCode.blocked,
     );
@@ -138,6 +144,16 @@ void main() {
     expect(
       describeAiError(tr, const PulpoAiException(AiErrorCode.blocked)),
       tr.aiBlocked,
+    );
+    expect(
+      describeAiError(
+        tr,
+        const PulpoAiException(
+          AiErrorCode.quota,
+          'Your prepayment credits are depleted',
+        ),
+      ),
+      tr.aiBillingDepleted,
     );
     expect(
       describeAiError(

@@ -12,7 +12,7 @@ import '../../features/budgets/budget_period.dart';
 import '../l10n/tr.dart';
 import 'daily_reminder.dart';
 
-const _kSmartChannelId = 'pulpo_smart_reminders_v2';
+const _kSmartChannelId = 'pulpo_smart_reminders_v3';
 const _kSmartIdsKey = 'smart_reminder_ids';
 const _kDebtBase = 3100;
 const _kSubBase = 4100;

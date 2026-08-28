@@ -48,10 +48,13 @@ class ProProducts {
   const ProProducts._();
 
   /// Must match App Store Connect / Play Console product IDs exactly.
-  static const monthlyId = 'pulpo_pro_mensual';
-  static const semiAnnualId = 'pulpo_pro_6_meses';
-  static const yearlyId = 'pulpo_pro_1anual';
+  static const monthlyId = 'monedero_pro_mensual';
+  static const semiAnnualId = 'monedero_pro_6meses';
+  static const yearlyId = 'monedero_pro_anual';
   static const ids = {monthlyId, semiAnnualId, yearlyId};
+
+  /// App Store Connect subscription group.
+  static const subscriptionGroupId = '22339635';
 }
 
 bool isActiveGoal({required bool isCompleted}) => !isCompleted;

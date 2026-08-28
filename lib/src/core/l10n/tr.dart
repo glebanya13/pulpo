@@ -176,6 +176,12 @@ class Tr {
   String get transactions => _get('transactions');
   String get analytics => _get('analytics');
   String get profile => _get('profile');
+  String get profileAvatarChoose => _get('profile_avatar_choose');
+  String get profileAvatarRemove => _get('profile_avatar_remove');
+  String get profileAvatarUpdating => _get('profile_avatar_updating');
+  String get profileAvatarUpdated => _get('profile_avatar_updated');
+  String get profileAvatarUpdatedLocal => _get('profile_avatar_updated_local');
+  String get profileAvatarRemoved => _get('profile_avatar_removed');
 
   // ─────────────────────── DASHBOARD ───────────────────────
   String get greetingMorning => _get('greeting_morning');
@@ -655,6 +661,14 @@ class Tr {
 
   String get proTitle => _get('pro_title');
   String get proSubtitle => _get('pro_subtitle');
+  List<String> get proFeatureBullets => [
+        _get('pro_feature_accounts'),
+        _get('pro_feature_ai'),
+        _get('pro_feature_reports'),
+        _get('pro_feature_cloud'),
+        _get('pro_feature_import'),
+        _get('pro_feature_shared'),
+      ];
   String get proCtaSubtitle => _get('pro_cta_subtitle');
   String get proGo => _get('pro_go');
   String get proRestore => _get('pro_restore');
@@ -721,6 +735,9 @@ class Tr {
   String get aiChatHint => _get('ai_chat_hint');
   String get aiChatPlaceholder => _get('ai_chat_placeholder');
   String get aiChatWelcome => _get('ai_chat_welcome');
+  String get aiClearChat => _get('ai_clear_chat');
+  String get aiClearChatTitle => _get('ai_clear_chat_title');
+  String get aiClearChatBody => _get('ai_clear_chat_body');
   String get aiAssistantEyebrow => _get('ai_assistant_eyebrow');
   String get aiRecording => _get('ai_recording');
   String get aiChatReceiptSent => _get('ai_chat_receipt_sent');
@@ -741,6 +758,7 @@ class Tr {
   String get aiApiNotEnabled => _get('ai_api_not_enabled');
   String get aiPermissionDenied => _get('ai_permission_denied');
   String get aiQuotaExceeded => _get('ai_quota_exceeded');
+  String get aiBillingDepleted => _get('ai_billing_depleted');
   String get aiFilled => _get('ai_filled');
   String get aiEnergyEmpty => _get('ai_energy_empty');
   String aiEnergyHint(int units) =>
@@ -876,6 +894,12 @@ class Tr {
       'weekday_sat': 'S',
       'weekday_sun': 'D',
       // profile
+      'profile_avatar_choose': 'Elegir foto',
+      'profile_avatar_remove': 'Quitar foto',
+      'profile_avatar_updating': 'Actualizando foto…',
+      'profile_avatar_updated': 'Foto de perfil actualizada',
+      'profile_avatar_updated_local': 'Foto guardada en el dispositivo',
+      'profile_avatar_removed': 'Foto de perfil eliminada',
       'management': 'GESTIÓN',
       'recurring': 'RECURRENTE',
       'section_settings': 'AJUSTES',
@@ -1337,6 +1361,12 @@ class Tr {
       'pro_title': 'Monedero Pro',
       'pro_subtitle':
           'Sin límites en cuentas, metas, informes, IA (recibos y voz), importación y copias en la nube.',
+      'pro_feature_accounts': 'Cuentas, metas, presupuestos y deudas sin límite',
+      'pro_feature_ai': 'Asistente IA: voz, recibos y chat',
+      'pro_feature_reports': 'Informes, tendencias y flujos avanzados',
+      'pro_feature_cloud': 'Copias en la nube y sync entre dispositivos',
+      'pro_feature_import': 'Importar CSV y exportar Excel / PDF',
+      'pro_feature_shared': 'Presupuesto compartido con tu pareja',
       'pro_cta_subtitle': 'Acceso sin límites',
       'pro_go': 'Pasar a Pro',
       'pro_restore': 'Restaurar compras',
@@ -1438,6 +1468,10 @@ class Tr {
       'ai_chat_placeholder': 'Mensaje…',
       'ai_chat_welcome':
           'Hola. Soy tu asistente financiero. Puedo registrar un gasto o ingreso — escribe «Café 60» o «Salario 25000». También puedes enviar una foto del recibo, hablar por micrófono o preguntar sobre tus datos en la app.',
+      'ai_clear_chat': 'Borrar chat',
+      'ai_clear_chat_title': '¿Borrar el chat?',
+      'ai_clear_chat_body':
+          'Se eliminará el historial de este chat en el dispositivo y en la nube. No se puede deshacer.',
       'ai_assistant_eyebrow': 'AI',
       'ai_recording': 'Grabando…',
       'ai_chat_receipt_sent': '📷 Recibo',
@@ -1457,6 +1491,8 @@ class Tr {
       'ai_permission_denied':
           'Firebase rechazó la IA (App Check). En debug: copia el token de la consola y guárdalo en Firebase → App Check → Manage debug tokens.',
       'ai_quota_exceeded': 'Se alcanzó el límite de uso de IA. Prueba más tarde.',
+      'ai_billing_depleted':
+          'El asistente de IA no está disponible ahora. Inténtalo más tarde.',
       'ai_filled': 'Campos rellenados con IA',
       'ai_energy_empty':
           'Sin energía. Pasa a Pro para usar el asistente sin límites.',
@@ -1517,6 +1553,12 @@ class Tr {
       'weekday_sat': 'Сб',
       'weekday_sun': 'Вс',
       // profile
+      'profile_avatar_choose': 'Выбрать фото',
+      'profile_avatar_remove': 'Удалить фото',
+      'profile_avatar_updating': 'Обновляем фото…',
+      'profile_avatar_updated': 'Фото профиля обновлено',
+      'profile_avatar_updated_local': 'Фото сохранено на устройстве',
+      'profile_avatar_removed': 'Фото профиля удалено',
       'management': 'УПРАВЛЕНИЕ',
       'recurring': 'РЕГУЛЯРНОЕ',
       'section_settings': 'НАСТРОЙКИ',
@@ -1978,6 +2020,12 @@ class Tr {
       'pro_title': 'Monedero Pro',
       'pro_subtitle':
           'Без лимитов на счета, цели, отчёты, ИИ (чеки и голос), импорт и облачные копии.',
+      'pro_feature_accounts': 'Счета, цели, бюджеты и долги без лимита',
+      'pro_feature_ai': 'ИИ-ассистент: голос, чеки и чат',
+      'pro_feature_reports': 'Отчёты, тренды и денежные потоки',
+      'pro_feature_cloud': 'Облачные копии и синхронизация устройств',
+      'pro_feature_import': 'Импорт CSV и экспорт Excel / PDF',
+      'pro_feature_shared': 'Общий бюджет с партнёром',
       'pro_cta_subtitle': 'Доступ без ограничений',
       'pro_go': 'Перейти на Pro',
       'pro_restore': 'Восстановить покупки',
@@ -2079,6 +2127,10 @@ class Tr {
       'ai_chat_placeholder': 'Сообщение…',
       'ai_chat_welcome':
           'Привет! Я твой финансовый ассистент. Могу записать расход или доход — напиши «Кофе 60» или «Зарплата 25000». Можно отправить фото чека, сказать голосом или спросить про данные в приложении.',
+      'ai_clear_chat': 'Очистить чат',
+      'ai_clear_chat_title': 'Очистить чат?',
+      'ai_clear_chat_body':
+          'История этого чата будет удалена на устройстве и в облаке. Отменить нельзя.',
       'ai_assistant_eyebrow': 'AI',
       'ai_recording': 'Записываю…',
       'ai_chat_receipt_sent': '📷 Чек',
@@ -2098,6 +2150,8 @@ class Tr {
       'ai_permission_denied':
           'Firebase отклонил ИИ (App Check). В debug: скопируйте токен из логов и сохраните в Firebase → App Check → Manage debug tokens.',
       'ai_quota_exceeded': 'Лимит ИИ исчерпан. Попробуйте позже.',
+      'ai_billing_depleted':
+          'ИИ-ассистент временно недоступен. Попробуйте позже.',
       'ai_filled': 'Поля заполнены с помощью ИИ',
       'ai_energy_empty':
           'Энергия закончилась. Перейдите на Pro для безлимитного ассистента.',
@@ -2158,6 +2212,12 @@ class Tr {
       'weekday_sat': 'Sa',
       'weekday_sun': 'Su',
       // profile
+      'profile_avatar_choose': 'Choose photo',
+      'profile_avatar_remove': 'Remove photo',
+      'profile_avatar_updating': 'Updating photo…',
+      'profile_avatar_updated': 'Profile photo updated',
+      'profile_avatar_updated_local': 'Photo saved on this device',
+      'profile_avatar_removed': 'Profile photo removed',
       'management': 'MANAGEMENT',
       'recurring': 'RECURRING',
       'section_settings': 'SETTINGS',
@@ -2619,6 +2679,12 @@ class Tr {
       'pro_title': 'Monedero Pro',
       'pro_subtitle':
           'Unlimited accounts, goals, reports, AI (receipts & voice), import and cloud backups.',
+      'pro_feature_accounts': 'Unlimited accounts, goals, budgets and debts',
+      'pro_feature_ai': 'AI assistant: voice, receipts and chat',
+      'pro_feature_reports': 'Advanced reports, trends and cash flow',
+      'pro_feature_cloud': 'Cloud backups and multi-device sync',
+      'pro_feature_import': 'CSV import and Excel / PDF export',
+      'pro_feature_shared': 'Shared budget with your partner',
       'pro_cta_subtitle': 'Unlimited access',
       'pro_go': 'Go Pro',
       'pro_restore': 'Restore purchases',
@@ -2720,6 +2786,10 @@ class Tr {
       'ai_chat_placeholder': 'Message…',
       'ai_chat_welcome':
           'Hi! I\'m your financial assistant. I can log an expense or income — try «Coffee 60» or «Salary 25000». Send a receipt photo, use the mic, or ask about your app data.',
+      'ai_clear_chat': 'Clear chat',
+      'ai_clear_chat_title': 'Clear chat?',
+      'ai_clear_chat_body':
+          'This chat history will be deleted on this device and in the cloud. This cannot be undone.',
       'ai_assistant_eyebrow': 'AI',
       'ai_recording': 'Recording…',
       'ai_chat_receipt_sent': '📷 Receipt',
@@ -2739,6 +2809,8 @@ class Tr {
       'ai_permission_denied':
           'Firebase rejected AI (App Check). In debug: copy the token from logs and save it in Firebase → App Check → Manage debug tokens.',
       'ai_quota_exceeded': 'AI usage limit reached. Try again later.',
+      'ai_billing_depleted':
+          'The AI assistant is temporarily unavailable. Try again later.',
       'ai_filled': 'Fields filled with AI',
       'ai_energy_empty':
           'Out of energy. Upgrade to Pro for unlimited assistant use.',
@@ -2795,6 +2867,12 @@ class Tr {
       'weekday_sat': 'Сб',
       'weekday_sun': 'Нд',
       'management': 'КЕРУВАННЯ',
+      'profile_avatar_choose': 'Обрати фото',
+      'profile_avatar_remove': 'Видалити фото',
+      'profile_avatar_updating': 'Оновлюємо фото…',
+      'profile_avatar_updated': 'Фото профілю оновлено',
+      'profile_avatar_updated_local': 'Фото збережено на пристрої',
+      'profile_avatar_removed': 'Фото профілю видалено',
       'recurring': 'РЕГУЛЯРНЕ',
       'section_settings': 'НАЛАШТУВАННЯ',
       'accounts': 'Рахунки',
@@ -3218,6 +3296,12 @@ class Tr {
       'account_section': 'Акаунт',
       'pro_title': 'Monedero Pro',
       'pro_subtitle': 'Без лімітів на рахунки, цілі, звіти, ШІ (чеки та голос), імпорт і хмарні копії.',
+      'pro_feature_accounts': 'Рахунки, цілі, бюджети та борги без ліміту',
+      'pro_feature_ai': 'ШІ-асистент: голос, чеки та чат',
+      'pro_feature_reports': 'Звіти, тренди та грошові потоки',
+      'pro_feature_cloud': 'Хмарні копії та синхронізація пристроїв',
+      'pro_feature_import': 'Імпорт CSV та експорт Excel / PDF',
+      'pro_feature_shared': 'Спільний бюджет з партнером',
       'pro_cta_subtitle': 'Необмежений доступ',
       'pro_go': 'Оновити до Pro',
       'pro_restore': 'Відновити покупки',
@@ -3293,6 +3377,10 @@ class Tr {
       'ai_chat_hint': 'Голос, фото або текст — запишу витрати та доходи.',
       'ai_chat_placeholder': 'Повідомлення',
       'ai_chat_welcome': 'Вітаю! Я ваш фінансовий помічник. Можу записати витрату чи дохід — напишіть «Кава 60» або «Зарплата 25000». Можна надіслати фото чека, сказати голосом або запитати про дані в додатку.',
+      'ai_clear_chat': 'Очистити чат',
+      'ai_clear_chat_title': 'Очистити чат?',
+      'ai_clear_chat_body':
+          'Історію цього чату буде видалено на пристрої та в хмарі. Скасувати неможливо.',
       'ai_assistant_eyebrow': 'ШІ',
       'ai_recording': 'Запис…',
       'ai_chat_receipt_sent': 'Чек надіслано',
@@ -3309,6 +3397,8 @@ class Tr {
       'ai_api_not_enabled': 'Увімкніть Gemini / Firebase AI у консолі Firebase.',
       'ai_permission_denied': 'Firebase відхилила ШІ (App Check). У debug: скопіюйте токен із логів і додайте в Firebase → App Check → Debug tokens.',
       'ai_quota_exceeded': 'Ліміт ШІ вичерпано. Спробуйте пізніше.',
+      'ai_billing_depleted':
+          'ШІ-асистент тимчасово недоступний. Спробуйте пізніше.',
       'ai_filled': 'Поля заповнено за допомогою ШІ',
       'ai_energy_empty': 'Енергію вичерпано. Перейдіть на Pro для необмеженого асистента.',
       'ai_energy_hint':

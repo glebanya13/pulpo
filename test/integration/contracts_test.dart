@@ -14,9 +14,11 @@ void main() {
 
   group('In-app purchase product ids', () {
     test('Pro SKUs are non-empty and unique', () {
-      expect(ProProducts.monthlyId, isNotEmpty);
-      expect(ProProducts.yearlyId, isNotEmpty);
+      expect(ProProducts.monthlyId, 'monedero_pro_mensual');
+      expect(ProProducts.semiAnnualId, 'monedero_pro_6meses');
+      expect(ProProducts.yearlyId, 'monedero_pro_anual');
       expect(ProProducts.ids.length, 3);
+      expect(ProProducts.subscriptionGroupId, '22339635');
     });
   });
 }

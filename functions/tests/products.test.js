@@ -22,14 +22,14 @@ describe('products', () => {
 
   it('fallback expiry adds days', () => {
     const from = new Date('2026-01-01T00:00:00.000Z');
-    const expires = fallbackExpiry('pulpo_pro_mensual', from);
+    const expires = fallbackExpiry('monedero_pro_mensual', from);
     assert.equal(expires.toISOString(), '2026-01-31T00:00:00.000Z');
   });
 
   it('fallback amounts match paywall', () => {
-    assert.equal(fallbackAmount('pulpo_pro_mensual'), 3.99);
-    assert.equal(fallbackAmount('pulpo_pro_6_meses'), 14.99);
-    assert.equal(fallbackAmount('pulpo_pro_1anual'), 24.99);
+    assert.equal(fallbackAmount('monedero_pro_mensual'), 3.99);
+    assert.equal(fallbackAmount('monedero_pro_6meses'), 14.99);
+    assert.equal(fallbackAmount('monedero_pro_anual'), 24.99);
   });
 });
 
@@ -39,7 +39,7 @@ describe('resolveSubscriptionExpiry (trial)', () => {
   it('uses Apple expiresDate when present (trial or paid)', () => {
     const trialEnd = Date.parse('2026-08-27T12:00:00.000Z');
     const expires = resolveSubscriptionExpiry({
-      productId: 'pulpo_pro_1anual',
+      productId: 'monedero_pro_anual',
       expiresDateMs: trialEnd,
       offerType: 1,
       from,
@@ -49,7 +49,7 @@ describe('resolveSubscriptionExpiry (trial)', () => {
 
   it('falls back to 7-day intro when offerType is introductory and no expiresDate', () => {
     const expires = resolveSubscriptionExpiry({
-      productId: 'pulpo_pro_mensual',
+      productId: 'monedero_pro_mensual',
       expiresDateMs: null,
       offerType: 1,
       from,
@@ -60,7 +60,7 @@ describe('resolveSubscriptionExpiry (trial)', () => {
 
   it('falls back to full product period when not intro and no expiresDate', () => {
     const expires = resolveSubscriptionExpiry({
-      productId: 'pulpo_pro_mensual',
+      productId: 'monedero_pro_mensual',
       expiresDateMs: 0,
       offerType: null,
       from,
