@@ -39,12 +39,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final monthly = pro.monthly;
     final semiAnnual = pro.semiAnnual;
     final selected = _selected ?? monthly ?? semiAnnual ?? yearly;
+    final showPinnedCta = !pro.isPro && signedIn;
 
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
           children: [
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(24, 8, 24, showPinnedCta ? 12 : 32),
+                children: [
             Align(
               alignment: Alignment.centerRight,
               child: Pressable(
@@ -88,25 +92,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 color: context.mutedText,
               ),
             ),
-            if (!pro.isPro && widget.gate != ProGate.generic) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: context.surface,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  tr.paywallBody(widget.gate),
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.4,
-                    fontWeight: FontWeight.w600,
-                    color: context.primaryText,
-                  ),
-                ),
-              ),
-            ],
             if (pro.isPro) ...[
               const SizedBox(height: 20),
               _ProActiveSection(pro: pro),
@@ -148,7 +133,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               if (monthly != null)
                 _PaywallPlanCard(
                   title: tr.proMonthly,
-                  price: monthly.price,
+                  price: ProductOfferInfo.displayPrice(monthly),
                   allFeaturesLabel: tr.proAllFeatures,
                   badge: () {
                     final days = ProductOfferInfo.trialDays(monthly);
@@ -165,7 +150,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 const SizedBox(height: 10),
                 _PaywallPlanCard(
                   title: tr.proSemiAnnual,
-                  price: semiAnnual.price,
+                  price: ProductOfferInfo.displayPrice(semiAnnual),
                   allFeaturesLabel: tr.proAllFeatures,
                   comparePrice: ProductOfferInfo.comparePrice(
                     base: monthly,
@@ -187,7 +172,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 const SizedBox(height: 10),
                 _PaywallPlanCard(
                   title: tr.proYearly,
-                  price: yearly.price,
+                  price: ProductOfferInfo.displayPrice(yearly),
                   allFeaturesLabel: tr.proAllFeatures,
                   comparePrice: ProductOfferInfo.comparePrice(
                     base: monthly,
@@ -233,20 +218,21 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               const SizedBox(height: 10),
               _ProFeaturesCard(features: tr.proFeatureBullets),
               const SizedBox(height: 20),
-              ScaledElevatedButton(
-                onPressed: pro.purchasing || selected == null
-                    ? null
-                    : () => _buy(context, ref, tr, selected),
-                child: Text(_ctaLabel(tr, selected)),
-              ),
-              const SizedBox(height: 8),
+              if (!showPinnedCta)
+                ScaledElevatedButton(
+                  onPressed: pro.purchasing || selected == null
+                      ? null
+                      : () => _buy(context, ref, tr, selected),
+                  child: Text(_ctaLabel(tr, selected)),
+                ),
+              if (!showPinnedCta) const SizedBox(height: 8),
               ScaledTextButton(
                 onPressed: pro.purchasing
                     ? null
                     : () => _restore(context, ref, tr),
                 child: Text(tr.proRestore),
               ),
-              if (pro.error != null)
+              if (pro.error != null && !showPinnedCta)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
@@ -321,6 +307,42 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     .setDebugUnlock(v),
               ),
             ],
+                ],
+              ),
+            ),
+            if (showPinnedCta)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  border: Border(
+                    top: BorderSide(color: context.divider.withValues(alpha: 0.6)),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ScaledElevatedButton(
+                      onPressed: pro.purchasing || selected == null
+                          ? null
+                          : () => _buy(context, ref, tr, selected),
+                      child: Text(_ctaLabel(tr, selected)),
+                    ),
+                    if (pro.error != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _errorText(tr, pro.error!),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.danger,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
           ],
         ),
       ),

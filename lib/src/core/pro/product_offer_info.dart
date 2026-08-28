@@ -7,9 +7,32 @@ import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 
+import 'pro_limits.dart';
+
 /// Trial length and yearly savings derived from the store (fallback = null).
 class ProductOfferInfo {
   const ProductOfferInfo._();
+
+  /// Localized price for paywall UI (catalog amounts, store currency symbol).
+  static String displayPrice(ProductDetails product) {
+    final catalog = ProProducts.catalogAmounts[product.id];
+    if (catalog != null) {
+      return _formatPrice(product.currencySymbol, catalog);
+    }
+    return product.price;
+  }
+
+  static double _amount(ProductDetails? product) {
+    if (product == null) return 0;
+    final catalog = ProProducts.catalogAmounts[product.id];
+    if (catalog != null) return catalog;
+    return product.rawPrice;
+  }
+
+  static String _formatPrice(String currencySymbol, double amount) {
+    final decimals = amount == amount.roundToDouble() ? 0 : 2;
+    return '$currencySymbol${amount.toStringAsFixed(decimals)}';
+  }
 
   /// Free-trial length in days from StoreKit / Play, if configured.
   static int? trialDays(ProductDetails product) {
@@ -33,8 +56,8 @@ class ProductOfferInfo {
     required ProductDetails? monthly,
     required ProductDetails? yearly,
   }) {
-    final m = monthly?.rawPrice ?? 0;
-    final y = yearly?.rawPrice ?? 0;
+    final m = _amount(monthly);
+    final y = _amount(yearly);
     if (m <= 0 || y <= 0) return null;
     final full = m * 12;
     if (full <= y) return null;
@@ -46,8 +69,8 @@ class ProductOfferInfo {
     required ProductDetails? monthly,
     required ProductDetails? semiAnnual,
   }) {
-    final m = monthly?.rawPrice ?? 0;
-    final s = semiAnnual?.rawPrice ?? 0;
+    final m = _amount(monthly);
+    final s = _amount(semiAnnual);
     if (m <= 0 || s <= 0) return null;
     final full = m * 6;
     if (full <= s) return null;
@@ -60,11 +83,10 @@ class ProductOfferInfo {
     required int multiplier,
   }) {
     if (base == null || multiplier <= 0) return null;
-    final total = base.rawPrice * multiplier;
-    if (total <= 0) return null;
-    final sym = base.currencySymbol;
-    final decimals = total == total.roundToDouble() ? 0 : 2;
-    return '$sym${total.toStringAsFixed(decimals)}';
+    final unit = _amount(base);
+    if (unit <= 0) return null;
+    final total = unit * multiplier;
+    return _formatPrice(base.currencySymbol, total);
   }
 
   static int? _sk2TrialDays(ProductDetails product) {

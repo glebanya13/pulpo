@@ -14,6 +14,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/pressable.dart';
 import '../auth/cloud_auth.dart';
+import 'profile_avatar_cache.dart';
 
 const _avatarSize = 48.0;
 const _avatarFileName = 'profile_avatar.jpg';
@@ -129,6 +130,7 @@ Future<void> _removeAvatar(BuildContext context, WidgetRef ref) async {
   }
   await settings.setProfileAvatarPath(null);
   ref.read(settingsControllerProvider.notifier).setProfileAvatarPath(null);
+  await ProfileAvatarCache.clear();
 
   try {
     if (FirebaseAuth.instance.currentUser != null) {
@@ -142,7 +144,7 @@ Future<void> _removeAvatar(BuildContext context, WidgetRef ref) async {
   );
 }
 
-class ProfileAvatar extends StatelessWidget {
+class ProfileAvatar extends StatefulWidget {
   const ProfileAvatar({
     super.key,
     required this.name,
@@ -161,18 +163,119 @@ class ProfileAvatar extends StatelessWidget {
   final bool showEditBadge;
 
   @override
+  State<ProfileAvatar> createState() => _ProfileAvatarState();
+}
+
+class _ProfileAvatarState extends State<ProfileAvatar>
+    with SingleTickerProviderStateMixin {
+  File? _remoteFile;
+  var _loadingRemote = false;
+  late final AnimationController _fadeController;
+  late final Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+    _fade = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+    _loadingRemote = _shouldLoadRemote;
+    _resolveRemote();
+  }
+
+  @override
+  void didUpdateWidget(ProfileAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.photoUrl != widget.photoUrl ||
+        oldWidget.localPath != widget.localPath) {
+      _resolveRemote();
+    }
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _resolveRemote() async {
+    if (_hasLocalAvatar) {
+      if (_remoteFile != null || _loadingRemote) {
+        setState(() {
+          _remoteFile = null;
+          _loadingRemote = false;
+        });
+      }
+      _fadeController.value = 1;
+      return;
+    }
+
+    final url = widget.photoUrl?.trim();
+    if (url == null || url.isEmpty) {
+      if (_remoteFile != null || _loadingRemote) {
+        setState(() {
+          _remoteFile = null;
+          _loadingRemote = false;
+        });
+      }
+      _fadeController.value = 0;
+      return;
+    }
+
+    final cached = await ProfileAvatarCache.fileForUrl(url);
+    if (!mounted) return;
+    if (cached != null) {
+      setState(() {
+        _remoteFile = cached;
+        _loadingRemote = false;
+      });
+      _fadeController.forward(from: 0);
+      return;
+    }
+
+    setState(() {
+      _remoteFile = null;
+      _loadingRemote = true;
+    });
+    _fadeController.value = 0;
+
+    final file = await ProfileAvatarCache.warm(url);
+    if (!mounted) return;
+    setState(() {
+      _remoteFile = file;
+      _loadingRemote = false;
+    });
+    if (file != null) {
+      _fadeController.forward(from: 0);
+    }
+  }
+
+  bool get _hasLocalAvatar {
+    final local = widget.localPath?.trim();
+    return local != null && local.isNotEmpty && File(local).existsSync();
+  }
+
+  bool get _shouldLoadRemote {
+    if (_hasLocalAvatar) return false;
+    final url = widget.photoUrl?.trim();
+    return url != null && url.isNotEmpty;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final avatar = _buildAvatar(context);
-    if (onTap == null) return avatar;
+    if (widget.onTap == null) return avatar;
 
     return Pressable(
-      onTap: onTap,
+      onTap: widget.onTap,
       scale: 0.96,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           avatar,
-          if (showEditBadge)
+          if (widget.showEditBadge)
             Positioned(
               right: -2,
               bottom: -2,
@@ -200,81 +303,165 @@ class ProfileAvatar extends StatelessWidget {
   }
 
   Widget _buildAvatar(BuildContext context) {
-    final letter = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+    final letter =
+        widget.name.isNotEmpty ? widget.name[0].toUpperCase() : 'U';
+    final fallback = _AvatarFallback(letter: letter, size: widget.size);
 
-    Widget fallback() => Container(
-          width: size,
-          height: size,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [AppColors.lime, AppColors.limeAccent],
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            letter,
-            style: TextStyle(
-              color: AppColors.ink,
-              fontSize: size * 0.42,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        );
-
-    final local = localPath?.trim();
-    if (local != null && local.isNotEmpty && File(local).existsSync()) {
-      return SizedBox(
-        width: size,
-        height: size,
-        child: ClipOval(
-          clipBehavior: Clip.antiAlias,
-          child: Image.file(
-            File(local),
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => fallback(),
-          ),
+    if (_hasLocalAvatar) {
+      final local = widget.localPath!.trim();
+      return _AvatarImage(
+        size: widget.size,
+        child: Image.file(
+          File(local),
+          width: widget.size,
+          height: widget.size,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          errorBuilder: (_, __, ___) => fallback,
         ),
+        fade: _fade,
+        showImage: true,
       );
     }
 
-    final url = photoUrl?.trim();
-    if (url == null || url.isEmpty) return fallback();
+    if (_remoteFile != null) {
+      return _AvatarImage(
+        size: widget.size,
+        child: Image.file(
+          _remoteFile!,
+          width: widget.size,
+          height: widget.size,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          errorBuilder: (_, __, ___) => fallback,
+        ),
+        fade: _fade,
+        showImage: true,
+      );
+    }
 
+    if (_loadingRemote) {
+      return _AvatarLoading(letter: letter, size: widget.size);
+    }
+
+    return fallback;
+  }
+}
+
+class _AvatarImage extends StatelessWidget {
+  const _AvatarImage({
+    required this.size,
+    required this.child,
+    required this.fade,
+    required this.showImage,
+  });
+
+  final double size;
+  final Widget child;
+  final Animation<double> fade;
+  final bool showImage;
+
+  @override
+  Widget build(BuildContext context) {
     return SizedBox(
       width: size,
       height: size,
       child: ClipOval(
         clipBehavior: Clip.antiAlias,
-        child: Image.network(
-          _avatarPhotoUrl(url),
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          alignment: Alignment.center,
-          filterQuality: FilterQuality.medium,
-          gaplessPlayback: true,
-          errorBuilder: (_, __, ___) => fallback(),
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) return child;
-            return fallback();
-          },
+        child: FadeTransition(
+          opacity: fade,
+          child: showImage ? child : const SizedBox.shrink(),
         ),
       ),
     );
   }
 }
 
-String _avatarPhotoUrl(String url) {
-  var u = url.trim();
-  if (!u.contains('googleusercontent.com')) return u;
-  u = u
-      .replaceAll(RegExp(r'=s\d+-c?\b'), '=s256-c')
-      .replaceAll(RegExp(r'/s\d+-c?/'), '/s256-c/');
-  if (!RegExp(r'[=/]s\d').hasMatch(u)) {
-    u = u.contains('?') ? '$u&sz=256' : '$u=s256-c';
+class _AvatarFallback extends StatelessWidget {
+  const _AvatarFallback({required this.letter, required this.size});
+
+  final String letter;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [AppColors.lime, AppColors.limeAccent],
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        letter,
+        style: TextStyle(
+          color: AppColors.ink,
+          fontSize: size * 0.42,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
   }
-  return u;
+}
+
+class _AvatarLoading extends StatefulWidget {
+  const _AvatarLoading({required this.letter, required this.size});
+
+  final String letter;
+  final double size;
+
+  @override
+  State<_AvatarLoading> createState() => _AvatarLoadingState();
+}
+
+class _AvatarLoadingState extends State<_AvatarLoading>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, child) {
+        return Opacity(
+          opacity: 0.55 + (_pulse.value * 0.45),
+          child: child,
+        );
+      },
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          _AvatarFallback(letter: widget.letter, size: widget.size),
+          SizedBox(
+            width: widget.size * 0.34,
+            height: widget.size * 0.34,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: context.isDark
+                  ? AppColors.lime.withValues(alpha: 0.9)
+                  : AppColors.ink.withValues(alpha: 0.65),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

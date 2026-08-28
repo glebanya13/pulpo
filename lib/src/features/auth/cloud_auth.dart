@@ -18,6 +18,7 @@ import '../../data/repositories/backup_service.dart';
 import '../../data/repositories/error_log_cloud.dart';
 import '../../data/repositories/settings_service.dart';
 import '../shared_budget/household_service.dart';
+import '../profile/profile_avatar_cache.dart';
 import 'cloud_restore_prompt.dart';
 
 class CloudNotConfigured implements Exception {
@@ -608,6 +609,10 @@ class CloudAuth {
       await user.updatePhotoURL(picture);
     }
 
+    if (picture != null) {
+      unawaited(ProfileAvatarCache.warm(picture));
+    }
+
     await _profileRef(user.uid).set({
       if (chosen != null) 'displayName': chosen,
       if (picture != null) 'photoUrl': picture,
@@ -673,6 +678,7 @@ class CloudAuth {
       SetOptions(merge: true),
     );
     await user.reload();
+    unawaited(ProfileAvatarCache.warm(url));
   }
 
   /// Removes cloud avatar; local file is cleared by the caller.
@@ -696,6 +702,7 @@ class CloudAuth {
       SetOptions(merge: true),
     );
     await user.reload();
+    await ProfileAvatarCache.clear();
   }
 }
 

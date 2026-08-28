@@ -676,6 +676,7 @@ class Tr {
         _get('pro_feature_cloud'),
         _get('pro_feature_import'),
         _get('pro_feature_shared'),
+        _get('pro_feature_reminders'),
       ];
   String get proCtaSubtitle => _get('pro_cta_subtitle');
   String get proGo => _get('pro_go');
@@ -1382,6 +1383,8 @@ class Tr {
       'pro_feature_cloud': 'Copias en la nube y sync entre dispositivos',
       'pro_feature_import': 'Importar CSV y exportar Excel / PDF',
       'pro_feature_shared': 'Presupuesto compartido con tu pareja',
+      'pro_feature_reminders':
+          'Recordatorios de pagos, suscripciones y metas financieras',
       'pro_cta_subtitle': 'Acceso sin límites',
       'pro_go': 'Pasar a Pro',
       'pro_restore': 'Restaurar compras',
@@ -2048,6 +2051,8 @@ class Tr {
       'pro_feature_cloud': 'Облачные копии и синхронизация устройств',
       'pro_feature_import': 'Импорт CSV и экспорт Excel / PDF',
       'pro_feature_shared': 'Общий бюджет с партнёром',
+      'pro_feature_reminders':
+          'Напоминания о платежах, подписках и финансовых целях',
       'pro_cta_subtitle': 'Доступ без ограничений',
       'pro_go': 'Перейти на Pro',
       'pro_restore': 'Восстановить покупки',
@@ -2714,6 +2719,8 @@ class Tr {
       'pro_feature_cloud': 'Cloud backups and multi-device sync',
       'pro_feature_import': 'CSV import and Excel / PDF export',
       'pro_feature_shared': 'Shared budget with your partner',
+      'pro_feature_reminders':
+          'Reminders for payments, subscriptions and financial goals',
       'pro_cta_subtitle': 'Unlimited access',
       'pro_go': 'Go Pro',
       'pro_restore': 'Restore purchases',
@@ -3339,6 +3346,8 @@ class Tr {
       'pro_feature_cloud': 'Хмарні копії та синхронізація пристроїв',
       'pro_feature_import': 'Імпорт CSV та експорт Excel / PDF',
       'pro_feature_shared': 'Спільний бюджет з партнером',
+      'pro_feature_reminders':
+          'Нагадування про платежі, підписки та фінансові цілі',
       'pro_cta_subtitle': 'Необмежений доступ',
       'pro_go': 'Оновити до Pro',
       'pro_restore': 'Відновити покупки',

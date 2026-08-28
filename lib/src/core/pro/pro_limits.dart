@@ -55,6 +55,13 @@ class ProProducts {
 
   /// App Store Connect subscription group.
   static const subscriptionGroupId = '22339635';
+
+  /// Paywall display amounts (must match ASC / Play / StoreKit config).
+  static const catalogAmounts = <String, double>{
+    monthlyId: 3.99,
+    semiAnnualId: 14.99,
+    yearlyId: 24.99,
+  };
 }
 
 bool isActiveGoal({required bool isCompleted}) => !isCompleted;
