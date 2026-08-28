@@ -3,7 +3,7 @@ workflows:
     name: Monedero iOS Release
 
     integrations:
-      app_store_connect: PULPO CODEMAGIC
+      app_store_connect: Monedero API
 
     environment:
       flutter: 3.47.0
