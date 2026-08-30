@@ -31,6 +31,8 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
   final _textCtrl = TextEditingController();
   db.Account? _account;
   bool _listening = false;
+  bool _resumingListen = false;
+  String _listenBase = '';
   bool _busy = false;
   bool _gateChecked = false;
 
@@ -66,17 +68,30 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
         _ => 'es_ES',
       };
 
+  bool _isSoftSpeechError(Object error) {
+    final msg = error.toString().toLowerCase();
+    return msg.contains('no_match') ||
+        msg.contains('no_speech') ||
+        msg.contains('speech_timeout') ||
+        msg.contains('busy') ||
+        msg.contains('client');
+  }
+
   Future<void> _startListening() async {
     if (_busy) return;
     final tr = Tr.of(context);
     final available = await _speech.initialize(
       onError: (e) {
         debugPrint('speech error: $e');
-        if (mounted) setState(() => _listening = false);
+        if (_isSoftSpeechError(e)) {
+          if (mounted && _listening) unawaited(_continueListening());
+          return;
+        }
+        if (mounted) unawaited(_stopListening());
       },
       onStatus: (status) {
         if (status == 'done' || status == 'notListening') {
-          if (mounted) setState(() => _listening = false);
+          if (mounted && _listening) unawaited(_continueListening());
         }
       },
     );
@@ -87,6 +102,28 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
       return;
     }
 
+    setState(() {
+      _listening = true;
+      _listenBase = _textCtrl.text.trim();
+    });
+    await _startSpeechEngine();
+  }
+
+  Future<void> _continueListening() async {
+    if (!_listening || !mounted || _resumingListen) return;
+    _resumingListen = true;
+    _listenBase = _textCtrl.text.trim();
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      if (!_listening || !mounted) return;
+      await _startSpeechEngine();
+    } finally {
+      _resumingListen = false;
+    }
+  }
+
+  Future<void> _startSpeechEngine() async {
+    if (!_listening || !mounted) return;
     final preferred = _localeId(ref.read(settingsControllerProvider).locale);
     final locales = await _speech.locales();
     final matched = locales
@@ -96,26 +133,34 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
         .map((l) => l.localeId)
         .firstOrNull;
 
-    setState(() => _listening = true);
     await _speech.listen(
       onResult: (result) {
-        if (!mounted) return;
-        setState(() => _textCtrl.text = result.recognizedWords);
+        if (!mounted || !_listening) return;
+        final chunk = result.recognizedWords.trim();
+        final combined = _listenBase.isEmpty
+            ? chunk
+            : (chunk.isEmpty ? _listenBase : '$_listenBase $chunk');
+        setState(() => _textCtrl.text = combined);
       },
       listenOptions: stt.SpeechListenOptions(
         localeId: matched ?? preferred,
-        listenFor: const Duration(seconds: 60),
-        pauseFor: const Duration(seconds: 5),
+        listenFor: const Duration(minutes: 3),
+        pauseFor: const Duration(seconds: 15),
         partialResults: true,
         listenMode: stt.ListenMode.dictation,
-        cancelOnError: true,
+        cancelOnError: false,
       ),
     );
   }
 
   Future<void> _stopListening() async {
+    _resumingListen = false;
+    if (mounted) {
+      setState(() => _listening = false);
+    } else {
+      _listening = false;
+    }
     await _speech.stop();
-    if (mounted) setState(() => _listening = false);
   }
 
   Future<void> _clear() async {

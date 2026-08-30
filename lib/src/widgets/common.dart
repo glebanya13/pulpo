@@ -175,31 +175,39 @@ class MadeInSpainTagline extends StatelessWidget {
     final line1Color = context.isDark
         ? context.mutedText
         : AppColors.textSecondary;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          tr.madeInSpainLine1,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            height: 1.25,
-            color: line1Color,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            tr.madeInSpainLine1,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              height: 1.25,
+              color: line1Color,
+            ),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          tr.madeInSpainLine2,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            height: 1.3,
-            color: context.faintText,
+          const SizedBox(height: 2),
+          Text(
+            tr.madeInSpainLine2,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              height: 1.3,
+              color: context.faintText,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

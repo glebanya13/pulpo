@@ -41,27 +41,20 @@ class DashboardScreen extends ConsumerWidget {
       tabPath: '/',
       builder: (context, scroll) {
         final pad = AppSpacing.tabPagePadding(context);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        return StickyScrollPage(
+          useSafeArea: false,
+          controller: scroll,
+          padding: pad,
+          headerGap: 0,
+          headerBottomPadding: 10,
+          header: ScreenTitlePill(
+            title: settings.userName,
+            eyebrow: tr.greetingForHour(DateTime.now().hour),
+            large: true,
+            expand: true,
+            trailing: const HeaderSupportActions(dense: true),
+          ),
           children: [
-            ColoredBox(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(pad.left, pad.top, pad.right, 10),
-                child: ScreenTitlePill(
-                  title: settings.userName,
-                  eyebrow: tr.greetingForHour(DateTime.now().hour),
-                  large: true,
-                  expand: true,
-                  trailing: const HeaderSupportActions(dense: true),
-                ),
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                controller: scroll,
-                padding: EdgeInsets.fromLTRB(pad.left, 0, pad.right, pad.bottom),
-                children: [
                   AsyncValuesGate(
                     values: [accountsAsync, txsAsync],
                     onRetry: retryBalance,
@@ -108,9 +101,7 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  const _HomeLinks(),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
@@ -137,11 +128,9 @@ class DashboardScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const SizedBox(height: 6),
                   const MonthlyCalendar(),
-                ],
-              ),
-            ),
+                  const SizedBox(height: 12),
+                  const _HomeLinks(),
           ],
         );
       },

@@ -52,6 +52,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   String _busyLabel = '';
   bool _gateChecked = false;
   bool _listening = false;
+  bool _resumingListen = false;
+  String _listenBase = '';
   int _listenSeconds = 0;
   Timer? _listenTimer;
   Timer? _burnTimer;
@@ -191,12 +193,19 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         _ => 'es_ES',
       };
 
+  bool _isSoftSpeechError(Object error) {
+    final msg = error.toString().toLowerCase();
+    return msg.contains('no_match') ||
+        msg.contains('no_speech') ||
+        msg.contains('speech_timeout') ||
+        msg.contains('busy') ||
+        msg.contains('client');
+  }
+
   Future<void> _toggleListening() async {
     if (_busy) return;
     if (_listening) {
       await _stopListening();
-      final text = _input.text.trim();
-      if (text.isNotEmpty) await _send(text);
       return;
     }
 
@@ -205,12 +214,16 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
     final tr = Tr.of(context);
     final available = await _speech.initialize(
-      onError: (_) {
-        if (mounted) _stopListening();
+      onError: (error) {
+        if (_isSoftSpeechError(error)) {
+          if (mounted && _listening) unawaited(_continueListening());
+          return;
+        }
+        if (mounted) unawaited(_stopListening());
       },
       onStatus: (status) {
         if (status == 'done' || status == 'notListening') {
-          if (mounted && _listening) _stopListening();
+          if (mounted && _listening) unawaited(_continueListening());
         }
       },
     );
@@ -222,6 +235,35 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       return;
     }
 
+    setState(() {
+      _listening = true;
+      _listenBase = _input.text.trim();
+      _listenSeconds = 0;
+    });
+    _syncEnergyBurn();
+    _listenTimer?.cancel();
+    _listenTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _listenSeconds++);
+    });
+
+    await _startSpeechEngine();
+  }
+
+  Future<void> _continueListening() async {
+    if (!_listening || !mounted || _resumingListen) return;
+    _resumingListen = true;
+    _listenBase = _input.text.trim();
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      if (!_listening || !mounted) return;
+      await _startSpeechEngine();
+    } finally {
+      _resumingListen = false;
+    }
+  }
+
+  Future<void> _startSpeechEngine() async {
+    if (!_listening || !mounted) return;
     final preferred = _localeId(ref.read(settingsControllerProvider).locale);
     final locales = await _speech.locales();
     final matched = locales
@@ -231,28 +273,22 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         .map((l) => l.localeId)
         .firstOrNull;
 
-    setState(() {
-      _listening = true;
-      _listenSeconds = 0;
-    });
-    _syncEnergyBurn();
-    _listenTimer?.cancel();
-    _listenTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _listenSeconds++);
-    });
-
     await _speech.listen(
       onResult: (result) {
-        if (!mounted) return;
-        setState(() => _input.text = result.recognizedWords);
+        if (!mounted || !_listening) return;
+        final chunk = result.recognizedWords.trim();
+        final combined = _listenBase.isEmpty
+            ? chunk
+            : (chunk.isEmpty ? _listenBase : '$_listenBase $chunk');
+        setState(() => _input.text = combined);
       },
       listenOptions: stt.SpeechListenOptions(
         localeId: matched ?? preferred,
-        listenFor: const Duration(seconds: 60),
-        pauseFor: const Duration(seconds: 4),
+        listenFor: const Duration(minutes: 3),
+        pauseFor: const Duration(seconds: 15),
         partialResults: true,
         listenMode: stt.ListenMode.dictation,
-        cancelOnError: true,
+        cancelOnError: false,
       ),
     );
   }
@@ -260,14 +296,19 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   Future<void> _stopListening() async {
     _listenTimer?.cancel();
     _listenTimer = null;
-    await _speech.stop();
+    _resumingListen = false;
     if (mounted) {
       setState(() {
         _listening = false;
+        _listenBase = '';
         _listenSeconds = 0;
       });
       _syncEnergyBurn();
+    } else {
+      _listening = false;
+      _listenBase = '';
     }
+    await _speech.stop();
   }
 
   Future<db.Account?> _resolveAccount() async {
@@ -982,7 +1023,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                     onTap: _busy
                         ? null
                         : () {
-                            if (hasText) {
+                            if (_listening) {
+                              unawaited(_stopListening());
+                            } else if (hasText) {
                               unawaited(_send());
                             } else {
                               unawaited(_toggleListening());
@@ -1007,10 +1050,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                             : null,
                       ),
                       child: Icon(
-                        hasText
-                            ? LucideIcons.send
-                            : (_listening
-                                ? LucideIcons.square
+                        _listening
+                            ? LucideIcons.square
+                            : (hasText
+                                ? LucideIcons.send
                                 : LucideIcons.mic),
                         size: 18,
                         color: hasText || _listening
