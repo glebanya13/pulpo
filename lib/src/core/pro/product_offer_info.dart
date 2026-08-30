@@ -8,16 +8,25 @@ import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 
 import 'pro_limits.dart';
+import '../utils/money_format.dart';
 
 /// Trial length and yearly savings derived from the store (fallback = null).
 class ProductOfferInfo {
   const ProductOfferInfo._();
 
-  /// Localized price for paywall UI (catalog amounts, store currency symbol).
+  /// Paywall price in euros (es_ES), independent of sandbox currency symbol.
+  static String formatCatalogPrice(double amount) {
+    return formatMoney(amount, ProProducts.catalogCurrency);
+  }
+
+  /// Localized price for paywall UI (catalog EUR amounts for Monedero SKUs).
   static String displayPrice(ProductDetails product) {
     final catalog = ProProducts.catalogAmounts[product.id];
     if (catalog != null) {
-      return _formatPrice(product.currencySymbol, catalog);
+      return formatCatalogPrice(catalog);
+    }
+    if (product.currencyCode.toUpperCase() == ProProducts.catalogCurrency) {
+      return formatMoney(product.rawPrice, ProProducts.catalogCurrency);
     }
     return product.price;
   }
@@ -27,11 +36,6 @@ class ProductOfferInfo {
     final catalog = ProProducts.catalogAmounts[product.id];
     if (catalog != null) return catalog;
     return product.rawPrice;
-  }
-
-  static String _formatPrice(String currencySymbol, double amount) {
-    final decimals = amount == amount.roundToDouble() ? 0 : 2;
-    return '$currencySymbol${amount.toStringAsFixed(decimals)}';
   }
 
   /// Free-trial length in days from StoreKit / Play, if configured.
@@ -96,7 +100,7 @@ class ProductOfferInfo {
     final unit = _amount(base);
     if (unit <= 0) return null;
     final total = unit * multiplier;
-    return _formatPrice(base.currencySymbol, total);
+    return formatCatalogPrice(total);
   }
 
   static int? _sk2TrialDays(ProductDetails product) {

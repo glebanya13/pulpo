@@ -1391,6 +1391,11 @@ class _AiInsightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final accent = AppColors.violet;
+    final isDark = context.isDark;
+    // На светлой карточке пастельный violet (#A78BFA) почти не виден.
+    final actionColor = isDark ? accent : AppColors.brandPurple;
+    final hintColor = isDark ? context.mutedText : AppColors.textSecondary;
+    final lockedDim = showPro && isDark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -1417,7 +1422,7 @@ class _AiInsightCard extends StatelessWidget {
               Icon(
                 LucideIcons.sparkles,
                 size: 18,
-                color: showPro ? accent.withValues(alpha: 0.55) : accent,
+                color: lockedDim ? accent.withValues(alpha: 0.55) : actionColor,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -1426,7 +1431,7 @@ class _AiInsightCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: showPro
+                    color: lockedDim
                         ? context.primaryText.withValues(alpha: 0.55)
                         : context.primaryText,
                   ),
@@ -1445,9 +1450,9 @@ class _AiInsightCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 height: 1.35,
-                color: showPro
-                    ? context.mutedText.withValues(alpha: 0.7)
-                    : context.mutedText,
+                color: lockedDim
+                    ? hintColor.withValues(alpha: 0.7)
+                    : hintColor,
               ),
             )
           else
@@ -1469,12 +1474,26 @@ class _AiInsightCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(100),
                 border: Border.all(
-                  color: accent.withValues(
-                    alpha: busy || showPro ? 0.35 : 0.85,
+                  color: actionColor.withValues(
+                    alpha: busy
+                        ? 0.4
+                        : lockedDim
+                            ? 0.35
+                            : isDark
+                                ? 0.85
+                                : 0.55,
                   ),
                   width: 1.5,
                 ),
-                color: accent.withValues(alpha: busy || showPro ? 0.08 : 0.14),
+                color: actionColor.withValues(
+                  alpha: busy
+                      ? 0.08
+                      : lockedDim
+                          ? 0.08
+                          : isDark
+                              ? 0.14
+                              : 0.1,
+                ),
               ),
               alignment: Alignment.center,
               child: Text(
@@ -1482,7 +1501,13 @@ class _AiInsightCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: accent.withValues(alpha: busy || showPro ? 0.45 : 1),
+                  color: actionColor.withValues(
+                    alpha: busy
+                        ? 0.5
+                        : lockedDim
+                            ? 0.45
+                            : 1,
+                  ),
                 ),
               ),
             ),

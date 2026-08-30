@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -28,6 +29,7 @@ import 'src/core/app_startup.dart';
 import 'src/features/auth/cloud_restore_prompt.dart';
 import 'src/features/security/lock_screen.dart';
 import 'src/widgets/startup_banner.dart';
+import 'src/widgets/app_fatal_error.dart';
 import 'src/router.dart';
 
 Future<void> main() async {
@@ -151,19 +153,22 @@ Future<void> main() async {
   }
 
   ErrorWidget.builder = (details) {
-    return Material(
-      color: AppColors.ink,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            details.exceptionAsString(),
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70, fontSize: 13),
+    if (kDebugMode) {
+      return Material(
+        color: AppColors.ink,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              details.exceptionAsString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            ),
           ),
         ),
-      ),
-    );
+      );
+    }
+    return AppFatalErrorWidget(details: details);
   };
 
   runApp(UncontrolledProviderScope(
@@ -202,6 +207,9 @@ class BudgetTrackerApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Monedero',
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      ),
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: settings.materialThemeMode,
@@ -225,19 +233,12 @@ class BudgetTrackerApp extends ConsumerWidget {
             systemNavigationBarIconBrightness:
                 dark ? Brightness.light : Brightness.dark,
           ),
-          child: Listener(
-            behavior: HitTestBehavior.translucent,
-            onPointerDown: (_) {
-              final focus = FocusManager.instance.primaryFocus;
-              if (focus != null && focus.hasFocus) focus.unfocus();
-            },
-            child: StartupBannerHost(
-              child: AutoSyncBinder(
-                child: CloudSyncFeedbackListener(
-                  child: CloudLoginSyncBinder(
-                    child: HomeWidgetBinder(
-                      child: LockGate(child: routed),
-                    ),
+          child: StartupBannerHost(
+            child: AutoSyncBinder(
+              child: CloudSyncFeedbackListener(
+                child: CloudLoginSyncBinder(
+                  child: HomeWidgetBinder(
+                    child: LockGate(child: routed),
                   ),
                 ),
               ),

@@ -6,13 +6,13 @@ import 'package:intl/intl.dart';
 import '../../core/ai/assistant_energy.dart';
 import '../../features/auth/cloud_auth.dart';
 import '../../features/pro/paywall_screen.dart';
+import '../navigation/smooth_routes.dart';
 import 'pro_controller.dart';
 import 'pro_limits.dart';
 
 Future<void> openPaywall(BuildContext context, ProGate gate) {
   return Navigator.of(context, rootNavigator: true).push(
-    MaterialPageRoute<void>(
-      fullscreenDialog: true,
+    SmoothModalRoute<void>(
       builder: (_) => PaywallScreen(gate: gate),
     ),
   );

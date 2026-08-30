@@ -69,6 +69,7 @@
 		A32F8C2C2C6E4A1A00B4C012 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A32F8C2C2C6E4A1A00B4C013 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A32F8C2C2C6E4A1A00B4C014 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A32F8C2C2C6E4A1A00B4C015 /* uk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = uk; path = uk.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A41F8C2D2C6E4A1A00B4C003 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		AD4F36AACDEA4BD5C1BD2954 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		B1EE1402D52D109DBCF93B67 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -251,6 +252,7 @@
 				Base,
 				es,
 				ru,
+				uk,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
@@ -450,6 +452,7 @@
 				A32F8C2C2C6E4A1A00B4C012 /* en */,
 				A32F8C2C2C6E4A1A00B4C013 /* es */,
 				A32F8C2C2C6E4A1A00B4C014 /* ru */,
+				A32F8C2C2C6E4A1A00B4C015 /* uk */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";

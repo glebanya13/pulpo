@@ -174,6 +174,7 @@ class Tr {
   // ─────────────────────── BOTTOM NAV / SECTIONS ───────────────────────
   String get home => _get('home');
   String get transactions => _get('transactions');
+  String get transactionsSubtitle => _get('transactions_subtitle');
   String get analytics => _get('analytics');
   String get profile => _get('profile');
   String get profileAvatarChoose => _get('profile_avatar_choose');
@@ -455,6 +456,13 @@ class Tr {
   String get inRealtime => _get('in_realtime');
   String get history12Weeks => _get('history_12_weeks');
   String get offlineFirstTag => _get('offline_first_tag');
+  String get madeInSpainLine1 => _get('made_in_spain_line1');
+  String get madeInSpainLine2 => _get('made_in_spain_line2');
+  String get aboutSpainTitle => _get('about_spain_title');
+  String get aboutSpainParagraph1 => _get('about_spain_p1');
+  String get aboutSpainParagraph2 => _get('about_spain_p2');
+  String get aboutSpainClosing1 => _get('about_spain_closing1');
+  String get aboutSpainClosing2 => _get('about_spain_closing2');
   String txIdLabel(int id) => _get('tx_id').replaceAll('{}', '$id');
   String get bankAccounts => _get('bank_accounts');
   String get cashWallets => _get('cash_wallets');
@@ -581,6 +589,8 @@ class Tr {
 
   // ─────────────────────── COMMON / ERROR ───────────────────────
   String get errorTitle => _get('error_title');
+  String get errorFatalBody => _get('error_fatal_body');
+  String get errorFatalHint => _get('error_fatal_hint');
   String get addAccountFirst => _get('add_account_first');
   String get accountNotFound => _get('account_not_found');
   String get backupCreated => _get('backup_created');
@@ -670,13 +680,27 @@ class Tr {
       _get('pro_discount_badge').replaceAll('{}', '$pct');
   String get proAllFeatures => _get('pro_all_features');
   List<String> get proFeatureBullets => [
+        _get('pro_feature_ai_chat'),
+        _get('pro_feature_ai_quality'),
+        _get('pro_feature_ai_receipts'),
+        _get('pro_feature_ai_voice'),
         _get('pro_feature_accounts'),
-        _get('pro_feature_ai'),
-        _get('pro_feature_reports'),
-        _get('pro_feature_cloud'),
-        _get('pro_feature_import'),
-        _get('pro_feature_shared'),
-        _get('pro_feature_reminders'),
+        _get('pro_feature_budgets'),
+        _get('pro_feature_goals'),
+        _get('pro_feature_debts'),
+        _get('pro_feature_stats'),
+        _get('pro_feature_trends'),
+        _get('pro_feature_cashflow'),
+        _get('pro_feature_shared_budget'),
+        _get('pro_feature_reminder_payments'),
+        _get('pro_feature_reminder_subs'),
+        _get('pro_feature_reminder_goals'),
+        _get('pro_feature_cloud_backup'),
+        _get('pro_feature_sync'),
+        _get('pro_feature_export_excel'),
+        _get('pro_feature_export_pdf'),
+        _get('pro_feature_import_csv'),
+        _get('pro_feature_no_ads'),
       ];
   String get proCtaSubtitle => _get('pro_cta_subtitle');
   String get proGo => _get('pro_go');
@@ -881,6 +905,7 @@ class Tr {
       // nav
       'home': 'Inicio',
       'transactions': 'Transacciones',
+      'transactions_subtitle': 'Ingresos, gastos y transferencias',
       'analytics': 'Analítica',
       'profile': 'Perfil',
       // dashboard
@@ -1043,6 +1068,14 @@ class Tr {
       'in_realtime': '↑ en tiempo real',
       'history_12_weeks': '12 semanas',
       'offline_first_tag': 'Monedero · offline-first',
+      'made_in_spain_line1': 'Hecho en España 🇪🇸',
+      'made_in_spain_line2': 'Para los que hablamos español.',
+      'about_spain_title': 'Hecho en España 🇪🇸',
+      'about_spain_p1':
+          'Creamos esta app porque queríamos una forma sencilla de gestionar nuestro dinero, hecha para nuestra manera de hablar y vivir.',
+      'about_spain_p2': 'Ahora queremos compartirla contigo.',
+      'about_spain_closing1': 'No es una app traducida al español.',
+      'about_spain_closing2': 'Es una app creada en español. 🇪🇸',
       'tx_id': 'ID: txn_{}',
       'bank_accounts': 'Cuentas bancarias',
       'cash_wallets': 'Efectivo y carteras',
@@ -1179,6 +1212,10 @@ class Tr {
       'crypto_upper': 'CRIPTO',
       // common error
       'error_title': 'Algo salió mal',
+      'error_fatal_body':
+          'Monedero encontró un error inesperado. Tus datos locales siguen guardados en el dispositivo.',
+      'error_fatal_hint':
+          'Cierra la app por completo (desliza hacia arriba en el selector de apps) y ábrela de nuevo.',
       'add_account_first': 'Añade primero una cuenta',
       'account_not_found': 'Cuenta no encontrada',
       'backup_created': 'Copia creada',
@@ -1377,14 +1414,27 @@ class Tr {
       'pro_trial_badge': '{} DÍAS GRATIS',
       'pro_discount_badge': '−{}%',
       'pro_all_features': 'Todas las funciones',
-      'pro_feature_accounts': 'Cuentas, metas, presupuestos y deudas sin límite',
-      'pro_feature_ai': 'Asistente IA: voz, recibos y chat',
-      'pro_feature_reports': 'Informes, tendencias y flujos avanzados',
-      'pro_feature_cloud': 'Copias en la nube y sync entre dispositivos',
-      'pro_feature_import': 'Importar CSV y exportar Excel / PDF',
-      'pro_feature_shared': 'Presupuesto compartido con tu pareja',
-      'pro_feature_reminders':
-          'Recordatorios de pagos, suscripciones y metas financieras',
+      'pro_feature_ai_chat': 'Asistente IA en el chat',
+      'pro_feature_ai_quality': 'Calidad y velocidad premium de la IA',
+      'pro_feature_ai_receipts': 'Escaneo de recibos con IA',
+      'pro_feature_ai_voice': 'Entrada por voz con IA',
+      'pro_feature_accounts': 'Cuentas sin límites',
+      'pro_feature_budgets': 'Presupuestos sin límites',
+      'pro_feature_goals': 'Metas financieras sin límites',
+      'pro_feature_debts': 'Deudas sin límites',
+      'pro_feature_stats': 'Estadísticas e informes detallados',
+      'pro_feature_trends': 'Análisis de tendencias financieras',
+      'pro_feature_cashflow': 'Flujos de caja',
+      'pro_feature_shared_budget': 'Presupuesto compartido con tu pareja',
+      'pro_feature_reminder_payments': 'Recordatorios de pagos',
+      'pro_feature_reminder_subs': 'Recordatorios de suscripciones',
+      'pro_feature_reminder_goals': 'Recordatorios de metas financieras',
+      'pro_feature_cloud_backup': 'Copias de seguridad en la nube',
+      'pro_feature_sync': 'Sincronización entre dispositivos',
+      'pro_feature_export_excel': 'Exportar a Excel',
+      'pro_feature_export_pdf': 'Exportar a PDF',
+      'pro_feature_import_csv': 'Importar datos desde CSV',
+      'pro_feature_no_ads': 'Sin anuncios',
       'pro_cta_subtitle': 'Acceso sin límites',
       'pro_go': 'Pasar a Pro',
       'pro_restore': 'Restaurar compras',
@@ -1477,10 +1527,10 @@ class Tr {
       'ai_use_transcript': 'Usar',
       'ai_category_suggest': 'IA sugiere: {}',
       'ai_apply_category': 'Aplicar',
-      'ai_insight_title': 'Insight de IA',
-      'ai_insight_generate': 'Generar insight',
+      'ai_insight_title': 'Análisis financiero con IA',
+      'ai_insight_generate': 'Generar',
       'ai_insight_hint':
-          'Un resumen breve a partir de los totales del periodo. Los movimientos en bruto no se envían.',
+          'Ingresos, gastos y cambios clave.',
       'ai_chat_title': 'Asistente',
       'ai_chat_hint': 'Voz, foto o texto — registra gastos e ingresos.',
       'ai_chat_placeholder': 'Mensaje…',
@@ -1549,6 +1599,7 @@ class Tr {
       // nav
       'home': 'Главная',
       'transactions': 'Транзакции',
+      'transactions_subtitle': 'Доходы, расходы и переводы',
       'analytics': 'Аналитика',
       'profile': 'Профиль',
       // dashboard
@@ -1711,6 +1762,14 @@ class Tr {
       'in_realtime': '↑ в реальном времени',
       'history_12_weeks': '12 недель',
       'offline_first_tag': 'Monedero · офлайн',
+      'made_in_spain_line1': 'Сделано в Испании 🇪🇸',
+      'made_in_spain_line2': 'Для тех, кто говорит по-испански.',
+      'about_spain_title': 'Сделано в Испании 🇪🇸',
+      'about_spain_p1':
+          'Мы создали это приложение, потому что хотели простой способ управлять деньгами — для нашего языка и нашего образа жизни.',
+      'about_spain_p2': 'Теперь мы хотим поделиться им с вами.',
+      'about_spain_closing1': 'Это не приложение, переведённое на испанский.',
+      'about_spain_closing2': 'Это приложение, созданное на испанском. 🇪🇸',
       'tx_id': 'ID: txn_{}',
       'bank_accounts': 'Банковские счета',
       'cash_wallets': 'Наличные и кошельки',
@@ -1847,6 +1906,10 @@ class Tr {
       'crypto_upper': 'КРИПТО',
       // common error
       'error_title': 'Что-то пошло не так',
+      'error_fatal_body':
+          'Monedero столкнулся с неожиданной ошибкой. Локальные данные на устройстве сохранены.',
+      'error_fatal_hint':
+          'Полностью закройте приложение (смахните из переключателя) и откройте снова.',
       'add_account_first': 'Сначала добавьте счёт',
       'account_not_found': 'Счёт не найден',
       'backup_created': 'Бэкап создан',
@@ -2045,14 +2108,27 @@ class Tr {
       'pro_trial_badge': '{} ДНЕЙ БЕСПЛАТНО',
       'pro_discount_badge': '−{}%',
       'pro_all_features': 'Все функции',
-      'pro_feature_accounts': 'Счета, цели, бюджеты и долги без лимита',
-      'pro_feature_ai': 'ИИ-ассистент: голос, чеки и чат',
-      'pro_feature_reports': 'Отчёты, тренды и денежные потоки',
-      'pro_feature_cloud': 'Облачные копии и синхронизация устройств',
-      'pro_feature_import': 'Импорт CSV и экспорт Excel / PDF',
-      'pro_feature_shared': 'Общий бюджет с партнёром',
-      'pro_feature_reminders':
-          'Напоминания о платежах, подписках и финансовых целях',
+      'pro_feature_ai_chat': 'ИИ-ассистент в чате',
+      'pro_feature_ai_quality': 'Премиальное качество и скорость ИИ',
+      'pro_feature_ai_receipts': 'Сканирование чеков с ИИ',
+      'pro_feature_ai_voice': 'Голосовой ввод с ИИ',
+      'pro_feature_accounts': 'Счета без ограничений',
+      'pro_feature_budgets': 'Бюджеты без ограничений',
+      'pro_feature_goals': 'Финансовые цели без ограничений',
+      'pro_feature_debts': 'Долги без ограничений',
+      'pro_feature_stats': 'Подробная статистика и отчёты',
+      'pro_feature_trends': 'Анализ финансовых трендов',
+      'pro_feature_cashflow': 'Денежные потоки',
+      'pro_feature_shared_budget': 'Общий бюджет с партнёром',
+      'pro_feature_reminder_payments': 'Напоминания о платежах',
+      'pro_feature_reminder_subs': 'Напоминания о подписках',
+      'pro_feature_reminder_goals': 'Напоминания о финансовых целях',
+      'pro_feature_cloud_backup': 'Облачные резервные копии',
+      'pro_feature_sync': 'Синхронизация между устройствами',
+      'pro_feature_export_excel': 'Экспорт в Excel',
+      'pro_feature_export_pdf': 'Экспорт в PDF',
+      'pro_feature_import_csv': 'Импорт данных из CSV',
+      'pro_feature_no_ads': 'Без рекламы',
       'pro_cta_subtitle': 'Доступ без ограничений',
       'pro_go': 'Перейти на Pro',
       'pro_restore': 'Восстановить покупки',
@@ -2145,10 +2221,10 @@ class Tr {
       'ai_use_transcript': 'Использовать',
       'ai_category_suggest': 'ИИ предлагает: {}',
       'ai_apply_category': 'Применить',
-      'ai_insight_title': 'ИИ-инсайт',
+      'ai_insight_title': 'ИИ-анализ финансов',
       'ai_insight_generate': 'Сгенерировать',
       'ai_insight_hint':
-          'Краткий текст по итогам периода. Сырые операции не отправляются.',
+          'Доходы, расходы и ключевые изменения.',
       'ai_chat_title': 'Ассистент',
       'ai_chat_hint': 'Голос, фото или текст — запишу расходы и доходы.',
       'ai_chat_placeholder': 'Сообщение…',
@@ -2217,6 +2293,7 @@ class Tr {
       // nav
       'home': 'Home',
       'transactions': 'Transactions',
+      'transactions_subtitle': 'Income, expenses and transfers',
       'analytics': 'Analytics',
       'profile': 'Profile',
       // dashboard
@@ -2379,6 +2456,14 @@ class Tr {
       'in_realtime': '↑ live',
       'history_12_weeks': '12 weeks',
       'offline_first_tag': 'Monedero · offline-first',
+      'made_in_spain_line1': 'Made in Spain 🇪🇸',
+      'made_in_spain_line2': 'For Spanish speakers.',
+      'about_spain_title': 'Made in Spain 🇪🇸',
+      'about_spain_p1':
+          'We built this app because we wanted a simple way to manage our money — made for how we speak and live.',
+      'about_spain_p2': 'Now we want to share it with you.',
+      'about_spain_closing1': "It's not an app translated into Spanish.",
+      'about_spain_closing2': "It's an app created in Spanish. 🇪🇸",
       'tx_id': 'ID: txn_{}',
       'bank_accounts': 'Bank accounts',
       'cash_wallets': 'Cash & wallets',
@@ -2515,6 +2600,10 @@ class Tr {
       'crypto_upper': 'CRYPTO',
       // common error
       'error_title': 'Something went wrong',
+      'error_fatal_body':
+          'Monedero hit an unexpected error. Your local data is still saved on this device.',
+      'error_fatal_hint':
+          'Fully close the app (swipe it away in the app switcher) and open it again.',
       'add_account_first': 'Add an account first',
       'account_not_found': 'Account not found',
       'backup_created': 'Backup created',
@@ -2713,14 +2802,27 @@ class Tr {
       'pro_trial_badge': '{} DAYS FREE',
       'pro_discount_badge': '−{}%',
       'pro_all_features': 'All features',
-      'pro_feature_accounts': 'Unlimited accounts, goals, budgets and debts',
-      'pro_feature_ai': 'AI assistant: voice, receipts and chat',
-      'pro_feature_reports': 'Advanced reports, trends and cash flow',
-      'pro_feature_cloud': 'Cloud backups and multi-device sync',
-      'pro_feature_import': 'CSV import and Excel / PDF export',
-      'pro_feature_shared': 'Shared budget with your partner',
-      'pro_feature_reminders':
-          'Reminders for payments, subscriptions and financial goals',
+      'pro_feature_ai_chat': 'AI assistant in chat',
+      'pro_feature_ai_quality': 'Premium AI quality and speed',
+      'pro_feature_ai_receipts': 'AI receipt scanning',
+      'pro_feature_ai_voice': 'AI voice input',
+      'pro_feature_accounts': 'Unlimited accounts',
+      'pro_feature_budgets': 'Unlimited budgets',
+      'pro_feature_goals': 'Unlimited financial goals',
+      'pro_feature_debts': 'Unlimited debts',
+      'pro_feature_stats': 'Detailed statistics and reports',
+      'pro_feature_trends': 'Financial trend analysis',
+      'pro_feature_cashflow': 'Cash flow',
+      'pro_feature_shared_budget': 'Shared budget with your partner',
+      'pro_feature_reminder_payments': 'Payment reminders',
+      'pro_feature_reminder_subs': 'Subscription reminders',
+      'pro_feature_reminder_goals': 'Financial goal reminders',
+      'pro_feature_cloud_backup': 'Cloud backups',
+      'pro_feature_sync': 'Sync across devices',
+      'pro_feature_export_excel': 'Export to Excel',
+      'pro_feature_export_pdf': 'Export to PDF',
+      'pro_feature_import_csv': 'Import data from CSV',
+      'pro_feature_no_ads': 'No ads',
       'pro_cta_subtitle': 'Unlimited access',
       'pro_go': 'Go Pro',
       'pro_restore': 'Restore purchases',
@@ -2813,10 +2915,10 @@ class Tr {
       'ai_use_transcript': 'Use',
       'ai_category_suggest': 'AI suggests: {}',
       'ai_apply_category': 'Apply',
-      'ai_insight_title': 'AI insight',
-      'ai_insight_generate': 'Generate insight',
+      'ai_insight_title': 'AI financial analysis',
+      'ai_insight_generate': 'Generate',
       'ai_insight_hint':
-          'A short summary from period totals. Raw transactions are not sent.',
+          'Income, expenses and key changes.',
       'ai_chat_title': 'Assistant',
       'ai_chat_hint': 'Voice, photo, or text — log expenses and income.',
       'ai_chat_placeholder': 'Message…',
@@ -2882,6 +2984,7 @@ class Tr {
       'transfer': 'Переказ',
       'home': 'Головна',
       'transactions': 'Транзакції',
+      'transactions_subtitle': 'Доходи, витрати та перекази',
       'analytics': 'Аналітика',
       'profile': 'Профіль',
       'greeting_morning': 'Доброго ранку',
@@ -3032,6 +3135,14 @@ class Tr {
       'in_realtime': '↑ у реальному часі',
       'history_12_weeks': '12 тижнів',
       'offline_first_tag': 'Monedero · офлайн',
+      'made_in_spain_line1': 'Зроблено в Іспанії 🇪🇸',
+      'made_in_spain_line2': 'Для тих, хто говорить іспанською.',
+      'about_spain_title': 'Зроблено в Іспанії 🇪🇸',
+      'about_spain_p1':
+          'Ми створили цей застосунок, бо хотіли простий спосіб керувати грошима — для нашої мови та нашого способу життя.',
+      'about_spain_p2': 'Тепер хочемо поділитися ним з вами.',
+      'about_spain_closing1': 'Це не застосунок, перекладений іспанською.',
+      'about_spain_closing2': 'Це застосунок, створений іспанською. 🇪🇸',
       'tx_id': 'ID: txn_{}',
       'bank_accounts': 'Банківські рахунки',
       'cash_wallets': 'Готівка та гаманці',
@@ -3149,6 +3260,10 @@ class Tr {
       'popular_upper': 'ПОПУЛЯРНЕ',
       'crypto_upper': 'КРИПТОВАЛЮТА',
       'error_title': 'Щось пішло не так',
+      'error_fatal_body':
+          'Monedero зіткнувся з неочікуваною помилкою. Локальні дані на пристрої збережені.',
+      'error_fatal_hint':
+          'Повністю закрийте застосунок (проведіть у перемикачі) і відкрийте знову.',
       'add_account_first': 'Спочатку додайте рахунок',
       'account_not_found': 'Рахунок не знайдено',
       'backup_created': 'Резервну копію створено',
@@ -3340,14 +3455,27 @@ class Tr {
       'pro_trial_badge': '{} ДНІВ БЕЗКОШТОВНО',
       'pro_discount_badge': '−{}%',
       'pro_all_features': 'Усі функції',
-      'pro_feature_accounts': 'Рахунки, цілі, бюджети та борги без ліміту',
-      'pro_feature_ai': 'ШІ-асистент: голос, чеки та чат',
-      'pro_feature_reports': 'Звіти, тренди та грошові потоки',
-      'pro_feature_cloud': 'Хмарні копії та синхронізація пристроїв',
-      'pro_feature_import': 'Імпорт CSV та експорт Excel / PDF',
-      'pro_feature_shared': 'Спільний бюджет з партнером',
-      'pro_feature_reminders':
-          'Нагадування про платежі, підписки та фінансові цілі',
+      'pro_feature_ai_chat': 'ШІ-асистент у чаті',
+      'pro_feature_ai_quality': 'Преміальна якість і швидкість ШІ',
+      'pro_feature_ai_receipts': 'Сканування чеків з ШІ',
+      'pro_feature_ai_voice': 'Голосовий ввід з ШІ',
+      'pro_feature_accounts': 'Рахунки без обмежень',
+      'pro_feature_budgets': 'Бюджети без обмежень',
+      'pro_feature_goals': 'Фінансові цілі без обмежень',
+      'pro_feature_debts': 'Борги без обмежень',
+      'pro_feature_stats': 'Детальна статистика та звіти',
+      'pro_feature_trends': 'Аналіз фінансових трендів',
+      'pro_feature_cashflow': 'Грошові потоки',
+      'pro_feature_shared_budget': 'Спільний бюджет з партнером',
+      'pro_feature_reminder_payments': 'Нагадування про платежі',
+      'pro_feature_reminder_subs': 'Нагадування про підписки',
+      'pro_feature_reminder_goals': 'Нагадування про фінансові цілі',
+      'pro_feature_cloud_backup': 'Хмарні резервні копії',
+      'pro_feature_sync': 'Синхронізація між пристроями',
+      'pro_feature_export_excel': 'Експорт у Excel',
+      'pro_feature_export_pdf': 'Експорт у PDF',
+      'pro_feature_import_csv': 'Імпорт даних з CSV',
+      'pro_feature_no_ads': 'Без реклами',
       'pro_cta_subtitle': 'Необмежений доступ',
       'pro_go': 'Оновити до Pro',
       'pro_restore': 'Відновити покупки',
@@ -3416,9 +3544,9 @@ class Tr {
       'ai_use_transcript': 'Використати',
       'ai_category_suggest': 'ШІ пропонує: {}',
       'ai_apply_category': 'Застосувати',
-      'ai_insight_title': 'Інсайт ШІ',
+      'ai_insight_title': 'ШІ-аналіз фінансів',
       'ai_insight_generate': 'Згенерувати',
-      'ai_insight_hint': 'Короткий текст за підсумками періоду. Сирі операції не надсилаються.',
+      'ai_insight_hint': 'Доходи, витрати та ключові зміни.',
       'ai_chat_title': 'Асистент',
       'ai_chat_hint': 'Голос, фото або текст — запишу витрати та доходи.',
       'ai_chat_placeholder': 'Повідомлення',

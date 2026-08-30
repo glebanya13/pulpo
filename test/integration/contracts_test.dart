@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulpo/src/core/app_info.dart';
+import 'package:pulpo/src/core/pro/product_offer_info.dart';
 import 'package:pulpo/src/core/pro/pro_limits.dart';
 
 /// Contract tests for release integrations (Firebase, IAP). Full device/emulator
@@ -19,6 +20,17 @@ void main() {
       expect(ProProducts.yearlyId, 'monedero_pro_anual');
       expect(ProProducts.ids.length, 3);
       expect(ProProducts.subscriptionGroupId, '22339635');
+      expect(ProProducts.catalogCurrency, 'EUR');
+      expect(ProProducts.catalogAmounts[ProProducts.monthlyId], 3.99);
+      expect(ProProducts.catalogAmounts[ProProducts.semiAnnualId], 14.99);
+      expect(ProProducts.catalogAmounts[ProProducts.yearlyId], 24.99);
+    });
+
+    test('paywall catalog prices render in euros (es_ES)', () {
+      expect(ProductOfferInfo.formatCatalogPrice(3.99), contains('€'));
+      expect(ProductOfferInfo.formatCatalogPrice(3.99), contains('3,99'));
+      expect(ProductOfferInfo.formatCatalogPrice(14.99), contains('14,99'));
+      expect(ProductOfferInfo.formatCatalogPrice(24.99), contains('24,99'));
     });
   });
 }

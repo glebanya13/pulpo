@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="widget_description">Баланс и расходы за месяц</string>
+    <string name="widget_budget_description">Остаток бюджета и кольцо прогресса</string>
+    <string name="widget_chart_description">График расходов по дням</string>
     <string name="widget_balance">ОБЩИЙ БАЛАНС</string>
     <string name="widget_spent">ПОТРАЧЕНО В ЭТОМ МЕСЯЦЕ</string>
 </resources>

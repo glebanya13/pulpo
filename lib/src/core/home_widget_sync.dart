@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -21,6 +22,7 @@ const kHomeWidgetIosBudgetName = 'PulpoBudgetWidget';
 const kHomeWidgetIosChartName = 'PulpoChartWidget';
 
 const kHomeWidgetAppGroup = 'group.com.pulpo.widget';
+const _homeWidgetDebounce = Duration(milliseconds: 700);
 
 Future<void> configureHomeWidget() async {
   if (kIsWeb) return;
@@ -45,15 +47,36 @@ class HomeWidgetBinder extends ConsumerStatefulWidget {
 
 class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
   String? _lastPayload;
+  Timer? _debounce;
 
   @override
-  Widget build(BuildContext context) {
-    final total = ref.watch(totalBalanceProvider);
-    final currency = ref.watch(settingsControllerProvider).baseCurrency;
-    final locale = ref.watch(settingsControllerProvider).locale;
-    final txs = ref.watch(allTransactionsProvider).valueOrNull ?? const [];
-    final budgets = ref.watch(budgetsProvider).valueOrNull ?? const [];
-    final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleSync());
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleSync() {
+    _debounce?.cancel();
+    _debounce = Timer(_homeWidgetDebounce, () {
+      if (!mounted) return;
+      unawaited(_syncNow());
+    });
+  }
+
+  Future<void> _syncNow() async {
+    final total = ref.read(totalBalanceProvider);
+    final settings = ref.read(settingsControllerProvider);
+    final currency = settings.baseCurrency;
+    final locale = settings.locale;
+    final txs = ref.read(allTransactionsProvider).valueOrNull ?? const [];
+    final budgets = ref.read(budgetsProvider).valueOrNull ?? const [];
+    final cats = ref.read(categoriesProvider).valueOrNull ?? const [];
 
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month, 1);
@@ -92,12 +115,21 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
       encodeCategoryShortcuts(snap.categoryShortcuts),
     ].join('|');
 
-    if (payload != _lastPayload) {
-      _lastPayload = payload;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _push(tr: tr, snap: snap);
-      });
-    }
+    if (payload == _lastPayload) return;
+    _lastPayload = payload;
+    await _push(tr: tr, snap: snap);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(totalBalanceProvider, (_, _) => _scheduleSync());
+    ref.listen(
+      settingsControllerProvider.select((s) => '${s.baseCurrency}|${s.locale}'),
+      (_, _) => _scheduleSync(),
+    );
+    ref.listen(allTransactionsProvider, (_, _) => _scheduleSync());
+    ref.listen(budgetsProvider, (_, _) => _scheduleSync());
+    ref.listen(categoriesProvider, (_, _) => _scheduleSync());
 
     return widget.child;
   }

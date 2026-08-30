@@ -88,6 +88,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           headerGap: 16,
           header: ScreenTitlePill(
             title: tr.transactions,
+            subtitle: tr.transactionsSubtitle,
             large: true,
             expand: true,
             trailing: const HeaderSupportActions(dense: true),
@@ -207,7 +208,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
               if (filtered.isEmpty) {
                 return EmptyState(
-                  icon: LucideIcons.receipt,
+                  icon: LucideIcons.receiptEuro,
                   title: tr.emptyTransactionsList,
                   description: tr.emptyTransactions,
                   action: tr.newTransaction,

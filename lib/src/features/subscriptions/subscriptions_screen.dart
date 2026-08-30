@@ -8,6 +8,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
+import '../../core/utils/money_format.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/db/app_database.dart' as db;
@@ -29,6 +30,7 @@ class SubscriptionsScreen extends ConsumerWidget {
     final active = subs.where((s) => !s.isPaused).toList();
     final used = active.length;
     final isPro = ref.watch(proControllerProvider).isPro;
+    final currency = ref.watch(settingsControllerProvider).baseCurrency;
 
     return Scaffold(
       body: StickyScrollPage(
@@ -65,6 +67,7 @@ class SubscriptionsScreen extends ConsumerWidget {
                             child: _TotalCard(
                               label: tr.perMonth,
                               value: monthly,
+                              currency: currency,
                               accent: true,
                             ),
                           ),
@@ -73,6 +76,7 @@ class SubscriptionsScreen extends ConsumerWidget {
                             child: _TotalCard(
                               label: tr.perYear,
                               value: yearly,
+                              currency: currency,
                               accent: false,
                             ),
                           ),
@@ -376,10 +380,12 @@ class _TotalCard extends StatelessWidget {
   const _TotalCard({
     required this.label,
     required this.value,
+    required this.currency,
     required this.accent,
   });
   final String label;
   final double value;
+  final String currency;
   final bool accent;
 
   @override
@@ -404,7 +410,7 @@ class _TotalCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '\$${value.toStringAsFixed(2)}',
+            formatMoney(value, currency),
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -501,7 +507,7 @@ class _SubCard extends ConsumerWidget {
             ),
           ),
           Text(
-            '\$${sub.amount.toStringAsFixed(2)}',
+            formatMoney(sub.amount, sub.currency),
             style: TextStyle(
               color: context.primaryText,
               fontSize: 16,

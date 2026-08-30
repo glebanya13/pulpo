@@ -62,6 +62,9 @@ class ProProducts {
     semiAnnualId: 14.99,
     yearlyId: 24.99,
   };
+
+  /// Store prices for Spain / EU — paywall always shows EUR, not sandbox $.
+  static const catalogCurrency = 'EUR';
 }
 
 bool isActiveGoal({required bool isCompleted}) => !isCompleted;

@@ -52,7 +52,6 @@ class ProfileScreen extends ConsumerWidget {
               '${tr.accountsCount(accounts.length)} · $currency',
           localAvatarPath: settings.profileAvatarPath,
           photoUrl: authUser?.photoURL,
-          onAvatarTap: () => openProfileAvatarSheet(context, ref),
           onEditTap: () => openNameSheet(context, ref, tr),
         ),
         children: [
@@ -201,6 +200,8 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
         ),
+        const SizedBox(height: 10),
+        const MadeInSpainTagline(),
         const SizedBox(height: 24),
       ],
       ),
@@ -215,7 +216,6 @@ class _ProfileStickyHeader extends StatelessWidget {
     required this.subtitle,
     required this.localAvatarPath,
     required this.photoUrl,
-    required this.onAvatarTap,
     required this.onEditTap,
   });
 
@@ -224,7 +224,6 @@ class _ProfileStickyHeader extends StatelessWidget {
   final String subtitle;
   final String? localAvatarPath;
   final String? photoUrl;
-  final VoidCallback onAvatarTap;
   final VoidCallback onEditTap;
 
   @override
@@ -258,8 +257,6 @@ class _ProfileStickyHeader extends StatelessWidget {
             name: userName,
             localPath: localAvatarPath,
             photoUrl: photoUrl,
-            showEditBadge: true,
-            onTap: onAvatarTap,
           ),
           const SizedBox(width: 12),
           Expanded(

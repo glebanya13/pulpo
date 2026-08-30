@@ -15,6 +15,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/auth/cloud_auth.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/common.dart';
 import '../../core/open_link.dart';
 import '../../core/pro/subscription_links.dart';
 
@@ -66,12 +67,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(24, 8, 24, showPinnedCta ? 12 : 32),
-                children: [
+            ListView(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                8,
+                24,
+                showPinnedCta ? 132 : 32,
+              ),
+              children: [
             Align(
               alignment: Alignment.centerRight,
               child: Pressable(
@@ -112,7 +117,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 fontSize: 15,
                 height: 1.4,
                 fontWeight: FontWeight.w500,
-                color: context.mutedText,
+                color: context.isDark
+                    ? context.mutedText
+                    : AppColors.textSecondary,
               ),
             ),
             if (pro.isPro) ...[
@@ -153,62 +160,84 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 ),
               ],
               const SizedBox(height: 16),
-              if (monthly != null)
-                _PaywallPlanCard(
-                  title: tr.proMonthly,
-                  price: ProductOfferInfo.displayPrice(monthly),
-                  allFeaturesLabel: tr.proAllFeatures,
-                  trialLabel: trialLabelFor(monthly),
-                  selected: selected?.id == monthly.id,
-                  busy: pro.purchasing,
-                  onTap: () => setState(() => _selected = monthly),
-                ),
-              if (semiAnnual != null) ...[
-                const SizedBox(height: 10),
-                _PaywallPlanCard(
-                  title: tr.proSemiAnnual,
-                  price: ProductOfferInfo.displayPrice(semiAnnual),
-                  allFeaturesLabel: tr.proAllFeatures,
-                  trialLabel: trialLabelFor(semiAnnual),
-                  comparePrice: ProductOfferInfo.comparePrice(
-                    base: monthly,
-                    multiplier: 6,
-                  ),
-                  badge: () {
-                    final pct = ProductOfferInfo.semiAnnualSavePercent(
-                      monthly: monthly,
-                      semiAnnual: semiAnnual,
-                    );
-                    return pct != null ? tr.proDiscountBadge(pct) : null;
-                  }(),
-                  selected: selected?.id == semiAnnual.id,
-                  busy: pro.purchasing,
-                  onTap: () => setState(() => _selected = semiAnnual),
-                ),
-              ],
-              if (yearly != null) ...[
-                const SizedBox(height: 10),
-                _PaywallPlanCard(
-                  title: tr.proYearly,
-                  price: ProductOfferInfo.displayPrice(yearly),
-                  allFeaturesLabel: tr.proAllFeatures,
-                  trialLabel: trialLabelFor(yearly),
-                  comparePrice: ProductOfferInfo.comparePrice(
-                    base: monthly,
-                    multiplier: 12,
-                  ),
-                  badge: () {
-                    final pct = ProductOfferInfo.yearlySavePercent(
-                      monthly: monthly,
-                      yearly: yearly,
-                    );
-                    return pct != null ? tr.proDiscountBadge(pct) : null;
-                  }(),
-                  selected: selected?.id == yearly.id,
-                  busy: pro.purchasing,
-                  onTap: () => setState(() => _selected = yearly),
-                ),
-              ],
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 280),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                child: pro.loading &&
+                        monthly == null &&
+                        semiAnnual == null &&
+                        yearly == null &&
+                        !pro.isPro
+                    ? const _PaywallPlansSkeleton(key: ValueKey('plans-loading'))
+                    : Column(
+                        key: const ValueKey('plans-loaded'),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (monthly != null)
+                            _PaywallPlanCard(
+                              title: tr.proMonthly,
+                              price: ProductOfferInfo.displayPrice(monthly),
+                              allFeaturesLabel: tr.proAllFeatures,
+                              trialLabel: trialLabelFor(monthly),
+                              selected: selected?.id == monthly.id,
+                              busy: pro.purchasing,
+                              onTap: () => setState(() => _selected = monthly),
+                            ),
+                          if (semiAnnual != null) ...[
+                            const SizedBox(height: 10),
+                            _PaywallPlanCard(
+                              title: tr.proSemiAnnual,
+                              price: ProductOfferInfo.displayPrice(semiAnnual),
+                              allFeaturesLabel: tr.proAllFeatures,
+                              trialLabel: trialLabelFor(semiAnnual),
+                              comparePrice: ProductOfferInfo.comparePrice(
+                                base: monthly,
+                                multiplier: 6,
+                              ),
+                              badge: () {
+                                final pct = ProductOfferInfo.semiAnnualSavePercent(
+                                  monthly: monthly,
+                                  semiAnnual: semiAnnual,
+                                );
+                                return pct != null
+                                    ? tr.proDiscountBadge(pct)
+                                    : null;
+                              }(),
+                              selected: selected?.id == semiAnnual.id,
+                              busy: pro.purchasing,
+                              onTap: () =>
+                                  setState(() => _selected = semiAnnual),
+                            ),
+                          ],
+                          if (yearly != null) ...[
+                            const SizedBox(height: 10),
+                            _PaywallPlanCard(
+                              title: tr.proYearly,
+                              price: ProductOfferInfo.displayPrice(yearly),
+                              allFeaturesLabel: tr.proAllFeatures,
+                              trialLabel: trialLabelFor(yearly),
+                              comparePrice: ProductOfferInfo.comparePrice(
+                                base: monthly,
+                                multiplier: 12,
+                              ),
+                              badge: () {
+                                final pct = ProductOfferInfo.yearlySavePercent(
+                                  monthly: monthly,
+                                  yearly: yearly,
+                                );
+                                return pct != null
+                                    ? tr.proDiscountBadge(pct)
+                                    : null;
+                              }(),
+                              selected: selected?.id == yearly.id,
+                              busy: pro.purchasing,
+                              onTap: () => setState(() => _selected = yearly),
+                            ),
+                          ],
+                        ],
+                      ),
+              ),
               const SizedBox(height: 24),
               Align(
                 alignment: Alignment.centerLeft,
@@ -218,7 +247,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.1,
-                    color: context.mutedText,
+                    color: context.isDark
+                        ? context.mutedText
+                        : AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -308,17 +339,20 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     .setDebugUnlock(v),
               ),
             ],
-                ],
-              ),
+              ],
             ),
             if (showPinnedCta)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+              Positioned(
+                left: 24,
+                right: 24,
+                bottom: 8,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     paywallCta(),
+                    const SizedBox(height: 10),
+                    const MadeInSpainTagline(),
                     if (pro.error != null) ...[
                       const SizedBox(height: 8),
                       Text(
@@ -411,6 +445,80 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   }
 }
 
+class _PaywallPlansSkeleton extends StatelessWidget {
+  const _PaywallPlansSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var i = 0; i < 3; i++) ...[
+          if (i > 0) const SizedBox(height: 10),
+          _PaywallPlanSkeleton(hasBadge: i > 0),
+        ],
+      ],
+    );
+  }
+}
+
+class _PaywallPlanSkeleton extends StatelessWidget {
+  const _PaywallPlanSkeleton({this.hasBadge = false});
+
+  final bool hasBadge;
+
+  @override
+  Widget build(BuildContext context) {
+    final fill = context.isDark
+        ? Colors.white.withValues(alpha: 0.06)
+        : const Color(0xFFF0F0F0);
+    return Container(
+      height: hasBadge ? 98 : 88,
+      padding: EdgeInsets.fromLTRB(16, hasBadge ? 22 : 16, 16, 16),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: context.divider),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 88,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: fill,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: 120,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: fill,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 64,
+            height: 18,
+            decoration: BoxDecoration(
+              color: fill,
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PaywallProHero extends StatelessWidget {
   const _PaywallProHero();
 
@@ -476,13 +584,13 @@ class _ProFeaturesCard extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < features.length; i++) ...[
-            if (i > 0) const SizedBox(height: 10),
+            if (i > 0) const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 22,
-                  height: 22,
+                  width: 20,
+                  height: 20,
                   margin: const EdgeInsets.only(top: 1),
                   decoration: BoxDecoration(
                     color: AppColors.lime.withValues(alpha: 0.35),
@@ -490,7 +598,7 @@ class _ProFeaturesCard extends StatelessWidget {
                   ),
                   child: const Icon(
                     LucideIcons.check,
-                    size: 14,
+                    size: 12,
                     color: AppColors.ink,
                   ),
                 ),
@@ -499,8 +607,8 @@ class _ProFeaturesCard extends StatelessWidget {
                   child: Text(
                     features[i],
                     style: TextStyle(
-                      fontSize: 14,
-                      height: 1.35,
+                      fontSize: 13,
+                      height: 1.3,
                       fontWeight: FontWeight.w600,
                       color: context.primaryText,
                     ),
@@ -626,6 +734,22 @@ class _PaywallPlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    // На light neon-lime текст на lime-фоне не читается — белая карточка + тёмная рамка.
+    final cardFill = selected
+        ? (isDark
+            ? AppColors.lime.withValues(alpha: 0.18)
+            : context.surface)
+        : context.surface;
+    final cardBorder = selected
+        ? (isDark ? AppColors.lime : AppColors.limeAccent)
+        : context.divider;
+    final secondaryText =
+        isDark ? context.mutedText : AppColors.textSecondary;
+    final trialColor = selected
+        ? (isDark ? AppColors.lime : context.primaryText)
+        : context.primaryText;
+
     return Pressable(
       enabled: !busy,
       onTap: onTap,
@@ -634,12 +758,10 @@ class _PaywallPlanCard extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: EdgeInsets.fromLTRB(16, badge != null ? 22 : 16, 16, 16),
         decoration: BoxDecoration(
-          color: selected
-              ? AppColors.lime.withValues(alpha: 0.18)
-              : context.surface,
+          color: cardFill,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: selected ? AppColors.lime : context.divider,
+            color: cardBorder,
             width: selected ? 2 : 1,
           ),
         ),
@@ -656,7 +778,9 @@ class _PaywallPlanCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: selected ? AppColors.lime : AppColors.ink,
+                      color: selected
+                          ? (isDark ? AppColors.lime : AppColors.limeAccent)
+                          : AppColors.ink,
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: Text(
@@ -692,14 +816,14 @@ class _PaywallPlanCard extends StatelessWidget {
                           Icon(
                             LucideIcons.zap,
                             size: 12,
-                            color: context.mutedText,
+                            color: secondaryText,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             allFeaturesLabel,
                             style: TextStyle(
                               fontSize: 11,
-                              color: context.mutedText,
+                              color: secondaryText,
                             ),
                           ),
                         ],
@@ -711,9 +835,7 @@ class _PaywallPlanCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
-                            color: selected
-                                ? AppColors.lime
-                                : context.primaryText,
+                            color: trialColor,
                           ),
                         ),
                       ],
@@ -738,7 +860,9 @@ class _PaywallPlanCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           decoration: TextDecoration.lineThrough,
-                          color: context.faintText,
+                          color: isDark
+                              ? context.faintText
+                              : AppColors.textMuted,
                         ),
                       ),
                     ],

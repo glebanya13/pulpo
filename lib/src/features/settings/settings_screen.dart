@@ -25,6 +25,7 @@ import '../../widgets/pressable.dart';
 import '../../widgets/pro_upgrade_card.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
 import '../auth/cloud_auth.dart';
+import '../profile/profile_avatar.dart';
 import 'reminder_settings.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -277,167 +278,180 @@ Future<void> openNameSheet(
     context: context,
     transparent: true,
     builder: (ctx) {
-      return Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(ctx).cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Theme.of(ctx).brightness == Brightness.dark
-                        ? Colors.white.withValues(alpha: 0.24)
-                        : const Color(0xFFDDDDDD),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+      return Consumer(
+        builder: (ctx, ref, _) {
+          final settings = ref.watch(settingsControllerProvider);
+          final photoUrl =
+              ref.watch(authUserProvider).valueOrNull?.photoURL;
+          final displayName = settings.userName;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(ctx).cardColor,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              const SizedBox(height: 20),
-              Row(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: ctx.wellBg(const Color(0xFFD4F5E0)),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(LucideIcons.user,
-                        color: ctx.wellFg(const Color(0xFFD4F5E0))),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tr.yourName,
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: Theme.of(ctx).colorScheme.onSurface),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          tr.howToCall,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(ctx).colorScheme.onSurface
-                                  .withValues(alpha: 0.6)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(ctx).scaffoldBackgroundColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  controller: ctrl,
-                  autofocus: true,
-                  textCapitalization: TextCapitalization.words,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(ctx).colorScheme.onSurface,
-                  ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    filled: false,
-                    hintText: tr.enterName,
-                    hintStyle: TextStyle(
-                        color: Theme.of(ctx)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.4),
-                        fontSize: 15),
-                    isCollapsed: true,
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 18),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: Pressable(
-                      onTap: () => Navigator.pop(ctx),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color: Theme.of(ctx).dividerColor, width: 1.5),
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          tr.cancel,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(ctx).colorScheme.onSurface),
-                        ),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Theme.of(ctx).brightness == Brightness.dark
+                            ? Colors.white.withValues(alpha: 0.24)
+                            : const Color(0xFFDDDDDD),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Pressable(
-                      onTap: () async {
-                        final name = ctrl.text.trim();
-                        if (name.isEmpty) return;
-                        await ref
-                            .read(settingsControllerProvider.notifier)
-                            .setUserName(name);
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        // Firebase Auth + Firestore — never block the sheet.
-                        unawaited(
-                          ref
-                              .read(cloudAuthProvider)
-                              .updateDisplayName(name)
-                              .catchError((Object e, StackTrace st) {
-                            debugPrint('updateDisplayName: $e\n$st');
-                          }),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: AppColors.lime,
-                          borderRadius: BorderRadius.circular(100),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      ProfileAvatar(
+                        name: displayName,
+                        localPath: settings.profileAvatarPath,
+                        photoUrl: photoUrl,
+                        size: 52,
+                        showEditBadge: true,
+                        onTap: () => openProfileAvatarSheet(ctx, ref),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tr.yourName,
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color:
+                                      Theme.of(ctx).colorScheme.onSurface),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              tr.howToCall,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(ctx)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.6)),
+                            ),
+                          ],
                         ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          tr.save,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.ink,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(ctx).scaffoldBackgroundColor,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextField(
+                      controller: ctrl,
+                      autofocus: true,
+                      textCapitalization: TextCapitalization.words,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(ctx).colorScheme.onSurface,
+                      ),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        filled: false,
+                        hintText: tr.enterName,
+                        hintStyle: TextStyle(
+                            color: Theme.of(ctx)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.4),
+                            fontSize: 15),
+                        isCollapsed: true,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 18),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Pressable(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                  color: Theme.of(ctx).dividerColor,
+                                  width: 1.5),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              tr.cancel,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(ctx).colorScheme.onSurface),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Pressable(
+                          onTap: () async {
+                            final name = ctrl.text.trim();
+                            if (name.isEmpty) return;
+                            await ref
+                                .read(settingsControllerProvider.notifier)
+                                .setUserName(name);
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            // Firebase Auth + Firestore — never block the sheet.
+                            unawaited(
+                              ref
+                                  .read(cloudAuthProvider)
+                                  .updateDisplayName(name)
+                                  .catchError((Object e, StackTrace st) {
+                                debugPrint('updateDisplayName: $e\n$st');
+                              }),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.lime,
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              tr.save,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       );
     },
   );

@@ -1,1 +1,5 @@
 "NSFaceIDUsageDescription" = "Monedero uses Face ID to unlock the app.";
+"NSCameraUsageDescription" = "We use the camera to attach receipt photos to your transactions.";
+"NSPhotoLibraryUsageDescription" = "We use your photo library to attach receipt photos to your transactions.";
+"NSMicrophoneUsageDescription" = "We use the microphone for AI voice expense entry (Pro).";
+"NSSpeechRecognitionUsageDescription" = "We use speech recognition to turn what you say into a draft transaction (Pro).";

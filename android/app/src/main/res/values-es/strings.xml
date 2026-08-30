@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="widget_description">Saldo y gasto de este mes</string>
+    <string name="widget_budget_description">Presupuesto restante y progreso</string>
+    <string name="widget_chart_description">Gráfico de gastos diarios</string>
     <string name="widget_balance">SALDO TOTAL</string>
     <string name="widget_spent">GASTADO ESTE MES</string>
 </resources>

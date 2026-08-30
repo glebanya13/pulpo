@@ -6,6 +6,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/open_link.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
@@ -76,8 +77,111 @@ class AboutScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 20),
+            _AboutSpainStoryCard(tr: tr),
           ],
         ),
+    );
+  }
+}
+
+class _AboutSpainStoryCard extends StatelessWidget {
+  const _AboutSpainStoryCard({required this.tr});
+
+  final Tr tr;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    final bodyColor =
+        isDark ? context.mutedText : AppColors.textSecondary;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  const Color(0xFF2B2214),
+                  context.surface,
+                ]
+              : [
+                  const Color(0xFFFFF6E5),
+                  const Color(0xFFFFFBF3),
+                ],
+        ),
+        border: Border.all(
+          color: isDark
+              ? AppColors.lime.withValues(alpha: 0.22)
+              : const Color(0xFFE8C878).withValues(alpha: 0.55),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            tr.aboutSpainTitle,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
+              height: 1.2,
+              color: context.primaryText,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            tr.aboutSpainParagraph1,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+              color: bodyColor,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            tr.aboutSpainParagraph2,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.45,
+              fontWeight: FontWeight.w600,
+              color: context.primaryText,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Divider(
+              height: 1,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : const Color(0xFFE8D4A0).withValues(alpha: 0.7),
+            ),
+          ),
+          Text(
+            tr.aboutSpainClosing1,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+              color: context.primaryText,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            tr.aboutSpainClosing2,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.4,
+              fontWeight: FontWeight.w800,
+              color: isDark ? AppColors.lime : AppColors.limeAccent,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -129,7 +129,9 @@ class ScreenTitlePill extends StatelessWidget {
             style: TextStyle(
               fontSize: large ? 13 : 12,
               fontWeight: FontWeight.w500,
-              color: context.mutedText,
+              color: context.isDark
+                  ? context.mutedText
+                  : AppColors.textSecondary,
             ),
           ),
         ],
@@ -163,8 +165,47 @@ class ScreenTitlePill extends StatelessWidget {
   }
 }
 
+/// Brand line under paywall CTA / profile footer.
+class MadeInSpainTagline extends StatelessWidget {
+  const MadeInSpainTagline({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = Tr.of(context);
+    final line1Color = context.isDark
+        ? context.mutedText
+        : AppColors.textSecondary;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          tr.madeInSpainLine1,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            height: 1.25,
+            color: line1Color,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          tr.madeInSpainLine2,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            height: 1.3,
+            color: context.faintText,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Pins [header] above a scrollable list (same pattern as the home tab).
-class StickyScrollPage extends StatelessWidget {
+class StickyScrollPage extends StatefulWidget {
   const StickyScrollPage({
     super.key,
     required this.header,
@@ -189,39 +230,74 @@ class StickyScrollPage extends StatelessWidget {
   final ScrollPhysics? physics;
 
   @override
+  State<StickyScrollPage> createState() => _StickyScrollPageState();
+}
+
+class _StickyScrollPageState extends State<StickyScrollPage> {
+  final _headerKey = GlobalKey();
+  double _headerHeight = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeader());
+  }
+
+  @override
+  void didUpdateWidget(covariant StickyScrollPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeader());
+  }
+
+  void _measureHeader() {
+    final box = _headerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final h = box.size.height;
+    if ((h - _headerHeight).abs() > 0.5 && mounted) {
+      setState(() => _headerHeight = h);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bg = Theme.of(context).scaffoldBackgroundColor;
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    // Floating sticky header: no solid scaffold plate behind the "cloud"
+    // (dark theme previously showed a black rectangle under rounded cards).
+    final content = Stack(
+      clipBehavior: Clip.none,
       children: [
-        ColoredBox(
-          color: bg,
-          child: Padding(
+        Positioned.fill(
+          child: ListView(
+            controller: widget.controller,
+            physics: widget.physics,
             padding: EdgeInsets.fromLTRB(
-              padding.left,
-              padding.top,
-              padding.right,
-              headerBottomPadding,
+              widget.padding.left,
+              (_headerHeight > 0 ? _headerHeight : 72) + widget.headerGap,
+              widget.padding.right,
+              widget.padding.bottom,
             ),
-            child: header,
+            children: widget.children,
           ),
         ),
-        Expanded(
-          child: ListView(
-            controller: controller,
-            physics: physics,
-            padding: EdgeInsets.fromLTRB(
-              padding.left,
-              headerGap,
-              padding.right,
-              padding.bottom,
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: KeyedSubtree(
+            key: _headerKey,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                widget.padding.left,
+                widget.padding.top,
+                widget.padding.right,
+                widget.headerBottomPadding,
+              ),
+              child: widget.header,
             ),
-            children: children,
           ),
         ),
       ],
     );
-    if (!useSafeArea) return content;
+    if (!widget.useSafeArea) return content;
     return SafeArea(child: content);
   }
 }

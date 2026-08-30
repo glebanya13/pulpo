@@ -1,0 +1,5 @@
+"NSFaceIDUsageDescription" = "Monedero використовує Face ID для розблокування застосунку.";
+"NSCameraUsageDescription" = "Камера потрібна, щоб додавати фото чеків до операцій.";
+"NSPhotoLibraryUsageDescription" = "Галерея потрібна, щоб додавати фото чеків до операцій.";
+"NSMicrophoneUsageDescription" = "Мікрофон потрібен для голосового введення витрат з ШІ (Pro).";
+"NSSpeechRecognitionUsageDescription" = "Розпізнавання мовлення потрібне, щоб перетворювати голос на чернетку операції (Pro).";
