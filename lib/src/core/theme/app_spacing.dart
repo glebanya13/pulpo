@@ -21,8 +21,8 @@ class AppSpacing {
 
   /// Space so the last item sits just above the floating tab bar.
   static double tabBodyBottom(BuildContext context) {
-    final home = MediaQuery.paddingOf(context).bottom;
-    return 82 + (home * 0.2).clamp(0, 8);
+    const navBarExtent = 62.0;
+    return navBarExtent + MediaQuery.paddingOf(context).bottom + sm;
   }
 
   static EdgeInsets tabPagePadding(BuildContext context) {

@@ -7,7 +7,6 @@ import '../core/l10n/tr.dart';
 import '../core/ai/assistant_energy.dart';
 import '../core/pro/pro_controller.dart';
 import '../core/pro/pro_guard.dart';
-import '../core/pro/pro_limits.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/color_well.dart';
@@ -179,6 +178,71 @@ class _QuickActionsSheet extends ConsumerWidget {
                       LucideIcons.mic,
                       size: 16,
                       color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Pressable(
+            onTap: () async {
+              Navigator.pop(context);
+              if (!await requireAi(context, ref, allowFreeEnergy: true)) {
+                return;
+              }
+              if (context.mounted) {
+                context.push('/assistant?scanReceipt=1');
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              decoration: BoxDecoration(
+                color: context.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.lime.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                children: [
+                  ColorWellIcon(
+                    color: AppColors.bgFood,
+                    icon: LucideIcons.receipt,
+                    size: 42,
+                    iconSize: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tr.aiRecognizeReceipt,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: context.primaryText,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          tr.receipt,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: context.mutedText,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!isPro && !energy.hasEnergy)
+                    const ProBadge(dense: true)
+                  else
+                    Icon(
+                      LucideIcons.chevronRight,
+                      size: 16,
+                      color: context.faintText,
                     ),
                 ],
               ),

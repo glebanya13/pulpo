@@ -28,14 +28,9 @@ class BudgetBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final homeInset = MediaQuery.paddingOf(context).bottom;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        0,
-        20,
-        (homeInset * 0.4).clamp(8, 14),
-      ),
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.symmetric(horizontal: 20),
       child: LiquidGlass(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
         child: Row(

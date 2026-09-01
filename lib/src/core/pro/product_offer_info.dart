@@ -19,22 +19,14 @@ class ProductOfferInfo {
     return formatMoney(amount, ProProducts.catalogCurrency);
   }
 
-  /// Localized price for paywall UI (catalog EUR amounts for Monedero SKUs).
+  /// Localized price from the store (App Store / Play).
   static String displayPrice(ProductDetails product) {
-    final catalog = ProProducts.catalogAmounts[product.id];
-    if (catalog != null) {
-      return formatCatalogPrice(catalog);
-    }
-    if (product.currencyCode.toUpperCase() == ProProducts.catalogCurrency) {
-      return formatMoney(product.rawPrice, ProProducts.catalogCurrency);
-    }
-    return product.price;
+    if (product.price.isNotEmpty) return product.price;
+    return formatMoney(product.rawPrice, product.currencyCode);
   }
 
   static double _amount(ProductDetails? product) {
     if (product == null) return 0;
-    final catalog = ProProducts.catalogAmounts[product.id];
-    if (catalog != null) return catalog;
     return product.rawPrice;
   }
 
@@ -55,13 +47,10 @@ class ProductOfferInfo {
     return null;
   }
 
-  /// Store trial when configured; otherwise marketing default for known SKUs.
-  static const paywallTrialDays = 7;
-
+  /// Store trial when configured in App Store Connect / Play Console.
   static int? trialDaysForPaywall(ProductDetails product) {
     final fromStore = trialDays(product);
     if (fromStore != null && fromStore > 0) return fromStore;
-    if (ProProducts.ids.contains(product.id)) return paywallTrialDays;
     return null;
   }
 
@@ -100,7 +89,7 @@ class ProductOfferInfo {
     final unit = _amount(base);
     if (unit <= 0) return null;
     final total = unit * multiplier;
-    return formatCatalogPrice(total);
+    return formatMoney(total, base.currencyCode);
   }
 
   static int? _sk2TrialDays(ProductDetails product) {

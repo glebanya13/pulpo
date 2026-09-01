@@ -76,7 +76,7 @@ void main() {
     expect(Tr.fromLang('en').proGo.toLowerCase(), contains('pro'));
     expect(Tr.fromLang('ru').paywallBody(ProGate.accounts), contains('3'));
     expect(Tr.fromLang('es').importCsv.toLowerCase(), contains('csv'));
-    expect(Tr.fromLang('en').proFeatureBullets, hasLength(21));
+    expect(Tr.fromLang('en').proFeatureBullets, hasLength(20));
     expect(Tr.fromLang('es').proFeatureBullets.first, isNotEmpty);
   });
 }

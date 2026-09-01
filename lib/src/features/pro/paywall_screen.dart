@@ -47,9 +47,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     String trialLabelFor(ProductDetails product) {
       final days = ProductOfferInfo.trialDaysForPaywall(product);
       if (days == null || days <= 0) return '';
-      return days == ProductOfferInfo.paywallTrialDays
-          ? tr.proTrial
-          : tr.proTrialDays(days);
+      return days == 7 ? tr.proTrial : tr.proTrialDays(days);
     }
 
     Widget paywallCta() {

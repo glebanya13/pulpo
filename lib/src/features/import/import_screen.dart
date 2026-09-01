@@ -10,6 +10,8 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/file_pick.dart';
+import '../../core/pro/pro_guard.dart';
+import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/db/app_database.dart';
@@ -31,12 +33,27 @@ class ImportScreen extends ConsumerStatefulWidget {
 
 class _ImportScreenState extends ConsumerState<ImportScreen> {
   bool _busy = false;
+  bool _gateChecked = false;
   String? _fileName;
   String? _rawText;
   CsvInspectResult? _inspect;
   CsvColumnMapping? _mapping;
   CsvParseResult? _parsed;
   int? _accountId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensurePro());
+  }
+
+  Future<void> _ensurePro() async {
+    if (_gateChecked) return;
+    _gateChecked = true;
+    if (!await requirePro(context, ref, ProGate.importCsv)) {
+      if (mounted) context.pop();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

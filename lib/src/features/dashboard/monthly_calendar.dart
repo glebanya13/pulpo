@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,8 +15,10 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
+import '../../widgets/common.dart';
 import '../../widgets/transaction_tile.dart';
 import '../../widgets/pressable.dart';
+import 'calendar_date_picker_sheet.dart';
 
 /// Календарь-обзор транзакций за месяц.
 /// Ячейка дня: число + до двух пилюль (расход красная, доход зелёная).
@@ -29,6 +32,7 @@ class MonthlyCalendar extends ConsumerStatefulWidget {
 
 class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
   late DateTime _month;
+  int _viewIndex = 0;
 
   @override
   void initState() {
@@ -41,9 +45,30 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     setState(() => _month = DateTime(_month.year, _month.month + delta, 1));
   }
 
+  Future<void> _openDatePicker(BuildContext context) async {
+    final picked = await showCalendarDatePicker(
+      context,
+      initial: _month,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _month = DateTime(picked.year, picked.month, 1));
+    final monthTxs = ref.read(allTransactionsProvider).valueOrNull;
+    if (monthTxs == null) return;
+    final monthStart = DateTime(picked.year, picked.month, 1);
+    final monthEnd = DateTime(picked.year, picked.month + 1, 1);
+    final filtered = monthTxs
+        .where(
+          (t) => !t.date.isBefore(monthStart) && t.date.isBefore(monthEnd),
+        )
+        .toList();
+    if (!context.mounted) return;
+    await _openDaySheet(context, picked, filtered);
+  }
+
   @override
   Widget build(BuildContext context) {
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
+    final tr = Tr.of(context);
     final monthStart = _month;
     final monthEnd = DateTime(_month.year, _month.month + 1, 1);
     // Use the full stream (already warm on dashboard) so month switches never
@@ -92,7 +117,17 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _Header(month: _month, onShift: _shiftMonth),
+              _Header(
+                month: _month,
+                onShift: _shiftMonth,
+                onTitleTap: () => _openDatePicker(context),
+              ),
+              const SizedBox(height: 8),
+              TabsPill(
+                tabs: [tr.calendarViewCalendar, tr.calendarViewDaily],
+                index: _viewIndex,
+                onChanged: (i) => setState(() => _viewIndex = i),
+              ),
               const SizedBox(height: 8),
               _MonthTotals(
                 income: income,
@@ -101,14 +136,22 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
                 currency: currency,
               ),
               const SizedBox(height: 8),
-              _MonthTable(
-                month: _month,
-                leading: leading,
-                daysInMonth: daysInMonth,
-                byDay: byDay,
-                currency: currency,
-                onTapDay: (day) => _openDaySheet(context, day, monthTxs),
-              ),
+              if (_viewIndex == 0)
+                _MonthTable(
+                  month: _month,
+                  leading: leading,
+                  daysInMonth: daysInMonth,
+                  byDay: byDay,
+                  currency: currency,
+                  onTapDay: (day) => _openDaySheet(context, day, monthTxs),
+                )
+              else
+                _DailyMonthList(
+                  month: _month,
+                  txs: monthTxs,
+                  currency: currency,
+                  onTapDay: (day) => _openDaySheet(context, day, monthTxs),
+                ),
             ],
           ),
         );
@@ -138,9 +181,14 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.month, required this.onShift});
+  const _Header({
+    required this.month,
+    required this.onShift,
+    required this.onTitleTap,
+  });
   final DateTime month;
   final ValueChanged<int> onShift;
+  final VoidCallback onTitleTap;
 
   @override
   Widget build(BuildContext context) {
@@ -153,20 +201,45 @@ class _Header extends StatelessWidget {
         _NavBtn(icon: LucideIcons.chevronLeft, onTap: () => onShift(-1)),
         Expanded(
           child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: context.isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : context.surface,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                titleCapitalized,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: context.primaryText,
+            child: Pressable(
+              onTap: onTitleTap,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: context.isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : context.scaffoldBg,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: AppColors.lime.withValues(alpha: 0.28),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      titleCapitalized,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: context.primaryText,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      LucideIcons.chevronDown,
+                      size: 16,
+                      color: context.mutedText,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -275,6 +348,139 @@ class _NavBtn extends StatelessWidget {
         ),
         child: Icon(icon, size: 18, color: context.primaryText),
       ),
+    );
+  }
+}
+
+class _DailyMonthList extends StatelessWidget {
+  const _DailyMonthList({
+    required this.month,
+    required this.txs,
+    required this.currency,
+    required this.onTapDay,
+  });
+
+  final DateTime month;
+  final List<db.Transaction> txs;
+  final String currency;
+  final ValueChanged<DateTime> onTapDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = Tr.of(context);
+    final locale = Localizations.localeOf(context).toString();
+    final grouped = groupBy<db.Transaction, DateTime>(
+      txs,
+      (t) => DateTime(t.date.year, t.date.month, t.date.day),
+    );
+    final days = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+
+    if (days.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+        child: Text(
+          tr.noTxThisDay,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: context.mutedText, fontWeight: FontWeight.w600),
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final day in days) ...[
+          Pressable(
+            onTap: () => onTapDay(day),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(4, 10, 4, 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    '${day.day}',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: context.primaryText,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: context.scaffoldBg,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      DateFormat.E(locale).format(day),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: context.mutedText,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  _DayTotalsRow(dayTxs: grouped[day]!, currency: currency),
+                ],
+              ),
+            ),
+          ),
+          for (final tx in grouped[day]!)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: TransactionTile(tx: tx),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _DayTotalsRow extends StatelessWidget {
+  const _DayTotalsRow({required this.dayTxs, required this.currency});
+
+  final List<db.Transaction> dayTxs;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    var income = 0.0;
+    var expense = 0.0;
+    for (final t in dayTxs) {
+      final type = TxType.values[t.type];
+      if (type == TxType.income) {
+        income += t.amount;
+      } else if (type == TxType.expense) {
+        expense += t.amount;
+      }
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (income > 0)
+          Text(
+            formatMoney(income, currency),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AppColors.limeAccent,
+            ),
+          ),
+        if (income > 0 && expense > 0) const SizedBox(width: 8),
+        if (expense > 0)
+          Text(
+            formatMoney(expense, currency),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AppColors.danger,
+            ),
+          ),
+      ],
     );
   }
 }

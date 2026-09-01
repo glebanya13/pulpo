@@ -243,75 +243,101 @@ class _BalanceActionCardState extends ConsumerState<_BalanceActionCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      tr.totalBalance,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 11,
-                        letterSpacing: 0.8,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      formatMoney(widget.total, widget.currency),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        height: 1.1,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                    if (widget.fxApproximate) ...[
-                      const SizedBox(height: 6),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                       Text(
-                        tr.fxApproximateBalance,
-                        textAlign: TextAlign.center,
+                        tr.totalBalance,
                         style: const TextStyle(
-                          color: Colors.white54,
-                          fontSize: 10,
+                          color: Colors.white70,
+                          fontSize: 11,
+                          letterSpacing: 0.8,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ],
-                  ],
-                ),
-              ),
-              Tooltip(
-                message: tr.management,
-                child: Semantics(
-                  label: tr.management,
-                  button: true,
-                  child: Pressable(
-                    key: _menuAnchorKey,
-                    onTap: _showManagementMenu,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 4),
+                      Text(
+                        formatMoney(widget.total, widget.currency),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                          height: 1.1,
+                          letterSpacing: -1,
+                        ),
                       ),
-                      child: const Icon(
-                        LucideIcons.chevronDown,
-                        size: 20,
-                        color: Colors.white,
+                      if (widget.fxApproximate) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          tr.fxApproximateBalance,
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Tooltip(
+                    message: tr.management,
+                    child: Semantics(
+                      label: tr.management,
+                      button: true,
+                      child: Pressable(
+                        key: _menuAnchorKey,
+                        onTap: _showManagementMenu,
+                        child: Container(
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                tr.management,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.4,
+                                  height: 1.15,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Icon(
+                                LucideIcons.chevronDown,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Row(

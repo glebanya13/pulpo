@@ -217,44 +217,54 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 );
               }
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final day in sortedKeys) ...[
-                    Padding(
+              final items = <_TxListEntry>[];
+              for (final day in sortedKeys) {
+                items.add(_TxListEntry.header(day));
+                for (final tx in grouped[day]!) {
+                  items.add(_TxListEntry.tx(tx));
+                }
+              }
+
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  if (item.isHeader) {
+                    return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Text(
-                        _dayLabel(day, tr, context),
+                        _dayLabel(item.day!, tr, context),
                         style: TextStyle(
                           fontSize: 12,
                           color: context.mutedText,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                    ...grouped[day]!.map(
-                      (t) => Dismissible(
-                        key: ValueKey(t.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 24),
-                          decoration: BoxDecoration(
-                            color: AppColors.danger,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        onDismissed: (_) => _deleteWithUndo(t),
-                        child: Pressable(
-                          onTap: () => context.push('/tx/${t.id}'),
-                          child: TransactionTile(tx: t),
-                        ),
+                    );
+                  }
+                  final tx = item.transaction!;
+                  return Dismissible(
+                    key: ValueKey(tx.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 24),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger,
+                        borderRadius: BorderRadius.circular(18),
                       ),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: const Icon(Icons.delete, color: Colors.white),
                     ),
-                  ],
-                ],
+                    onDismissed: (_) => _deleteWithUndo(tx),
+                    child: Pressable(
+                      onTap: () => context.push('/tx/${tx.id}'),
+                      child: TransactionTile(tx: tx),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -474,4 +484,19 @@ class _FilterPick extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TxListEntry {
+  const _TxListEntry._({this.day, this.transaction});
+
+  factory _TxListEntry.header(DateTime day) =>
+      _TxListEntry._(day: day);
+
+  factory _TxListEntry.tx(db.Transaction tx) =>
+      _TxListEntry._(transaction: tx);
+
+  final DateTime? day;
+  final db.Transaction? transaction;
+
+  bool get isHeader => day != null;
 }

@@ -184,6 +184,12 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     }
     await _chat.ensureWelcome(Tr.of(context).aiChatWelcome);
     _scrollToEnd();
+    if (!mounted) return;
+    final scanReceipt =
+        GoRouterState.of(context).uri.queryParameters['scanReceipt'] == '1';
+    if (scanReceipt) {
+      await _showPhotoOptions();
+    }
   }
 
   String _localeId(String locale) => switch (locale) {

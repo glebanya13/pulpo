@@ -14,6 +14,9 @@ import 'l10n/tr.dart';
 import 'utils/money_format.dart';
 import 'widget_snapshot.dart';
 
+/// Home-screen widgets are off for now — flip to `true` when shipping widgets.
+const kHomeWidgetsEnabled = false;
+
 const kHomeWidgetAndroidName = 'PulpoWidgetProvider';
 const kHomeWidgetAndroidBudgetName = 'PulpoBudgetWidgetProvider';
 const kHomeWidgetAndroidChartName = 'PulpoChartWidgetProvider';
@@ -21,11 +24,16 @@ const kHomeWidgetIosName = 'PulpoWidget';
 const kHomeWidgetIosBudgetName = 'PulpoBudgetWidget';
 const kHomeWidgetIosChartName = 'PulpoChartWidget';
 
+/// Syncs balance/budget/chart snapshots to home-screen widgets.
+///
+/// iOS requires App Group `group.com.pulpo.widget` on the App ID and in
+/// `Runner.entitlements` before enabling — see Apple Developer → Identifiers.
+/// Android widgets work without extra setup.
 const kHomeWidgetAppGroup = 'group.com.pulpo.widget';
 const _homeWidgetDebounce = Duration(milliseconds: 700);
 
 Future<void> configureHomeWidget() async {
-  if (kIsWeb) return;
+  if (!kHomeWidgetsEnabled || kIsWeb) return;
   // App Group `group.com.pulpo.widget` must exist on the Apple Developer
   // App ID + provisioning profile before adding it to Runner.entitlements.
   // Until then, skip setAppGroupId so IPA signing stays green.
@@ -52,6 +60,7 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
   @override
   void initState() {
     super.initState();
+    if (!kHomeWidgetsEnabled) return;
     WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleSync());
   }
 
@@ -62,6 +71,7 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
   }
 
   void _scheduleSync() {
+    if (!kHomeWidgetsEnabled) return;
     _debounce?.cancel();
     _debounce = Timer(_homeWidgetDebounce, () {
       if (!mounted) return;
@@ -122,6 +132,8 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
 
   @override
   Widget build(BuildContext context) {
+    if (!kHomeWidgetsEnabled) return widget.child;
+
     ref.listen(totalBalanceProvider, (_, _) => _scheduleSync());
     ref.listen(
       settingsControllerProvider.select((s) => '${s.baseCurrency}|${s.locale}'),
@@ -138,7 +150,7 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
     required Tr tr,
     required WidgetSnapshot snap,
   }) async {
-    if (kIsWeb) return;
+    if (!kHomeWidgetsEnabled || kIsWeb) return;
     // iOS WidgetKit needs App Groups on the signing profile; Android works now.
     if (Platform.isIOS) return;
     try {

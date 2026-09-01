@@ -1,3 +1,6 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
 
 import '../pro/pro_limits.dart';
@@ -202,6 +205,9 @@ class Tr {
   String get emptyTransactions => _get('empty_transactions');
   String get calendar => _get('calendar');
   String get viewHistory => _get('view_history');
+  String get calendarViewCalendar => _get('calendar_view_calendar');
+  String get calendarViewDaily => _get('calendar_view_daily');
+  String get calendarPickDate => _get('calendar_pick_date');
   String get noTxThisDay => _get('no_tx_this_day');
 
   /// Короткие подписи дней недели (пн-первый).
@@ -700,7 +706,6 @@ class Tr {
         _get('pro_feature_export_excel'),
         _get('pro_feature_export_pdf'),
         _get('pro_feature_import_csv'),
-        _get('pro_feature_no_ads'),
       ];
   String get proCtaSubtitle => _get('pro_cta_subtitle');
   String get proGo => _get('pro_go');
@@ -708,7 +713,12 @@ class Tr {
   String get proSignInRequired => _get('pro_sign_in_required');
   String get proRestoreEmpty => _get('pro_restore_empty');
   String get proRestoreOk => _get('pro_restore_ok');
-  String get proLegalNotice => _get('pro_legal_notice');
+  String get proLegalNotice {
+    if (!kIsWeb && Platform.isAndroid) {
+      return _get('pro_legal_notice_android');
+    }
+    return _get('pro_legal_notice');
+  }
   String get proYearly => _get('pro_yearly');
   String get proMonthly => _get('pro_monthly');
   String get proSemiAnnual => _get('pro_semi_annual');
@@ -919,6 +929,9 @@ class Tr {
       'empty_transactions': 'Aún no hay transacciones. Toca + para añadir.',
       'calendar': 'Calendario',
       'view_history': 'Ver historial →',
+      'calendar_view_calendar': 'Calendario',
+      'calendar_view_daily': 'Diario',
+      'calendar_pick_date': 'Elegir fecha',
       'no_tx_this_day': 'Sin transacciones este día',
       'weekday_mon': 'L',
       'weekday_tue': 'M',
@@ -1443,6 +1456,8 @@ class Tr {
       'pro_restore_ok': 'Compras restauradas',
       'pro_legal_notice':
           'El pago se carga a tu Apple ID. La suscripción se renueva automáticamente salvo que la canceles al menos 24 h antes del final del periodo. Gestiona o cancela en Ajustes → Apple ID → Suscripciones. Si compras durante la prueba, pierdes el resto de días gratis. Al continuar aceptas los Términos y la Política de privacidad.',
+      'pro_legal_notice_android':
+          'El pago se carga a tu cuenta de Google Play. La suscripción se renueva automáticamente salvo que la canceles al menos 24 h antes del final del periodo. Gestiona o cancela en Google Play → Pagos y suscripciones → Suscripciones. Al continuar aceptas los Términos y la Política de privacidad.',
       'pro_yearly': 'Anual',
       'pro_monthly': 'Mensual',
       'pro_semi_annual': '6 meses',
@@ -1613,6 +1628,9 @@ class Tr {
       'empty_transactions': 'Пока пусто. Нажмите + чтобы добавить.',
       'calendar': 'Календарь',
       'view_history': 'История →',
+      'calendar_view_calendar': 'Календарь',
+      'calendar_view_daily': 'По дням',
+      'calendar_pick_date': 'Выбрать дату',
       'no_tx_this_day': 'Транзакций за этот день нет',
       'weekday_mon': 'Пн',
       'weekday_tue': 'Вт',
@@ -1628,7 +1646,7 @@ class Tr {
       'profile_avatar_updated': 'Фото профиля обновлено',
       'profile_avatar_updated_local': 'Фото сохранено на устройстве',
       'profile_avatar_removed': 'Фото профиля удалено',
-      'management': 'УПРАВЛЕНИЕ',
+      'management': 'Управление',
       'recurring': 'РЕГУЛЯРНОЕ',
       'section_settings': 'НАСТРОЙКИ',
       'accounts': 'Счета',
@@ -2137,6 +2155,8 @@ class Tr {
       'pro_restore_ok': 'Покупки восстановлены',
       'pro_legal_notice':
           'Оплата списывается с Apple ID. Подписка продлевается автоматически, если не отменить её минимум за 24 часа до конца периода. Управление: Настройки → Apple ID → Подписки. Покупка во время пробного периода отменяет оставшиеся дни триала. Продолжая, вы принимаете Условия использования и Политику конфиденциальности.',
+      'pro_legal_notice_android':
+          'Оплата списывается с аккаунта Google Play. Подписка продлевается автоматически, если не отменить её минимум за 24 часа до конца периода. Управление: Google Play → Платежи и подписки → Подписки. Продолжая, вы принимаете Условия использования и Политику конфиденциальности.',
       'pro_yearly': 'На год',
       'pro_monthly': 'На месяц',
       'pro_semi_annual': '6 месяцев',
@@ -2307,6 +2327,9 @@ class Tr {
       'empty_transactions': 'No transactions yet. Tap + to add.',
       'calendar': 'Calendar',
       'view_history': 'View history →',
+      'calendar_view_calendar': 'Calendar',
+      'calendar_view_daily': 'Daily',
+      'calendar_pick_date': 'Pick date',
       'no_tx_this_day': 'No transactions on this day',
       'weekday_mon': 'Mo',
       'weekday_tue': 'Tu',
@@ -2831,6 +2854,8 @@ class Tr {
       'pro_restore_ok': 'Purchases restored',
       'pro_legal_notice':
           'Payment will be charged to your Apple ID. Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. Manage or cancel in Settings → Apple ID → Subscriptions. Any unused free trial is forfeited when you purchase. By continuing you agree to the Terms of Use and Privacy Policy.',
+      'pro_legal_notice_android':
+          'Payment will be charged to your Google Play account. Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. Manage or cancel in Google Play → Payments & subscriptions → Subscriptions. By continuing you agree to the Terms of Use and Privacy Policy.',
       'pro_yearly': 'Yearly',
       'pro_monthly': 'Monthly',
       'pro_semi_annual': '6 months',
@@ -2987,16 +3012,19 @@ class Tr {
       'transactions_subtitle': 'Доходи, витрати та перекази',
       'analytics': 'Аналітика',
       'profile': 'Профіль',
-      'greeting_morning': 'Доброго ранку',
-      'greeting_afternoon': 'Добрий день',
-      'greeting_evening': 'Добрий вечір',
-      'greeting_night': 'Надобраніч',
+      'greeting_morning': 'Доброго ранку 👋',
+      'greeting_afternoon': 'Добрий день 👋',
+      'greeting_evening': 'Добрий вечір 👋',
+      'greeting_night': 'Надобраніч 🌙',
       'total_balance': 'Загальний баланс',
       'recent_transactions': 'Останні транзакції',
       'see_all': 'Усі',
       'empty_transactions': 'Поки що порожньо. Натисніть +, щоб додати.',
       'calendar': 'Календар',
-      'view_history': 'Історія',
+      'view_history': 'Історія →',
+      'calendar_view_calendar': 'Календар',
+      'calendar_view_daily': 'По днях',
+      'calendar_pick_date': 'Вибрати дату',
       'no_tx_this_day': 'Немає транзакцій за цей день',
       'weekday_mon': 'Пн',
       'weekday_tue': 'Вт',
@@ -3005,7 +3033,7 @@ class Tr {
       'weekday_fri': 'Пт',
       'weekday_sat': 'Сб',
       'weekday_sun': 'Нд',
-      'management': 'КЕРУВАННЯ',
+      'management': 'Керування',
       'profile_avatar_choose': 'Обрати фото',
       'profile_avatar_remove': 'Видалити фото',
       'profile_avatar_updating': 'Оновлюємо фото…',
@@ -3483,6 +3511,8 @@ class Tr {
       'pro_restore_empty': 'Активних покупок не знайдено',
       'pro_restore_ok': 'Покупки відновлено',
       'pro_legal_notice': 'Платіж буде стягнуто з вашого Apple ID. Підписка поновлюється автоматично, якщо її не скасовано принаймні за 24 години до закінчення періоду. Керування: налаштування → підписки → Apple ID. Придбання протягом пробного періоду скасує решту пробних днів. Продовжуючи, ви погоджуєтеся з Умовами використання та Політикою конфіденційності.',
+      'pro_legal_notice_android':
+          'Платіж буде стягнуто з вашого облікового запису Google Play. Підписка поновлюється автоматично, якщо її не скасовано принаймні за 24 години до закінчення періоду. Керування: Google Play → Платежі та підписки → Підписки. Продовжуючи, ви погоджуєтеся з Умовами використання та Політикою конфіденційності.',
       'pro_yearly': 'На рік',
       'pro_monthly': 'На місяць',
       'pro_semi_annual': '6 місяців',

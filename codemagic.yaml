@@ -18,6 +18,11 @@ workflows:
         script: |
           flutter pub get
 
+      - name: Flutter analyze and test
+        script: |
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          flutter test
+
       - name: Set up code signing
         script: |
           xcode-project use-profiles --project ios/Runner.xcodeproj
