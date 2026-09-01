@@ -10,20 +10,22 @@ import '../core/theme/liquid_glass.dart';
 import 'ai_assistant_mark.dart';
 import 'pressable.dart';
 
-/// Pill bottom nav: home · txs · plus (bright FAB) · reports · chat (quiet).
+/// Pill bottom nav: home · management · plus (FAB) · reports · chat.
 class BudgetBottomNav extends StatelessWidget {
   const BudgetBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTap,
     required this.onAddTap,
+    required this.onManagementTap,
     required this.onChatTap,
   });
 
-  /// Shell tab index: 0 home, 1 transactions, 2 reports.
+  /// Shell tab index: 0 home, 1 reports.
   final int currentIndex;
   final ValueChanged<int> onTap;
   final VoidCallback onAddTap;
+  final VoidCallback onManagementTap;
   final VoidCallback onChatTap;
 
   @override
@@ -42,9 +44,9 @@ class BudgetBottomNav extends StatelessWidget {
               onTap: () => onTap(0),
             ),
             _NavItem(
-              icon: LucideIcons.arrowLeftRight,
-              active: currentIndex == 1,
-              onTap: () => onTap(1),
+              icon: LucideIcons.layoutGrid,
+              active: false,
+              onTap: onManagementTap,
             ),
             _Fab(
               icon: LucideIcons.plus,
@@ -54,8 +56,8 @@ class BudgetBottomNav extends StatelessWidget {
             ),
             _NavItem(
               icon: LucideIcons.pieChart,
-              active: currentIndex == 2,
-              onTap: () => onTap(2),
+              active: currentIndex == 1,
+              onTap: () => onTap(1),
             ),
             _AiNavItem(onTap: onChatTap),
           ],

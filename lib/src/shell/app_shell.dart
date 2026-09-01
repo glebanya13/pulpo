@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/pro/pro_guard.dart';
 import '../widgets/bottom_nav.dart';
+import '../widgets/management_menu.dart';
 import '../widgets/quick_actions_sheet.dart';
 
 bool get _useFloatingNav {
@@ -54,6 +55,7 @@ class AppShell extends ConsumerWidget {
           initialLocation: true,
         ),
         onAddTap: () => showQuickActionsSheet(context),
+        onManagementTap: () => showManagementMenu(context, ref),
         onChatTap: () => _openAssistant(context, ref),
       ),
     );

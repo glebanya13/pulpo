@@ -46,8 +46,14 @@ extension VividColorX on Color {
 }
 
 extension ColorWellX on BuildContext {
-  Color wellBg(Color stored) {
+  Color wellBg(Color stored, {bool solid = false}) {
     final v = stored.asVivid;
+    if (solid) {
+      if (isDark) {
+        return Color.lerp(const Color(0xFF1A1A1A), v, 0.38)!;
+      }
+      return Color.lerp(Colors.white, v, 0.48)!;
+    }
     if (isDark) {
       return Color.lerp(const Color(0xFF1C1C1C), v, 0.16)!;
     }
@@ -76,6 +82,7 @@ class ColorWellIcon extends StatelessWidget {
     this.size = 42,
     this.iconSize = 20,
     this.radius = 14,
+    this.solid = false,
   });
 
   final Color color;
@@ -83,6 +90,7 @@ class ColorWellIcon extends StatelessWidget {
   final double size;
   final double iconSize;
   final double radius;
+  final bool solid;
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +98,7 @@ class ColorWellIcon extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: context.wellBg(color),
+        color: context.wellBg(color, solid: solid),
         borderRadius: BorderRadius.circular(radius),
       ),
       child: Icon(icon, size: iconSize, color: context.wellFg(color)),

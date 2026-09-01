@@ -33,7 +33,6 @@ import 'features/shared_budget/shared_budget_screen.dart';
 import 'features/subscriptions/subscriptions_screen.dart';
 import 'features/transactions/add_transaction_screen.dart';
 import 'features/transactions/transaction_detail_screen.dart';
-import 'features/transactions/transactions_screen.dart';
 import 'features/transactions/transfer_screen.dart';
 import 'shell/app_shell.dart';
 
@@ -88,6 +87,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+      GoRoute(
+        path: '/transactions',
+        redirect: (context, state) => '/',
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
@@ -97,14 +100,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/',
                 builder: (context, state) => const DashboardScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/transactions',
-                builder: (context, state) => const TransactionsScreen(),
               ),
             ],
           ),

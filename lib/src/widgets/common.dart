@@ -306,16 +306,45 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
   }
 }
 
-/// Profile shortcut: avatar icon + localized “My account” label.
+/// Profile shortcut: avatar icon + optional localized label.
 class MyAccountChip extends StatelessWidget {
-  const MyAccountChip({super.key, this.dense = false});
+  const MyAccountChip({
+    super.key,
+    this.dense = false,
+    this.iconOnly = false,
+  });
 
   final bool dense;
+  final bool iconOnly;
 
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final iconColor = context.isDark ? AppColors.lime : AppColors.ink;
+    final size = dense ? 34.0 : 40.0;
+
+    if (iconOnly) {
+      return Pressable(
+        onTap: () => context.push('/profile'),
+        child: Semantics(
+          button: true,
+          label: tr.myAccount,
+          child: Container(
+            width: size,
+            height: size,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: context.isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : AppColors.ink.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(LucideIcons.user, size: dense ? 18 : 20, color: iconColor),
+          ),
+        ),
+      );
+    }
+
     return Pressable(
       onTap: () => context.push('/profile'),
       child: Container(
@@ -389,9 +418,14 @@ class WhatsAppSupportChip extends StatelessWidget {
 
 /// WhatsApp + account chip pair for main tab headers.
 class HeaderSupportActions extends StatelessWidget {
-  const HeaderSupportActions({super.key, this.dense = true});
+  const HeaderSupportActions({
+    super.key,
+    this.dense = true,
+    this.accountIconOnly = false,
+  });
 
   final bool dense;
+  final bool accountIconOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -400,7 +434,7 @@ class HeaderSupportActions extends StatelessWidget {
       children: [
         WhatsAppSupportChip(dense: dense),
         SizedBox(width: dense ? 6 : 8),
-        MyAccountChip(dense: dense),
+        MyAccountChip(dense: dense, iconOnly: accountIconOnly),
       ],
     );
   }

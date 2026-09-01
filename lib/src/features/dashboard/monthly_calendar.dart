@@ -15,8 +15,9 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
-import '../../widgets/common.dart';
 import '../../widgets/transaction_tile.dart';
+import '../../data/repositories/transaction_repository.dart';
+import '../../widgets/transaction_filters.dart';
 import '../../widgets/pressable.dart';
 import 'calendar_date_picker_sheet.dart';
 
@@ -33,12 +34,60 @@ class MonthlyCalendar extends ConsumerStatefulWidget {
 class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
   late DateTime _month;
   int _viewIndex = 0;
+  String _query = '';
+  TxType? _filterType;
+  int? _accountId;
+  int? _categoryId;
+  final _searchCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
     _month = DateTime(now.year, now.month, 1);
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _query = '';
+      _searchCtrl.clear();
+      _filterType = null;
+      _accountId = null;
+      _categoryId = null;
+    });
+  }
+
+  bool get _hasActiveFilters =>
+      _query.isNotEmpty ||
+      _filterType != null ||
+      _accountId != null ||
+      _categoryId != null;
+
+  Future<void> _deleteWithUndo(db.Transaction tx) async {
+    final tr = Tr.of(context);
+    await ref.read(transactionRepositoryProvider).delete(tx.id);
+    ref.invalidate(allTransactionsProvider);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(tr.txDeleted),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: tr.undo,
+          onPressed: () async {
+            await ref.read(transactionRepositoryProvider).restore(tx);
+            ref.invalidate(allTransactionsProvider);
+          },
+        ),
+      ),
+    );
   }
 
   void _shiftMonth(int delta) {
@@ -74,15 +123,30 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     // Use the full stream (already warm on dashboard) so month switches never
     // flash a loading spinner / collapse height.
     final allTxsAsync = ref.watch(allTransactionsProvider);
+    final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
+    final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
 
     return AsyncValueView(
       value: allTxsAsync,
       onRetry: () => ref.invalidate(allTransactionsProvider),
       data: (allTxs) {
-        final monthTxs = allTxs
+        final monthTxs = applyTransactionFilters(
+          txs: allTxs
+              .where(
+                (t) =>
+                    !t.date.isBefore(monthStart) && t.date.isBefore(monthEnd),
+              )
+              .toList(),
+          query: _query,
+          filterType: _filterType,
+          accountId: _accountId,
+          categoryId: _categoryId,
+          categories: cats,
+          tr: tr,
+        );
+        final monthTxsUnfiltered = allTxs
             .where(
-              (t) =>
-                  !t.date.isBefore(monthStart) && t.date.isBefore(monthEnd),
+              (t) => !t.date.isBefore(monthStart) && t.date.isBefore(monthEnd),
             )
             .toList();
         var income = 0.0;
@@ -121,47 +185,46 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
                 month: _month,
                 onShift: _shiftMonth,
                 onTitleTap: () => _openDatePicker(context),
-                trailing: Pressable(
-                  onTap: () => context.go('/transactions'),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      tr.viewHistory,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.limeAccent,
-                      ),
-                    ),
-                  ),
+                calendarView: _viewIndex == 1,
+                onToggleCalendar: () => setState(
+                  () => _viewIndex = _viewIndex == 0 ? 1 : 0,
                 ),
               ),
-              const SizedBox(height: 8),
-              TabsPill(
-                tabs: [tr.calendarViewDaily, tr.calendarViewCalendar],
-                index: _viewIndex,
-                onChanged: (i) => setState(() => _viewIndex = i),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               _MonthTotals(
                 income: income,
                 expense: expense,
                 net: net,
                 currency: currency,
               ),
-              const SizedBox(height: 8),
+              if (_viewIndex == 0) ...[
+                const SizedBox(height: 6),
+                TransactionFiltersBar(
+                  searchController: _searchCtrl,
+                  query: _query,
+                  filterType: _filterType,
+                  accountId: _accountId,
+                  categoryId: _categoryId,
+                  accounts: accounts,
+                  categories: cats,
+                  onQueryChanged: (v) => setState(() => _query = v),
+                  onFilterTypeChanged: (t) => setState(() => _filterType = t),
+                  onAccountChanged: (id) => setState(() => _accountId = id),
+                  onCategoryChanged: (id) => setState(() => _categoryId = id),
+                ),
+              ],
+              const SizedBox(height: 6),
               if (_viewIndex == 0)
                 _DailyMonthList(
                   month: _month,
                   txs: monthTxs,
                   currency: currency,
+                  hasFilters: _hasActiveFilters,
+                  monthHasTxs: monthTxsUnfiltered.isNotEmpty,
+                  onClearFilters: _clearFilters,
                   onTapDay: (day) => _openDaySheet(context, day, monthTxs),
-                  onShowAll: () => context.go('/transactions'),
-                  maxDays: 5,
-                  maxTxPerDay: 3,
+                  onTapTx: (tx) => context.push('/tx/${tx.id}'),
+                  onDeleteTx: _deleteWithUndo,
                 )
               else
                 _MonthTable(
@@ -205,17 +268,19 @@ class _Header extends StatelessWidget {
     required this.month,
     required this.onShift,
     required this.onTitleTap,
-    this.trailing,
+    required this.calendarView,
+    required this.onToggleCalendar,
   });
   final DateTime month;
   final ValueChanged<int> onShift;
   final VoidCallback onTitleTap;
-  final Widget? trailing;
+  final bool calendarView;
+  final VoidCallback onToggleCalendar;
 
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
-    final title = DateFormat('LLLL y', locale).format(month);
+    final title = DateFormat('LLL y', locale).format(month);
     final titleCapitalized =
         title.isEmpty ? title : title[0].toUpperCase() + title.substring(1);
     return Row(
@@ -225,53 +290,40 @@ class _Header extends StatelessWidget {
           child: Center(
             child: Pressable(
               onTap: onTitleTap,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: context.isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : context.scaffoldBg,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: AppColors.lime.withValues(alpha: 0.28),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      titleCapitalized,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: context.primaryText,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Icon(
-                      LucideIcons.chevronDown,
-                      size: 16,
-                      color: context.mutedText,
-                    ),
-                  ],
+              child: Text(
+                titleCapitalized,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: context.primaryText,
                 ),
               ),
             ),
           ),
         ),
         _NavBtn(icon: LucideIcons.chevronRight, onTap: () => onShift(1)),
-        if (trailing != null) ...[
-          const SizedBox(width: 4),
-          trailing!,
-        ],
+        const SizedBox(width: 4),
+        Pressable(
+          onTap: onToggleCalendar,
+          child: Container(
+            width: 28,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: calendarView
+                  ? AppColors.lime.withValues(alpha: 0.2)
+                  : context.scaffoldBg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              LucideIcons.calendarDays,
+              size: 15,
+              color: calendarView
+                  ? AppColors.limeAccent
+                  : context.mutedText,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -365,14 +417,14 @@ class _NavBtn extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        width: 32,
-        height: 32,
+        width: 28,
+        height: 28,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: context.scaffoldBg,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 18, color: context.primaryText),
+        child: Icon(icon, size: 16, color: context.primaryText),
       ),
     );
   }
@@ -383,19 +435,23 @@ class _DailyMonthList extends StatelessWidget {
     required this.month,
     required this.txs,
     required this.currency,
+    required this.hasFilters,
+    required this.monthHasTxs,
+    required this.onClearFilters,
     required this.onTapDay,
-    this.onShowAll,
-    this.maxDays,
-    this.maxTxPerDay,
+    required this.onTapTx,
+    required this.onDeleteTx,
   });
 
   final DateTime month;
   final List<db.Transaction> txs;
   final String currency;
+  final bool hasFilters;
+  final bool monthHasTxs;
+  final VoidCallback onClearFilters;
   final ValueChanged<DateTime> onTapDay;
-  final VoidCallback? onShowAll;
-  final int? maxDays;
-  final int? maxTxPerDay;
+  final ValueChanged<db.Transaction> onTapTx;
+  final ValueChanged<db.Transaction> onDeleteTx;
 
   @override
   Widget build(BuildContext context) {
@@ -406,13 +462,37 @@ class _DailyMonthList extends StatelessWidget {
       (t) => DateTime(t.date.year, t.date.month, t.date.day),
     );
     final days = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
-    final visibleDays =
-        maxDays == null ? days : days.take(maxDays!).toList();
-    final truncated = (maxDays != null && days.length > maxDays!) ||
-        (maxTxPerDay != null &&
-            visibleDays.any((day) => grouped[day]!.length > maxTxPerDay!));
 
     if (days.isEmpty) {
+      if (hasFilters && monthHasTxs) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: Column(
+            children: [
+              Text(
+                tr.emptyFilterResults,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: context.mutedText,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Pressable(
+                onTap: onClearFilters,
+                child: Text(
+                  tr.clearFilters,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.limeAccent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
         child: Text(
@@ -426,18 +506,18 @@ class _DailyMonthList extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final day in visibleDays) ...[
+        for (final day in days) ...[
           Pressable(
             onTap: () => onTapDay(day),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(4, 10, 4, 6),
+              padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     '${day.day}',
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: context.primaryText,
                       height: 1,
@@ -466,30 +546,26 @@ class _DailyMonthList extends StatelessWidget {
               ),
             ),
           ),
-          for (final tx in grouped[day]!.take(maxTxPerDay ?? grouped[day]!.length))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: TransactionTile(tx: tx),
-            ),
-        ],
-        if (truncated && onShowAll != null) ...[
-          const SizedBox(height: 4),
-          Pressable(
-            onTap: onShowAll,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Center(
-                child: Text(
-                  tr.seeAll,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.limeAccent,
-                  ),
+          for (final tx in grouped[day]!)
+            Dismissible(
+              key: ValueKey(tx.id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                margin: const EdgeInsets.symmetric(vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.danger,
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: const Icon(Icons.delete, color: Colors.white, size: 20),
+              ),
+              onDismissed: (_) => onDeleteTx(tx),
+              child: Pressable(
+                onTap: () => onTapTx(tx),
+                child: TransactionTile(tx: tx, embedded: true),
               ),
             ),
-          ),
         ],
       ],
     );

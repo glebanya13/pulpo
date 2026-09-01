@@ -13,8 +13,16 @@ import '../data/db/enums.dart';
 import '../data/repositories/providers.dart';
 
 class TransactionTile extends ConsumerWidget {
-  const TransactionTile({super.key, required this.tx});
+  const TransactionTile({
+    super.key,
+    required this.tx,
+    this.embedded = false,
+  });
+
   final db.Transaction tx;
+
+  /// Inside a parent card (e.g. home calendar) — darker tile on scaffold bg.
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,40 +39,51 @@ class TransactionTile extends ConsumerWidget {
         ? Color(category.color)
         : (isIncome ? const Color(0xFF8BD44A) : const Color(0xFFFF5C5C));
 
+    final title = tx.note?.isNotEmpty == true
+        ? tx.note!
+        : (category != null
+            ? Tr.of(context).categoryName(category.name)
+            : Tr.of(context).transactionSingular);
+
     final dateStr = _humanDate(tx.date, context);
+    final subtitle =
+        '${category != null ? Tr.of(context).categoryName(category.name) : _typeLabel(type, context)} · $dateStr';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.only(bottom: embedded ? 6 : 8),
+      padding: EdgeInsets.all(embedded ? 12 : 14),
       decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.circular(18),
+        color: embedded ? context.scaffoldBg : context.surface,
+        borderRadius: BorderRadius.circular(embedded ? 16 : 18),
       ),
       child: Row(
         children: [
-          ColorWellIcon(color: wellColor, icon: icon),
+          ColorWellIcon(
+            color: wellColor,
+            icon: icon,
+            size: embedded ? 38 : 42,
+            iconSize: embedded ? 18 : 20,
+            radius: embedded ? 12 : 14,
+            solid: true,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  tx.note?.isNotEmpty == true
-                      ? tx.note!
-                      : (category != null
-                          ? Tr.of(context).categoryName(category.name)
-                          : Tr.of(context).transactionSingular),
+                  title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: embedded ? 13 : 14,
                     fontWeight: FontWeight.w600,
                     color: context.primaryText,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${category != null ? Tr.of(context).categoryName(category.name) : _typeLabel(type, context)} · $dateStr',
+                  subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -75,10 +94,11 @@ class TransactionTile extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             amountStr,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: embedded ? 14 : 15,
               fontWeight: FontWeight.w700,
               color: isIncome
                   ? (context.isDark
