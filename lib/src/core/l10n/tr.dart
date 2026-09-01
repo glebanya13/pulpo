@@ -209,6 +209,10 @@ class Tr {
   String get calendarViewDaily => _get('calendar_view_daily');
   String get calendarPickDate => _get('calendar_pick_date');
   String get noTxThisDay => _get('no_tx_this_day');
+  String get enterAmount => _get('enter_amount');
+  String get emptyFilterResults => _get('empty_filter_results');
+  String get emptyFilterResultsHint => _get('empty_filter_results_hint');
+  String get clearFilters => _get('clear_filters');
 
   /// Короткие подписи дней недели (пн-первый).
   List<String> get weekdayShort => [
@@ -933,6 +937,11 @@ class Tr {
       'calendar_view_daily': 'Diario',
       'calendar_pick_date': 'Elegir fecha',
       'no_tx_this_day': 'Sin transacciones este día',
+      'enter_amount': 'Introduce un importe',
+      'empty_filter_results': 'Sin resultados',
+      'empty_filter_results_hint':
+          'Prueba otros filtros o la búsqueda.',
+      'clear_filters': 'Limpiar filtros',
       'weekday_mon': 'L',
       'weekday_tue': 'M',
       'weekday_wed': 'X',
@@ -1632,6 +1641,11 @@ class Tr {
       'calendar_view_daily': 'По дням',
       'calendar_pick_date': 'Выбрать дату',
       'no_tx_this_day': 'Транзакций за этот день нет',
+      'enter_amount': 'Введите сумму',
+      'empty_filter_results': 'Ничего не найдено',
+      'empty_filter_results_hint':
+          'Попробуйте изменить фильтры или поиск.',
+      'clear_filters': 'Сбросить фильтры',
       'weekday_mon': 'Пн',
       'weekday_tue': 'Вт',
       'weekday_wed': 'Ср',
@@ -2331,6 +2345,10 @@ class Tr {
       'calendar_view_daily': 'Daily',
       'calendar_pick_date': 'Pick date',
       'no_tx_this_day': 'No transactions on this day',
+      'enter_amount': 'Enter an amount',
+      'empty_filter_results': 'No matches',
+      'empty_filter_results_hint': 'Try changing filters or search.',
+      'clear_filters': 'Clear filters',
       'weekday_mon': 'Mo',
       'weekday_tue': 'Tu',
       'weekday_wed': 'We',
@@ -3026,6 +3044,11 @@ class Tr {
       'calendar_view_daily': 'По днях',
       'calendar_pick_date': 'Вибрати дату',
       'no_tx_this_day': 'Немає транзакцій за цей день',
+      'enter_amount': 'Введіть суму',
+      'empty_filter_results': 'Нічого не знайдено',
+      'empty_filter_results_hint':
+          'Спробуйте змінити фільтри або пошук.',
+      'clear_filters': 'Скинути фільтри',
       'weekday_mon': 'Пн',
       'weekday_tue': 'Вт',
       'weekday_wed': 'Ср',

@@ -80,6 +80,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     if (seed != null && widget.editId == null) {
       _date = DateTime(seed.year, seed.month, seed.day);
     }
+    _amountCtrl.addListener(_onAmountChanged);
+  }
+
+  void _onAmountChanged() {
+    if (mounted) setState(() {});
   }
   db.Category? _category;
   db.Account? _account;
@@ -272,7 +277,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       );
       return;
     }
-    if (_amount <= 0) return;
+    if (_amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(Tr.of(context).enterAmount)),
+      );
+      return;
+    }
 
     final note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
     final repo = ref.read(transactionRepositoryProvider);
@@ -484,7 +494,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ScaledElevatedButton(
-                  onPressed: _save,
+                  onPressed: _amount > 0 ? _save : null,
                   child: Text(tr.save),
                 ),
               ),
@@ -551,9 +561,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               _FormRow(
                 icon: LucideIcons.calendar,
                 label: tr.date,
-                value: DateFormat('d MMM, HH:mm',
-                        Localizations.localeOf(context).languageCode)
-                    .format(_date),
+                value: DateFormat(
+                  'd MMM yyyy',
+                  Localizations.localeOf(context).languageCode,
+                ).format(_date),
                 onTap: _pickDate,
               ),
               _FormRow(

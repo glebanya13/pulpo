@@ -109,7 +109,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              tr.proSubtitle,
+              tr.paywallBody(widget.gate),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
@@ -522,46 +522,7 @@ class _PaywallProHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 104,
-      height: 104,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFD4FF00),
-            AppColors.lime,
-            Color(0xFFF0FF7A),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.lime.withValues(alpha: 0.55),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(LucideIcons.rocket, size: 44, color: AppColors.ink),
-          const SizedBox(height: 6),
-          Text(
-            Tr.of(context).proBadge,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.2,
-              height: 1,
-              color: AppColors.ink,
-            ),
-          ),
-        ],
-      ),
-    );
+    return const BrandLogo(size: 104, plate: false);
   }
 }
 

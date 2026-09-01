@@ -9,7 +9,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
 
-/// Brand mark: stacked MONEDERO — purple plate (light) / transparent lime (dark).
+/// Brand mark — Monedero app icon (purple plate + lime mascot).
 class BrandLogo extends StatelessWidget {
   const BrandLogo({
     super.key,
@@ -19,17 +19,15 @@ class BrandLogo extends StatelessWidget {
   });
 
   final double size;
-  /// When false, only the mark (no rounded plate / shadow behind it).
+  /// When false, only the mark (no extra shadow plate behind it).
   final bool plate;
-  /// Use when the parent is dark even if the app theme is still light
-  /// (onboarding, lock screen).
+  /// Kept for call sites; icon asset is the same in light and dark themes.
   final bool onDarkSurface;
 
   @override
   Widget build(BuildContext context) {
     final radius = size * 0.22;
-    final dark = onDarkSurface || context.isDark;
-    final asset = dark ? 'assets/logo_dark.png' : 'assets/logo_light.png';
+    const asset = 'assets/icon_light.png';
     final mark = ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: Image.asset(
@@ -51,15 +49,13 @@ class BrandLogo extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
-        boxShadow: dark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: mark,

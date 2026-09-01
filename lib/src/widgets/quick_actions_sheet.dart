@@ -208,7 +208,7 @@ class _QuickActionsSheet extends ConsumerWidget {
                 children: [
                   ColorWellIcon(
                     color: AppColors.bgFood,
-                    icon: LucideIcons.receipt,
+                    icon: LucideIcons.receiptEuro,
                     size: 42,
                     iconSize: 20,
                   ),

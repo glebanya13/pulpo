@@ -207,6 +207,21 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 ..sort((a, b) => b.compareTo(a));
 
               if (filtered.isEmpty) {
+                if (txs.isNotEmpty) {
+                  return EmptyState(
+                    icon: LucideIcons.searchX,
+                    title: tr.emptyFilterResults,
+                    description: tr.emptyFilterResultsHint,
+                    action: tr.clearFilters,
+                    onAction: () => setState(() {
+                      _query = '';
+                      _searchCtrl.clear();
+                      _filterType = null;
+                      _accountId = null;
+                      _categoryId = null;
+                    }),
+                  );
+                }
                 return EmptyState(
                   icon: LucideIcons.receiptEuro,
                   title: tr.emptyTransactionsList,
@@ -225,46 +240,45 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 }
               }
 
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  if (item.isHeader) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        _dayLabel(item.day!, tr, context),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: context.mutedText,
-                          fontWeight: FontWeight.w600,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final item in items)
+                    if (item.isHeader)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          _dayLabel(item.day!, tr, context),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.mutedText,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
+                    else
+                      Dismissible(
+                        key: ValueKey(item.transaction!.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 24),
+                          decoration: BoxDecoration(
+                            color: AppColors.danger,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        onDismissed: (_) =>
+                            _deleteWithUndo(item.transaction!),
+                        child: Pressable(
+                          onTap: () =>
+                              context.push('/tx/${item.transaction!.id}'),
+                          child: TransactionTile(tx: item.transaction!),
                         ),
                       ),
-                    );
-                  }
-                  final tx = item.transaction!;
-                  return Dismissible(
-                    key: ValueKey(tx.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 24),
-                      decoration: BoxDecoration(
-                        color: AppColors.danger,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    onDismissed: (_) => _deleteWithUndo(tx),
-                    child: Pressable(
-                      onTap: () => context.push('/tx/${tx.id}'),
-                      child: TransactionTile(tx: tx),
-                    ),
-                  );
-                },
+                ],
               );
             },
           ),

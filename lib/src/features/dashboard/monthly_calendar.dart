@@ -121,10 +121,27 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
                 month: _month,
                 onShift: _shiftMonth,
                 onTitleTap: () => _openDatePicker(context),
+                trailing: Pressable(
+                  onTap: () => context.go('/transactions'),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      tr.viewHistory,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.limeAccent,
+                      ),
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               TabsPill(
-                tabs: [tr.calendarViewCalendar, tr.calendarViewDaily],
+                tabs: [tr.calendarViewDaily, tr.calendarViewCalendar],
                 index: _viewIndex,
                 onChanged: (i) => setState(() => _viewIndex = i),
               ),
@@ -137,18 +154,21 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
               ),
               const SizedBox(height: 8),
               if (_viewIndex == 0)
+                _DailyMonthList(
+                  month: _month,
+                  txs: monthTxs,
+                  currency: currency,
+                  onTapDay: (day) => _openDaySheet(context, day, monthTxs),
+                  onShowAll: () => context.go('/transactions'),
+                  maxDays: 5,
+                  maxTxPerDay: 3,
+                )
+              else
                 _MonthTable(
                   month: _month,
                   leading: leading,
                   daysInMonth: daysInMonth,
                   byDay: byDay,
-                  currency: currency,
-                  onTapDay: (day) => _openDaySheet(context, day, monthTxs),
-                )
-              else
-                _DailyMonthList(
-                  month: _month,
-                  txs: monthTxs,
                   currency: currency,
                   onTapDay: (day) => _openDaySheet(context, day, monthTxs),
                 ),
@@ -185,10 +205,12 @@ class _Header extends StatelessWidget {
     required this.month,
     required this.onShift,
     required this.onTitleTap,
+    this.trailing,
   });
   final DateTime month;
   final ValueChanged<int> onShift;
   final VoidCallback onTitleTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -246,6 +268,10 @@ class _Header extends StatelessWidget {
           ),
         ),
         _NavBtn(icon: LucideIcons.chevronRight, onTap: () => onShift(1)),
+        if (trailing != null) ...[
+          const SizedBox(width: 4),
+          trailing!,
+        ],
       ],
     );
   }
@@ -358,12 +384,18 @@ class _DailyMonthList extends StatelessWidget {
     required this.txs,
     required this.currency,
     required this.onTapDay,
+    this.onShowAll,
+    this.maxDays,
+    this.maxTxPerDay,
   });
 
   final DateTime month;
   final List<db.Transaction> txs;
   final String currency;
   final ValueChanged<DateTime> onTapDay;
+  final VoidCallback? onShowAll;
+  final int? maxDays;
+  final int? maxTxPerDay;
 
   @override
   Widget build(BuildContext context) {
@@ -374,6 +406,11 @@ class _DailyMonthList extends StatelessWidget {
       (t) => DateTime(t.date.year, t.date.month, t.date.day),
     );
     final days = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+    final visibleDays =
+        maxDays == null ? days : days.take(maxDays!).toList();
+    final truncated = (maxDays != null && days.length > maxDays!) ||
+        (maxTxPerDay != null &&
+            visibleDays.any((day) => grouped[day]!.length > maxTxPerDay!));
 
     if (days.isEmpty) {
       return Padding(
@@ -389,7 +426,7 @@ class _DailyMonthList extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final day in days) ...[
+        for (final day in visibleDays) ...[
           Pressable(
             onTap: () => onTapDay(day),
             child: Padding(
@@ -429,11 +466,30 @@ class _DailyMonthList extends StatelessWidget {
               ),
             ),
           ),
-          for (final tx in grouped[day]!)
+          for (final tx in grouped[day]!.take(maxTxPerDay ?? grouped[day]!.length))
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: TransactionTile(tx: tx),
             ),
+        ],
+        if (truncated && onShowAll != null) ...[
+          const SizedBox(height: 4),
+          Pressable(
+            onTap: onShowAll,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Center(
+                child: Text(
+                  tr.seeAll,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.limeAccent,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ],
     );

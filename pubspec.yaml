@@ -71,10 +71,9 @@ flutter_launcher_icons:
     generate: true
     image_path: assets/icon_light.png
   image_path: assets/icon_light.png
-  image_path_ios_dark_transparent: assets/icon_dark.png
+  image_path_ios_dark_transparent: assets/icon_light.png
   adaptive_icon_background: "#8C52FF"
-  adaptive_icon_foreground: assets/icon_dark.png
-  adaptive_icon_foreground_inset: 0
+  adaptive_icon_foreground: assets/icon_light.png
   remove_alpha_ios: true
   background_color_ios: "#8C52FF"
 
