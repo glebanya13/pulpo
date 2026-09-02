@@ -25,8 +25,14 @@ class ProductOfferInfo {
   static double paywallAmount(
     ProductDetails product, {
     String? storeCountryCode,
+    String? preferredCurrency,
+    String? preferredCountryCode,
   }) {
-    final country = _resolveCountry(product, storeCountryCode);
+    final country = _resolveCountry(
+      product,
+      storeCountryCode: storeCountryCode,
+      preferredCountryCode: preferredCountryCode,
+    );
     final storeCurrency = product.currencyCode.toUpperCase();
     final catalog = ProProducts.catalogAmounts[product.id];
 
@@ -34,6 +40,7 @@ class ProductOfferInfo {
         StorePricing.shouldUseCatalog(
           storeCurrency: storeCurrency,
           countryCode: country,
+          preferredCurrency: preferredCurrency,
         )) {
       return catalog;
     }
@@ -46,12 +53,19 @@ class ProductOfferInfo {
   static String paywallCurrency(
     ProductDetails product, {
     String? storeCountryCode,
+    String? preferredCurrency,
+    String? preferredCountryCode,
   }) {
-    final country = _resolveCountry(product, storeCountryCode);
+    final country = _resolveCountry(
+      product,
+      storeCountryCode: storeCountryCode,
+      preferredCountryCode: preferredCountryCode,
+    );
     final storeCurrency = product.currencyCode.toUpperCase();
     if (StorePricing.shouldUseCatalog(
       storeCurrency: storeCurrency,
       countryCode: country,
+      preferredCurrency: preferredCurrency,
     )) {
       return ProProducts.catalogCurrency;
     }
@@ -63,10 +77,26 @@ class ProductOfferInfo {
   static String paywallPrice(
     ProductDetails product, {
     String? storeCountryCode,
+    String? preferredCurrency,
+    String? preferredCountryCode,
   }) {
-    final country = _resolveCountry(product, storeCountryCode);
-    final amount = paywallAmount(product, storeCountryCode: country);
-    final currency = paywallCurrency(product, storeCountryCode: country);
+    final country = _resolveCountry(
+      product,
+      storeCountryCode: storeCountryCode,
+      preferredCountryCode: preferredCountryCode,
+    );
+    final amount = paywallAmount(
+      product,
+      storeCountryCode: country,
+      preferredCurrency: preferredCurrency,
+      preferredCountryCode: preferredCountryCode,
+    );
+    final currency = paywallCurrency(
+      product,
+      storeCountryCode: country,
+      preferredCurrency: preferredCurrency,
+      preferredCountryCode: preferredCountryCode,
+    );
     final expectedCurrency = StorePricing.currencyForCountry(country);
     final storeCurrency = product.currencyCode.toUpperCase();
 
@@ -94,9 +124,16 @@ class ProductOfferInfo {
   static double _amount(
     ProductDetails? product, {
     String? storeCountryCode,
+    String? preferredCurrency,
+    String? preferredCountryCode,
   }) {
     if (product == null) return 0;
-    return paywallAmount(product, storeCountryCode: storeCountryCode);
+    return paywallAmount(
+      product,
+      storeCountryCode: storeCountryCode,
+      preferredCurrency: preferredCurrency,
+      preferredCountryCode: preferredCountryCode,
+    );
   }
 
   /// Free-trial length in days from StoreKit / Play, if configured.
@@ -128,9 +165,21 @@ class ProductOfferInfo {
     required ProductDetails? monthly,
     required ProductDetails? yearly,
     String? storeCountryCode,
+    String? preferredCurrency,
+    String? preferredCountryCode,
   }) {
-    final m = _amount(monthly, storeCountryCode: storeCountryCode);
-    final y = _amount(yearly, storeCountryCode: storeCountryCode);
+    final m = _amount(
+      monthly,
+      storeCountryCode: storeCountryCode,
+      preferredCurrency: preferredCurrency,
+      preferredCountryCode: preferredCountryCode,
+    );
+    final y = _amount(
+      yearly,
+      storeCountryCode: storeCountryCode,
+      preferredCurrency: preferredCurrency,
+      preferredCountryCode: preferredCountryCode,
+    );
     if (m <= 0 || y <= 0) return null;
     final full = m * 12;
     if (full <= y) return null;
@@ -142,9 +191,21 @@ class ProductOfferInfo {
     required ProductDetails? monthly,
     required ProductDetails? semiAnnual,
     String? storeCountryCode,
+    String? preferredCurrency,
+    String? preferredCountryCode,
   }) {
-    final m = _amount(monthly, storeCountryCode: storeCountryCode);
-    final s = _amount(semiAnnual, storeCountryCode: storeCountryCode);
+    final m = _amount(
+      monthly,
+      storeCountryCode: storeCountryCode,
+      preferredCurrency: preferredCurrency,
+      preferredCountryCode: preferredCountryCode,
+    );
+    final s = _amount(
+      semiAnnual,
+      storeCountryCode: storeCountryCode,
+      preferredCurrency: preferredCurrency,
+      preferredCountryCode: preferredCountryCode,
+    );
     if (m <= 0 || s <= 0) return null;
     final full = m * 6;
     if (full <= s) return null;
@@ -156,12 +217,24 @@ class ProductOfferInfo {
     required ProductDetails? base,
     required int multiplier,
     String? storeCountryCode,
+    String? preferredCurrency,
+    String? preferredCountryCode,
   }) {
     if (base == null || multiplier <= 0) return null;
-    final unit = _amount(base, storeCountryCode: storeCountryCode);
+    final unit = _amount(
+      base,
+      storeCountryCode: storeCountryCode,
+      preferredCurrency: preferredCurrency,
+      preferredCountryCode: preferredCountryCode,
+    );
     if (unit <= 0) return null;
     final total = unit * multiplier;
-    final currency = paywallCurrency(base, storeCountryCode: storeCountryCode);
+    final currency = paywallCurrency(
+      base,
+      storeCountryCode: storeCountryCode,
+      preferredCurrency: preferredCurrency,
+      preferredCountryCode: preferredCountryCode,
+    );
     return formatMoney(total, currency);
   }
 
@@ -174,12 +247,14 @@ class ProductOfferInfo {
   }
 
   static String? _resolveCountry(
-    ProductDetails product,
+    ProductDetails product, {
     String? storeCountryCode,
-  ) {
+    String? preferredCountryCode,
+  }) {
     return StorePricing.resolveCountry(
       storeCountryCode: storeCountryCode,
       productCountryCode: _countryFromProduct(product),
+      preferredCountryCode: preferredCountryCode,
     );
   }
 

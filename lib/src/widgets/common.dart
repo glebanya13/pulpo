@@ -220,7 +220,7 @@ class StickyScrollPage extends StatefulWidget {
     this.headerBottomPadding = 0,
     this.useSafeArea = true,
     this.physics,
-    this.fillRemainingColor,
+    this.fillViewport = false,
   });
 
   final Widget header;
@@ -233,8 +233,8 @@ class StickyScrollPage extends StatefulWidget {
   final double headerBottomPadding;
   final bool useSafeArea;
   final ScrollPhysics? physics;
-  /// Fills empty space below short content (e.g. home calendar list).
-  final Color? fillRemainingColor;
+  /// Fills the tab viewport so [Expanded] children can grow (floating bottom nav).
+  final bool fillViewport;
 
   @override
   State<StickyScrollPage> createState() => _StickyScrollPageState();
@@ -271,7 +271,41 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
     // (dark theme previously showed a black rectangle under rounded cards).
     final topInset =
         (_headerHeight > 0 ? _headerHeight : 72) + widget.headerGap;
-    final fillColor = widget.fillRemainingColor;
+
+    final scrollSlivers = widget.fillViewport
+        ? <Widget>[
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                widget.padding.left,
+                topInset,
+                widget.padding.right,
+                0,
+              ),
+              sliver: SliverFillRemaining(
+                hasScrollBody: false,
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: widget.padding.bottom),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: widget.children,
+                  ),
+                ),
+              ),
+            ),
+          ]
+        : <Widget>[
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                widget.padding.left,
+                topInset,
+                widget.padding.right,
+                widget.padding.bottom,
+              ),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate(widget.children),
+              ),
+            ),
+          ];
 
     final content = Stack(
       clipBehavior: Clip.none,
@@ -280,27 +314,7 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
           child: CustomScrollView(
             controller: widget.controller,
             physics: widget.physics,
-            slivers: [
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  widget.padding.left,
-                  topInset,
-                  widget.padding.right,
-                  fillColor != null ? 0 : widget.padding.bottom,
-                ),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate(widget.children),
-                ),
-              ),
-              if (fillColor != null)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: ColoredBox(
-                    color: fillColor,
-                    child: SizedBox(height: widget.padding.bottom),
-                  ),
-                ),
-            ],
+            slivers: scrollSlivers,
           ),
         ),
         Positioned(

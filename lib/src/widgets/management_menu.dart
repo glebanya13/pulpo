@@ -122,16 +122,65 @@ Future<void> showManagementMenu(BuildContext context, WidgetRef ref) async {
                         Navigator.pop(ctx);
                         openPaywall(context, ProGate.generic);
                       },
-                      child: Padding(
+                      child: Container(
+                        margin: const EdgeInsets.fromLTRB(4, 6, 4, 4),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 10,
+                          horizontal: 12,
+                          vertical: 12,
                         ),
-                        child: _ManagementMenuRow(
-                          icon: LucideIcons.sparkles,
-                          label: tr.proGo,
-                          color: AppColors.lime,
-                          showPro: false,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFFD4FF00),
+                              AppColors.lime,
+                              Color(0xFFF0FF7A),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.lime.withValues(alpha: 0.4),
+                              blurRadius: 14,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.35),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                LucideIcons.rocket,
+                                size: 14,
+                                color: AppColors.ink,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                tr.proGo,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              LucideIcons.chevronRight,
+                              size: 16,
+                              color: AppColors.ink.withValues(alpha: 0.75),
+                            ),
+                          ],
                         ),
                       ),
                     );

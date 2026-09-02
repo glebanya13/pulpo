@@ -22,6 +22,7 @@ import '../auth/cloud_auth.dart';
 import '../auth/cloud_restore_prompt.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/pro_badge.dart';
 import '../../widgets/pro_upgrade_card.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -43,14 +44,21 @@ class ProfileScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              side,
-              MediaQuery.viewPaddingOf(context).top + AppSpacing.xs,
-              side,
-              0,
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: context.surface,
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
             ),
-            child: _ProfileStickyHeader(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                side,
+                MediaQuery.viewPaddingOf(context).top + AppSpacing.xs,
+                side,
+                12,
+              ),
+              child: _ProfileStickyHeader(
                 onBack: () => context.pop(),
                 userName: settings.userName,
                 subtitle: authUser?.email ??
@@ -60,204 +68,167 @@ class ProfileScreen extends ConsumerWidget {
                 onEditTap: () => openNameSheet(context, ref, tr),
               ),
             ),
+          ),
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(side, 20, side, bottomPad),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight - 20,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(side, 20, side, bottomPad),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (!isPro) ...[
+                      ProUpgradeCard(
+                        title: tr.proGo,
+                        subtitle: tr.proCtaSubtitle,
+                        onTap: () => openPaywall(context, ProGate.generic),
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              if (!isPro) ...[
-                                ProUpgradeCard(
-                                  title: tr.proGo,
-                                  subtitle: tr.proCtaSubtitle,
-                                  onTap: () =>
-                                      openPaywall(context, ProGate.generic),
-                                ),
-                                const SizedBox(height: 20),
-                              ] else ...[
-                                ProUpgradeCard(
-                                  title: tr.proTitle,
-                                  subtitle: tr.proActive,
-                                  onTap: () =>
-                                      openPaywall(context, ProGate.generic),
-                                ),
-                                const SizedBox(height: 20),
-                              ],
-                              _SectionLabel(tr.sectionSettings),
-                              _MenuGroup(
-                                children: [
-                                  if (authUser == null)
-                                    _MenuRow(
-                                      icon: LucideIcons.logIn,
-                                      iconBg: const Color(0xFFE0F2FE),
-                                      label: tr.signIn,
-                                      onTap: () =>
-                                          context.push('/settings/account'),
-                                    ),
-                                  _MenuRow(
-                                    icon: LucideIcons.shield,
-                                    iconBg: const Color(0xFFD4F5E0),
-                                    label: tr.security,
-                                    onTap: () =>
-                                        context.push('/settings/security'),
-                                  ),
-                                  _MenuRow(
-                                    icon: LucideIcons.layers,
-                                    iconBg: const Color(0xFFD4F5E0),
-                                    label: tr.categories,
-                                    onTap: () => context.push('/categories'),
-                                  ),
-                                  _MenuRow(
-                                    icon: LucideIcons.dollarSign,
-                                    iconBg: AppColors.bgFood,
-                                    label: tr.baseCurrency,
-                                    trailing: currency,
-                                    onTap: () =>
-                                        context.push('/settings/currency'),
-                                  ),
-                                  _MenuRow(
-                                    icon: LucideIcons.globe,
-                                    iconBg: const Color(0xFFE0F2FE),
-                                    label: tr.language,
-                                    onTap: () =>
-                                        context.push('/settings/language'),
-                                  ),
-                                  _MenuRow(
-                                    icon: LucideIcons.moon,
-                                    iconBg: const Color(0xFFE8E4FF),
-                                    label: tr.theme,
-                                    subtitle:
-                                        tr.themeLabel(settings.themeMode),
-                                    trailing:
-                                        tr.themeLabel(settings.themeMode),
-                                    onTap: () =>
-                                        context.push('/settings/theme'),
-                                  ),
-                                  _MenuRow(
-                                    icon: LucideIcons.database,
-                                    iconBg: const Color(0xFFF2F2F2),
-                                    label: tr.dataBackups,
-                                    onTap: () =>
-                                        context.push('/settings/backups'),
-                                  ),
-                                  _MenuRow(
-                                    icon: LucideIcons.download,
-                                    iconBg: const Color(0xFFFFF3D6),
-                                    label: tr.exportCsv,
-                                    onTap: () =>
-                                        context.push('/settings/export'),
-                                  ),
-                                  _MenuRow(
-                                    icon: LucideIcons.upload,
-                                    iconBg: const Color(0xFFE0F2FE),
-                                    label: tr.importCsv,
-                                    onTap: () =>
-                                        context.push('/settings/import'),
-                                  ),
-                                  _MenuRow(
-                                    icon: LucideIcons.info,
-                                    iconBg: const Color(0xFFF2F2F2),
-                                    label: tr.about,
-                                    onTap: () =>
-                                        context.push('/settings/about'),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              ReminderCtaButton(
-                                enabled: settings.dailyReminderEnabled ||
-                                    (isPro && settings.smartRemindersEnabled),
-                                title: tr.dailyReminderCta,
-                                subtitle: settings.dailyReminderEnabled
-                                    ? tr.dailyReminderCtaOn(
-                                        formatReminderTime(
-                                          settings.dailyReminderHour,
-                                          settings.dailyReminderMinute,
-                                        ),
-                                      )
-                                    : tr.dailyReminderCtaOff,
-                                onTap: () =>
-                                    context.push('/settings/reminders'),
-                              ),
-                              if (authUser != null) ...[
-                                const SizedBox(height: 28),
-                                _MenuGroup(
-                                  children: [
-                                    _MenuRow(
-                                      icon: LucideIcons.trash2,
-                                      iconBg: const Color(0xFFFFE4E1),
-                                      label: tr.deleteCloudAccount,
-                                      danger: true,
-                                      onTap: () =>
-                                          _confirmDeleteAccount(context, ref, tr),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Pressable(
-                                  onTap: () =>
-                                      ref.read(cloudAuthProvider).signOut(),
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: context.emphasized,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: context.emphasizedBorder,
-                                      ),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      tr.signOut,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
+                      const SizedBox(height: 20),
+                    ] else ...[
+                      ProUpgradeCard(
+                        title: tr.proTitle,
+                        subtitle: tr.proActive,
+                        onTap: () => openPaywall(context, ProGate.generic),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    _SectionLabel(tr.sectionSettings),
+                    _MenuGroup(
+                      children: [
+                        if (authUser == null)
+                          _MenuRow(
+                            icon: LucideIcons.logIn,
+                            iconBg: const Color(0xFFE0F2FE),
+                            label: tr.signIn,
+                            onTap: () => context.push('/settings/account'),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 24),
-                            child: Column(
-                              children: [
-                                Text(
-                                  'Monedero · v${AppInfo.version}',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: context.faintText,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                const MadeInSpainTagline(),
-                              ],
-                            ),
+                        _MenuRow(
+                          icon: LucideIcons.shield,
+                          iconBg: const Color(0xFFD4F5E0),
+                          label: tr.security,
+                          onTap: () => context.push('/settings/security'),
+                        ),
+                        _MenuRow(
+                          icon: LucideIcons.layers,
+                          iconBg: const Color(0xFFD4F5E0),
+                          label: tr.categories,
+                          onTap: () => context.push('/categories'),
+                        ),
+                        _MenuRow(
+                          icon: LucideIcons.dollarSign,
+                          iconBg: AppColors.bgFood,
+                          label: tr.baseCurrency,
+                          trailing: currency,
+                          onTap: () => context.push('/settings/currency'),
+                        ),
+                        _MenuRow(
+                          icon: LucideIcons.globe,
+                          iconBg: const Color(0xFFE0F2FE),
+                          label: tr.language,
+                          onTap: () => context.push('/settings/language'),
+                        ),
+                        _MenuRow(
+                          icon: LucideIcons.moon,
+                          iconBg: const Color(0xFFE8E4FF),
+                          label: tr.theme,
+                          subtitle: tr.themeLabel(settings.themeMode),
+                          trailing: tr.themeLabel(settings.themeMode),
+                          onTap: () => context.push('/settings/theme'),
+                        ),
+                        _MenuRow(
+                          icon: LucideIcons.database,
+                          iconBg: const Color(0xFFF2F2F2),
+                          label: tr.dataBackups,
+                          onTap: () => context.push('/settings/backups'),
+                        ),
+                        _MenuRow(
+                          icon: LucideIcons.download,
+                          iconBg: const Color(0xFFFFF3D6),
+                          label: tr.exportCsv,
+                          onTap: () => context.push('/settings/export'),
+                        ),
+                        _MenuRow(
+                          icon: LucideIcons.upload,
+                          iconBg: const Color(0xFFE0F2FE),
+                          label: tr.importCsv,
+                          showProMark: true,
+                          proLocked: !isPro,
+                          onTap: () => context.push('/settings/import'),
+                        ),
+                        _MenuRow(
+                          icon: LucideIcons.info,
+                          iconBg: const Color(0xFFF2F2F2),
+                          label: tr.about,
+                          onTap: () => context.push('/settings/about'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ReminderCtaButton(
+                      enabled: settings.dailyReminderEnabled ||
+                          (isPro && settings.smartRemindersEnabled),
+                      title: tr.dailyReminderCta,
+                      subtitle: settings.dailyReminderEnabled
+                          ? tr.dailyReminderCtaOn(
+                              formatReminderTime(
+                                settings.dailyReminderHour,
+                                settings.dailyReminderMinute,
+                              ),
+                            )
+                          : tr.dailyReminderCtaOff,
+                      onTap: () => context.push('/settings/reminders'),
+                    ),
+                    if (authUser != null) ...[
+                      const SizedBox(height: 28),
+                      _MenuGroup(
+                        children: [
+                          _MenuRow(
+                            icon: LucideIcons.trash2,
+                            iconBg: const Color(0xFFFFE4E1),
+                            label: tr.deleteCloudAccount,
+                            danger: true,
+                            onTap: () =>
+                                _confirmDeleteAccount(context, ref, tr),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 12),
+                      Pressable(
+                        onTap: () => ref.read(cloudAuthProvider).signOut(),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            color: context.emphasized,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: context.emphasizedBorder),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            tr.signOut,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    Text(
+                      'Monedero · v${AppInfo.version}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.faintText,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  );
-                },
+                    const SizedBox(height: 10),
+                    const MadeInSpainTagline(),
+                  ],
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -283,12 +254,12 @@ class _ProfileStickyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 10, 12, 12),
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.circular(20),
-      ),
+    final controlBg = context.isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : AppColors.ink.withValues(alpha: 0.06);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 2, 0, 0),
       child: Row(
         children: [
           Pressable(
@@ -297,7 +268,7 @@ class _ProfileStickyHeader extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: context.scaffoldBg,
+                color: controlBg,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -347,7 +318,7 @@ class _ProfileStickyHeader extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: context.scaffoldBg,
+                color: controlBg,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -579,6 +550,8 @@ class _MenuRow extends StatelessWidget {
     this.trailing,
     this.onTap,
     this.danger = false,
+    this.showProMark = false,
+    this.proLocked = false,
   });
   final IconData icon;
   final Color iconBg;
@@ -587,11 +560,16 @@ class _MenuRow extends StatelessWidget {
   final String? trailing;
   final VoidCallback? onTap;
   final bool danger;
+  final bool showProMark;
+  final bool proLocked;
 
   @override
   Widget build(BuildContext context) {
-    final labelColor =
-        danger ? const Color(0xFFE53E3E) : context.primaryText;
+    final labelColor = danger
+        ? const Color(0xFFE53E3E)
+        : proLocked
+            ? proLockedTextColor(context)
+            : context.primaryText;
     final iconWell = Container(
       width: 36,
       height: 36,
@@ -613,7 +591,10 @@ class _MenuRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            iconWell,
+            if (showProMark)
+              ProIconMark(size: 36, child: iconWell)
+            else
+              iconWell,
             const SizedBox(width: 14),
             Expanded(
               child: Column(

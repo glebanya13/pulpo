@@ -440,6 +440,8 @@ class Tr {
   String get tabFlows => _get('tab_flows');
   String expensesForPeriod(String period) =>
       _get('expenses_6_months').replaceAll('{}', period);
+  String incomeForPeriod(String period) =>
+      _get('income_for_period').replaceAll('{}', period);
   String incomeVsForPeriod(String period) =>
       _get('income_vs_expenses').replaceAll('{}', period);
   String get byCategoriesTitle => _get('by_categories');
@@ -448,6 +450,8 @@ class Tr {
   String get noExpensesThisMonth => _get('no_expenses_this_month');
   String noExpensesForPeriod(String period) =>
       _get('no_expenses_period').replaceAll('{}', period);
+  String noIncomeForPeriod(String period) =>
+      _get('no_income_period').replaceAll('{}', period);
   String get expenseThisMonth => _get('expense_this_month');
   String get expenseToday => _get('expense_today');
   String get vsPrevMonth => _get('vs_prev_month');
@@ -591,6 +595,8 @@ class Tr {
   String get byCategoriesMonthPrefix => _get('by_categories_month_prefix'); // "Por categoría · "
   String get expensesByCategoriesMonthPrefix =>
       _get('expenses_by_categories_month_prefix');
+  String get incomeByCategoriesMonthPrefix =>
+      _get('income_by_categories_month_prefix');
   String get cashFlowMonthPrefix => _get('cash_flow_month_prefix');
 
   // ─────────────────────── CURRENCY PICKER ───────────────────────
@@ -1068,11 +1074,13 @@ class Tr {
       'tab_trends': 'Tendencias',
       'tab_flows': 'Flujos',
       'expenses_6_months': 'Gastos · {}',
+      'income_for_period': 'Ingresos · {}',
       'by_categories': 'Por categoría',
       'total_word': 'total',
       'expenses_by_categories': 'Gastos por categoría',
       'no_expenses_this_month': 'Sin gastos este mes',
       'no_expenses_period': 'Sin gastos · {}',
+      'no_income_period': 'Sin ingresos · {}',
       'income_vs_expenses': 'Ingresos vs Gastos · {}',
       'expense_this_month': 'Gasto de este mes',
       'expense_today': 'Gasto de hoy',
@@ -1229,6 +1237,7 @@ class Tr {
       // reports titles
       'by_categories_month_prefix': 'Por categoría · ',
       'expenses_by_categories_month_prefix': 'Gastos por categoría · ',
+      'income_by_categories_month_prefix': 'Ingresos por categoría · ',
       'cash_flow_month_prefix': 'Flujo de caja · ',
       // currency picker
       'search_currency': 'Buscar moneda',
@@ -1400,7 +1409,7 @@ class Tr {
       'pin_wrong': 'PIN incorrecto',
       'unlock': 'Desbloquear',
       'unlock_biometric_hint': 'Usa Face ID o tu huella para continuar',
-      'export_csv': 'Exportar CSV',
+      'export_csv': 'Exportar datos',
       'export_excel': 'Exportar Excel',
       'export_pdf': 'Exportar PDF',
       'export_period': 'Periodo de exportación',
@@ -1773,11 +1782,13 @@ class Tr {
       'tab_trends': 'Тренды',
       'tab_flows': 'Потоки',
       'expenses_6_months': 'Расходы · {}',
+      'income_for_period': 'Доходы · {}',
       'by_categories': 'По категориям',
       'total_word': 'всего',
       'expenses_by_categories': 'Расходы по категориям',
       'no_expenses_this_month': 'Нет расходов за этот месяц',
       'no_expenses_period': 'Нет расходов · {}',
+      'no_income_period': 'Нет доходов · {}',
       'income_vs_expenses': 'Доходы vs Расходы · {}',
       'expense_this_month': 'Расход в этом месяце',
       'expense_today': 'Расход сегодня',
@@ -1934,6 +1945,7 @@ class Tr {
       // reports titles
       'by_categories_month_prefix': 'По категориям · ',
       'expenses_by_categories_month_prefix': 'Расходы по категориям · ',
+      'income_by_categories_month_prefix': 'Доходы по категориям · ',
       'cash_flow_month_prefix': 'Денежный поток · ',
       // currency picker
       'search_currency': 'Поиск валюты',
@@ -2105,7 +2117,7 @@ class Tr {
       'pin_wrong': 'Неверный PIN',
       'unlock': 'Разблокировать',
       'unlock_biometric_hint': 'Используй Face ID или отпечаток, чтобы продолжить',
-      'export_csv': 'Экспорт CSV',
+      'export_csv': 'Экспорт данных',
       'export_excel': 'Экспорт Excel',
       'export_pdf': 'Экспорт PDF',
       'export_period': 'Период экспорта',
@@ -2477,11 +2489,13 @@ class Tr {
       'tab_trends': 'Trends',
       'tab_flows': 'Flows',
       'expenses_6_months': 'Expenses · {}',
+      'income_for_period': 'Income · {}',
       'by_categories': 'By category',
       'total_word': 'total',
       'expenses_by_categories': 'Expenses by category',
       'no_expenses_this_month': 'No expenses this month',
       'no_expenses_period': 'No expenses · {}',
+      'no_income_period': 'No income · {}',
       'income_vs_expenses': 'Income vs Expenses · {}',
       'expense_this_month': 'Expense this month',
       'expense_today': 'Expense today',
@@ -2638,6 +2652,7 @@ class Tr {
       // reports titles
       'by_categories_month_prefix': 'By category · ',
       'expenses_by_categories_month_prefix': 'Expenses by category · ',
+      'income_by_categories_month_prefix': 'Income by category · ',
       'cash_flow_month_prefix': 'Cash flow · ',
       // currency picker
       'search_currency': 'Search currency',
@@ -2809,7 +2824,7 @@ class Tr {
       'pin_wrong': 'Wrong PIN',
       'unlock': 'Unlock',
       'unlock_biometric_hint': 'Use Face ID or fingerprint to continue',
-      'export_csv': 'Export CSV',
+      'export_csv': 'Export data',
       'export_excel': 'Export Excel',
       'export_pdf': 'Export PDF',
       'export_period': 'Export period',
@@ -3168,11 +3183,13 @@ class Tr {
       'tab_trends': 'Тренди',
       'tab_flows': 'Потоки',
       'expenses_6_months': 'Витрати · {}',
+      'income_for_period': 'Доходи · {}',
       'by_categories': 'За категоріями',
       'total_word': 'усього',
       'expenses_by_categories': 'Витрати за категоріями',
       'no_expenses_this_month': 'Жодних витрат за цей місяць',
       'no_expenses_period': 'Немає витрат · {}',
+      'no_income_period': 'Немає доходів · {}',
       'income_vs_expenses': 'Доходи vs витрати · {}',
       'expense_this_month': 'Витрати цього місяця',
       'expense_today': 'Витрати сьогодні',
@@ -3311,6 +3328,7 @@ class Tr {
       'next_run_prefix': 'Далі:',
       'by_categories_month_prefix': 'За категоріями ·',
       'expenses_by_categories_month_prefix': 'Витрати за категоріями ·',
+      'income_by_categories_month_prefix': 'Доходи за категоріями ·',
       'cash_flow_month_prefix': 'Грошовий потік ·',
       'search_currency': 'Пошук валюти',
       'popular_upper': 'ПОПУЛЯРНЕ',
@@ -3475,7 +3493,7 @@ class Tr {
       'pin_wrong': 'Невірний PIN-код',
       'unlock': 'Розблокувати',
       'unlock_biometric_hint': 'Використайте Face ID або відбиток пальця, щоб продовжити',
-      'export_csv': 'Експорт у CSV',
+      'export_csv': 'Експорт даних',
       'export_excel': 'Експорт у Excel',
       'export_pdf': 'Експорт у PDF',
       'export_period': 'Період експорту',

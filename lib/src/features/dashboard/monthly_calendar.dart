@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
-import '../../core/currencies.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
@@ -173,13 +172,14 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
         final daysInMonth = DateTime(_month.year, _month.month + 1, 0).day;
 
         return Container(
+          width: double.infinity,
           padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
           decoration: BoxDecoration(
             color: context.surface,
             borderRadius: BorderRadius.circular(18),
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _Header(
                 month: _month,
@@ -214,27 +214,32 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
                 ),
               ],
               SizedBox(height: _viewIndex == 0 ? 6 : 10),
-              if (_viewIndex == 0)
-                _DailyMonthList(
-                  month: _month,
-                  txs: monthTxs,
-                  currency: currency,
-                  hasFilters: _hasActiveFilters,
-                  monthHasTxs: monthTxsUnfiltered.isNotEmpty,
-                  onClearFilters: _clearFilters,
-                  onTapDay: (day) => _openDaySheet(context, day, monthTxs),
-                  onTapTx: (tx) => context.push('/tx/${tx.id}'),
-                  onDeleteTx: _deleteWithUndo,
-                )
-              else
-                _MonthTable(
-                  month: _month,
-                  leading: leading,
-                  daysInMonth: daysInMonth,
-                  byDay: byDay,
-                  currency: currency,
-                  onTapDay: (day) => _openDaySheet(context, day, monthTxs),
-                ),
+              Expanded(
+                child: _viewIndex == 0
+                    ? SingleChildScrollView(
+                        child: _DailyMonthList(
+                          month: _month,
+                          txs: monthTxs,
+                          currency: currency,
+                          hasFilters: _hasActiveFilters,
+                          monthHasTxs: monthTxsUnfiltered.isNotEmpty,
+                          onClearFilters: _clearFilters,
+                          onTapDay: (day) =>
+                              _openDaySheet(context, day, monthTxs),
+                          onTapTx: (tx) => context.push('/tx/${tx.id}'),
+                          onDeleteTx: _deleteWithUndo,
+                        ),
+                      )
+                    : _MonthTable(
+                        month: _month,
+                        leading: leading,
+                        daysInMonth: daysInMonth,
+                        byDay: byDay,
+                        currency: currency,
+                        onTapDay: (day) =>
+                            _openDaySheet(context, day, monthTxs),
+                      ),
+              ),
             ],
           ),
         );
@@ -247,18 +252,15 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     DateTime day,
     List<db.Transaction> monthTxs,
   ) async {
-    final dayTxs = monthTxs.where((t) {
-      return t.date.year == day.year &&
-          t.date.month == day.month &&
-          t.date.day == day.day;
-    }).toList();
-
     await showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _DaySheet(day: day, txs: dayTxs),
+      builder: (ctx) => _DaySheet(
+        day: day,
+        onDeleteTx: _deleteWithUndo,
+      ),
     );
   }
 }
@@ -955,25 +957,82 @@ class _Pill extends StatelessWidget {
   }
 }
 
-class _DaySheet extends StatelessWidget {
-  const _DaySheet({required this.day, required this.txs});
-  final DateTime day;
-  final List<db.Transaction> txs;
+class _DaySheetQuickChip extends StatelessWidget {
+  const _DaySheetQuickChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
-  void _openAdd(BuildContext context) {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Tooltip(
+        message: label,
+        child: Semantics(
+          label: label,
+          button: true,
+          child: Pressable(
+            onTap: onTap,
+            scale: 0.97,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.lime,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, size: 20, color: AppColors.ink),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DaySheet extends ConsumerWidget {
+  const _DaySheet({
+    required this.day,
+    required this.onDeleteTx,
+  });
+
+  final DateTime day;
+  final ValueChanged<db.Transaction> onDeleteTx;
+
+  void _openAdd(
+    BuildContext context, {
+    required String type,
+    String? mode,
+  }) {
     final router = GoRouter.of(context);
     final y = day.year.toString().padLeft(4, '0');
     final m = day.month.toString().padLeft(2, '0');
     final d = day.day.toString().padLeft(2, '0');
     Navigator.of(context).pop();
-    router.push('/add?date=$y-$m-$d');
+    final uri = StringBuffer('/add?date=$y-$m-$d&type=$type');
+    if (mode != null) uri.write('&mode=$mode');
+    router.push(uri.toString());
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
     final locale = Localizations.localeOf(context).toString();
     final title = DateFormat.yMMMMd(locale).format(day);
+    final allTxs = ref.watch(allTransactionsProvider).valueOrNull ?? const [];
+    final txs = allTxs
+        .where(
+          (t) =>
+              t.date.year == day.year &&
+              t.date.month == day.month &&
+              t.date.day == day.day,
+        )
+        .toList();
     return Container(
       decoration: BoxDecoration(
         color: context.scaffoldBg,
@@ -1034,43 +1093,62 @@ class _DaySheet extends StatelessWidget {
                 itemCount: txs.length,
                 itemBuilder: (ctx, i) {
                   final t = txs[i];
-                  return Pressable(
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      context.push('/tx/${t.id}');
-                    },
-                    child: TransactionTile(tx: t),
+                  return Dismissible(
+                    key: ValueKey(t.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      margin: EdgeInsets.only(bottom: i < txs.length - 1 ? 8 : 0),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.delete,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    onDismissed: (_) => onDeleteTx(t),
+                    child: Pressable(
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        context.push('/tx/${t.id}');
+                      },
+                      child: TransactionTile(tx: t),
+                    ),
                   );
                 },
               ),
             ),
           const SizedBox(height: 14),
-          Pressable(
-            onTap: () => _openAdd(context),
-            scale: 0.97,
-            child: Container(
-              width: double.infinity,
-              height: 54,
-              decoration: BoxDecoration(
-                color: AppColors.lime,
-                borderRadius: BorderRadius.circular(16),
+          Row(
+            children: [
+              _DaySheetQuickChip(
+                icon: LucideIcons.plus,
+                label: tr.income,
+                onTap: () => _openAdd(context, type: 'income'),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(LucideIcons.plus, size: 22, color: AppColors.ink),
-                  const SizedBox(width: 8),
-                  Text(
-                    tr.newTransaction,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 6),
+              _DaySheetQuickChip(
+                icon: LucideIcons.minus,
+                label: tr.expense,
+                onTap: () => _openAdd(context, type: 'expense'),
               ),
-            ),
+              const SizedBox(width: 6),
+              _DaySheetQuickChip(
+                icon: LucideIcons.arrowLeftRight,
+                label: tr.transferBetweenShort,
+                onTap: () => _openAdd(context, type: 'transfer'),
+              ),
+              const SizedBox(width: 6),
+              _DaySheetQuickChip(
+                icon: LucideIcons.send,
+                label: tr.transferExternal,
+                onTap: () => _openAdd(context, type: 'expense', mode: 'external'),
+              ),
+            ],
           ),
         ],
       ),
@@ -1078,41 +1156,6 @@ class _DaySheet extends StatelessWidget {
   }
 }
 
-/// Компактный формат суммы для пилюль в календаре: €752, €1,2K, €12K, €1M.
-String _shortMoney(double value, String currency) {
-  final symbol = _shortSymbol(currency);
-  final abs = value.abs();
-  String num;
-  if (abs >= 1000000) {
-    num = '${_trimZero((abs / 1000000).toStringAsFixed(1))}M';
-  } else if (abs >= 10000) {
-    num = '${(abs / 1000).round()}K';
-  } else if (abs >= 1000) {
-    num = '${_trimZero((abs / 1000).toStringAsFixed(1))}K';
-  } else {
-    num = abs.toStringAsFixed(0);
-  }
-  // Испанский формат — запятая как десятичный разделитель.
-  num = num.replaceAll('.', ',');
-  return '$symbol$num';
-}
-
-String _trimZero(String s) {
-  if (s.endsWith('0')) {
-    final dot = s.indexOf('.');
-    if (dot != -1) return s.substring(0, dot);
-  }
-  return s;
-}
-
-String _shortSymbol(String code) {
-  switch (code.toUpperCase()) {
-    case 'XAF':
-      return '';
-    case 'DOP':
-    case 'UYU':
-      return r'$';
-    default:
-      return symbolForCode(code);
-  }
-}
+/// Calendar pill amounts — same formatting as the rest of the app (with cents).
+String _shortMoney(double value, String currency) =>
+    formatMoney(value.abs(), currency);

@@ -85,14 +85,16 @@ class StorePricing {
     return code.toUpperCase();
   }
 
-  /// StoreKit storefront → SK1 price locale → device region.
+  /// StoreKit storefront → SK1 price locale → app currency country → device region.
   static String? resolveCountry({
     String? storeCountryCode,
     String? productCountryCode,
+    String? preferredCountryCode,
   }) {
     for (final code in [
       storeCountryCode,
       productCountryCode,
+      preferredCountryCode,
       deviceCountryCode(),
     ]) {
       if (code == null || code.isEmpty) continue;
@@ -101,16 +103,26 @@ class StorePricing {
     }
     return storeCountryCode?.toUpperCase() ??
         productCountryCode?.toUpperCase() ??
+        preferredCountryCode?.toUpperCase() ??
         deviceCountryCode();
   }
 
+  /// Use ASC catalog (EUR) when the store price is in another currency but the
+  /// user's storefront / app currency expects euros (common with US sandbox).
   static bool shouldUseCatalog({
     required String storeCurrency,
     required String? countryCode,
+    String? preferredCurrency,
   }) {
+    final store = storeCurrency.toUpperCase();
+    if (store == ProProducts.catalogCurrency) return false;
+
     final expected = currencyForCountry(countryCode);
-    return expected != null &&
-        expected != storeCurrency.toUpperCase() &&
-        expected == ProProducts.catalogCurrency;
+    if (expected == ProProducts.catalogCurrency) return true;
+
+    if (preferredCurrency?.toUpperCase() == ProProducts.catalogCurrency) {
+      return true;
+    }
+    return false;
   }
 }

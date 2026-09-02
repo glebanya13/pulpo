@@ -14,6 +14,7 @@ import '../../core/pro/product_offer_info.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/auth/cloud_auth.dart';
+import '../../data/repositories/settings_service.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/common.dart';
 import '../../core/open_link.dart';
@@ -36,6 +37,12 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final tr = Tr.of(context);
     final pro = ref.watch(proControllerProvider);
     final storeCountry = pro.storeCountryCode;
+    final settings = ref.watch(settingsControllerProvider);
+    final pricing = (
+      storeCountryCode: storeCountry,
+      preferredCurrency: settings.baseCurrency,
+      preferredCountryCode: settings.baseCurrencyCountry,
+    );
     final signedIn = ref.watch(authUserProvider).valueOrNull != null;
     final yearly = pro.yearly;
     final monthly = pro.monthly;
@@ -178,7 +185,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                               title: tr.proMonthly,
                               price: ProductOfferInfo.paywallPrice(
                                 monthly,
-                                storeCountryCode: storeCountry,
+                                storeCountryCode: pricing.storeCountryCode,
+                                preferredCurrency: pricing.preferredCurrency,
+                                preferredCountryCode:
+                                    pricing.preferredCountryCode,
                               ),
                               allFeaturesLabel: tr.proAllFeatures,
                               trialLabel: trialLabelFor(monthly),
@@ -192,20 +202,29 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                               title: tr.proSemiAnnual,
                               price: ProductOfferInfo.paywallPrice(
                                 semiAnnual,
-                                storeCountryCode: storeCountry,
+                                storeCountryCode: pricing.storeCountryCode,
+                                preferredCurrency: pricing.preferredCurrency,
+                                preferredCountryCode:
+                                    pricing.preferredCountryCode,
                               ),
                               allFeaturesLabel: tr.proAllFeatures,
                               trialLabel: trialLabelFor(semiAnnual),
                               comparePrice: ProductOfferInfo.comparePrice(
                                 base: monthly,
                                 multiplier: 6,
-                                storeCountryCode: storeCountry,
+                                storeCountryCode: pricing.storeCountryCode,
+                                preferredCurrency: pricing.preferredCurrency,
+                                preferredCountryCode:
+                                    pricing.preferredCountryCode,
                               ),
                               badge: () {
                                 final pct = ProductOfferInfo.semiAnnualSavePercent(
                                   monthly: monthly,
                                   semiAnnual: semiAnnual,
-                                  storeCountryCode: storeCountry,
+                                  storeCountryCode: pricing.storeCountryCode,
+                                  preferredCurrency: pricing.preferredCurrency,
+                                  preferredCountryCode:
+                                      pricing.preferredCountryCode,
                                 );
                                 return pct != null
                                     ? tr.proDiscountBadge(pct)
@@ -223,20 +242,29 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                               title: tr.proYearly,
                               price: ProductOfferInfo.paywallPrice(
                                 yearly,
-                                storeCountryCode: storeCountry,
+                                storeCountryCode: pricing.storeCountryCode,
+                                preferredCurrency: pricing.preferredCurrency,
+                                preferredCountryCode:
+                                    pricing.preferredCountryCode,
                               ),
                               allFeaturesLabel: tr.proAllFeatures,
                               trialLabel: trialLabelFor(yearly),
                               comparePrice: ProductOfferInfo.comparePrice(
                                 base: monthly,
                                 multiplier: 12,
-                                storeCountryCode: storeCountry,
+                                storeCountryCode: pricing.storeCountryCode,
+                                preferredCurrency: pricing.preferredCurrency,
+                                preferredCountryCode:
+                                    pricing.preferredCountryCode,
                               ),
                               badge: () {
                                 final pct = ProductOfferInfo.yearlySavePercent(
                                   monthly: monthly,
                                   yearly: yearly,
-                                  storeCountryCode: storeCountry,
+                                  storeCountryCode: pricing.storeCountryCode,
+                                  preferredCurrency: pricing.preferredCurrency,
+                                  preferredCountryCode:
+                                      pricing.preferredCountryCode,
                                 );
                                 return pct != null
                                     ? tr.proDiscountBadge(pct)
@@ -534,9 +562,38 @@ class _PaywallPlanSkeleton extends StatelessWidget {
 class _PaywallProHero extends StatelessWidget {
   const _PaywallProHero();
 
+  static const _size = 104.0;
+
   @override
   Widget build(BuildContext context) {
-    return const BrandLogo(size: 104, plate: false);
+    return Container(
+      width: _size,
+      height: _size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(_size * 0.22),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFD4FF00),
+            AppColors.lime,
+            Color(0xFFF0FF7A),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.lime.withValues(alpha: 0.45),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: const Icon(
+        LucideIcons.rocket,
+        size: 48,
+        color: AppColors.ink,
+      ),
+    );
   }
 }
 

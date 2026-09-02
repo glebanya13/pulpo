@@ -53,6 +53,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   bool _gateChecked = false;
   bool _listening = false;
   bool _resumingListen = false;
+  bool _stopAndSendPending = false;
   String _listenBase = '';
   int _listenSeconds = 0;
   Timer? _listenTimer;
@@ -222,14 +223,18 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final available = await _speech.initialize(
       onError: (error) {
         if (_isSoftSpeechError(error)) {
-          if (mounted && _listening) unawaited(_continueListening());
+          if (mounted && _listening && !_stopAndSendPending) {
+            unawaited(_continueListening());
+          }
           return;
         }
         if (mounted) unawaited(_stopListening());
       },
       onStatus: (status) {
         if (status == 'done' || status == 'notListening') {
-          if (mounted && _listening) unawaited(_continueListening());
+          if (mounted && _listening && !_stopAndSendPending) {
+            unawaited(_stopListeningAndSend());
+          }
         }
       },
     );
@@ -291,7 +296,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       listenOptions: stt.SpeechListenOptions(
         localeId: matched ?? preferred,
         listenFor: const Duration(minutes: 3),
-        pauseFor: const Duration(seconds: 15),
+        pauseFor: const Duration(seconds: 3),
         partialResults: true,
         listenMode: stt.ListenMode.dictation,
         cancelOnError: false,
@@ -315,6 +320,24 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       _listenBase = '';
     }
     await _speech.stop();
+  }
+
+  Future<void> _stopListeningAndSend() async {
+    if (_busy || _stopAndSendPending) return;
+    if (!_listening) {
+      final text = _input.text.trim();
+      if (text.isNotEmpty) await _send(text);
+      return;
+    }
+    _stopAndSendPending = true;
+    try {
+      final text = _input.text.trim();
+      await _stopListening();
+      if (!mounted || text.isEmpty) return;
+      await _send(text);
+    } finally {
+      _stopAndSendPending = false;
+    }
   }
 
   Future<db.Account?> _resolveAccount() async {
@@ -1030,7 +1053,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                         ? null
                         : () {
                             if (_listening) {
-                              unawaited(_stopListening());
+                              unawaited(_stopListeningAndSend());
                             } else if (hasText) {
                               unawaited(_send());
                             } else {

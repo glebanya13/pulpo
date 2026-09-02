@@ -43,7 +43,7 @@ class DashboardScreen extends ConsumerWidget {
           padding: pad,
           headerGap: 0,
           headerBottomPadding: 10,
-          fillRemainingColor: context.surface,
+          fillViewport: true,
           header: ScreenTitlePill(
             title: settings.userName,
             eyebrow: tr.greetingForHour(DateTime.now().hour),
@@ -62,7 +62,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const MonthlyCalendar(),
+            const Expanded(child: MonthlyCalendar()),
           ],
         );
       },

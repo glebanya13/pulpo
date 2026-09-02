@@ -105,6 +105,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           controller: scroll,
           padding: pad,
           headerGap: 16,
+          fillViewport: true,
           header: ScreenTitlePill(
             title: tr.analytics,
             subtitle: tr.analyticsSubtitle,
@@ -141,26 +142,38 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           },
         ),
         const SizedBox(height: 20),
-        AsyncValuesGate(
-          values: [txsAsync, catsAsync],
-          onRetry: retryLoad,
-          child: Builder(
-            builder: (context) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: _buildTabContent(
-                  txs: txsAsync.requireValue,
-                  cats: catsAsync.requireValue,
-                  now: now,
-                  rangeStart: range.start,
-                  rangeEnd: range.end,
-                  monthCount: monthCount,
-                  currency: currency,
-                  periodName: periodName,
-                  periodKind: range.kind,
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.surface,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              child: AsyncValuesGate(
+                values: [txsAsync, catsAsync],
+                onRetry: retryLoad,
+                child: Builder(
+                  builder: (context) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: _buildTabContent(
+                        txs: txsAsync.requireValue,
+                        cats: catsAsync.requireValue,
+                        now: now,
+                        rangeStart: range.start,
+                        rangeEnd: range.end,
+                        monthCount: monthCount,
+                        currency: currency,
+                        periodName: periodName,
+                        periodKind: range.kind,
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ),
           ],
@@ -323,37 +336,43 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     String currency,
     String periodName,
   ) {
-    final monthly = List<double>.filled(monthCount, 0);
+    final monthlyExpense = List<double>.filled(monthCount, 0);
+    final monthlyIncome = List<double>.filled(monthCount, 0);
+    final expenseByCat = <int, double>{};
+    final incomeByCat = <int, double>{};
+    var expenseTotal = 0.0;
+    var incomeTotal = 0.0;
+
     for (final t in txs) {
-      if (TxType.values[t.type] != TxType.expense) continue;
       final monthIdx = (t.date.year - rangeStart.year) * 12 +
           (t.date.month - rangeStart.month);
-      if (monthIdx >= 0 && monthIdx < monthCount) monthly[monthIdx] += t.amount;
-    }
-    final total6m = monthly.fold<double>(0, (a, b) => a + b);
-    final maxMonthly = monthly.reduce(math.max);
+      if (monthIdx < 0 || monthIdx >= monthCount) continue;
 
-    final byCat = <int, double>{};
-    var monthTotal = 0.0;
-    var incomeTotal = 0.0;
-    for (final t in txs) {
       final type = TxType.values[t.type];
       if (type == TxType.income) {
+        monthlyIncome[monthIdx] += t.amount;
+        incomeByCat.update(t.categoryId ?? -1, (v) => v + t.amount,
+            ifAbsent: () => t.amount);
         incomeTotal += t.amount;
-        continue;
+      } else if (type == TxType.expense) {
+        monthlyExpense[monthIdx] += t.amount;
+        expenseByCat.update(t.categoryId ?? -1, (v) => v + t.amount,
+            ifAbsent: () => t.amount);
+        expenseTotal += t.amount;
       }
-      if (type != TxType.expense) continue;
-      byCat.update(t.categoryId ?? -1, (v) => v + t.amount,
-          ifAbsent: () => t.amount);
-      monthTotal += t.amount;
     }
-    final donutData = byCat.entries.toList()
+
+    final expensePeriodTotal =
+        monthlyExpense.fold<double>(0, (a, b) => a + b);
+    final incomePeriodTotal = monthlyIncome.fold<double>(0, (a, b) => a + b);
+    final expenseDonut = expenseByCat.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    final maxCatVal = donutData.isEmpty ? 1.0 : donutData.first.value;
+    final incomeDonut = incomeByCat.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     final tr = Tr.of(context);
     final topCategories = <({String name, double amount})>[];
-    for (final e in donutData.take(8)) {
+    for (final e in expenseDonut.take(8)) {
       final cat = cats.where((c) => c.id == e.key).firstOrNull;
       final name = cat != null ? tr.categoryName(cat.name) : tr.other;
       topCategories.add((name: name, amount: e.value));
@@ -382,165 +401,226 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           await _generateInsight(
             periodName: periodName,
             currency: currency,
-            totalExpense: monthTotal,
+            totalExpense: expenseTotal,
             totalIncome: incomeTotal,
             topCategories: topCategories,
           );
         },
       ),
       const SizedBox(height: 16),
-      _ChartCard(
-        title: Tr.of(context).expensesForPeriod(periodName),
-        value: formatMoney(total6m, currency),
-        child: total6m <= 0
-            ? Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  Tr.of(context).noExpensesForPeriod(periodName),
-                  style: TextStyle(color: context.mutedText, fontSize: 14),
-                ),
-              )
-            : SizedBox(
-                height: 150,
-                child: BarChart(
-                  BarChartData(
-                    alignment: BarChartAlignment.spaceAround,
-                    borderData: FlBorderData(show: false),
-                    gridData: const FlGridData(show: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
-                      topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 22,
-                          getTitlesWidget: (v, meta) {
-                            final month = DateTime(rangeStart.year,
-                                rangeStart.month + v.toInt(), 1);
-                            final isCurrent = v.toInt() == monthCount - 1;
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: Text(
-                                DateFormat(
-                                        'LLL',
-                                        Localizations.localeOf(context)
-                                            .languageCode)
-                                    .format(month),
-                                style: TextStyle(
-                                  color: isCurrent
-                                      ? _chartBarColor
-                                      : context.faintText,
-                                  fontSize: 11,
-                                  fontWeight: isCurrent
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    maxY: maxMonthly * 1.2 + 1,
-                    barGroups: [
-                      for (var i = 0; i < monthCount; i++)
-                        BarChartGroupData(
-                          x: i,
-                          barRods: [
-                            BarChartRodData(
-                              toY: monthly[i],
-                              color: i == monthCount - 1
-                                  ? _chartBarColor
-                                  : context.progressTrack,
-                              width: 18,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(6),
-                                topRight: Radius.circular(6),
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+      _overviewBarChartCard(
+        title: tr.incomeForPeriod(periodName),
+        emptyLabel: tr.noIncomeForPeriod(periodName),
+        monthly: monthlyIncome,
+        total: incomePeriodTotal,
+        activeBarColor: AppColors.limeAccent,
+        rangeStart: rangeStart,
+        monthCount: monthCount,
+        currency: currency,
       ),
       const SizedBox(height: 16),
-      _ChartCard(
-        title:
-            '${Tr.of(context).byCategoriesMonthPrefix}$periodName',
-        value: '',
-        child: donutData.isEmpty
-            ? Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  Tr.of(context).noExpensesForPeriod(periodName),
-                  style: TextStyle(color: context.mutedText, fontSize: 14),
-                ),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    formatMoney(monthTotal, currency),
-                    style: TextStyle(
-                      color: context.primaryText,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  Text(
-                    Tr.of(context).totalWord,
-                    style: TextStyle(
-                      color: context.faintText,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _CategoryDonut(
-                    segments: [
-                      for (var i = 0; i < donutData.length; i++)
-                        _StackSegment(
-                          color: _pieColorForCategory(
-                            cats
-                                .where((c) => c.id == donutData[i].key)
-                                .firstOrNull,
-                            i,
-                          ),
-                          value: donutData[i].value,
-                        ),
-                    ],
-                    centerLabel: formatMoney(monthTotal, currency),
-                    centerHint: Tr.of(context).totalWord,
-                  ),
-                  const SizedBox(height: 20),
-                  for (var i = 0; i < donutData.length; i++) ...[
-                    if (i > 0) const SizedBox(height: 14),
-                    _CategoryRow(
-                      category: cats
-                          .where((c) => c.id == donutData[i].key)
-                          .firstOrNull,
-                      amount: donutData[i].value,
-                      fraction: donutData[i].value / maxCatVal,
-                      total: monthTotal,
-                      currency: currency,
-                      barColor: _pieColorForCategory(
-                        cats
-                            .where((c) => c.id == donutData[i].key)
-                            .firstOrNull,
-                        i,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+      _overviewBarChartCard(
+        title: tr.expensesForPeriod(periodName),
+        emptyLabel: tr.noExpensesForPeriod(periodName),
+        monthly: monthlyExpense,
+        total: expensePeriodTotal,
+        activeBarColor: _chartBarColor,
+        rangeStart: rangeStart,
+        monthCount: monthCount,
+        currency: currency,
+      ),
+      const SizedBox(height: 16),
+      _overviewCategoriesCard(
+        title: '${tr.incomeByCategoriesMonthPrefix}$periodName',
+        emptyLabel: tr.noIncomeForPeriod(periodName),
+        donutData: incomeDonut,
+        periodTotal: incomeTotal,
+        cats: cats,
+        currency: currency,
+      ),
+      const SizedBox(height: 16),
+      _overviewCategoriesCard(
+        title: '${tr.expensesByCategoriesMonthPrefix}$periodName',
+        emptyLabel: tr.noExpensesForPeriod(periodName),
+        donutData: expenseDonut,
+        periodTotal: expenseTotal,
+        cats: cats,
+        currency: currency,
       ),
     ];
+  }
+
+  Widget _overviewBarChartCard({
+    required String title,
+    required String emptyLabel,
+    required List<double> monthly,
+    required double total,
+    required Color activeBarColor,
+    required DateTime rangeStart,
+    required int monthCount,
+    required String currency,
+  }) {
+    final maxMonthly = monthly.isEmpty ? 0.0 : monthly.reduce(math.max);
+    return _ChartCard(
+      title: title,
+      value: formatMoney(total, currency),
+      child: total <= 0
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                emptyLabel,
+                style: TextStyle(color: context.mutedText, fontSize: 14),
+              ),
+            )
+          : SizedBox(
+              height: 150,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  borderData: FlBorderData(show: false),
+                  gridData: const FlGridData(show: false),
+                  titlesData: FlTitlesData(
+                    leftTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 22,
+                        getTitlesWidget: (v, meta) {
+                          final month = DateTime(
+                              rangeStart.year, rangeStart.month + v.toInt(), 1);
+                          final isCurrent = v.toInt() == monthCount - 1;
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              DateFormat(
+                                      'LLL',
+                                      Localizations.localeOf(context)
+                                          .languageCode)
+                                  .format(month),
+                              style: TextStyle(
+                                color: isCurrent
+                                    ? activeBarColor
+                                    : context.faintText,
+                                fontSize: 11,
+                                fontWeight: isCurrent
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  maxY: maxMonthly * 1.2 + 1,
+                  barGroups: [
+                    for (var i = 0; i < monthCount; i++)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: monthly[i],
+                            color: i == monthCount - 1
+                                ? activeBarColor
+                                : context.progressTrack,
+                            width: 18,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(6),
+                              topRight: Radius.circular(6),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _overviewCategoriesCard({
+    required String title,
+    required String emptyLabel,
+    required List<MapEntry<int, double>> donutData,
+    required double periodTotal,
+    required List<db.Category> cats,
+    required String currency,
+  }) {
+    final maxCatVal = donutData.isEmpty ? 1.0 : donutData.first.value;
+    return _ChartCard(
+      title: title,
+      value: '',
+      child: donutData.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                emptyLabel,
+                style: TextStyle(color: context.mutedText, fontSize: 14),
+              ),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  formatMoney(periodTotal, currency),
+                  style: TextStyle(
+                    color: context.primaryText,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                Text(
+                  Tr.of(context).totalWord,
+                  style: TextStyle(
+                    color: context.faintText,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _CategoryDonut(
+                  segments: [
+                    for (var i = 0; i < donutData.length; i++)
+                      _StackSegment(
+                        color: _pieColorForCategory(
+                          cats
+                              .where((c) => c.id == donutData[i].key)
+                              .firstOrNull,
+                          i,
+                        ),
+                        value: donutData[i].value,
+                      ),
+                  ],
+                  centerLabel: formatMoney(periodTotal, currency),
+                  centerHint: Tr.of(context).totalWord,
+                ),
+                const SizedBox(height: 20),
+                for (var i = 0; i < donutData.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 14),
+                  _CategoryRow(
+                    category: cats
+                        .where((c) => c.id == donutData[i].key)
+                        .firstOrNull,
+                    amount: donutData[i].value,
+                    fraction: donutData[i].value / maxCatVal,
+                    total: periodTotal,
+                    currency: currency,
+                    barColor: _pieColorForCategory(
+                      cats
+                          .where((c) => c.id == donutData[i].key)
+                          .firstOrNull,
+                      i,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+    );
   }
 
   // ─────────────────────── Trends ───────────────────────

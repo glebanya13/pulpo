@@ -49,6 +49,24 @@ void main() {
     expect(price, contains('3,99'));
   });
 
+  test('paywall uses EUR catalog when base currency is EUR but store is USD',
+      () {
+    final monthly = _FakeProduct(
+      id: ProProducts.monthlyId,
+      price: r'$3.99',
+      rawPrice: 3.99,
+      currencyCode: 'USD',
+    );
+    final price = ProductOfferInfo.paywallPrice(
+      monthly,
+      storeCountryCode: 'USA',
+      preferredCurrency: 'EUR',
+      preferredCountryCode: 'ES',
+    );
+    expect(price, contains('€'));
+    expect(price, contains('3,99'));
+  });
+
   test('paywall keeps Apple USD price for US storefront', () {
     final monthly = _FakeProduct(
       id: ProProducts.monthlyId,
@@ -57,7 +75,11 @@ void main() {
       currencyCode: 'USD',
     );
     expect(
-      ProductOfferInfo.paywallPrice(monthly, storeCountryCode: 'USA'),
+      ProductOfferInfo.paywallPrice(
+        monthly,
+        storeCountryCode: 'USA',
+        preferredCurrency: 'USD',
+      ),
       r'$3.99',
     );
   });
