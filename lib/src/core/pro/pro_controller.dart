@@ -7,7 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
+import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'store_pricing.dart';
 
 import '../../data/repositories/settings_service.dart';
 import 'cloud_pro_service.dart';
@@ -261,15 +264,22 @@ class ProController extends Notifier<ProState> {
   }
 
   Future<String?> _readStoreCountryCode() async {
-    if (kIsWeb) return null;
-    if (!Platform.isIOS) return null;
+    if (kIsWeb) return StorePricing.deviceCountryCode();
+    if (!Platform.isIOS) return StorePricing.deviceCountryCode();
     try {
       final code = await Storefront().countryCode();
-      return code.isEmpty ? null : code;
+      if (code.isNotEmpty) return code;
     } catch (e, st) {
-      debugPrint('storefront country: $e\n$st');
-      return null;
+      debugPrint('storefront sk2: $e\n$st');
     }
+    try {
+      final storefront = await SKPaymentQueueWrapper().storefront();
+      final code = storefront?.countryCode;
+      if (code != null && code.isNotEmpty) return code;
+    } catch (e, st) {
+      debugPrint('storefront sk1: $e\n$st');
+    }
+    return StorePricing.deviceCountryCode();
   }
 
   void _listenIfNeeded() {

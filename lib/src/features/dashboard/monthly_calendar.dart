@@ -213,7 +213,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
                   onCategoryChanged: (id) => setState(() => _categoryId = id),
                 ),
               ],
-              const SizedBox(height: 6),
+              SizedBox(height: _viewIndex == 0 ? 6 : 10),
               if (_viewIndex == 0)
                 _DailyMonthList(
                   month: _month,
@@ -281,7 +281,8 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final locale = Localizations.localeOf(context).toString();
-    final title = DateFormat('MMMM y', locale).format(month);
+    // LLLL = stand-alone month (Август), MMMM = genitive in ru (августа).
+    final title = DateFormat('LLLL y', locale).format(month);
     final titleCapitalized =
         title.isEmpty ? title : title[0].toUpperCase() + title.substring(1);
     return Row(

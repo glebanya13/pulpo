@@ -26,15 +26,15 @@ class ProductOfferInfo {
     ProductDetails product, {
     String? storeCountryCode,
   }) {
-    final country = storeCountryCode ?? _countryFromProduct(product);
+    final country = _resolveCountry(product, storeCountryCode);
     final storeCurrency = product.currencyCode.toUpperCase();
-    final expectedCurrency = StorePricing.currencyForCountry(country);
     final catalog = ProProducts.catalogAmounts[product.id];
 
-    // Sandbox / misconfigured store: storefront is EU but prices came back in $.
     if (catalog != null &&
-        expectedCurrency == ProProducts.catalogCurrency &&
-        storeCurrency != ProProducts.catalogCurrency) {
+        StorePricing.shouldUseCatalog(
+          storeCurrency: storeCurrency,
+          countryCode: country,
+        )) {
       return catalog;
     }
 
@@ -47,11 +47,12 @@ class ProductOfferInfo {
     ProductDetails product, {
     String? storeCountryCode,
   }) {
-    final country = storeCountryCode ?? _countryFromProduct(product);
+    final country = _resolveCountry(product, storeCountryCode);
     final storeCurrency = product.currencyCode.toUpperCase();
-    final expectedCurrency = StorePricing.currencyForCountry(country);
-    if (expectedCurrency == ProProducts.catalogCurrency &&
-        storeCurrency != ProProducts.catalogCurrency) {
+    if (StorePricing.shouldUseCatalog(
+      storeCurrency: storeCurrency,
+      countryCode: country,
+    )) {
       return ProProducts.catalogCurrency;
     }
     if (storeCurrency.isNotEmpty) return storeCurrency;
@@ -63,7 +64,7 @@ class ProductOfferInfo {
     ProductDetails product, {
     String? storeCountryCode,
   }) {
-    final country = storeCountryCode ?? _countryFromProduct(product);
+    final country = _resolveCountry(product, storeCountryCode);
     final amount = paywallAmount(product, storeCountryCode: country);
     final currency = paywallCurrency(product, storeCountryCode: country);
     final expectedCurrency = StorePricing.currencyForCountry(country);
@@ -71,7 +72,8 @@ class ProductOfferInfo {
 
     // Trust Apple's pre-formatted string when currency matches storefront.
     if (product.price.isNotEmpty &&
-        (expectedCurrency == null || storeCurrency == expectedCurrency) &&
+        expectedCurrency != null &&
+        storeCurrency == expectedCurrency &&
         storeCurrency == currency) {
       return product.price;
     }
@@ -169,6 +171,16 @@ class ProductOfferInfo {
       return code.isEmpty ? null : code;
     }
     return null;
+  }
+
+  static String? _resolveCountry(
+    ProductDetails product,
+    String? storeCountryCode,
+  ) {
+    return StorePricing.resolveCountry(
+      storeCountryCode: storeCountryCode,
+      productCountryCode: _countryFromProduct(product),
+    );
   }
 
   static int? _sk2TrialDays(ProductDetails product) {

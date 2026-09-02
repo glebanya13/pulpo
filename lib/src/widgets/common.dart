@@ -220,6 +220,7 @@ class StickyScrollPage extends StatefulWidget {
     this.headerBottomPadding = 0,
     this.useSafeArea = true,
     this.physics,
+    this.fillRemainingColor,
   });
 
   final Widget header;
@@ -232,6 +233,8 @@ class StickyScrollPage extends StatefulWidget {
   final double headerBottomPadding;
   final bool useSafeArea;
   final ScrollPhysics? physics;
+  /// Fills empty space below short content (e.g. home calendar list).
+  final Color? fillRemainingColor;
 
   @override
   State<StickyScrollPage> createState() => _StickyScrollPageState();
@@ -266,20 +269,38 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
   Widget build(BuildContext context) {
     // Floating sticky header: no solid scaffold plate behind the "cloud"
     // (dark theme previously showed a black rectangle under rounded cards).
+    final topInset =
+        (_headerHeight > 0 ? _headerHeight : 72) + widget.headerGap;
+    final fillColor = widget.fillRemainingColor;
+
     final content = Stack(
       clipBehavior: Clip.none,
       children: [
         Positioned.fill(
-          child: ListView(
+          child: CustomScrollView(
             controller: widget.controller,
             physics: widget.physics,
-            padding: EdgeInsets.fromLTRB(
-              widget.padding.left,
-              (_headerHeight > 0 ? _headerHeight : 72) + widget.headerGap,
-              widget.padding.right,
-              widget.padding.bottom,
-            ),
-            children: widget.children,
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  widget.padding.left,
+                  topInset,
+                  widget.padding.right,
+                  fillColor != null ? 0 : widget.padding.bottom,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate(widget.children),
+                ),
+              ),
+              if (fillColor != null)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: ColoredBox(
+                    color: fillColor,
+                    child: SizedBox(height: widget.padding.bottom),
+                  ),
+                ),
+            ],
           ),
         ),
         Positioned(

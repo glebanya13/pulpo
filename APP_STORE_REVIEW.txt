@@ -1,21 +1,96 @@
 App Review notes (App Store / Google Play)
 ==========================================
 
+Submission ID (Sep 2, 2026): 752f791d-f60a-4ee7-93cf-b8f08918cf25
+Version reviewed: 1.0.1 (42) — resubmit with build 47+ after fixes below.
+
 Login is optional. Reviewers can use the app without an Apple, Google, or email account.
 
 How to try without an account
-1. Launch Pulpo / Monedero.
+1. Launch Monedero.
 2. Tap “Try without an account” / “Открыть без аккаунта” / “Probar sin cuenta” on the first screen
    (or the same action on the setup screen / “Continue without signing in” on Sign in).
 3. The app opens with sample local data (cash, card, salary, expenses). No cloud account is created.
 
-Sign in with Apple
-Sign in with Apple is implemented in the app. Enable the Sign In with Apple capability
-for bundle id com.pulpo.app in Apple Developer and in Codemagic.
+How to review subscriptions (Pro paywall)
+1. Open the app (with or without account).
+2. Tap “Управление” (Management) in the bottom bar → “Перейти на Pro” (Go Pro),
+   or hit any Pro-gated feature (e.g. add 4th account).
+3. Sign in with Apple / Google / email if prompted (required to purchase).
+4. Paywall shows three auto-renewable plans with title, period, and price:
+   - monedero_pro_mensual  — Monthly  (1 month)
+   - monedero_pro_6meses   — 6 months
+   - monedero_pro_anual    — Yearly   (1 year)
+5. Scroll to the bottom: legal text + tappable “Terms of Use” and “Privacy Policy” links.
+6. Sandbox purchase / restore available with a Sandbox Apple ID.
 
-Legal / support
+Subscription group ID: 22339635 (Monedero Pro)
+
+Legal / support (must be functional in metadata AND in-app)
 Privacy: https://monedero.mobi/privacy
 Terms:   https://monedero.mobi/terms
 Support: https://monedero.mobi/support
 Email:   hola@monedero.mobi
 WhatsApp: @monedero.mobi (https://wa.me/monedero.mobi)
+
+Sign in with Apple
+Sign in with Apple is implemented. Capability enabled for bundle id com.pulpo.app.
+
+---
+FIX CHECKLIST — App Store Connect (required before resubmit)
+---
+
+A) Guideline 2.1(b) — Submit In-App Purchases for review
+
+For EACH product (monedero_pro_mensual, monedero_pro_6meses, monedero_pro_anual):
+
+1. App Store Connect → Apps → Monedero → Subscriptions → group “Monedero Pro”.
+2. Open the product → complete all required metadata (display name, description, pricing).
+3. Upload **App Review Screenshot** (required): screenshot of the paywall showing that plan
+   with price visible. Can use the same paywall screenshot for all three if all plans are visible.
+4. Set status to **Ready to Submit** (not “Missing Metadata” or “Waiting for Review” alone).
+5. When submitting the new app version, on the version page under **In-App Purchases and
+   Subscriptions**, click **+** and add all three subscriptions to this submission.
+6. Upload a **new binary** (build 47+) — IAPs cannot be reviewed without a linked build.
+
+B) Guideline 3.1.2(c) — Terms of Use in App Store metadata
+
+Do ALL of the following:
+
+1. **Privacy Policy URL** field: https://monedero.mobi/privacy
+2. **Terms of Use** — pick ONE:
+   - Option A (custom EULA): App Store Connect → App Information → License Agreement →
+     Custom EULA, paste or link to https://monedero.mobi/terms
+   - Option B (standard Apple EULA): add this line at the end of **App Description** (every locale):
+
+     Terms of Use (EULA): https://monedero.mobi/terms
+
+3. Suggested App Description footer (copy into each locale description):
+
+   ---
+   Monedero Pro is an optional auto-renewable subscription (monthly, 6-month, or yearly).
+   Payment is charged to your Apple ID. Subscription renews automatically unless cancelled
+   at least 24 hours before the end of the current period. Manage in Settings → Apple ID →
+   Subscriptions.
+
+   Privacy Policy: https://monedero.mobi/privacy
+   Terms of Use: https://monedero.mobi/terms
+   Support: https://monedero.mobi/support
+   ---
+
+C) Reply to App Review (Resolution Center)
+
+Paste something like:
+
+   We have addressed both items:
+   1. All three auto-renewable subscriptions (monedero_pro_mensual, monedero_pro_6meses,
+      monedero_pro_anual) are now submitted for review with App Review screenshots and
+      included in app version 1.0.1 (47).
+   2. App Store metadata now includes functional Privacy Policy and Terms of Use links.
+      The in-app paywall also displays subscription title, duration, price, and tappable
+      Terms/Privacy links (see attached screen recording).
+
+   To open the paywall: Management tab → Go Pro (or any Pro feature). Sign-in is required
+   to purchase; reviewers can use Sandbox Apple ID.
+
+   Optional: attach a 30–60 s screen recording showing paywall → Terms link opens in Safari.

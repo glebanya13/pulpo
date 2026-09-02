@@ -33,6 +33,22 @@ void main() {
     expect(price, contains('3,99'));
   });
 
+  test('paywall uses EUR catalog when device region is ES but store returns USD',
+      () {
+    final monthly = _FakeProduct(
+      id: ProProducts.monthlyId,
+      price: r'$3.99',
+      rawPrice: 3.99,
+      currencyCode: 'USD',
+    );
+    final price = ProductOfferInfo.paywallPrice(
+      monthly,
+      storeCountryCode: 'ES',
+    );
+    expect(price, contains('€'));
+    expect(price, contains('3,99'));
+  });
+
   test('paywall keeps Apple USD price for US storefront', () {
     final monthly = _FakeProduct(
       id: ProProducts.monthlyId,

@@ -68,13 +68,40 @@ Future<void> showManagementMenu(BuildContext context, WidgetRef ref) async {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    tr.management,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: ctx.primaryText,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          tr.management,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: ctx.primaryText,
+                          ),
+                        ),
+                      ),
+                      Pressable(
+                        onTap: () => Navigator.pop(ctx),
+                        child: Semantics(
+                          button: true,
+                          label: tr.cancel,
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: ctx.scaffoldBg,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              LucideIcons.x,
+                              size: 18,
+                              color: ctx.primaryText,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

@@ -43,6 +43,7 @@ class DashboardScreen extends ConsumerWidget {
           padding: pad,
           headerGap: 0,
           headerBottomPadding: 10,
+          fillRemainingColor: context.surface,
           header: ScreenTitlePill(
             title: settings.userName,
             eyebrow: tr.greetingForHour(DateTime.now().hour),
