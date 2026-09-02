@@ -117,7 +117,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              tr.paywallBody(widget.gate),
+              tr.proSubtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,

@@ -10,6 +10,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/file_pick.dart';
+import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
@@ -22,6 +23,7 @@ import '../../data/repositories/transaction_repository.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/pro_badge.dart';
 import 'csv_import.dart';
 
 class ImportScreen extends ConsumerStatefulWidget {
@@ -33,7 +35,6 @@ class ImportScreen extends ConsumerStatefulWidget {
 
 class _ImportScreenState extends ConsumerState<ImportScreen> {
   bool _busy = false;
-  bool _gateChecked = false;
   String? _fileName;
   String? _rawText;
   CsvInspectResult? _inspect;
@@ -42,22 +43,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   int? _accountId;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensurePro());
-  }
-
-  Future<void> _ensurePro() async {
-    if (_gateChecked) return;
-    _gateChecked = true;
-    if (!await requirePro(context, ref, ProGate.importCsv)) {
-      if (mounted) context.pop();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
+    final isPro = ref.watch(proControllerProvider).isPro;
     final accountsAsync = ref.watch(accountsProvider);
     final base = ref.watch(settingsControllerProvider).baseCurrency;
     final accounts = accountsAsync.valueOrNull ?? const [];
@@ -109,7 +97,17 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               const SizedBox(height: 16),
               ScaledFilledButton(
                 onPressed: _busy ? null : () => _pick(base),
-                child: Text(tr.importPickFile),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(tr.importPickFile),
+                    if (!isPro) ...[
+                      const SizedBox(width: 8),
+                      const ProBadge(dense: true, onAccent: true),
+                    ],
+                  ],
+                ),
               ),
             ],
             if (_fileName != null) ...[
@@ -308,6 +306,8 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   }
 
   Future<void> _pick(String fallbackCurrency) async {
+    if (!await requirePro(context, ref, ProGate.importCsv)) return;
+    if (!mounted) return;
     final XFile? file;
     try {
       file = await openFile(acceptedTypeGroups: const [csvFileTypeGroup]);
@@ -373,6 +373,8 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     final parsed = _parsed;
     final accountId = _accountId;
     if (parsed == null || accountId == null) return;
+    if (!await requirePro(context, ref, ProGate.importCsv)) return;
+    if (!mounted) return;
     setState(() => _busy = true);
     final repo = ref.read(transactionRepositoryProvider);
     final existing = ref.read(allTransactionsProvider).valueOrNull ?? const [];

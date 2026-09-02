@@ -37,198 +37,194 @@ class ProfileScreen extends ConsumerWidget {
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
     final isPro = ref.watch(proControllerProvider).isPro;
 
-    final bottomPad = AppSpacing.tabBodyBottom(context);
     const side = AppSpacing.lg;
+    final navClearance =
+        AppSpacing.sm + MediaQuery.viewPaddingOf(context).bottom;
+    final pad = EdgeInsets.fromLTRB(
+      side,
+      MediaQuery.viewPaddingOf(context).top + AppSpacing.xs,
+      side,
+      0,
+    );
 
     return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: StickyScrollPage(
+        useSafeArea: false,
+        padding: pad,
+        headerGap: 16,
+        headerBottomPadding: 4,
+        fillViewport: true,
+        header: _ProfileStickyHeader(
+          onBack: () => context.pop(),
+          userName: settings.userName,
+          subtitle: authUser?.email ??
+              '${tr.accountsCount(accounts.length)} · $currency',
+          localAvatarPath: settings.profileAvatarPath,
+          photoUrl: authUser?.photoURL,
+          onEditTap: () => openNameSheet(context, ref, tr),
+        ),
         children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: context.surface,
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(20),
-              ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                side,
-                MediaQuery.viewPaddingOf(context).top + AppSpacing.xs,
-                side,
-                12,
-              ),
-              child: _ProfileStickyHeader(
-                onBack: () => context.pop(),
-                userName: settings.userName,
-                subtitle: authUser?.email ??
-                    '${tr.accountsCount(accounts.length)} · $currency',
-                localAvatarPath: settings.profileAvatarPath,
-                photoUrl: authUser?.photoURL,
-                onEditTap: () => openNameSheet(context, ref, tr),
-              ),
-            ),
-          ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(side, 20, side, bottomPad),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (!isPro) ...[
-                      ProUpgradeCard(
-                        title: tr.proGo,
-                        subtitle: tr.proCtaSubtitle,
-                        onTap: () => openPaywall(context, ProGate.generic),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!isPro) ...[
+                    ProUpgradeCard(
+                      title: tr.proGo,
+                      subtitle: tr.proCtaSubtitle,
+                      onTap: () => openPaywall(context, ProGate.generic),
+                    ),
+                    const SizedBox(height: 20),
+                  ] else ...[
+                    ProUpgradeCard(
+                      title: tr.proTitle,
+                      subtitle: tr.proActive,
+                      onTap: () => openPaywall(context, ProGate.generic),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                  _SectionLabel(tr.sectionSettings),
+                  _MenuGroup(
+                    children: [
+                      if (authUser == null)
+                        _MenuRow(
+                          icon: LucideIcons.logIn,
+                          iconBg: const Color(0xFFE0F2FE),
+                          label: tr.signIn,
+                          onTap: () => context.push('/settings/account'),
+                        ),
+                      _MenuRow(
+                        icon: LucideIcons.shield,
+                        iconBg: const Color(0xFFD4F5E0),
+                        label: tr.security,
+                        onTap: () => context.push('/settings/security'),
                       ),
-                      const SizedBox(height: 20),
-                    ] else ...[
-                      ProUpgradeCard(
-                        title: tr.proTitle,
-                        subtitle: tr.proActive,
-                        onTap: () => openPaywall(context, ProGate.generic),
+                      _MenuRow(
+                        icon: LucideIcons.layers,
+                        iconBg: const Color(0xFFD4F5E0),
+                        label: tr.categories,
+                        onTap: () => context.push('/categories'),
                       ),
-                      const SizedBox(height: 20),
+                      _MenuRow(
+                        icon: LucideIcons.dollarSign,
+                        iconBg: AppColors.bgFood,
+                        label: tr.baseCurrency,
+                        trailing: currency,
+                        onTap: () => context.push('/settings/currency'),
+                      ),
+                      _MenuRow(
+                        icon: LucideIcons.globe,
+                        iconBg: const Color(0xFFE0F2FE),
+                        label: tr.language,
+                        onTap: () => context.push('/settings/language'),
+                      ),
+                      _MenuRow(
+                        icon: LucideIcons.moon,
+                        iconBg: const Color(0xFFE8E4FF),
+                        label: tr.theme,
+                        subtitle: tr.themeLabel(settings.themeMode),
+                        trailing: tr.themeLabel(settings.themeMode),
+                        onTap: () => context.push('/settings/theme'),
+                      ),
+                      _MenuRow(
+                        icon: LucideIcons.database,
+                        iconBg: const Color(0xFFF2F2F2),
+                        label: tr.dataBackups,
+                        onTap: () => context.push('/settings/backups'),
+                      ),
+                      _MenuRow(
+                        icon: LucideIcons.download,
+                        iconBg: const Color(0xFFFFF3D6),
+                        label: tr.exportCsv,
+                        onTap: () => context.push('/settings/export'),
+                      ),
+                      _MenuRow(
+                        icon: LucideIcons.upload,
+                        iconBg: const Color(0xFFE0F2FE),
+                        label: tr.importCsv,
+                        showProMark: !isPro,
+                        proLocked: !isPro,
+                        onTap: () => context.push('/settings/import'),
+                      ),
+                      _MenuRow(
+                        icon: LucideIcons.info,
+                        iconBg: const Color(0xFFF2F2F2),
+                        label: tr.about,
+                        onTap: () => context.push('/settings/about'),
+                      ),
                     ],
-                    _SectionLabel(tr.sectionSettings),
+                  ),
+                  const SizedBox(height: 12),
+                  ReminderCtaButton(
+                    enabled: settings.dailyReminderEnabled ||
+                        (isPro && settings.smartRemindersEnabled),
+                    title: tr.dailyReminderCta,
+                    subtitle: settings.dailyReminderEnabled
+                        ? tr.dailyReminderCtaOn(
+                            formatReminderTime(
+                              settings.dailyReminderHour,
+                              settings.dailyReminderMinute,
+                            ),
+                          )
+                        : tr.dailyReminderCtaOff,
+                    onTap: () => context.push('/settings/reminders'),
+                  ),
+                  if (authUser != null) ...[
+                    const SizedBox(height: 28),
                     _MenuGroup(
                       children: [
-                        if (authUser == null)
-                          _MenuRow(
-                            icon: LucideIcons.logIn,
-                            iconBg: const Color(0xFFE0F2FE),
-                            label: tr.signIn,
-                            onTap: () => context.push('/settings/account'),
-                          ),
                         _MenuRow(
-                          icon: LucideIcons.shield,
-                          iconBg: const Color(0xFFD4F5E0),
-                          label: tr.security,
-                          onTap: () => context.push('/settings/security'),
-                        ),
-                        _MenuRow(
-                          icon: LucideIcons.layers,
-                          iconBg: const Color(0xFFD4F5E0),
-                          label: tr.categories,
-                          onTap: () => context.push('/categories'),
-                        ),
-                        _MenuRow(
-                          icon: LucideIcons.dollarSign,
-                          iconBg: AppColors.bgFood,
-                          label: tr.baseCurrency,
-                          trailing: currency,
-                          onTap: () => context.push('/settings/currency'),
-                        ),
-                        _MenuRow(
-                          icon: LucideIcons.globe,
-                          iconBg: const Color(0xFFE0F2FE),
-                          label: tr.language,
-                          onTap: () => context.push('/settings/language'),
-                        ),
-                        _MenuRow(
-                          icon: LucideIcons.moon,
-                          iconBg: const Color(0xFFE8E4FF),
-                          label: tr.theme,
-                          subtitle: tr.themeLabel(settings.themeMode),
-                          trailing: tr.themeLabel(settings.themeMode),
-                          onTap: () => context.push('/settings/theme'),
-                        ),
-                        _MenuRow(
-                          icon: LucideIcons.database,
-                          iconBg: const Color(0xFFF2F2F2),
-                          label: tr.dataBackups,
-                          onTap: () => context.push('/settings/backups'),
-                        ),
-                        _MenuRow(
-                          icon: LucideIcons.download,
-                          iconBg: const Color(0xFFFFF3D6),
-                          label: tr.exportCsv,
-                          onTap: () => context.push('/settings/export'),
-                        ),
-                        _MenuRow(
-                          icon: LucideIcons.upload,
-                          iconBg: const Color(0xFFE0F2FE),
-                          label: tr.importCsv,
-                          showProMark: true,
-                          proLocked: !isPro,
-                          onTap: () => context.push('/settings/import'),
-                        ),
-                        _MenuRow(
-                          icon: LucideIcons.info,
-                          iconBg: const Color(0xFFF2F2F2),
-                          label: tr.about,
-                          onTap: () => context.push('/settings/about'),
+                          icon: LucideIcons.trash2,
+                          iconBg: const Color(0xFFFFE4E1),
+                          label: tr.deleteCloudAccount,
+                          danger: true,
+                          onTap: () =>
+                              _confirmDeleteAccount(context, ref, tr),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    ReminderCtaButton(
-                      enabled: settings.dailyReminderEnabled ||
-                          (isPro && settings.smartRemindersEnabled),
-                      title: tr.dailyReminderCta,
-                      subtitle: settings.dailyReminderEnabled
-                          ? tr.dailyReminderCtaOn(
-                              formatReminderTime(
-                                settings.dailyReminderHour,
-                                settings.dailyReminderMinute,
-                              ),
-                            )
-                          : tr.dailyReminderCtaOff,
-                      onTap: () => context.push('/settings/reminders'),
-                    ),
-                    if (authUser != null) ...[
-                      const SizedBox(height: 28),
-                      _MenuGroup(
-                        children: [
-                          _MenuRow(
-                            icon: LucideIcons.trash2,
-                            iconBg: const Color(0xFFFFE4E1),
-                            label: tr.deleteCloudAccount,
-                            danger: true,
-                            onTap: () =>
-                                _confirmDeleteAccount(context, ref, tr),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Pressable(
-                        onTap: () => ref.read(cloudAuthProvider).signOut(),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            color: context.emphasized,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: context.emphasizedBorder),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            tr.signOut,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
+                    Pressable(
+                      onTap: () => ref.read(cloudAuthProvider).signOut(),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: context.emphasized,
+                          borderRadius: BorderRadius.circular(16),
+                          border:
+                              Border.all(color: context.emphasizedBorder),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          tr.signOut,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
                           ),
                         ),
                       ),
-                    ],
-                    const SizedBox(height: 24),
-                    Text(
-                      'Monedero · v${AppInfo.version}',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.faintText,
-                        fontWeight: FontWeight.w500,
-                      ),
                     ),
-                    const SizedBox(height: 10),
-                    const MadeInSpainTagline(),
                   ],
-                ),
+                ],
               ),
             ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Monedero · v${AppInfo.version}',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              color: context.faintText,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const MadeInSpainTagline(),
+          SizedBox(height: navClearance),
         ],
       ),
     );

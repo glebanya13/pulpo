@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_format.dart';
@@ -217,6 +218,9 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
               Expanded(
                 child: _viewIndex == 0
                     ? SingleChildScrollView(
+                        padding: EdgeInsets.only(
+                          bottom: AppSpacing.tabBodyBottom(context),
+                        ),
                         child: _DailyMonthList(
                           month: _month,
                           txs: monthTxs,
@@ -255,7 +259,6 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     await showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
-      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _DaySheet(
         day: day,
@@ -898,14 +901,14 @@ class _DayCell extends StatelessWidget {
                   children: [
                     if (showIncome)
                       _Pill(
-                        text: _shortMoney(income, currency),
+                        text: _shortMoney(income),
                         color: AppColors.limeAccent,
                         compact: both,
                       ),
                     if (both) const SizedBox(height: 2),
                     if (showExpense)
                       _Pill(
-                        text: _shortMoney(expense, currency),
+                        text: _shortMoney(expense),
                         color: AppColors.danger,
                         compact: both,
                       ),
@@ -1038,12 +1041,7 @@ class _DaySheet extends ConsumerWidget {
         color: context.scaffoldBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: EdgeInsets.fromLTRB(
-        20,
-        12,
-        20,
-        24 + MediaQuery.paddingOf(context).bottom,
-      ),
+      padding: AppSpacing.sheetOnTabScreen(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1084,43 +1082,9 @@ class _DaySheet extends ConsumerWidget {
               ),
             )
           else
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.5,
-              ),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: txs.length,
-                itemBuilder: (ctx, i) {
-                  final t = txs[i];
-                  return Dismissible(
-                    key: ValueKey(t.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      margin: EdgeInsets.only(bottom: i < txs.length - 1 ? 8 : 0),
-                      decoration: BoxDecoration(
-                        color: AppColors.danger,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.delete,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    onDismissed: (_) => onDeleteTx(t),
-                    child: Pressable(
-                      onTap: () {
-                        Navigator.of(ctx).pop();
-                        context.push('/tx/${t.id}');
-                      },
-                      child: TransactionTile(tx: t),
-                    ),
-                  );
-                },
-              ),
+            _DaySheetTxList(
+              txs: txs,
+              onDeleteTx: onDeleteTx,
             ),
           const SizedBox(height: 14),
           Row(
@@ -1156,6 +1120,69 @@ class _DaySheet extends ConsumerWidget {
   }
 }
 
-/// Calendar pill amounts — same formatting as the rest of the app (with cents).
-String _shortMoney(double value, String currency) =>
-    formatMoney(value.abs(), currency);
+class _DaySheetTxList extends StatelessWidget {
+  const _DaySheetTxList({
+    required this.txs,
+    required this.onDeleteTx,
+  });
+
+  final List<db.Transaction> txs;
+  final ValueChanged<db.Transaction> onDeleteTx;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.45;
+    const rowGap = 8.0;
+    const estRowHeight = 68.0;
+    final contentHeight =
+        txs.length * estRowHeight + (txs.length - 1) * rowGap;
+
+    Widget tile(int i) {
+      final t = txs[i];
+      return Dismissible(
+        key: ValueKey(t.id),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          margin: EdgeInsets.only(bottom: i < txs.length - 1 ? rowGap : 0),
+          decoration: BoxDecoration(
+            color: AppColors.danger,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.delete,
+            color: Colors.white,
+            size: 20,
+          ),
+        ),
+        onDismissed: (_) => onDeleteTx(t),
+        child: Pressable(
+          onTap: () {
+            Navigator.of(context).pop();
+            context.push('/tx/${t.id}');
+          },
+          child: TransactionTile(tx: t),
+        ),
+      );
+    }
+
+    if (contentHeight <= maxHeight) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [for (var i = 0; i < txs.length; i++) tile(i)],
+      );
+    }
+
+    return SizedBox(
+      height: maxHeight,
+      child: ListView.builder(
+        itemCount: txs.length,
+        itemBuilder: (ctx, i) => tile(i),
+      ),
+    );
+  }
+}
+
+/// Calendar pill amounts — compact number only (no currency symbol).
+String _shortMoney(double value) => formatAmountBare(value);

@@ -46,7 +46,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   bool _aiInsightBusy = false;
 
   void _resetToInitial() {
-    setState(() => _tab = 0);
+    ref
+        .read(statsPeriodProvider.notifier)
+        .setKind(StatsPeriodKind.thisMonth);
+    setState(() {
+      _tab = 0;
+      _aiInsight = null;
+      _aiInsightForPeriod = null;
+      _aiInsightBusy = false;
+    });
   }
 
   @override
@@ -99,7 +107,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       tabPath: '/reports',
       onBecameVisible: _resetToInitial,
       builder: (context, scroll) {
-        final pad = AppSpacing.tabPagePadding(context);
+        final pad = AppSpacing.tabPagePadding(context).copyWith(bottom: 0);
         return StickyScrollPage(
           useSafeArea: false,
           controller: scroll,
@@ -143,34 +151,38 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         ),
         const SizedBox(height: 20),
         Expanded(
-          child: Container(
-            decoration: BoxDecoration(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: ColoredBox(
               color: context.surface,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-              child: AsyncValuesGate(
-                values: [txsAsync, catsAsync],
-                onRetry: retryLoad,
-                child: Builder(
-                  builder: (context) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: _buildTabContent(
-                        txs: txsAsync.requireValue,
-                        cats: catsAsync.requireValue,
-                        now: now,
-                        rangeStart: range.start,
-                        rangeEnd: range.end,
-                        monthCount: monthCount,
-                        currency: currency,
-                        periodName: periodName,
-                        periodKind: range.kind,
-                      ),
-                    );
-                  },
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  12,
+                  12,
+                  12,
+                  12 + AppSpacing.tabBodyBottom(context),
+                ),
+                child: AsyncValuesGate(
+                  values: [txsAsync, catsAsync],
+                  onRetry: retryLoad,
+                  child: Builder(
+                    builder: (context) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: _buildTabContent(
+                          txs: txsAsync.requireValue,
+                          cats: catsAsync.requireValue,
+                          now: now,
+                          rangeStart: range.start,
+                          rangeEnd: range.end,
+                          monthCount: monthCount,
+                          currency: currency,
+                          periodName: periodName,
+                          periodKind: range.kind,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

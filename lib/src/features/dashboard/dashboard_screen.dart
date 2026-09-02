@@ -36,7 +36,7 @@ class DashboardScreen extends ConsumerWidget {
     return ResetScrollWhenObscured(
       tabPath: '/',
       builder: (context, scroll) {
-        final pad = AppSpacing.tabPagePadding(context);
+        final pad = AppSpacing.tabPagePadding(context).copyWith(bottom: 0);
         return StickyScrollPage(
           useSafeArea: false,
           controller: scroll,

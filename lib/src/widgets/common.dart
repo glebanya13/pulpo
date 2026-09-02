@@ -283,8 +283,7 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
               ),
               sliver: SliverFillRemaining(
                 hasScrollBody: false,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: widget.padding.bottom),
+                child: SizedBox.expand(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: widget.children,
