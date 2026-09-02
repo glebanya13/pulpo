@@ -126,10 +126,11 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
 
-    return AsyncValueView(
-      value: allTxsAsync,
-      onRetry: () => ref.invalidate(allTransactionsProvider),
-      data: (allTxs) {
+    return SizedBox.expand(
+      child: AsyncValueView(
+        value: allTxsAsync,
+        onRetry: () => ref.invalidate(allTransactionsProvider),
+        data: (allTxs) {
         final monthTxs = applyTransactionFilters(
           txs: allTxs
               .where(
@@ -216,38 +217,54 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
               ],
               SizedBox(height: _viewIndex == 0 ? 6 : 10),
               Expanded(
-                child: _viewIndex == 0
-                    ? SingleChildScrollView(
-                        padding: EdgeInsets.only(
-                          bottom: AppSpacing.tabBodyBottom(context),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final bottomInset =
+                        AppSpacing.tabScrollBottomInset(context);
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (_viewIndex == 0)
+                              _DailyMonthList(
+                                month: _month,
+                                txs: monthTxs,
+                                currency: currency,
+                                hasFilters: _hasActiveFilters,
+                                monthHasTxs: monthTxsUnfiltered.isNotEmpty,
+                                onClearFilters: _clearFilters,
+                                onTapDay: (day) =>
+                                    _openDaySheet(context, day, monthTxs),
+                                onTapTx: (tx) => context.push('/tx/${tx.id}'),
+                                onDeleteTx: _deleteWithUndo,
+                              )
+                            else
+                              _MonthTable(
+                                month: _month,
+                                leading: leading,
+                                daysInMonth: daysInMonth,
+                                byDay: byDay,
+                                currency: currency,
+                                onTapDay: (day) =>
+                                    _openDaySheet(context, day, monthTxs),
+                              ),
+                            SizedBox(height: bottomInset),
+                          ],
                         ),
-                        child: _DailyMonthList(
-                          month: _month,
-                          txs: monthTxs,
-                          currency: currency,
-                          hasFilters: _hasActiveFilters,
-                          monthHasTxs: monthTxsUnfiltered.isNotEmpty,
-                          onClearFilters: _clearFilters,
-                          onTapDay: (day) =>
-                              _openDaySheet(context, day, monthTxs),
-                          onTapTx: (tx) => context.push('/tx/${tx.id}'),
-                          onDeleteTx: _deleteWithUndo,
-                        ),
-                      )
-                    : _MonthTable(
-                        month: _month,
-                        leading: leading,
-                        daysInMonth: daysInMonth,
-                        byDay: byDay,
-                        currency: currency,
-                        onTapDay: (day) =>
-                            _openDaySheet(context, day, monthTxs),
                       ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
         );
       },
+      ),
     );
   }
 

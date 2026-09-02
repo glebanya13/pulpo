@@ -155,35 +155,43 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             borderRadius: BorderRadius.circular(18),
             child: ColoredBox(
               color: context.surface,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  12,
-                  12,
-                  12,
-                  12 + AppSpacing.tabBodyBottom(context),
-                ),
-                child: AsyncValuesGate(
-                  values: [txsAsync, catsAsync],
-                  onRetry: retryLoad,
-                  child: Builder(
-                    builder: (context) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: _buildTabContent(
-                          txs: txsAsync.requireValue,
-                          cats: catsAsync.requireValue,
-                          now: now,
-                          rangeStart: range.start,
-                          rangeEnd: range.end,
-                          monthCount: monthCount,
-                          currency: currency,
-                          periodName: periodName,
-                          periodKind: range.kind,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final bottomInset =
+                      AppSpacing.tabScrollBottomInset(context);
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(minHeight: constraints.maxHeight),
+                      child: AsyncValuesGate(
+                        values: [txsAsync, catsAsync],
+                        onRetry: retryLoad,
+                        child: Builder(
+                          builder: (context) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ..._buildTabContent(
+                                  txs: txsAsync.requireValue,
+                                  cats: catsAsync.requireValue,
+                                  now: now,
+                                  rangeStart: range.start,
+                                  rangeEnd: range.end,
+                                  monthCount: monthCount,
+                                  currency: currency,
+                                  periodName: periodName,
+                                  periodKind: range.kind,
+                                ),
+                                SizedBox(height: bottomInset),
+                              ],
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-                ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),

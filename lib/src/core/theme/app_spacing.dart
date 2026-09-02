@@ -19,11 +19,15 @@ class AppSpacing {
   static const double rXxl = 28;
   static const double rPill = 100;
 
-  /// Space so the last item sits just above the floating tab bar.
-  static double tabBodyBottom(BuildContext context) {
-    const navBarExtent = 62.0;
-    return navBarExtent + MediaQuery.paddingOf(context).bottom + sm;
+  /// Clearance for scroll content above the floating tab bar.
+  static double tabScrollBottomInset(BuildContext context) {
+    const navBarHeight = 64.0;
+    const gap = 8.0;
+    return navBarHeight + MediaQuery.paddingOf(context).bottom + gap;
   }
+
+  /// Space so the last item sits just above the floating tab bar.
+  static double tabBodyBottom(BuildContext context) => tabScrollBottomInset(context);
 
   static EdgeInsets tabPagePadding(BuildContext context) {
     return EdgeInsets.fromLTRB(
