@@ -48,10 +48,7 @@ class DashboardScreen extends ConsumerWidget {
             eyebrow: tr.greetingForHour(DateTime.now().hour),
             large: true,
             expand: true,
-            trailing: const HeaderSupportActions(
-              dense: true,
-              accountIconOnly: true,
-            ),
+            trailing: const HeaderSupportActions(dense: true),
           ),
           children: [
             AsyncValuesGate(
@@ -100,13 +97,13 @@ class _QuickChip extends StatelessWidget {
           child: Pressable(
             onTap: onTap,
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 11),
               decoration: BoxDecoration(
                 color: chipBg,
                 borderRadius: BorderRadius.circular(14),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, size: 20, color: iconColor),
+              child: Icon(icon, size: 21, color: iconColor),
             ),
           ),
         ),
@@ -139,23 +136,25 @@ class _BalanceActionCard extends StatelessWidget {
         border: Border.all(color: context.emphasizedBorder, width: 1),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             tr.totalBalance,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white70,
-              fontSize: 11,
+              fontSize: 12,
               letterSpacing: 0.8,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             formatMoney(total, currency),
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 30,
+              fontSize: 32,
               fontWeight: FontWeight.w800,
               height: 1.1,
               letterSpacing: -1,

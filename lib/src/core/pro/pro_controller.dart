@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/repositories/settings_service.dart';
@@ -27,6 +28,7 @@ class ProState {
     required this.purchasing,
     required this.storeAvailable,
     required this.products,
+    this.storeCountryCode,
     this.error,
   });
 
@@ -38,6 +40,8 @@ class ProState {
   final bool purchasing;
   final bool storeAvailable;
   final List<ProductDetails> products;
+  /// App Store / Play storefront country (ISO 3166-1 alpha-3 on iOS).
+  final String? storeCountryCode;
   final String? error;
 
   bool get isPro {
@@ -81,6 +85,7 @@ class ProState {
     bool? purchasing,
     bool? storeAvailable,
     List<ProductDetails>? products,
+    String? storeCountryCode,
     String? error,
     bool clearError = false,
   }) {
@@ -94,6 +99,7 @@ class ProState {
       purchasing: purchasing ?? this.purchasing,
       storeAvailable: storeAvailable ?? this.storeAvailable,
       products: products ?? this.products,
+      storeCountryCode: storeCountryCode ?? this.storeCountryCode,
       error: clearError ? null : (error ?? this.error),
     );
   }
@@ -210,7 +216,13 @@ class ProController extends Notifier<ProState> {
     }
 
     var products = const <ProductDetails>[];
+    String? storeCountry;
     if (available) {
+      try {
+        storeCountry = await _readStoreCountryCode();
+      } catch (e, st) {
+        debugPrint('iap storefront: $e\n$st');
+      }
       try {
         final response = await iap.queryProductDetails(ProProducts.ids);
         products = response.productDetails;
@@ -240,11 +252,24 @@ class ProController extends Notifier<ProState> {
       loading: false,
       storeAvailable: available,
       products: products,
+      storeCountryCode: storeCountry,
       entitled: _prefs.getBool(_kEntitled) ?? false,
       localExpiresAt: _readLocalExpiresAt(),
       debugUnlock: _prefs.getBool(_kDebugUnlock) ?? false,
       clearError: true,
     );
+  }
+
+  Future<String?> _readStoreCountryCode() async {
+    if (kIsWeb) return null;
+    if (!Platform.isIOS) return null;
+    try {
+      final code = await Storefront().countryCode();
+      return code.isEmpty ? null : code;
+    } catch (e, st) {
+      debugPrint('storefront country: $e\n$st');
+      return null;
+    }
   }
 
   void _listenIfNeeded() {

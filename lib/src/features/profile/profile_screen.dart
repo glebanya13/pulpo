@@ -38,12 +38,7 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       body: StickyScrollPage(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.xs,
-          AppSpacing.lg,
-          AppSpacing.xxl,
-        ),
+        padding: AppSpacing.tabPagePadding(context),
         headerGap: 20,
         header: _ProfileStickyHeader(
           onBack: () => context.pop(),

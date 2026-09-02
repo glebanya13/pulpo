@@ -279,48 +279,62 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tr = Tr.of(context);
     final locale = Localizations.localeOf(context).toString();
-    final title = DateFormat('LLL y', locale).format(month);
+    final title = DateFormat('MMMM y', locale).format(month);
     final titleCapitalized =
         title.isEmpty ? title : title[0].toUpperCase() + title.substring(1);
     return Row(
       children: [
         _NavBtn(icon: LucideIcons.chevronLeft, onTap: () => onShift(-1)),
-        Expanded(
-          child: Center(
-            child: Pressable(
-              onTap: onTitleTap,
-              child: Text(
-                titleCapitalized,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: context.primaryText,
-                ),
+        Pressable(
+          onTap: onTitleTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              titleCapitalized,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: context.primaryText,
               ),
             ),
           ),
         ),
         _NavBtn(icon: LucideIcons.chevronRight, onTap: () => onShift(1)),
-        const SizedBox(width: 4),
+        const Spacer(),
         Pressable(
           onTap: onToggleCalendar,
           child: Container(
-            width: 28,
-            height: 28,
-            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             decoration: BoxDecoration(
               color: calendarView
                   ? AppColors.lime.withValues(alpha: 0.2)
                   : context.scaffoldBg,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              LucideIcons.calendarDays,
-              size: 15,
-              color: calendarView
-                  ? AppColors.limeAccent
-                  : context.mutedText,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  LucideIcons.calendarDays,
+                  size: 16,
+                  color: calendarView
+                      ? AppColors.limeAccent
+                      : context.mutedText,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  tr.calendar,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: calendarView
+                        ? AppColors.limeAccent
+                        : context.mutedText,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -389,7 +403,7 @@ class _Mini extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: context.mutedText),
+              style: TextStyle(fontSize: 12, color: context.mutedText),
             ),
             const SizedBox(height: 2),
             Text(
@@ -398,7 +412,7 @@ class _Mini extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w800, color: color),
+                  fontSize: 14, fontWeight: FontWeight.w800, color: color),
             ),
           ],
         ),
@@ -417,14 +431,14 @@ class _NavBtn extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        width: 28,
-        height: 28,
+        width: 32,
+        height: 32,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: context.scaffoldBg,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 16, color: context.primaryText),
+        child: Icon(icon, size: 17, color: context.primaryText),
       ),
     );
   }
@@ -506,80 +520,153 @@ class _DailyMonthList extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final day in days) ...[
-          Pressable(
-            onTap: () => onTapDay(day),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    '${day.day}',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: context.primaryText,
-                      height: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: context.scaffoldBg,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      DateFormat.E(locale).format(day),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: context.mutedText,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  _DayTotalsRow(dayTxs: grouped[day]!, currency: currency),
-                ],
-              ),
-            ),
+        for (var i = 0; i < days.length; i++)
+          _DayBlock(
+            day: days[i],
+            txs: grouped[days[i]]!,
+            currency: currency,
+            locale: locale,
+            isLast: i == days.length - 1,
+            onTapDay: () => onTapDay(days[i]),
+            onTapTx: onTapTx,
+            onDeleteTx: onDeleteTx,
           ),
-          for (final tx in grouped[day]!)
-            Dismissible(
-              key: ValueKey(tx.id),
-              direction: DismissDirection.endToStart,
-              background: Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 20),
-                margin: const EdgeInsets.symmetric(vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.danger,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.delete, color: Colors.white, size: 20),
-              ),
-              onDismissed: (_) => onDeleteTx(tx),
-              child: Pressable(
-                onTap: () => onTapTx(tx),
-                child: TransactionTile(tx: tx, embedded: true),
-              ),
-            ),
-        ],
       ],
     );
   }
 }
 
-class _DayTotalsRow extends StatelessWidget {
-  const _DayTotalsRow({required this.dayTxs, required this.currency});
+class _DayBlock extends StatelessWidget {
+  const _DayBlock({
+    required this.day,
+    required this.txs,
+    required this.currency,
+    required this.locale,
+    required this.isLast,
+    required this.onTapDay,
+    required this.onTapTx,
+    required this.onDeleteTx,
+  });
+
+  final DateTime day;
+  final List<db.Transaction> txs;
+  final String currency;
+  final String locale;
+  final bool isLast;
+  final VoidCallback onTapDay;
+  final ValueChanged<db.Transaction> onTapTx;
+  final ValueChanged<db.Transaction> onDeleteTx;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.scaffoldBg,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Pressable(
+              onTap: onTapDay,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${day.day}',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: context.primaryText,
+                        height: 1,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.surface,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          DateFormat.E(locale).format(day),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: context.mutedText,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    _DayHeaderTotals(dayTxs: txs, currency: currency),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              child: Column(
+                children: [
+                  for (var i = 0; i < txs.length; i++)
+                    Dismissible(
+                      key: ValueKey(txs[i].id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        margin: EdgeInsets.only(bottom: i < txs.length - 1 ? 6 : 0),
+                        decoration: BoxDecoration(
+                          color: AppColors.danger,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.delete,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      onDismissed: (_) => onDeleteTx(txs[i]),
+                      child: Pressable(
+                        onTap: () => onTapTx(txs[i]),
+                        child: TransactionTile(
+                          tx: txs[i],
+                          embedded: true,
+                          embeddedInDayBlock: true,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DayHeaderTotals extends StatelessWidget {
+  const _DayHeaderTotals({required this.dayTxs, required this.currency});
 
   final List<db.Transaction> dayTxs;
   final String currency;
 
   @override
   Widget build(BuildContext context) {
+    final tr = Tr.of(context);
     var income = 0.0;
     var expense = 0.0;
     for (final t in dayTxs) {
@@ -590,28 +677,59 @@ class _DayTotalsRow extends StatelessWidget {
         expense += t.amount;
       }
     }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    final net = income - expense;
+    final netColor = net > 0
+        ? AppColors.limeAccent
+        : net < 0
+            ? AppColors.danger
+            : context.mutedText;
+    final showBreakdown = income > 0 && expense > 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (income > 0)
-          Text(
-            formatMoney(income, currency),
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AppColors.limeAccent,
-            ),
+        if (showBreakdown)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                formatMoney(income, currency, showSign: true),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.limeAccent,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                formatMoney(-expense, currency, showSign: true),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.danger,
+                ),
+              ),
+            ],
           ),
-        if (income > 0 && expense > 0) const SizedBox(width: 8),
-        if (expense > 0)
-          Text(
-            formatMoney(expense, currency),
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AppColors.danger,
-            ),
+        if (showBreakdown) const SizedBox(height: 2),
+        Text(
+          formatMoney(net, currency, showSign: true),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: netColor,
+            letterSpacing: -0.2,
           ),
+        ),
+        Text(
+          tr.monthNet,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w600,
+            color: context.faintText,
+            letterSpacing: 0.2,
+          ),
+        ),
       ],
     );
   }

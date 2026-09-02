@@ -35,6 +35,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     final pro = ref.watch(proControllerProvider);
+    final storeCountry = pro.storeCountryCode;
     final signedIn = ref.watch(authUserProvider).valueOrNull != null;
     final yearly = pro.yearly;
     final monthly = pro.monthly;
@@ -175,7 +176,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                           if (monthly != null)
                             _PaywallPlanCard(
                               title: tr.proMonthly,
-                              price: ProductOfferInfo.displayPrice(monthly),
+                              price: ProductOfferInfo.paywallPrice(
+                                monthly,
+                                storeCountryCode: storeCountry,
+                              ),
                               allFeaturesLabel: tr.proAllFeatures,
                               trialLabel: trialLabelFor(monthly),
                               selected: selected?.id == monthly.id,
@@ -186,17 +190,22 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                             const SizedBox(height: 10),
                             _PaywallPlanCard(
                               title: tr.proSemiAnnual,
-                              price: ProductOfferInfo.displayPrice(semiAnnual),
+                              price: ProductOfferInfo.paywallPrice(
+                                semiAnnual,
+                                storeCountryCode: storeCountry,
+                              ),
                               allFeaturesLabel: tr.proAllFeatures,
                               trialLabel: trialLabelFor(semiAnnual),
                               comparePrice: ProductOfferInfo.comparePrice(
                                 base: monthly,
                                 multiplier: 6,
+                                storeCountryCode: storeCountry,
                               ),
                               badge: () {
                                 final pct = ProductOfferInfo.semiAnnualSavePercent(
                                   monthly: monthly,
                                   semiAnnual: semiAnnual,
+                                  storeCountryCode: storeCountry,
                                 );
                                 return pct != null
                                     ? tr.proDiscountBadge(pct)
@@ -212,17 +221,22 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                             const SizedBox(height: 10),
                             _PaywallPlanCard(
                               title: tr.proYearly,
-                              price: ProductOfferInfo.displayPrice(yearly),
+                              price: ProductOfferInfo.paywallPrice(
+                                yearly,
+                                storeCountryCode: storeCountry,
+                              ),
                               allFeaturesLabel: tr.proAllFeatures,
                               trialLabel: trialLabelFor(yearly),
                               comparePrice: ProductOfferInfo.comparePrice(
                                 base: monthly,
                                 multiplier: 12,
+                                storeCountryCode: storeCountry,
                               ),
                               badge: () {
                                 final pct = ProductOfferInfo.yearlySavePercent(
                                   monthly: monthly,
                                   yearly: yearly,
+                                  storeCountryCode: storeCountry,
                                 );
                                 return pct != null
                                     ? tr.proDiscountBadge(pct)

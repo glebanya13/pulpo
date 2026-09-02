@@ -100,6 +100,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/',
                 builder: (context, state) => const DashboardScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'profile',
+                    pageBuilder: (context, state) =>
+                        _fadePage(state, const ProfileScreen()),
+                  ),
+                ],
               ),
             ],
           ),
@@ -117,11 +124,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/assistant',
         pageBuilder: (context, state) =>
             _fadePage(state, const AssistantChatScreen()),
-      ),
-      GoRoute(
-        path: '/profile',
-        pageBuilder: (context, state) =>
-            _fadePage(state, const ProfileScreen()),
       ),
       GoRoute(
         path: '/add',

@@ -8,6 +8,7 @@ import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 
 import 'pro_limits.dart';
+import 'store_pricing.dart';
 import '../utils/money_format.dart';
 
 /// Trial length and yearly savings derived from the store (fallback = null).
@@ -19,15 +20,81 @@ class ProductOfferInfo {
     return formatMoney(amount, ProProducts.catalogCurrency);
   }
 
-  /// Localized price from the store (App Store / Play).
-  static String displayPrice(ProductDetails product) {
-    if (product.price.isNotEmpty) return product.price;
-    return formatMoney(product.rawPrice, product.currencyCode);
+  /// Amount shown on the paywall for [product], aligned with the App Store
+  /// storefront when possible.
+  static double paywallAmount(
+    ProductDetails product, {
+    String? storeCountryCode,
+  }) {
+    final country = storeCountryCode ?? _countryFromProduct(product);
+    final storeCurrency = product.currencyCode.toUpperCase();
+    final expectedCurrency = StorePricing.currencyForCountry(country);
+    final catalog = ProProducts.catalogAmounts[product.id];
+
+    // Sandbox / misconfigured store: storefront is EU but prices came back in $.
+    if (catalog != null &&
+        expectedCurrency == ProProducts.catalogCurrency &&
+        storeCurrency != ProProducts.catalogCurrency) {
+      return catalog;
+    }
+
+    if (product.rawPrice > 0) return product.rawPrice;
+    return catalog ?? 0;
   }
 
-  static double _amount(ProductDetails? product) {
+  /// Currency code used for paywall formatting.
+  static String paywallCurrency(
+    ProductDetails product, {
+    String? storeCountryCode,
+  }) {
+    final country = storeCountryCode ?? _countryFromProduct(product);
+    final storeCurrency = product.currencyCode.toUpperCase();
+    final expectedCurrency = StorePricing.currencyForCountry(country);
+    if (expectedCurrency == ProProducts.catalogCurrency &&
+        storeCurrency != ProProducts.catalogCurrency) {
+      return ProProducts.catalogCurrency;
+    }
+    if (storeCurrency.isNotEmpty) return storeCurrency;
+    return ProProducts.catalogCurrency;
+  }
+
+  /// Localized paywall price from the App Store / Play storefront.
+  static String paywallPrice(
+    ProductDetails product, {
+    String? storeCountryCode,
+  }) {
+    final country = storeCountryCode ?? _countryFromProduct(product);
+    final amount = paywallAmount(product, storeCountryCode: country);
+    final currency = paywallCurrency(product, storeCountryCode: country);
+    final expectedCurrency = StorePricing.currencyForCountry(country);
+    final storeCurrency = product.currencyCode.toUpperCase();
+
+    // Trust Apple's pre-formatted string when currency matches storefront.
+    if (product.price.isNotEmpty &&
+        (expectedCurrency == null || storeCurrency == expectedCurrency) &&
+        storeCurrency == currency) {
+      return product.price;
+    }
+
+    if (amount > 0) return formatMoney(amount, currency);
+    final catalog = ProProducts.catalogAmounts[product.id];
+    if (catalog != null) return formatCatalogPrice(catalog);
+    return product.price;
+  }
+
+  /// Fallback while products are still loading.
+  static String catalogPriceFor(String productId) {
+    final catalog = ProProducts.catalogAmounts[productId];
+    if (catalog == null) return '';
+    return formatCatalogPrice(catalog);
+  }
+
+  static double _amount(
+    ProductDetails? product, {
+    String? storeCountryCode,
+  }) {
     if (product == null) return 0;
-    return product.rawPrice;
+    return paywallAmount(product, storeCountryCode: storeCountryCode);
   }
 
   /// Free-trial length in days from StoreKit / Play, if configured.
@@ -58,9 +125,10 @@ class ProductOfferInfo {
   static int? yearlySavePercent({
     required ProductDetails? monthly,
     required ProductDetails? yearly,
+    String? storeCountryCode,
   }) {
-    final m = _amount(monthly);
-    final y = _amount(yearly);
+    final m = _amount(monthly, storeCountryCode: storeCountryCode);
+    final y = _amount(yearly, storeCountryCode: storeCountryCode);
     if (m <= 0 || y <= 0) return null;
     final full = m * 12;
     if (full <= y) return null;
@@ -71,9 +139,10 @@ class ProductOfferInfo {
   static int? semiAnnualSavePercent({
     required ProductDetails? monthly,
     required ProductDetails? semiAnnual,
+    String? storeCountryCode,
   }) {
-    final m = _amount(monthly);
-    final s = _amount(semiAnnual);
+    final m = _amount(monthly, storeCountryCode: storeCountryCode);
+    final s = _amount(semiAnnual, storeCountryCode: storeCountryCode);
     if (m <= 0 || s <= 0) return null;
     final full = m * 6;
     if (full <= s) return null;
@@ -84,12 +153,22 @@ class ProductOfferInfo {
   static String? comparePrice({
     required ProductDetails? base,
     required int multiplier,
+    String? storeCountryCode,
   }) {
     if (base == null || multiplier <= 0) return null;
-    final unit = _amount(base);
+    final unit = _amount(base, storeCountryCode: storeCountryCode);
     if (unit <= 0) return null;
     final total = unit * multiplier;
-    return formatMoney(total, base.currencyCode);
+    final currency = paywallCurrency(base, storeCountryCode: storeCountryCode);
+    return formatMoney(total, currency);
+  }
+
+  static String? _countryFromProduct(ProductDetails product) {
+    if (product is AppStoreProductDetails) {
+      final code = product.skProduct.priceLocale.countryCode;
+      return code.isEmpty ? null : code;
+    }
+    return null;
   }
 
   static int? _sk2TrialDays(ProductDetails product) {

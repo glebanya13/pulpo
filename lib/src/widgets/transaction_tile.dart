@@ -17,12 +17,16 @@ class TransactionTile extends ConsumerWidget {
     super.key,
     required this.tx,
     this.embedded = false,
+    this.embeddedInDayBlock = false,
   });
 
   final db.Transaction tx;
 
   /// Inside a parent card (e.g. home calendar) — darker tile on scaffold bg.
   final bool embedded;
+
+  /// Nested inside a day group card (surface tile on scaffold group).
+  final bool embeddedInDayBlock;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -49,11 +53,15 @@ class TransactionTile extends ConsumerWidget {
     final subtitle =
         '${category != null ? Tr.of(context).categoryName(category.name) : _typeLabel(type, context)} · $dateStr';
 
+    final tileBg = embedded
+        ? (embeddedInDayBlock ? context.surface : context.scaffoldBg)
+        : context.surface;
+
     return Container(
       margin: EdgeInsets.only(bottom: embedded ? 6 : 8),
       padding: EdgeInsets.all(embedded ? 12 : 14),
       decoration: BoxDecoration(
-        color: embedded ? context.scaffoldBg : context.surface,
+        color: tileBg,
         borderRadius: BorderRadius.circular(embedded ? 16 : 18),
       ),
       child: Row(

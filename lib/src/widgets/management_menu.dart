@@ -5,6 +5,8 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/l10n/tr.dart';
 import '../core/pro/pro_controller.dart';
+import '../core/pro/pro_guard.dart';
+import '../core/pro/pro_limits.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/color_well.dart';
@@ -81,11 +83,32 @@ Future<void> showManagementMenu(BuildContext context, WidgetRef ref) async {
             Flexible(
               child: ListView.separated(
                 shrinkWrap: true,
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                itemCount: items.length + 1,
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                itemCount: items.length + 1 + (isPro ? 0 : 1),
                 separatorBuilder: (context, index) =>
                     Divider(height: 1, color: ctx.divider),
                 itemBuilder: (_, i) {
+                  final proRowIndex = items.length + 1;
+                  if (!isPro && i == proRowIndex) {
+                    return Pressable(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        openPaywall(context, ProGate.generic);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 10,
+                        ),
+                        child: _ManagementMenuRow(
+                          icon: LucideIcons.sparkles,
+                          label: tr.proGo,
+                          color: AppColors.lime,
+                          showPro: false,
+                        ),
+                      ),
+                    );
+                  }
                   if (i == 0) {
                     return Pressable(
                       onTap: () {
@@ -128,6 +151,7 @@ Future<void> showManagementMenu(BuildContext context, WidgetRef ref) async {
                 },
               ),
             ),
+            const SizedBox(height: 8),
           ],
         ),
       );

@@ -421,7 +421,7 @@ class HeaderSupportActions extends StatelessWidget {
   const HeaderSupportActions({
     super.key,
     this.dense = true,
-    this.accountIconOnly = false,
+    this.accountIconOnly = true,
   });
 
   final bool dense;

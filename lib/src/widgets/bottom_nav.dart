@@ -39,25 +39,25 @@ class BudgetBottomNav extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _NavItem(
-              icon: LucideIcons.layoutDashboard,
+              icon: LucideIcons.house,
               active: currentIndex == 0,
               onTap: () => onTap(0),
-            ),
-            _NavItem(
-              icon: LucideIcons.layoutGrid,
-              active: false,
-              onTap: onManagementTap,
-            ),
-            _Fab(
-              icon: LucideIcons.plus,
-              size: 52,
-              iconSize: 24,
-              onTap: onAddTap,
             ),
             _NavItem(
               icon: LucideIcons.pieChart,
               active: currentIndex == 1,
               onTap: () => onTap(1),
+            ),
+            _Fab(
+              icon: LucideIcons.plus,
+              size: 54,
+              iconSize: 25,
+              onTap: onAddTap,
+            ),
+            _NavItem(
+              icon: LucideIcons.layoutGrid,
+              active: false,
+              onTap: onManagementTap,
             ),
             _AiNavItem(onTap: onChatTap),
           ],
@@ -86,15 +86,15 @@ class _NavItem extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        width: 38,
-        height: 38,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
           color: active ? AppColors.lime : Colors.transparent,
           shape: BoxShape.circle,
         ),
         child: Icon(
           icon,
-          size: 20,
+          size: 21,
           color: active ? AppColors.ink : idle,
         ),
       ),
@@ -115,8 +115,8 @@ class _AiNavItem extends ConsumerWidget {
     return Pressable(
       onTap: onTap,
       child: AiAssistantMark(
-        size: 38,
-        iconSize: 17,
+        size: 40,
+        iconSize: 18,
         needsUpgrade: needsUpgrade,
       ),
     );

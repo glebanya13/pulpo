@@ -492,6 +492,7 @@ class Tr {
 
   // ─────────────────────── TRANSACTION LIST ───────────────────────
   String get filterAll => _get('filter_all');
+  String get filter => _get('filter');
   String get filterAccount => _get('filter_account');
   String get filterCategory => _get('filter_category');
 
@@ -1119,6 +1120,7 @@ class Tr {
       'account_type': 'Tipo',
       // filters
       'filter_all': 'Todos',
+      'filter': 'Filtro',
       'filter_account': 'Cuenta',
       'filter_category': 'Categoría',
       // onboarding buttons
@@ -1823,6 +1825,7 @@ class Tr {
       'account_type': 'Тип',
       // filters
       'filter_all': 'Все',
+      'filter': 'Фильтр',
       'filter_account': 'Счёт',
       'filter_category': 'Категория',
       // onboarding buttons
@@ -2526,6 +2529,7 @@ class Tr {
       'account_type': 'Type',
       // filters
       'filter_all': 'All',
+      'filter': 'Filter',
       'filter_account': 'Account',
       'filter_category': 'Category',
       // onboarding buttons
@@ -3211,6 +3215,7 @@ class Tr {
       'reset_success': 'Дані видалено',
       'account_type': 'Тип',
       'filter_all': 'Всі',
+      'filter': 'Фільтр',
       'filter_account': 'Рахунок',
       'filter_category': 'Категорія',
       'skip': 'Пропустити',
