@@ -6,6 +6,7 @@ import '../core/app_info.dart';
 import '../core/l10n/tr.dart';
 import '../core/open_link.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_spacing.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
 
@@ -215,8 +216,8 @@ class StickyScrollPage extends StatefulWidget {
     required this.header,
     required this.children,
     this.controller,
-    this.padding = const EdgeInsets.fromLTRB(20, 12, 20, 40),
-    this.headerGap = 20,
+    this.padding,
+    this.headerGap = 16,
     this.headerBottomPadding = 0,
     this.useSafeArea = true,
     this.physics,
@@ -225,7 +226,9 @@ class StickyScrollPage extends StatefulWidget {
   final Widget header;
   final List<Widget> children;
   final ScrollController? controller;
-  final EdgeInsets padding;
+  /// When null: safe-area pages get a modest bottom gap; tab pages
+  /// (`useSafeArea: false`) should pass [AppSpacing.tabPagePadding].
+  final EdgeInsets? padding;
   /// Space between sticky header and first list child.
   final double headerGap;
   /// Extra padding under the header inside the sticky bar (dashboard uses 10).
@@ -262,10 +265,27 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
     }
   }
 
+  EdgeInsets _resolvePadding(BuildContext context) {
+    if (widget.padding != null) return widget.padding!;
+    if (widget.useSafeArea) {
+      return const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        12,
+        AppSpacing.lg,
+        AppSpacing.md,
+      );
+    }
+    return AppSpacing.tabPagePadding(context);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final pad = _resolvePadding(context);
+    // Prefer a status-bar-aware estimate so the first frame doesn't jump.
+    final estimatedHeader =
+        pad.top + 56 + widget.headerBottomPadding;
     final topInset =
-        (_headerHeight > 0 ? _headerHeight : 72) + widget.headerGap;
+        (_headerHeight > 0 ? _headerHeight : estimatedHeader) + widget.headerGap;
 
     // Solid backdrop under the sticky header so scrolled content never shows
     // through as a grey/black "hole" above the title pill.
@@ -279,10 +299,10 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
             slivers: [
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(
-                  widget.padding.left,
+                  pad.left,
                   topInset,
-                  widget.padding.right,
-                  widget.padding.bottom,
+                  pad.right,
+                  pad.bottom,
                 ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate(widget.children),
@@ -301,9 +321,9 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
               key: _headerKey,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
-                  widget.padding.left,
-                  widget.padding.top,
-                  widget.padding.right,
+                  pad.left,
+                  pad.top,
+                  pad.right,
                   widget.headerBottomPadding,
                 ),
                 child: widget.header,
@@ -469,7 +489,9 @@ class PageHeader extends StatelessWidget {
   final Widget? action;
   final VoidCallback? onBack;
 
-  static const _side = 42.0;
+  /// Canonical name for pushed-screen chrome (back · title pill · action).
+  static const double controlSize = 44;
+  static const _side = controlSize;
 
   @override
   Widget build(BuildContext context) {
@@ -570,6 +592,9 @@ class PageHeader extends StatelessWidget {
   }
 }
 
+/// Alias — prefer this name in new pushed screens.
+typedef AppPageHeader = PageHeader;
+
 class RoundIconButton extends StatelessWidget {
   const RoundIconButton({
     super.key,
@@ -605,8 +630,8 @@ class _RoundIconBtn extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        width: 42,
-        height: 42,
+        width: PageHeader.controlSize,
+        height: PageHeader.controlSize,
         decoration: BoxDecoration(
           color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white,
           shape: BoxShape.circle,
@@ -710,7 +735,7 @@ class TabsPill extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: limeActive
                         ? AppColors.lime
-                        : (context.isDark ? AppColors.ink3 : AppColors.ink),
+                        : (context.isDark ? Colors.white : AppColors.ink),
                     borderRadius: BorderRadius.circular(100),
                   ),
                 ),
@@ -734,7 +759,7 @@ class TabsPill extends StatelessWidget {
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: index == i
-                                    ? (limeActive
+                                    ? (limeActive || context.isDark
                                         ? AppColors.ink
                                         : Colors.white)
                                     : context.mutedText,
@@ -820,6 +845,9 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bg = background == AppColors.bgFood && context.isDark
+        ? context.surface
+        : background;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -829,7 +857,7 @@ class EmptyState extends StatelessWidget {
             Container(
               width: 140,
               height: 140,
-              decoration: BoxDecoration(color: background, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
               child: Icon(
                 icon,
                 size: 56,
@@ -958,7 +986,9 @@ class ErrorView extends StatelessWidget {
       description: message,
       action: onRetry != null ? tr.retry : null,
       onAction: onRetry,
-      background: const Color(0xFFFFE4E1),
+      background: context.isDark
+          ? const Color(0xFF3A2A28)
+          : const Color(0xFFFFE4E1),
     );
   }
 }

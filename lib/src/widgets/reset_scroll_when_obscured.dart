@@ -34,6 +34,7 @@ class _ResetScrollWhenObscuredState extends State<ResetScrollWhenObscured> {
   static const _tabPaths = {
     '/',
     '/reports',
+    '/management',
   };
 
   @override

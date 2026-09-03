@@ -14,6 +14,7 @@ import '../../core/theme/color_well.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_badge.dart';
+import '../../widgets/reset_scroll_when_obscured.dart';
 
 typedef ManagementMenuItem = (IconData, String, String, Color, bool);
 
@@ -42,118 +43,117 @@ class ManagementScreen extends ConsumerWidget {
     final tr = Tr.of(context);
     final isPro = ref.watch(proControllerProvider).isPro;
     final items = managementMenuItems(tr);
-    final bottomClearance = AppSpacing.tabScrollBottomInset(context);
 
-    return Scaffold(
-      body: StickyScrollPage(
-        useSafeArea: false,
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          MediaQuery.viewPaddingOf(context).top + AppSpacing.xs,
-          AppSpacing.lg,
-          bottomClearance,
-        ),
-        headerGap: 16,
-        header: PageHeader(
-          first: tr.management,
-          onBack: () => context.pop(),
-        ),
-        children: [
-          SoftCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _MenuTile(
-                  icon: LucideIcons.user,
-                  label: tr.myAccount,
-                  color: AppColors.lime,
-                  showPro: false,
-                  onTap: () => context.push('/profile'),
-                ),
-                Divider(height: 1, color: context.divider),
-                for (var i = 0; i < items.length; i++) ...[
-                  _MenuTile(
-                    icon: items[i].$1,
-                    label: items[i].$2,
-                    color: items[i].$4,
-                    showPro: items[i].$5 && !isPro,
-                    onTap: () => context.push(items[i].$3),
-                  ),
-                  if (i != items.length - 1)
-                    Divider(height: 1, color: context.divider),
-                ],
-              ],
-            ),
+    return ResetScrollWhenObscured(
+      tabPath: '/management',
+      builder: (context, scroll) {
+        return StickyScrollPage(
+          useSafeArea: false,
+          controller: scroll,
+          padding: AppSpacing.tabPagePadding(context),
+          headerGap: 16,
+          header: ScreenTitlePill(
+            title: tr.management,
+            large: true,
+            expand: true,
           ),
-          if (!isPro) ...[
-            const SizedBox(height: 16),
-            Pressable(
-              onTap: () => openPaywall(context, ProGate.generic),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFFD4FF00),
-                      AppColors.lime,
-                      Color(0xFFF0FF7A),
+          children: [
+            SoftCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _MenuTile(
+                    icon: LucideIcons.user,
+                    label: tr.myAccount,
+                    color: AppColors.lime,
+                    showPro: false,
+                    onTap: () => context.push('/profile'),
+                  ),
+                  Divider(height: 1, color: context.divider),
+                  for (var i = 0; i < items.length; i++) ...[
+                    _MenuTile(
+                      icon: items[i].$1,
+                      label: items[i].$2,
+                      color: items[i].$4,
+                      showPro: items[i].$5 && !isPro,
+                      onTap: () => context.push(items[i].$3),
+                    ),
+                    if (i != items.length - 1)
+                      Divider(height: 1, color: context.divider),
+                  ],
+                ],
+              ),
+            ),
+            if (!isPro) ...[
+              const SizedBox(height: 16),
+              Pressable(
+                onTap: () => openPaywall(context, ProGate.generic),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFD4FF00),
+                        AppColors.lime,
+                        Color(0xFFF0FF7A),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.lime.withValues(alpha: 0.4),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
                     ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.lime.withValues(alpha: 0.4),
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        LucideIcons.rocket,
-                        size: 16,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        tr.proGo,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          LucideIcons.rocket,
+                          size: 16,
                           color: AppColors.ink,
                         ),
                       ),
-                    ),
-                    Icon(
-                      LucideIcons.chevronRight,
-                      size: 18,
-                      color: AppColors.ink.withValues(alpha: 0.75),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          tr.proGo,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        LucideIcons.chevronRight,
+                        size: 18,
+                        color: AppColors.ink.withValues(alpha: 0.75),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
-      ),
+        );
+      },
     );
   }
 }

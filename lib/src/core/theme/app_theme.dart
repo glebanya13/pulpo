@@ -119,13 +119,18 @@ class AppTheme {
         selectionColor: AppColors.lime.withValues(alpha: 0.45),
         selectionHandleColor: AppColors.limeAccent,
       ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
   static ThemeData dark() {
-    const bg = AppColors.ink;
-    const surface = AppColors.ink2;
-    const surface2 = AppColors.ink3;
+    // Page shell = ink2 (gray). Cards lift to ink3. Pure black (ink) only for
+    // intentional emphasized blocks — never as the screen backdrop.
+    const bg = AppColors.ink2;
+    const surface = AppColors.ink3;
+    const surface2 = Color(0xFF333333);
     const onSurface = Colors.white;
 
     final scheme = ColorScheme.fromSeed(
@@ -283,6 +288,9 @@ class AppTheme {
         selectionColor: AppColors.lime.withValues(alpha: 0.45),
         selectionHandleColor: AppColors.lime,
       ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 }
@@ -294,14 +302,12 @@ extension AppColorsX on BuildContext {
   Color get scaffoldBg => Theme.of(this).scaffoldBackgroundColor;
 
   /// Стандартная карточка (списки, tiles, форм-blocks).
-  /// light → белый; dark → ink2.
+  /// light → белый; dark → ink3 (над серой оболочкой ink2).
   Color get surface => Theme.of(this).cardColor;
 
-  /// «Приподнятая» акцентная карточка. В light-дизайне была чёрная (BalanceCard,
-  /// BudgetSummary, NetWorth, BottomNav, insight cards). В dark bg=ink она сливается —
-  /// поднимаем до ink3.
-  Color get emphasized =>
-      isDark ? AppColors.ink3 : AppColors.ink;
+  /// «Приподнятая» акцентная карточка (BalanceCard, BudgetSummary и т.п.).
+  /// light → чёрная; dark → ink на серой оболочке ink2.
+  Color get emphasized => AppColors.ink;
 
   /// Тонкая рамка вокруг emphasized-карточек — помогает выделить их на dark fone.
   Color get emphasizedBorder =>

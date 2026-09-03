@@ -35,19 +35,16 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _headerKey = GlobalKey();
   final _scroll = ScrollController();
-  var _headerScrolled = false;
   double _headerHeight = 56;
 
   @override
   void initState() {
     super.initState();
-    _scroll.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeader());
   }
 
   @override
   void dispose() {
-    _scroll.removeListener(_onScroll);
     _scroll.dispose();
     super.dispose();
   }
@@ -58,14 +55,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final h = box.size.height;
     if ((h - _headerHeight).abs() > 0.5 && mounted) {
       setState(() => _headerHeight = h);
-    }
-  }
-
-  void _onScroll() {
-    if (!_scroll.hasClients) return;
-    final scrolled = _scroll.offset > 6;
-    if (scrolled != _headerScrolled && mounted) {
-      setState(() => _headerScrolled = scrolled);
     }
   }
 
@@ -81,7 +70,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     const side = AppSpacing.lg;
     const headerGap = 16.0;
     final top = MediaQuery.viewPaddingOf(context).top + AppSpacing.xs;
-    final bottomClearance = AppSpacing.tabScrollBottomInset(context);
+    final bottomClearance = AppSpacing.pushedScrollBottomInset(context);
 
     return Scaffold(
       body: Stack(
@@ -162,7 +151,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             icon: LucideIcons.moon,
                             iconBg: const Color(0xFFE8E4FF),
                             label: tr.theme,
-                            subtitle: tr.themeLabel(settings.themeMode),
                             trailing: tr.themeLabel(settings.themeMode),
                             onTap: () => context.push('/settings/theme'),
                           ),
@@ -269,15 +257,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             top: 0,
             left: 0,
             right: 0,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              decoration: BoxDecoration(
-                color: _headerScrolled ? context.surface : Colors.transparent,
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(20),
-                ),
-              ),
+            child: ColoredBox(
+              color: Theme.of(context).scaffoldBackgroundColor,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(side, top, side, 12),
                 child: KeyedSubtree(
@@ -323,6 +304,7 @@ class _ProfileStickyHeader extends StatelessWidget {
     final controlBg = context.isDark
         ? Colors.white.withValues(alpha: 0.1)
         : AppColors.ink.withValues(alpha: 0.06);
+    const size = PageHeader.controlSize;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(2, 2, 0, 0),
@@ -331,8 +313,8 @@ class _ProfileStickyHeader extends StatelessWidget {
           Pressable(
             onTap: onBack,
             child: Container(
-              width: 40,
-              height: 40,
+              width: size,
+              height: size,
               decoration: BoxDecoration(
                 color: controlBg,
                 shape: BoxShape.circle,
@@ -381,8 +363,8 @@ class _ProfileStickyHeader extends StatelessWidget {
           Pressable(
             onTap: onEditTap,
             child: Container(
-              width: 40,
-              height: 40,
+              width: size,
+              height: size,
               decoration: BoxDecoration(
                 color: controlBg,
                 shape: BoxShape.circle,

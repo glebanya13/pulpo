@@ -78,6 +78,8 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(tr.txDeleted),
+        behavior: SnackBarBehavior.floating,
+        margin: AppSpacing.snackBarMargin(context),
         duration: const Duration(seconds: 5),
         // Flutter 3.37+: SnackBars with an action persist until tapped unless
         // persist is false (otherwise the undo toast never auto-dismisses).

@@ -23,7 +23,6 @@ import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_badge.dart';
-import '../../widgets/reset_scroll_when_obscured.dart';
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
@@ -41,10 +40,7 @@ class AccountsScreen extends ConsumerWidget {
     final currencies = accounts.map((a) => a.currency).toSet().length;
 
     return Scaffold(
-      body: ResetScrollWhenObscured(
-          tabPath: '/accounts',
-          builder: (context, scroll) => StickyScrollPage(
-            controller: scroll,
+      body: StickyScrollPage(
             header: PageHeader(
                 first: tr.myAccounts,
                 subtitle:
@@ -106,7 +102,6 @@ class AccountsScreen extends ConsumerWidget {
                 ),
               ),
             ],
-          ),
       ),
     );
   }

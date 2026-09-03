@@ -94,6 +94,9 @@ class Tr {
   String get transferExternalTab => _get('transfer_external_tab');
   String get transferBetweenHint => _get('transfer_between_hint');
   String get transferExternalHint => _get('transfer_external_hint');
+  /// Compact labels for home balance quick actions.
+  String get quickTransfer => _get('quick_transfer');
+  String get quickExternal => _get('quick_external');
   String get monthBalance => _get('month_balance');
   String get monthNet => _get('month_net');
   String get signIn => _get('sign_in');
@@ -1355,6 +1358,8 @@ class Tr {
       'transfer_external_tab': 'Transferencia externa',
       'transfer_between_hint': 'Mueve dinero entre tus cuentas. No es ingreso ni gasto.',
       'transfer_external_hint': 'Envías dinero fuera de tus cuentas. Cuenta como gasto.',
+      'quick_transfer': 'Entre',
+      'quick_external': 'Fuera',
       'month_balance': 'Balance del mes',
       'month_net': 'Resultado',
       'sign_in': 'Iniciar sesión',
@@ -2065,6 +2070,8 @@ class Tr {
       'transfer_external_tab': 'Внешний перевод',
       'transfer_between_hint': 'Перевод между своими счетами. Это не доход и не расход.',
       'transfer_external_hint': 'Деньги уходят вовне. Считается расходом.',
+      'quick_transfer': 'Между',
+      'quick_external': 'Вне',
       'month_balance': 'Баланс за месяц',
       'month_net': 'Итого',
       'sign_in': 'Войти',
@@ -2774,6 +2781,8 @@ class Tr {
       'transfer_external_tab': 'External transfer',
       'transfer_between_hint': 'Move money between your own accounts. Not income or expense.',
       'transfer_external_hint': 'Send money outside your accounts. Counts as an expense.',
+      'quick_transfer': 'Move',
+      'quick_external': 'Send',
       'month_balance': 'This month',
       'month_net': 'Net',
       'sign_in': 'Sign in',
@@ -3448,6 +3457,8 @@ class Tr {
       'transfer_external_tab': 'Зовнішній переказ',
       'transfer_between_hint': 'Переказ між рахунками. Це не дохід і не витрата.',
       'transfer_external_hint': 'Гроші виходять і вважаються витратою.',
+      'quick_transfer': 'Між',
+      'quick_external': 'Зовні',
       'month_balance': 'Баланс за місяць',
       'month_net': 'Разом',
       'sign_in': 'Увійти',

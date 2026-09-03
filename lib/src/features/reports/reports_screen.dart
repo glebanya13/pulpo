@@ -114,71 +114,68 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           controller: scroll,
           padding: pad,
           headerGap: 16,
-          header: ScreenTitlePill(
-            title: tr.analytics,
-            subtitle: tr.analyticsSubtitle,
-            large: true,
-            expand: true,
-            trailing: const HeaderSupportActions(dense: true),
+          headerBottomPadding: 4,
+          header: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ScreenTitlePill(
+                title: tr.analytics,
+                subtitle: tr.analyticsSubtitle,
+                large: true,
+                expand: true,
+                trailing: const HeaderSupportActions(dense: true),
+              ),
+              const SizedBox(height: 12),
+              _PeriodDropdownButton(
+                label: customRangeLabel ?? periodName,
+                onTap: () => _openPeriodPicker(
+                  context: context,
+                  ref: ref,
+                  tr: tr,
+                  current: range.kind,
+                  isPro: isPro,
+                  periodLabel: periodLabel,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _ReportsSegmentedTabs(
+                labels: tabs,
+                index: _tab,
+                locked: isPro ? const {} : const {1, 2},
+                onSelect: (i) async {
+                  if ((i == 1 || i == 2) && !isPro) {
+                    await openPaywall(
+                      context,
+                      i == 1 ? ProGate.trends : ProGate.flows,
+                    );
+                    return;
+                  }
+                  setState(() => _tab = i);
+                },
+              ),
+            ],
           ),
           children: [
-            _PeriodDropdownButton(
-              label: customRangeLabel ?? periodName,
-              onTap: () => _openPeriodPicker(
-                context: context,
-                ref: ref,
-                tr: tr,
-                current: range.kind,
-                isPro: isPro,
-                periodLabel: periodLabel,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _ReportsSegmentedTabs(
-              labels: tabs,
-              index: _tab,
-              locked: isPro ? const {} : const {1, 2},
-              onSelect: (i) async {
-                if ((i == 1 || i == 2) && !isPro) {
-                  await openPaywall(
-                    context,
-                    i == 1 ? ProGate.trends : ProGate.flows,
+            AsyncValuesGate(
+              values: [txsAsync, catsAsync],
+              onRetry: retryLoad,
+              child: Builder(
+                builder: (context) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: _buildTabContent(
+                      txs: txsAsync.requireValue,
+                      cats: catsAsync.requireValue,
+                      now: now,
+                      rangeStart: range.start,
+                      rangeEnd: range.end,
+                      monthCount: monthCount,
+                      currency: currency,
+                      periodName: periodName,
+                      periodKind: range.kind,
+                    ),
                   );
-                  return;
-                }
-                setState(() => _tab = i);
-              },
-            ),
-            const SizedBox(height: 16),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: context.surface,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                child: AsyncValuesGate(
-                  values: [txsAsync, catsAsync],
-                  onRetry: retryLoad,
-                  child: Builder(
-                    builder: (context) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: _buildTabContent(
-                          txs: txsAsync.requireValue,
-                          cats: catsAsync.requireValue,
-                          now: now,
-                          rangeStart: range.start,
-                          rangeEnd: range.end,
-                          monthCount: monthCount,
-                          currency: currency,
-                          periodName: periodName,
-                          periodKind: range.kind,
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                },
               ),
             ),
           ],
@@ -325,7 +322,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(describeAiError(tr, e))),
+        SnackBar(
+          content: Text(describeAiError(tr, e)),
+          behavior: SnackBarBehavior.floating,
+          margin: AppSpacing.snackBarMargin(context),
+        ),
       );
     } finally {
       if (mounted) setState(() => _aiInsightBusy = false);
@@ -1362,7 +1363,7 @@ class _ReportsSegmentedTabs extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
                     color: index == i
-                        ? (context.isDark ? AppColors.ink3 : AppColors.ink)
+                        ? (context.isDark ? Colors.white : AppColors.ink)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1384,7 +1385,9 @@ class _ReportsSegmentedTabs extends StatelessWidget {
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: index == i
-                                    ? Colors.white
+                                    ? (context.isDark
+                                        ? AppColors.ink
+                                        : Colors.white)
                                     : context.mutedText,
                               ),
                             ),
@@ -1449,7 +1452,7 @@ class _PeriodSheetTile extends StatelessWidget {
             if (locked)
               const ProBadge(dense: true)
             else if (selected)
-              const Icon(LucideIcons.check, size: 18, color: AppColors.ink),
+              Icon(LucideIcons.check, size: 18, color: context.accent),
           ],
         ),
       ),

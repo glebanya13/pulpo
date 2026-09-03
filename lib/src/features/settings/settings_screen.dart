@@ -23,7 +23,6 @@ import '../../widgets/common.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_upgrade_card.dart';
-import '../../widgets/reset_scroll_when_obscured.dart';
 import '../auth/cloud_auth.dart';
 import '../profile/profile_avatar.dart';
 import 'reminder_settings.dart';
@@ -38,10 +37,7 @@ class SettingsScreen extends ConsumerWidget {
     final pro = ref.watch(proControllerProvider);
 
     return Scaffold(
-      body: ResetScrollWhenObscured(
-          tabPath: '/settings',
-          builder: (context, scroll) => StickyScrollPage(
-            controller: scroll,
+      body: StickyScrollPage(
             header: PageHeader(
                 first: tr.settings,
                 onBack: () => context.pop(),
@@ -207,7 +203,6 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ],
-        ),
       ),
     );
   }

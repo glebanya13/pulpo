@@ -29,11 +29,17 @@ class AppShell extends ConsumerWidget {
     if (context.mounted) context.push('/assistant');
   }
 
+  void _goTab(int index) {
+    navigationShell.goBranch(
+      index,
+      // Customer wants no state "remembering" between pages:
+      // always re-open the target branch at its initial location.
+      initialLocation: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final path = GoRouterState.of(context).uri.path;
-    final managementActive = path == '/management';
-
     return Scaffold(
       extendBody: _useFloatingNav,
       body: LayoutBuilder(
@@ -49,19 +55,11 @@ class AppShell extends ConsumerWidget {
         },
       ),
       bottomNavigationBar: BudgetBottomNav(
+        // 0 home · 1 reports · 2 management
         currentIndex: navigationShell.currentIndex,
-        managementActive: managementActive,
-        onTap: (i) => navigationShell.goBranch(
-          i,
-          // Customer wants no state "remembering" between pages:
-          // always re-open the target branch at its initial location.
-          initialLocation: true,
-        ),
+        onTap: _goTab,
         onAddTap: () => showQuickActionsSheet(context),
-        onManagementTap: () {
-          if (managementActive) return;
-          context.push('/management');
-        },
+        onManagementTap: () => _goTab(2),
         onChatTap: () => _openAssistant(context, ref),
       ),
     );

@@ -88,23 +88,40 @@ class _QuickChip extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.12)
         : context.surface;
     final iconColor = onDark ? Colors.white : context.primaryText;
+    final labelColor = onDark ? Colors.white70 : context.mutedText;
 
     return Expanded(
-      child: Tooltip(
-        message: label,
-        child: Semantics(
-          label: label,
-          button: true,
-          child: Pressable(
-            onTap: onTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 11),
-              decoration: BoxDecoration(
-                color: chipBg,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              alignment: Alignment.center,
-              child: Icon(icon, size: 21, color: iconColor),
+      child: Semantics(
+        label: label,
+        button: true,
+        child: Pressable(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            decoration: BoxDecoration(
+              color: chipBg,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 20, color: iconColor),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      height: 1.1,
+                      color: labelColor,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -191,14 +208,14 @@ class _BalanceActionCard extends StatelessWidget {
               const SizedBox(width: 6),
               _QuickChip(
                 icon: LucideIcons.arrowLeftRight,
-                label: tr.transferBetweenAccounts,
+                label: tr.quickTransfer,
                 onDark: true,
                 onTap: () => context.push('/add?type=transfer'),
               ),
               const SizedBox(width: 6),
               _QuickChip(
                 icon: LucideIcons.send,
-                label: tr.transferExternal,
+                label: tr.quickExternal,
                 onDark: true,
                 onTap: () => context.push('/add?type=expense&mode=external'),
               ),

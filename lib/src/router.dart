@@ -103,23 +103,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/',
                 builder: (context, state) => const DashboardScreen(),
               ),
-              GoRoute(
-                path: '/profile',
-                redirect: (context, state) {
-                  // Guest / demo: open sign-in instead of an empty profile.
-                  if (FirebaseAuth.instance.currentUser == null) {
-                    return '/settings/account';
-                  }
-                  return null;
-                },
-                pageBuilder: (context, state) =>
-                    _fadePage(state, const ProfileScreen()),
-              ),
-              GoRoute(
-                path: '/management',
-                pageBuilder: (context, state) =>
-                    _fadePage(state, const ManagementScreen()),
-              ),
             ],
           ),
           StatefulShellBranch(
@@ -130,7 +113,27 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/management',
+                builder: (context, state) => const ManagementScreen(),
+              ),
+            ],
+          ),
         ],
+      ),
+      GoRoute(
+        path: '/profile',
+        redirect: (context, state) {
+          // Guest / demo: open sign-in instead of an empty profile.
+          if (FirebaseAuth.instance.currentUser == null) {
+            return '/settings/account';
+          }
+          return null;
+        },
+        pageBuilder: (context, state) =>
+            _fadePage(state, const ProfileScreen()),
       ),
       GoRoute(
         path: '/assistant',

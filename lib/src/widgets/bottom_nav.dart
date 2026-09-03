@@ -19,16 +19,14 @@ class BudgetBottomNav extends StatelessWidget {
     required this.onAddTap,
     required this.onManagementTap,
     required this.onChatTap,
-    this.managementActive = false,
   });
 
-  /// Shell tab index: 0 home, 1 reports.
+  /// Shell tab index: 0 home, 1 reports, 2 management.
   final int currentIndex;
   final ValueChanged<int> onTap;
   final VoidCallback onAddTap;
   final VoidCallback onManagementTap;
   final VoidCallback onChatTap;
-  final bool managementActive;
 
   @override
   Widget build(BuildContext context) {
@@ -42,12 +40,12 @@ class BudgetBottomNav extends StatelessWidget {
           children: [
             _NavItem(
               icon: LucideIcons.house,
-              active: currentIndex == 0 && !managementActive,
+              active: currentIndex == 0,
               onTap: () => onTap(0),
             ),
             _NavItem(
               icon: LucideIcons.pieChart,
-              active: currentIndex == 1 && !managementActive,
+              active: currentIndex == 1,
               onTap: () => onTap(1),
             ),
             _Fab(
@@ -58,7 +56,7 @@ class BudgetBottomNav extends StatelessWidget {
             ),
             _NavItem(
               icon: LucideIcons.layoutGrid,
-              active: managementActive,
+              active: currentIndex == 2,
               onTap: onManagementTap,
             ),
             _AiNavItem(onTap: onChatTap),
@@ -85,19 +83,26 @@ class _NavItem extends StatelessWidget {
     final idle = context.isDark
         ? Colors.white.withValues(alpha: 0.55)
         : AppColors.ink.withValues(alpha: 0.42);
+    // Lime is reserved for the + FAB — selected tabs use high-contrast fill.
+    final activeBg = context.isDark ? Colors.white : AppColors.ink;
+    final activeFg = context.isDark ? AppColors.ink : Colors.white;
     return Pressable(
       onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: active ? AppColors.lime : Colors.transparent,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          icon,
-          size: 21,
-          color: active ? AppColors.ink : idle,
+      child: Semantics(
+        button: true,
+        selected: active,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: active ? activeBg : Colors.transparent,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: 21,
+            color: active ? activeFg : idle,
+          ),
         ),
       ),
     );
@@ -117,7 +122,7 @@ class _AiNavItem extends ConsumerWidget {
     return Pressable(
       onTap: onTap,
       child: AiAssistantMark(
-        size: 40,
+        size: 44,
         iconSize: 18,
         needsUpgrade: needsUpgrade,
       ),
