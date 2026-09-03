@@ -180,29 +180,41 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
       children: [
         _Label(tr.transferFrom),
         _AccountRow(account: _from, onTap: () => _pickAccount(from: true)),
-        // Bridge between from/to — always dead-center of the form width.
-        SizedBox(
-          height: 44,
-          width: double.infinity,
-          child: Center(
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: context.emphasized,
-                shape: BoxShape.circle,
-                border: Border.all(color: context.scaffoldBg, width: 3),
-              ),
-              child: const Icon(
-                LucideIcons.arrowDown,
-                size: 16,
-                color: AppColors.lime,
+        const SizedBox(height: 6),
+        _Label(tr.transferTo),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _AccountRow(
+                    account: _to, onTap: () => _pickAccount(from: false)),
+              ],
+            ),
+            Positioned(
+              top: -24,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: context.emphasized,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: context.scaffoldBg, width: 3),
+                  ),
+                  child: const Icon(
+                    LucideIcons.arrowDown,
+                    size: 16,
+                    color: AppColors.lime,
+                  ),
+                ),
               ),
             ),
-          ),
+          ],
         ),
-        _Label(tr.transferTo),
-        _AccountRow(account: _to, onTap: () => _pickAccount(from: false)),
         const SizedBox(height: 20),
         Center(
           child: Text(tr.transferSending,

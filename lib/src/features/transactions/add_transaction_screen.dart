@@ -691,7 +691,8 @@ class _TypeTabs extends StatelessWidget {
           children: [
             for (final i in [a, b])
               Expanded(
-                child: Pressable(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () {
                     switch (i) {
                       case 0:
