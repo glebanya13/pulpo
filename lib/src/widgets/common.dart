@@ -287,8 +287,7 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
     final topInset =
         (_headerHeight > 0 ? _headerHeight : estimatedHeader) + widget.headerGap;
 
-    // Solid backdrop under the sticky header so scrolled content never shows
-    // through as a grey/black "hole" above the title pill.
+    // Header floats above scroll content; only the pill/card keeps a surface fill.
     final content = Stack(
       clipBehavior: Clip.none,
       children: [
@@ -315,19 +314,16 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
           top: 0,
           left: 0,
           right: 0,
-          child: ColoredBox(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            child: KeyedSubtree(
-              key: _headerKey,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  pad.left,
-                  pad.top,
-                  pad.right,
-                  widget.headerBottomPadding,
-                ),
-                child: widget.header,
+          child: KeyedSubtree(
+            key: _headerKey,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                pad.left,
+                pad.top,
+                pad.right,
+                widget.headerBottomPadding,
               ),
+              child: widget.header,
             ),
           ),
         ),

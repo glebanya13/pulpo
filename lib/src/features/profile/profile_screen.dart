@@ -251,21 +251,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             top: 0,
             left: 0,
             right: 0,
-            child: ColoredBox(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(side, top, side, 12),
-                child: KeyedSubtree(
-                  key: _headerKey,
-                  child: _ProfileStickyHeader(
-                    onBack: () => context.pop(),
-                    userName: settings.userName,
-                    subtitle: authUser?.email ??
-                        '${tr.accountsCount(accounts.length)} · $currency',
-                    localAvatarPath: settings.profileAvatarPath,
-                    photoUrl: authUser?.photoURL,
-                    onEditTap: () => openNameSheet(context, ref, tr),
-                  ),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(side, top, side, 12),
+              child: KeyedSubtree(
+                key: _headerKey,
+                child: _ProfileStickyHeader(
+                  onBack: () => context.pop(),
+                  userName: settings.userName,
+                  subtitle: authUser?.email ??
+                      '${tr.accountsCount(accounts.length)} · $currency',
+                  localAvatarPath: settings.profileAvatarPath,
+                  photoUrl: authUser?.photoURL,
+                  onEditTap: () => openNameSheet(context, ref, tr),
                 ),
               ),
             ),

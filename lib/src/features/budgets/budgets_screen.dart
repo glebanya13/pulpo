@@ -414,37 +414,34 @@ Future<void> _openBudgetEditor(
                   onChanged: (v) => setSt(() => period = v ?? 1),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  Tr.of(ctx).budgetCategories,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: context.mutedText,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    FilterChip(
-                      label: Text(Tr.of(ctx).budgetCategoriesAll),
-                      selected: selectedCats.isEmpty,
-                      onSelected: (_) => setSt(() => selectedCats.clear()),
-                    ),
-                    for (final c in expenseCats)
-                      FilterChip(
-                        label: Text(Tr.of(ctx).categoryName(c.name)),
-                        selected: selectedCats.contains(c.id),
-                        onSelected: (on) => setSt(() {
-                          if (on) {
-                            selectedCats.add(c.id);
-                          } else {
-                            selectedCats.remove(c.id);
-                          }
-                        }),
+                Pressable(
+                  onTap: () async {
+                    final picked = await _pickBudgetCategories(
+                      ctx,
+                      selected: selectedCats,
+                      expenseCats: expenseCats,
+                    );
+                    if (picked != null) setSt(() => selectedCats = picked);
+                  },
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: Tr.of(ctx).budgetCategories,
+                      suffixIcon: Icon(
+                        LucideIcons.chevronDown,
+                        size: 18,
+                        color: context.faintText,
                       ),
-                  ],
+                    ),
+                    child: Text(
+                      _budgetCategoryLabel(ctx, selectedCats, expenseCats),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: context.primaryText,
+                      ),
+                    ),
+                  ),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
@@ -528,5 +525,158 @@ Future<void> _openBudgetEditor(
       },
     ),
   );
+}
 
+String _budgetCategoryLabel(
+  BuildContext context,
+  Set<int> selected,
+  List<db.Category> cats,
+) {
+  final tr = Tr.of(context);
+  if (selected.isEmpty) return tr.budgetCategoriesAll;
+  final names = [
+    for (final c in cats)
+      if (selected.contains(c.id)) tr.categoryName(c.name),
+  ];
+  return names.join(', ');
+}
+
+Future<Set<int>?> _pickBudgetCategories(
+  BuildContext context, {
+  required Set<int> selected,
+  required List<db.Category> expenseCats,
+}) {
+  var local = Set<int>.from(selected);
+  final tr = Tr.of(context);
+
+  return showAppBottomSheet<Set<int>>(
+    context: context,
+    backgroundColor: Theme.of(context).cardColor,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (ctx) {
+      final bottomInset = MediaQuery.viewPaddingOf(ctx).bottom;
+      final maxH = MediaQuery.sizeOf(ctx).height * 0.72;
+
+      return StatefulBuilder(
+        builder: (ctx, setSt) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: bottomInset),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxH),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: ctx.handleBar,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          tr.budgetCategories,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: ctx.primaryText,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                      itemCount: expenseCats.length + 1,
+                      separatorBuilder: (context, index) => Divider(
+                        height: 1,
+                        color: ctx.divider,
+                      ),
+                      itemBuilder: (_, i) {
+                        if (i == 0) {
+                          final all = local.isEmpty;
+                          return Pressable(
+                            onTap: () => setSt(() => local.clear()),
+                            scale: 0.98,
+                            child: ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                tr.budgetCategoriesAll,
+                                style: TextStyle(
+                                  fontWeight:
+                                      all ? FontWeight.w700 : FontWeight.w500,
+                                  color: ctx.primaryText,
+                                ),
+                              ),
+                              trailing: all
+                                  ? Icon(
+                                      LucideIcons.check,
+                                      color: ctx.accent,
+                                      size: 20,
+                                    )
+                                  : null,
+                            ),
+                          );
+                        }
+                        final c = expenseCats[i - 1];
+                        final on = local.contains(c.id);
+                        return Pressable(
+                          onTap: () => setSt(() {
+                            if (on) {
+                              local.remove(c.id);
+                            } else {
+                              local.add(c.id);
+                            }
+                          }),
+                          scale: 0.98,
+                          child: ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              tr.categoryName(c.name),
+                              style: TextStyle(
+                                fontWeight:
+                                    on ? FontWeight.w700 : FontWeight.w500,
+                                color: ctx.primaryText,
+                              ),
+                            ),
+                            trailing: on
+                                ? Icon(
+                                    LucideIcons.check,
+                                    color: ctx.accent,
+                                    size: 20,
+                                  )
+                                : null,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                    child: ScaledElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, local),
+                      child: Text(tr.done),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
 }
