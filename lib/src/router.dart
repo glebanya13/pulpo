@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import 'features/categories/categories_screen.dart';
 import 'features/dashboard/dashboard_screen.dart';
 import 'features/debts/debts_screen.dart';
 import 'features/goals/goals_screen.dart';
+import 'features/management/management_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/onboarding/onboarding_setup_screen.dart';
 import 'features/assistant/assistant_chat_screen.dart';
@@ -103,8 +105,20 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: '/profile',
+                redirect: (context, state) {
+                  // Guest / demo: open sign-in instead of an empty profile.
+                  if (FirebaseAuth.instance.currentUser == null) {
+                    return '/settings/account';
+                  }
+                  return null;
+                },
                 pageBuilder: (context, state) =>
                     _fadePage(state, const ProfileScreen()),
+              ),
+              GoRoute(
+                path: '/management',
+                pageBuilder: (context, state) =>
+                    _fadePage(state, const ManagementScreen()),
               ),
             ],
           ),

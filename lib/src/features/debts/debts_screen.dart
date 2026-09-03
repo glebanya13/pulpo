@@ -476,41 +476,38 @@ class _DebtCard extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Container(
-                height: 6,
-                decoration: BoxDecoration(
-                  color: context.progressTrack,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: progress.toDouble(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color:
-                          isIOwe ? AppColors.danger : AppColors.lime,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
+              const SizedBox(height: 14),
+              AppProgressBar(
+                value: progress.toDouble(),
+                height: 8,
+                color: isIOwe ? AppColors.danger : AppColors.lime,
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    tr.paidOfTemplate
-                        .replaceFirst(
-                            '{p}', formatMoney(debt.paidAmount, debt.currency))
-                        .replaceFirst(
-                            '{t}', formatMoney(debt.amount, debt.currency)),
-                    style: TextStyle(
-                        fontSize: 11, color: context.faintText),
-                  ),
-                  Text('${(progress * 100).round()}%',
+                  Expanded(
+                    child: Text(
+                      tr.paidOfTemplate
+                          .replaceFirst(
+                              '{p}',
+                              formatMoney(
+                                  debt.paidAmount, debt.currency))
+                          .replaceFirst(
+                              '{t}',
+                              formatMoney(debt.amount, debt.currency)),
                       style: TextStyle(
-                          fontSize: 11, color: context.faintText)),
+                          fontSize: 12, color: context.faintText),
+                    ),
+                  ),
+                  Text(
+                    '${(progress * 100).round()}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: context.mutedText,
+                    ),
+                  ),
                 ],
               ),
             ],

@@ -75,16 +75,18 @@ class BudgetsScreen extends ConsumerWidget {
             ),
         headerGap: 16,
         children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 54),
-              child: Text(
-                DateFormat('LLLL yyyy',
-                        Localizations.localeOf(context).languageCode)
-                    .format(now),
-                style: TextStyle(color: context.mutedText),
+            Text(
+              DateFormat('LLLL yyyy',
+                      Localizations.localeOf(context).languageCode)
+                  .format(now),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+                color: context.mutedText,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             AsyncValuesGate(
               values: [budgetsAsync, txsAsync],
               onRetry: retryLoad,
@@ -212,24 +214,11 @@ class _Summary extends StatelessWidget {
             style: const TextStyle(color: Colors.white54, fontSize: 14),
           ),
           const SizedBox(height: 16),
-          Container(
-            height: 8,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: progress,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.lime, AppColors.limeDark],
-                  ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
+          AppProgressBar(
+            value: progress,
+            height: 10,
+            trackColor: Colors.white.withValues(alpha: 0.12),
+            color: AppColors.lime,
           ),
           const SizedBox(height: 14),
           Row(
@@ -237,11 +226,11 @@ class _Summary extends StatelessWidget {
             children: [
               Text(
                 Tr.of(context).percentUsed((progress * 100).round()),
-                style: const TextStyle(color: Colors.white70, fontSize: 11),
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
               Text(
                 '${formatMoney(leftAmount, currency)} · ${Tr.of(context).daysLeftLabel(daysLeft)}',
-                style: const TextStyle(color: Colors.white70, fontSize: 11),
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
             ],
           ),
@@ -273,62 +262,72 @@ class _BudgetItem extends ConsumerWidget {
         ? AppColors.danger
         : (progress > 0.7 ? AppColors.warning : AppColors.lime);
 
-    return Pressable(
-      onTap: () => _openBudgetEditor(context, ref, existing: budget),
-      child: Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          Row(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Pressable(
+        onTap: () => _openBudgetEditor(context, ref, existing: budget),
+        child: SoftCard(
+          padding: const EdgeInsets.all(16),
+          radius: 20,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ColorWellIcon(
-                color: Color(budget.color),
-                icon: LucideIcons.pieChart,
-                size: 36,
-                iconSize: 16,
-                radius: 12,
+              Row(
+                children: [
+                  ColorWellIcon(
+                    color: Color(budget.color),
+                    icon: LucideIcons.pieChart,
+                    size: 42,
+                    iconSize: 18,
+                    radius: 14,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          budget.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: context.primaryText,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${formatMoney(spent, budget.currency)} / ${formatMoney(limit, budget.currency)}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: context.mutedText,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '${(progress * 100).round()}%',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                      color: barColor,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  budget.name,
-                  style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: context.primaryText),
-                ),
-              ),
-              Text(
-                '${formatMoney(spent, budget.currency)} / ${formatMoney(limit, budget.currency)}',
-                style: TextStyle(
-                    fontSize: 12, color: context.faintText),
+              const SizedBox(height: 14),
+              AppProgressBar(
+                value: progress.toDouble(),
+                height: 8,
+                color: barColor,
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Container(
-            height: 6,
-            decoration: BoxDecoration(
-              color: context.progressTrack,
-              borderRadius: BorderRadius.circular(3),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: progress.toDouble(),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: barColor,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
       ),
     );
   }

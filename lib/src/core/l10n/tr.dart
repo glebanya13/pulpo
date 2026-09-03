@@ -120,6 +120,7 @@ class Tr {
   String get authTooMany => _get('auth_too_many');
   String get authCanceled => _get('auth_canceled');
   String get authEmailInUse => _get('auth_email_in_use');
+  String get authNetworkError => _get('auth_network_error');
   String get cloudBackupOk => _get('cloud_backup_ok');
   String get cloudRestoreOk => _get('cloud_restore_ok');
   String get cloudEmpty => _get('cloud_empty');
@@ -1382,6 +1383,8 @@ class Tr {
       'auth_too_many': 'Demasiados intentos. Prueba más tarde',
       'auth_canceled': 'Inicio de sesión cancelado',
       'auth_email_in_use': 'Este email ya tiene cuenta. Inicia sesión.',
+      'auth_network_error':
+          'Sin conexión con el servidor. Comprueba la red del Mac o reinicia el simulador.',
       'cloud_backup_ok': 'Copia subida a la nube',
       'cloud_restore_ok': 'Datos restaurados desde la nube',
       'cloud_empty': 'Aún no hay copia en la nube',
@@ -2090,6 +2093,8 @@ class Tr {
       'auth_too_many': 'Слишком много попыток. Позже',
       'auth_canceled': 'Вход отменён',
       'auth_email_in_use': 'Этот email уже зарегистрирован. Войдите.',
+      'auth_network_error':
+          'Нет связи с сервером. Проверь интернет на Mac или перезапусти симулятор.',
       'cloud_backup_ok': 'Копия загружена в облако',
       'cloud_restore_ok': 'Данные восстановлены из облака',
       'cloud_empty': 'В облаке пока нет копии',
@@ -2797,6 +2802,8 @@ class Tr {
       'auth_too_many': 'Too many attempts. Try later',
       'auth_canceled': 'Sign-in cancelled',
       'auth_email_in_use': 'This email already has an account. Sign in.',
+      'auth_network_error':
+          'Cannot reach the server. Check Mac network or restart the simulator.',
       'cloud_backup_ok': 'Backup uploaded to the cloud',
       'cloud_restore_ok': 'Data restored from the cloud',
       'cloud_empty': 'No cloud backup yet',
@@ -3466,6 +3473,8 @@ class Tr {
       'auth_too_many': 'Забагато спроб. Пізніше',
       'auth_canceled': 'Вхід скасовано',
       'auth_email_in_use': 'Ця електронна адреса вже зареєстрована. Увійдіть.',
+      'auth_network_error':
+          'Немає звʼязку із сервером. Перевір інтернет на Mac або перезапусти симулятор.',
       'cloud_backup_ok': 'Копію завантажено до хмари',
       'cloud_restore_ok': 'Дані відновлено з хмари',
       'cloud_empty': 'Ще немає копії в хмарі',

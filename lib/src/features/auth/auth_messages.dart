@@ -26,6 +26,8 @@ String authErrorMessage(Tr tr, Object error) {
         return tr.authCanceled;
       case 'email-already-in-use':
         return tr.authEmailInUse;
+      case 'network-request-failed':
+        return tr.authNetworkError;
       default:
         return error.message ?? tr.authFailed;
     }

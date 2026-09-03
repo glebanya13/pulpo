@@ -220,7 +220,6 @@ class StickyScrollPage extends StatefulWidget {
     this.headerBottomPadding = 0,
     this.useSafeArea = true,
     this.physics,
-    this.fillViewport = false,
   });
 
   final Widget header;
@@ -233,8 +232,6 @@ class StickyScrollPage extends StatefulWidget {
   final double headerBottomPadding;
   final bool useSafeArea;
   final ScrollPhysics? physics;
-  /// Fills the tab viewport so [Expanded] children can grow (floating bottom nav).
-  final bool fillViewport;
 
   @override
   State<StickyScrollPage> createState() => _StickyScrollPageState();
@@ -267,45 +264,11 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Floating sticky header: no solid scaffold plate behind the "cloud"
-    // (dark theme previously showed a black rectangle under rounded cards).
     final topInset =
         (_headerHeight > 0 ? _headerHeight : 72) + widget.headerGap;
 
-    final scrollSlivers = widget.fillViewport
-        ? <Widget>[
-            SliverPadding(
-              padding: EdgeInsets.fromLTRB(
-                widget.padding.left,
-                topInset,
-                widget.padding.right,
-                0,
-              ),
-              sliver: SliverFillRemaining(
-                hasScrollBody: false,
-                child: SizedBox.expand(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: widget.children,
-                  ),
-                ),
-              ),
-            ),
-          ]
-        : <Widget>[
-            SliverPadding(
-              padding: EdgeInsets.fromLTRB(
-                widget.padding.left,
-                topInset,
-                widget.padding.right,
-                widget.padding.bottom,
-              ),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate(widget.children),
-              ),
-            ),
-          ];
-
+    // Solid backdrop under the sticky header so scrolled content never shows
+    // through as a grey/black "hole" above the title pill.
     final content = Stack(
       clipBehavior: Clip.none,
       children: [
@@ -313,23 +276,38 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
           child: CustomScrollView(
             controller: widget.controller,
             physics: widget.physics,
-            slivers: scrollSlivers,
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  widget.padding.left,
+                  topInset,
+                  widget.padding.right,
+                  widget.padding.bottom,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate(widget.children),
+                ),
+              ),
+            ],
           ),
         ),
         Positioned(
           top: 0,
           left: 0,
           right: 0,
-          child: KeyedSubtree(
-            key: _headerKey,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                widget.padding.left,
-                widget.padding.top,
-                widget.padding.right,
-                widget.headerBottomPadding,
+          child: ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: KeyedSubtree(
+              key: _headerKey,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  widget.padding.left,
+                  widget.padding.top,
+                  widget.padding.right,
+                  widget.headerBottomPadding,
+                ),
+                child: widget.header,
               ),
-              child: widget.header,
             ),
           ),
         ),
@@ -1043,6 +1021,38 @@ class BudgetBadge extends StatelessWidget {
 }
 
 enum BadgeTone { lime, red, green, orange, gray }
+
+/// Full-width progress track + fill. Prefer this over a bare
+/// [FractionallySizedBox] inside a [Container] (that shrinks to the fill).
+class AppProgressBar extends StatelessWidget {
+  const AppProgressBar({
+    super.key,
+    required this.value,
+    required this.color,
+    this.trackColor,
+    this.height = 8,
+  });
+
+  /// 0..1
+  final double value;
+  final Color color;
+  final Color? trackColor;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final v = value.clamp(0.0, 1.0);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(height / 2),
+      child: LinearProgressIndicator(
+        value: v,
+        minHeight: height,
+        backgroundColor: trackColor ?? context.progressTrack,
+        color: color,
+      ),
+    );
+  }
+}
 
 /// Скругленная карточка контента.
 class SoftCard extends StatelessWidget {

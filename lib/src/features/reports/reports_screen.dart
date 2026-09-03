@@ -103,17 +103,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         ? '${DateFormat('d MMM', Localizations.localeOf(context).languageCode).format(range.start)} – ${DateFormat('d MMM', Localizations.localeOf(context).languageCode).format(range.end.subtract(const Duration(days: 1)))}'
         : null;
 
+    final pad = AppSpacing.tabPagePadding(context);
+
     return ResetScrollWhenObscured(
       tabPath: '/reports',
       onBecameVisible: _resetToInitial,
       builder: (context, scroll) {
-        final pad = AppSpacing.tabPagePadding(context).copyWith(bottom: 0);
         return StickyScrollPage(
           useSafeArea: false,
           controller: scroll,
           padding: pad,
           headerGap: 16,
-          fillViewport: true,
           header: ScreenTitlePill(
             title: tr.analytics,
             subtitle: tr.analyticsSubtitle,
@@ -122,80 +122,65 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             trailing: const HeaderSupportActions(dense: true),
           ),
           children: [
-        _PeriodDropdownButton(
-          label: customRangeLabel ?? periodName,
-          onTap: () => _openPeriodPicker(
-            context: context,
-            ref: ref,
-            tr: tr,
-            current: range.kind,
-            isPro: isPro,
-            periodLabel: periodLabel,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _ReportsSegmentedTabs(
-          labels: tabs,
-          index: _tab,
-          locked: isPro ? const {} : const {1, 2},
-          onSelect: (i) async {
-            if ((i == 1 || i == 2) && !isPro) {
-              await openPaywall(
-                context,
-                i == 1 ? ProGate.trends : ProGate.flows,
-              );
-              return;
-            }
-            setState(() => _tab = i);
-          },
-        ),
-        const SizedBox(height: 20),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: ColoredBox(
-              color: context.surface,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final bottomInset =
-                      AppSpacing.tabScrollBottomInset(context);
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                    child: ConstrainedBox(
-                      constraints:
-                          BoxConstraints(minHeight: constraints.maxHeight),
-                      child: AsyncValuesGate(
-                        values: [txsAsync, catsAsync],
-                        onRetry: retryLoad,
-                        child: Builder(
-                          builder: (context) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                ..._buildTabContent(
-                                  txs: txsAsync.requireValue,
-                                  cats: catsAsync.requireValue,
-                                  now: now,
-                                  rangeStart: range.start,
-                                  rangeEnd: range.end,
-                                  monthCount: monthCount,
-                                  currency: currency,
-                                  periodName: periodName,
-                                  periodKind: range.kind,
-                                ),
-                                SizedBox(height: bottomInset),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
+            _PeriodDropdownButton(
+              label: customRangeLabel ?? periodName,
+              onTap: () => _openPeriodPicker(
+                context: context,
+                ref: ref,
+                tr: tr,
+                current: range.kind,
+                isPro: isPro,
+                periodLabel: periodLabel,
               ),
             ),
-          ),
-        ),
+            const SizedBox(height: 12),
+            _ReportsSegmentedTabs(
+              labels: tabs,
+              index: _tab,
+              locked: isPro ? const {} : const {1, 2},
+              onSelect: (i) async {
+                if ((i == 1 || i == 2) && !isPro) {
+                  await openPaywall(
+                    context,
+                    i == 1 ? ProGate.trends : ProGate.flows,
+                  );
+                  return;
+                }
+                setState(() => _tab = i);
+              },
+            ),
+            const SizedBox(height: 16),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: context.surface,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                child: AsyncValuesGate(
+                  values: [txsAsync, catsAsync],
+                  onRetry: retryLoad,
+                  child: Builder(
+                    builder: (context) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: _buildTabContent(
+                          txs: txsAsync.requireValue,
+                          cats: catsAsync.requireValue,
+                          now: now,
+                          rangeStart: range.start,
+                          rangeEnd: range.end,
+                          monthCount: monthCount,
+                          currency: currency,
+                          periodName: periodName,
+                          periodKind: range.kind,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
           ],
         );
       },

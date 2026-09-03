@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import '../core/pro/pro_guard.dart';
 import '../widgets/bottom_nav.dart';
-import '../widgets/management_menu.dart';
 import '../widgets/quick_actions_sheet.dart';
 
 bool get _useFloatingNav {
@@ -32,6 +31,9 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final path = GoRouterState.of(context).uri.path;
+    final managementActive = path == '/management';
+
     return Scaffold(
       extendBody: _useFloatingNav,
       body: LayoutBuilder(
@@ -48,6 +50,7 @@ class AppShell extends ConsumerWidget {
       ),
       bottomNavigationBar: BudgetBottomNav(
         currentIndex: navigationShell.currentIndex,
+        managementActive: managementActive,
         onTap: (i) => navigationShell.goBranch(
           i,
           // Customer wants no state "remembering" between pages:
@@ -55,7 +58,10 @@ class AppShell extends ConsumerWidget {
           initialLocation: true,
         ),
         onAddTap: () => showQuickActionsSheet(context),
-        onManagementTap: () => showManagementMenu(context, ref),
+        onManagementTap: () {
+          if (managementActive) return;
+          context.push('/management');
+        },
         onChatTap: () => _openAssistant(context, ref),
       ),
     );

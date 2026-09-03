@@ -79,6 +79,9 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
       SnackBar(
         content: Text(tr.txDeleted),
         duration: const Duration(seconds: 5),
+        // Flutter 3.37+: SnackBars with an action persist until tapped unless
+        // persist is false (otherwise the undo toast never auto-dismisses).
+        persist: false,
         action: SnackBarAction(
           label: tr.undo,
           onPressed: () async {
@@ -126,11 +129,10 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
 
-    return SizedBox.expand(
-      child: AsyncValueView(
-        value: allTxsAsync,
-        onRetry: () => ref.invalidate(allTransactionsProvider),
-        data: (allTxs) {
+    return AsyncValueView(
+      value: allTxsAsync,
+      onRetry: () => ref.invalidate(allTransactionsProvider),
+      data: (allTxs) {
         final monthTxs = applyTransactionFilters(
           txs: allTxs
               .where(
@@ -173,98 +175,81 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
         final leading = firstWeekday - 1;
         final daysInMonth = DateTime(_month.year, _month.month + 1, 0).day;
 
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
+        return DecoratedBox(
           decoration: BoxDecoration(
             color: context.surface,
             borderRadius: BorderRadius.circular(18),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _Header(
-                month: _month,
-                onShift: _shiftMonth,
-                onTitleTap: () => _openDatePicker(context),
-                calendarView: _viewIndex == 1,
-                onToggleCalendar: () => setState(
-                  () => _viewIndex = _viewIndex == 0 ? 1 : 0,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _Header(
+                  month: _month,
+                  onShift: _shiftMonth,
+                  onTitleTap: () => _openDatePicker(context),
+                  calendarView: _viewIndex == 1,
+                  onToggleCalendar: () => setState(
+                    () => _viewIndex = _viewIndex == 0 ? 1 : 0,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              _MonthTotals(
-                income: income,
-                expense: expense,
-                net: net,
-                currency: currency,
-              ),
-              if (_viewIndex == 0) ...[
                 const SizedBox(height: 6),
-                TransactionFiltersBar(
-                  searchController: _searchCtrl,
-                  query: _query,
-                  filterType: _filterType,
-                  accountId: _accountId,
-                  categoryId: _categoryId,
-                  accounts: accounts,
-                  categories: cats,
-                  onQueryChanged: (v) => setState(() => _query = v),
-                  onFilterTypeChanged: (t) => setState(() => _filterType = t),
-                  onAccountChanged: (id) => setState(() => _accountId = id),
-                  onCategoryChanged: (id) => setState(() => _categoryId = id),
+                _MonthTotals(
+                  income: income,
+                  expense: expense,
+                  net: net,
+                  currency: currency,
                 ),
+                if (_viewIndex == 0) ...[
+                  const SizedBox(height: 6),
+                  TransactionFiltersBar(
+                    searchController: _searchCtrl,
+                    query: _query,
+                    filterType: _filterType,
+                    accountId: _accountId,
+                    categoryId: _categoryId,
+                    accounts: accounts,
+                    categories: cats,
+                    onQueryChanged: (v) => setState(() => _query = v),
+                    onFilterTypeChanged: (t) =>
+                        setState(() => _filterType = t),
+                    onAccountChanged: (id) =>
+                        setState(() => _accountId = id),
+                    onCategoryChanged: (id) =>
+                        setState(() => _categoryId = id),
+                  ),
+                ],
+                SizedBox(height: _viewIndex == 0 ? 6 : 10),
+                if (_viewIndex == 0)
+                  _DailyMonthList(
+                    month: _month,
+                    txs: monthTxs,
+                    currency: currency,
+                    hasFilters: _hasActiveFilters,
+                    monthHasTxs: monthTxsUnfiltered.isNotEmpty,
+                    onClearFilters: _clearFilters,
+                    onTapDay: (day) =>
+                        _openDaySheet(context, day, monthTxs),
+                    onTapTx: (tx) => context.push('/tx/${tx.id}'),
+                    onDeleteTx: _deleteWithUndo,
+                  )
+                else
+                  _MonthTable(
+                    month: _month,
+                    leading: leading,
+                    daysInMonth: daysInMonth,
+                    byDay: byDay,
+                    currency: currency,
+                    onTapDay: (day) =>
+                        _openDaySheet(context, day, monthTxs),
+                  ),
               ],
-              SizedBox(height: _viewIndex == 0 ? 6 : 10),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final bottomInset =
-                        AppSpacing.tabScrollBottomInset(context);
-                    return SingleChildScrollView(
-                      child: ConstrainedBox(
-                        constraints:
-                            BoxConstraints(minHeight: constraints.maxHeight),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (_viewIndex == 0)
-                              _DailyMonthList(
-                                month: _month,
-                                txs: monthTxs,
-                                currency: currency,
-                                hasFilters: _hasActiveFilters,
-                                monthHasTxs: monthTxsUnfiltered.isNotEmpty,
-                                onClearFilters: _clearFilters,
-                                onTapDay: (day) =>
-                                    _openDaySheet(context, day, monthTxs),
-                                onTapTx: (tx) => context.push('/tx/${tx.id}'),
-                                onDeleteTx: _deleteWithUndo,
-                              )
-                            else
-                              _MonthTable(
-                                month: _month,
-                                leading: leading,
-                                daysInMonth: daysInMonth,
-                                byDay: byDay,
-                                currency: currency,
-                                onTapDay: (day) =>
-                                    _openDaySheet(context, day, monthTxs),
-                              ),
-                            SizedBox(height: bottomInset),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
-      ),
     );
   }
 

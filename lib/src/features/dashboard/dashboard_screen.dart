@@ -33,17 +33,17 @@ class DashboardScreen extends ConsumerWidget {
       ref.invalidate(allTransactionsProvider);
     }
 
+    final pad = AppSpacing.tabPagePadding(context);
+
     return ResetScrollWhenObscured(
       tabPath: '/',
       builder: (context, scroll) {
-        final pad = AppSpacing.tabPagePadding(context).copyWith(bottom: 0);
         return StickyScrollPage(
           useSafeArea: false,
           controller: scroll,
           padding: pad,
           headerGap: 0,
           headerBottomPadding: 10,
-          fillViewport: true,
           header: ScreenTitlePill(
             title: settings.userName,
             eyebrow: tr.greetingForHour(DateTime.now().hour),
@@ -62,7 +62,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const Expanded(child: MonthlyCalendar()),
+            const MonthlyCalendar(),
           ],
         );
       },
