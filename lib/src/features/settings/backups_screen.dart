@@ -486,10 +486,10 @@ class _BackupRow extends StatelessWidget {
           ),
           Pressable(
             onTap: () => Share.shareXFiles([XFile(file.path)]),
-            child: const Padding(
-              padding: EdgeInsets.all(8),
+            child: Padding(
+              padding: const EdgeInsets.all(8),
               child: Icon(LucideIcons.share,
-                  size: 16, color: AppColors.limeAccent),
+                  size: 16, color: context.accent),
             ),
           ),
           Pressable(

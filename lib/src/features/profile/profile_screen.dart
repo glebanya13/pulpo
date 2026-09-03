@@ -129,12 +129,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             onTap: () => context.push('/settings/security'),
                           ),
                           _MenuRow(
-                            icon: LucideIcons.layers,
-                            iconBg: const Color(0xFFD4F5E0),
-                            label: tr.categories,
-                            onTap: () => context.push('/categories'),
-                          ),
-                          _MenuRow(
                             icon: LucideIcons.dollarSign,
                             iconBg: AppColors.bgFood,
                             label: tr.baseCurrency,
@@ -594,7 +588,6 @@ class _MenuRow extends StatelessWidget {
     required this.icon,
     required this.iconBg,
     required this.label,
-    this.subtitle,
     this.trailing,
     this.onTap,
     this.danger = false,
@@ -604,7 +597,6 @@ class _MenuRow extends StatelessWidget {
   final IconData icon;
   final Color iconBg;
   final String label;
-  final String? subtitle;
   final String? trailing;
   final VoidCallback? onTap;
   final bool danger;
@@ -656,16 +648,6 @@ class _MenuRow extends StatelessWidget {
                       color: labelColor,
                     ),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.faintText,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),

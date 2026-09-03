@@ -109,9 +109,7 @@ class TransactionTile extends ConsumerWidget {
               fontSize: embedded ? 14 : 15,
               fontWeight: FontWeight.w700,
               color: isIncome
-                  ? (context.isDark
-                      ? AppColors.lime
-                      : AppColors.limeAccent)
+                  ? context.accent
                   : type == TxType.expense
                       ? AppColors.danger
                       : context.primaryText,

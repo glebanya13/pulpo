@@ -21,6 +21,7 @@ import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
+import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_badge.dart';
 
@@ -120,34 +121,14 @@ class AccountsScreen extends ConsumerWidget {
 
     await showAppBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      transparent: true,
       builder: (context) {
         return StatefulBuilder(builder: (context, setState) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              left: 20,
-              right: 20,
-              top: 20,
-            ),
+          return KeyboardFormSheet(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: context.handleBar,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
                 Text(
                   Tr.of(context).newAccount,
                   style: const TextStyle(
@@ -168,6 +149,8 @@ class AccountsScreen extends ConsumerWidget {
                         controller: balanceCtrl,
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
                         decoration: InputDecoration(
                           labelText: Tr.of(context).initialBalance,
                           hintText: '0',

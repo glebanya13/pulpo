@@ -138,15 +138,18 @@ class ScreenTitlePill extends StatelessWidget {
     final child = Container(
       width: expand ? double.infinity : null,
       padding: EdgeInsets.fromLTRB(
-        16,
-        large ? 12 : 10,
-        trailing != null ? 10 : 16,
-        large ? 12 : 10,
+        large ? 0 : 16,
+        large ? 4 : 10,
+        trailing != null ? (large ? 0 : 10) : (large ? 0 : 16),
+        large ? 4 : 10,
       ),
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.circular(large ? 18 : 999),
-      ),
+      // Large tab titles sit on the page scaffold — no second "card" fill.
+      decoration: large
+          ? null
+          : BoxDecoration(
+              color: context.surface,
+              borderRadius: BorderRadius.circular(999),
+            ),
       child: trailing == null
           ? textBlock
           : Row(
@@ -521,9 +524,7 @@ class PageHeader extends StatelessWidget {
               TextSpan(
                 text: second,
                 style: titleStyle.copyWith(
-                  color: context.isDark
-                      ? AppColors.lime
-                      : AppColors.limeAccent,
+                  color: context.accent,
                 ),
               ),
           ],
@@ -674,9 +675,7 @@ class SectTitle extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: context.isDark
-                      ? AppColors.lime
-                      : AppColors.limeAccent,
+                  color: context.accent,
                 ),
               ),
             ),
@@ -706,7 +705,11 @@ class TabsPill extends StatelessWidget {
     final weights = <int>[
       for (final t in tabs) t.trim().length.clamp(4, 18),
     ];
-    final total = weights.fold<int>(0, (a, b) => a + b);
+    final selectedBg = limeActive
+        ? AppColors.lime
+        : (context.isDark ? Colors.white : AppColors.ink);
+    final selectedFg =
+        limeActive || context.isDark ? AppColors.ink : Colors.white;
 
     return Container(
       padding: const EdgeInsets.all(3),
@@ -714,72 +717,40 @@ class TabsPill extends StatelessWidget {
         color: context.surface,
         borderRadius: BorderRadius.circular(100),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final inner = constraints.maxWidth;
-          var left = 0.0;
-          for (var i = 0; i < index; i++) {
-            left += inner * (weights[i] / total);
-          }
-          final segW = inner * (weights[index] / total);
-          return Stack(
-            children: [
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                left: left,
-                width: segW,
-                top: 0,
-                bottom: 0,
-                child: DecoratedBox(
+      child: Row(
+        children: [
+          for (var i = 0; i < tabs.length; i++)
+            Expanded(
+              flex: weights[i],
+              child: Pressable(
+                onTap: () => onChanged(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: limeActive
-                        ? AppColors.lime
-                        : (context.isDark ? Colors.white : AppColors.ink),
+                    color: index == i ? selectedBg : Colors.transparent,
                     borderRadius: BorderRadius.circular(100),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    tabs[i],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: index == i ? selectedFg : context.mutedText,
+                    ),
                   ),
                 ),
               ),
-              Row(
-                children: [
-                  for (var i = 0; i < tabs.length; i++)
-                    Expanded(
-                      flex: weights[i],
-                      child: Pressable(
-                        onTap: () => onChanged(i),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 6,
-                          ),
-                          child: Center(
-                            child: AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 200),
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: index == i
-                                    ? (limeActive || context.isDark
-                                        ? AppColors.ink
-                                        : Colors.white)
-                                    : context.mutedText,
-                              ),
-                              child: Text(
-                                tabs[i],
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          );
-        },
+            ),
+        ],
       ),
     );
   }

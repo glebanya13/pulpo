@@ -330,7 +330,7 @@ class _Header extends StatelessWidget {
                   LucideIcons.calendarDays,
                   size: 16,
                   color: calendarView
-                      ? AppColors.limeAccent
+                      ? context.accent
                       : context.mutedText,
                 ),
                 const SizedBox(width: 6),
@@ -340,7 +340,7 @@ class _Header extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: calendarView
-                        ? AppColors.limeAccent
+                        ? context.accent
                         : context.mutedText,
                   ),
                 ),
@@ -379,7 +379,7 @@ class _MonthTotals extends StatelessWidget {
           _Mini(
               label: tr.income,
               value: formatMoney(income, currency),
-              color: AppColors.limeAccent),
+              color: context.accent),
           Container(width: 1, height: 28, color: context.divider),
           _Mini(
               label: tr.expense,
@@ -441,8 +441,8 @@ class _NavBtn extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        width: 32,
-        height: 32,
+        width: 44,
+        height: 44,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: context.scaffoldBg,
@@ -506,10 +506,10 @@ class _DailyMonthList extends StatelessWidget {
                 onTap: onClearFilters,
                 child: Text(
                   tr.clearFilters,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.limeAccent,
+                    color: context.accent,
                   ),
                 ),
               ),
@@ -689,7 +689,7 @@ class _DayHeaderTotals extends StatelessWidget {
     }
     final net = income - expense;
     final netColor = net > 0
-        ? AppColors.limeAccent
+        ? context.accent
         : net < 0
             ? AppColors.danger
             : context.mutedText;
@@ -704,10 +704,10 @@ class _DayHeaderTotals extends StatelessWidget {
             children: [
               Text(
                 formatMoney(income, currency, showSign: true),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.limeAccent,
+                  color: context.accent,
                 ),
               ),
               const SizedBox(width: 6),
@@ -874,24 +874,30 @@ class _DayCell extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: isToday
-                    ? AppColors.lime.withValues(alpha: 0.45)
-                    : Colors.transparent,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                '$day',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: numberColor,
-                  height: 1,
+            SizedBox(
+              width: 44,
+              height: 44,
+              child: Center(
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isToday
+                        ? AppColors.lime.withValues(alpha: 0.45)
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '$day',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: numberColor,
+                      height: 1,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -906,7 +912,7 @@ class _DayCell extends StatelessWidget {
                     if (showIncome)
                       _Pill(
                         text: _shortMoney(income),
-                        color: AppColors.limeAccent,
+                        color: context.accent,
                         compact: both,
                       ),
                     if (both) const SizedBox(height: 2),

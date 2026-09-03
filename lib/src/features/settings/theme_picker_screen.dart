@@ -73,8 +73,8 @@ class ThemePickerScreen extends ConsumerWidget {
                                 ),
                               ),
                               if (current == options[i].$1)
-                                const Icon(LucideIcons.check,
-                                    color: AppColors.limeAccent, size: 20),
+                                Icon(LucideIcons.check,
+                                    color: context.accent, size: 20),
                             ],
                           ),
                         ),

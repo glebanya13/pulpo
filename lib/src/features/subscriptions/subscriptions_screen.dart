@@ -17,6 +17,7 @@ import '../../data/repositories/subscription_repository.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
+import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class SubscriptionsScreen extends ConsumerWidget {
@@ -173,10 +174,7 @@ Future<void> _openEditor(
 
   await showAppBottomSheet(
     context: context,
-    backgroundColor: Theme.of(context).cardColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
+    transparent: true,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setSt) {
         final tr = Tr.of(ctx);
@@ -205,25 +203,11 @@ Future<void> _openEditor(
           );
         }
 
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
+        return KeyboardFormSheet(
+          child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Center(
-                  child: SizedBox(
-                    width: 36,
-                    child: Divider(thickness: 4, color: context.handleBar),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 Text(
                   isEdit ? tr.editSubscription : tr.newSubscription,
                   style: const TextStyle(
@@ -241,6 +225,7 @@ Future<void> _openEditor(
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
                   decoration: InputDecoration(labelText: tr.amount),
                 ),
                 const SizedBox(height: 12),
@@ -369,7 +354,6 @@ Future<void> _openEditor(
                 ],
               ],
             ),
-          ),
         );
       },
     ),

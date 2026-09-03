@@ -17,6 +17,7 @@ import '../../data/repositories/providers.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
+import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class AccountDetailScreen extends ConsumerWidget {
@@ -386,18 +387,9 @@ Future<void> _openAccountEditor(
 
   await showAppBottomSheet(
     context: context,
-    backgroundColor: Theme.of(context).cardColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
+    transparent: true,
     builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
+      builder: (ctx, setSt) => KeyboardFormSheet(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -431,6 +423,8 @@ Future<void> _openAccountEditor(
                 controller: creditCtrl,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
                 decoration: InputDecoration(
                   labelText: Tr.of(ctx).creditLimit,
                   hintText: Tr.of(ctx).creditLimitHint,

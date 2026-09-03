@@ -145,8 +145,8 @@ class _Row extends StatelessWidget {
               ),
             ),
             if (selected)
-              const Icon(LucideIcons.check,
-                  color: AppColors.limeAccent, size: 20),
+              Icon(LucideIcons.check,
+                  color: context.accent, size: 20),
           ],
         ),
       ),

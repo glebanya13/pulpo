@@ -19,6 +19,7 @@ import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
+import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class DebtsScreen extends ConsumerStatefulWidget {
@@ -108,7 +109,7 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                             child: _StatCard(
                               label: tr.owedToMe,
                               value: formatMoney(owedToMeSum, currency),
-                              color: AppColors.limeAccent,
+                              color: context.accent,
                               subtitle: tr.peopleCount(owedToMe.length),
                             ),
                           ),
@@ -170,29 +171,13 @@ Future<void> _openDebtEditor(
 
   await showAppBottomSheet(
     context: context,
-    backgroundColor: Theme.of(context).cardColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
+    transparent: true,
     builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
+      builder: (ctx, setSt) => KeyboardFormSheet(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: SizedBox(
-                width: 36,
-                child: Divider(thickness: 4, color: context.handleBar),
-              ),
-            ),
-            const SizedBox(height: 12),
             Text(isEdit ? Tr.of(ctx).editDebt : Tr.of(ctx).newDebt,
                 style: const TextStyle(
                     fontSize: 20, fontWeight: FontWeight.w800)),
@@ -215,6 +200,8 @@ Future<void> _openDebtEditor(
               controller: amountCtrl,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
               decoration: InputDecoration(labelText: Tr.of(ctx).amount),
             ),
             const SizedBox(height: 12),
@@ -470,7 +457,7 @@ class _DebtCard extends ConsumerWidget {
                       fontWeight: FontWeight.w800,
                       color: isIOwe
                           ? AppColors.danger
-                          : AppColors.limeAccent,
+                          : context.accent,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -532,10 +519,7 @@ class _DebtCard extends ConsumerWidget {
     final tr = Tr.of(context);
     await showAppBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      transparent: true,
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
@@ -639,6 +623,8 @@ class _DebtCard extends ConsumerWidget {
           controller: ctrl,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
           decoration: InputDecoration(hintText: tr.amount),
         ),
         actions: [

@@ -140,7 +140,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                       LucideIcons.slidersHorizontal,
                       size: 17,
                       color: _expanded || _hasActiveFilters
-                          ? AppColors.limeAccent
+                          ? context.accent
                           : context.mutedText,
                     ),
                     const SizedBox(width: 6),
@@ -150,7 +150,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: _expanded || _hasActiveFilters
-                            ? AppColors.limeAccent
+                            ? context.accent
                             : context.mutedText,
                       ),
                     ),
@@ -385,9 +385,9 @@ Future<FilterPickResult<T>> openFilterPickSheet<T>(
                           ),
                         ),
                         trailing: active
-                            ? const Icon(
+                            ? Icon(
                                 LucideIcons.check,
-                                color: AppColors.limeAccent,
+                                color: ctx.accent,
                                 size: 20,
                               )
                             : null,

@@ -114,48 +114,42 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           controller: scroll,
           padding: pad,
           headerGap: 16,
-          headerBottomPadding: 4,
-          header: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ScreenTitlePill(
-                title: tr.analytics,
-                subtitle: tr.analyticsSubtitle,
-                large: true,
-                expand: true,
-                trailing: const HeaderSupportActions(dense: true),
-              ),
-              const SizedBox(height: 12),
-              _PeriodDropdownButton(
-                label: customRangeLabel ?? periodName,
-                onTap: () => _openPeriodPicker(
-                  context: context,
-                  ref: ref,
-                  tr: tr,
-                  current: range.kind,
-                  isPro: isPro,
-                  periodLabel: periodLabel,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _ReportsSegmentedTabs(
-                labels: tabs,
-                index: _tab,
-                locked: isPro ? const {} : const {1, 2},
-                onSelect: (i) async {
-                  if ((i == 1 || i == 2) && !isPro) {
-                    await openPaywall(
-                      context,
-                      i == 1 ? ProGate.trends : ProGate.flows,
-                    );
-                    return;
-                  }
-                  setState(() => _tab = i);
-                },
-              ),
-            ],
+          header: ScreenTitlePill(
+            title: tr.analytics,
+            subtitle: tr.analyticsSubtitle,
+            large: true,
+            expand: true,
+            trailing: const HeaderSupportActions(dense: true),
           ),
           children: [
+            _PeriodDropdownButton(
+              label: customRangeLabel ?? periodName,
+              onTap: () => _openPeriodPicker(
+                context: context,
+                ref: ref,
+                tr: tr,
+                current: range.kind,
+                isPro: isPro,
+                periodLabel: periodLabel,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _ReportsSegmentedTabs(
+              labels: tabs,
+              index: _tab,
+              locked: isPro ? const {} : const {1, 2},
+              onSelect: (i) async {
+                if ((i == 1 || i == 2) && !isPro) {
+                  await openPaywall(
+                    context,
+                    i == 1 ? ProGate.trends : ProGate.flows,
+                  );
+                  return;
+                }
+                setState(() => _tab = i);
+              },
+            ),
+            const SizedBox(height: 16),
             AsyncValuesGate(
               values: [txsAsync, catsAsync],
               onRetry: retryLoad,
@@ -419,7 +413,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         emptyLabel: tr.noIncomeForPeriod(periodName),
         monthly: monthlyIncome,
         total: incomePeriodTotal,
-        activeBarColor: AppColors.limeAccent,
+        activeBarColor: context.accent,
         rangeStart: rangeStart,
         monthCount: monthCount,
         currency: currency,
@@ -724,14 +718,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       for (var i = 0; i < dayCount; i++)
                         FlSpot(i.toDouble(), incomes[i]),
                     ],
-                    color: AppColors.limeAccent,
+                    color: context.accent,
                     isCurved: true,
                     barWidth: 3,
                     dotData: FlDotData(
                       show: true,
                       getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
                         radius: 4,
-                        color: AppColors.limeAccent,
+                        color: context.accent,
                         strokeWidth: 0,
                       ),
                     ),
@@ -774,7 +768,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.circle, size: 8, color: AppColors.limeAccent),
+                  Icon(Icons.circle, size: 8, color: context.accent),
                   const SizedBox(width: 6),
                   Text(
                     Tr.of(context).income,
@@ -827,7 +821,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               child: _TrendStat(
                 label: Tr.of(context).vsYesterday,
                 value: '${deltaPct >= 0 ? '+' : ''}$deltaPct%',
-                accent: deltaPct > 0 ? AppColors.limeAccent : AppColors.danger,
+                accent: deltaPct > 0 ? context.accent : AppColors.danger,
               ),
             ),
           ],
@@ -905,14 +899,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     for (var i = 0; i < monthCount; i++)
                       FlSpot(i.toDouble(), incomes[i]),
                   ],
-                  color: AppColors.limeAccent,
+                  color: context.accent,
                   isCurved: true,
                   barWidth: 3,
                   dotData: FlDotData(
                     show: true,
                     getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
                       radius: 4,
-                      color: AppColors.limeAccent,
+                      color: context.accent,
                       strokeWidth: 0,
                     ),
                   ),
@@ -955,7 +949,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.circle, size: 8, color: AppColors.limeAccent),
+                Icon(Icons.circle, size: 8, color: context.accent),
                 const SizedBox(width: 6),
                 Text(Tr.of(context).income,
                     style: TextStyle(
@@ -1002,7 +996,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             child: _TrendStat(
               label: Tr.of(context).vsPrevMonth,
               value: '${deltaPct >= 0 ? '+' : ''}$deltaPct%',
-              accent: deltaPct > 0 ? AppColors.limeAccent : AppColors.danger,
+              accent: deltaPct > 0 ? context.accent : AppColors.danger,
             ),
           ),
         ],
@@ -1055,7 +1049,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   child: _FlowSide(
                     label: Tr.of(context).incomeUpper,
                     total: formatMoney(totalIncome, currency),
-                    color: AppColors.limeAccent,
+                    color: context.accent,
                     alignEnd: false,
                   ),
                 ),
@@ -1083,7 +1077,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     : AppColors.danger.withValues(alpha: 0.22),
                 border: Border.all(
                   color: (net >= 0
-                          ? AppColors.limeAccent
+                          ? context.accent
                           : AppColors.danger)
                       .withValues(alpha: 0.4),
                 ),
@@ -1102,7 +1096,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     (net >= 0 ? '+' : '−') + formatMoney(net, currency),
                     style: TextStyle(
                       color: net >= 0
-                          ? AppColors.limeAccent
+                          ? context.accent
                           : AppColors.danger,
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -1838,7 +1832,7 @@ class _FlowRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isIncome ? AppColors.limeAccent : AppColors.danger;
+    final color = isIncome ? context.accent : AppColors.danger;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(

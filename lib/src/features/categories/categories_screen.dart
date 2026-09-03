@@ -16,6 +16,7 @@ import '../../data/repositories/providers.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
+import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class CategoriesScreen extends ConsumerStatefulWidget {
@@ -148,29 +149,13 @@ Future<void> _openCategoryEditor(
 
   await showAppBottomSheet(
     context: context,
-    backgroundColor: Theme.of(context).cardColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
+    transparent: true,
     builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
+      builder: (ctx, setSt) => KeyboardFormSheet(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: SizedBox(
-                width: 36,
-                child: Divider(thickness: 4, color: context.handleBar),
-              ),
-            ),
-            const SizedBox(height: 12),
             Text(
                 isEdit ? Tr.of(ctx).editCategory : Tr.of(ctx).newCategory,
                 style: const TextStyle(

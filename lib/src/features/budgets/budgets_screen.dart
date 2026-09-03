@@ -22,6 +22,7 @@ import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
+import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 import 'budget_period.dart';
 
@@ -355,167 +356,177 @@ Future<void> _openBudgetEditor(
 
   await showAppBottomSheet(
     context: context,
-    backgroundColor: Theme.of(context).cardColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
+    transparent: true,
     builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: SizedBox(
-                width: 36,
-                child: Divider(thickness: 4, color: context.handleBar),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(isEdit ? Tr.of(ctx).editBudget : Tr.of(ctx).newBudget,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameCtrl,
-              decoration:
-                  InputDecoration(labelText: Tr.of(ctx).budgetName),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: Tr.of(ctx).amount),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<int>(
-              initialValue: period,
-              decoration:
-                  InputDecoration(labelText: Tr.of(ctx).periodicity),
-              items: [
-                DropdownMenuItem(value: 0, child: Text(Tr.of(ctx).freqWeekly)),
-                DropdownMenuItem(
-                    value: 1, child: Text(Tr.of(ctx).monthlyLabel)),
-                DropdownMenuItem(
-                    value: 3, child: Text(Tr.of(ctx).yearlyLabel)),
-              ],
-              onChanged: (v) => setSt(() => period = v ?? 1),
-            ),
-            const SizedBox(height: 12),
-            Text(Tr.of(ctx).budgetCategories,
-                style: TextStyle(
+      builder: (ctx, setSt) {
+        return KeyboardFormSheet(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  isEdit ? Tr.of(ctx).editBudget : Tr.of(ctx).newBudget,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameCtrl,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: Tr.of(ctx).budgetName,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: amountCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
+                  decoration: InputDecoration(
+                    labelText: Tr.of(ctx).amount,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  initialValue: period,
+                  decoration: InputDecoration(
+                    labelText: Tr.of(ctx).periodicity,
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: 0,
+                      child: Text(Tr.of(ctx).freqWeekly),
+                    ),
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text(Tr.of(ctx).monthlyLabel),
+                    ),
+                    DropdownMenuItem(
+                      value: 3,
+                      child: Text(Tr.of(ctx).yearlyLabel),
+                    ),
+                  ],
+                  onChanged: (v) => setSt(() => period = v ?? 1),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  Tr.of(ctx).budgetCategories,
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: context.mutedText)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                FilterChip(
-                  label: Text(Tr.of(ctx).budgetCategoriesAll),
-                  selected: selectedCats.isEmpty,
-                  onSelected: (_) => setSt(() => selectedCats.clear()),
-                ),
-                for (final c in expenseCats)
-                  FilterChip(
-                    label: Text(Tr.of(ctx).categoryName(c.name)),
-                    selected: selectedCats.contains(c.id),
-                    onSelected: (on) => setSt(() {
-                      if (on) {
-                        selectedCats.add(c.id);
-                      } else {
-                        selectedCats.remove(c.id);
-                      }
-                    }),
+                    color: context.mutedText,
                   ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    FilterChip(
+                      label: Text(Tr.of(ctx).budgetCategoriesAll),
+                      selected: selectedCats.isEmpty,
+                      onSelected: (_) => setSt(() => selectedCats.clear()),
+                    ),
+                    for (final c in expenseCats)
+                      FilterChip(
+                        label: Text(Tr.of(ctx).categoryName(c.name)),
+                        selected: selectedCats.contains(c.id),
+                        onSelected: (on) => setSt(() {
+                          if (on) {
+                            selectedCats.add(c.id);
+                          } else {
+                            selectedCats.remove(c.id);
+                          }
+                        }),
+                      ),
+                  ],
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: rollover,
+                  onChanged: (v) => setSt(() => rollover = v),
+                  title: Text(Tr.of(ctx).budgetRollover),
+                  subtitle: Text(Tr.of(ctx).budgetRolloverDesc),
+                ),
+                const SizedBox(height: 12),
+                ScaledElevatedButton(
+                  onPressed: () async {
+                    FocusScope.of(ctx).unfocus();
+                    final amount = double.tryParse(amountCtrl.text) ?? 0;
+                    if (nameCtrl.text.trim().isEmpty || amount <= 0) return;
+                    final repo = ref.read(budgetRepositoryProvider);
+                    final catList = selectedCats.toList();
+                    if (isEdit) {
+                      await repo.update(
+                        id: existing.id,
+                        name: nameCtrl.text.trim(),
+                        amount: amount,
+                        period: period,
+                        categoryIds: catList,
+                        rollover: rollover,
+                      );
+                    } else {
+                      final currency =
+                          ref.read(settingsControllerProvider).baseCurrency;
+                      await repo.add(
+                        name: nameCtrl.text.trim(),
+                        amount: amount,
+                        currency: currency,
+                        period: period,
+                        categoryIds: catList,
+                        rollover: rollover,
+                      );
+                    }
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                  child: Text(Tr.of(ctx).save),
+                ),
+                if (isEdit) ...[
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: ctx,
+                        builder: (dctx) => AlertDialog(
+                          title: Text(Tr.of(dctx).deleteBudgetTitle),
+                          content: Text(Tr.of(dctx).deleteTxBody),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dctx, false),
+                              child: Text(Tr.of(dctx).cancel),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(dctx, true),
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFFE53E3E),
+                              ),
+                              child: Text(Tr.of(dctx).delete),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed != true) return;
+                      await ref
+                          .read(budgetRepositoryProvider)
+                          .delete(existing.id);
+                      if (ctx.mounted) Navigator.pop(ctx);
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFE53E3E),
+                    ),
+                    child: Text(Tr.of(ctx).delete),
+                  ),
+                ],
               ],
             ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: rollover,
-              onChanged: (v) => setSt(() => rollover = v),
-              title: Text(Tr.of(ctx).budgetRollover),
-              subtitle: Text(Tr.of(ctx).budgetRolloverDesc),
-            ),
-            const SizedBox(height: 12),
-            ScaledElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(amountCtrl.text) ?? 0;
-                if (nameCtrl.text.trim().isEmpty || amount <= 0) return;
-                final repo = ref.read(budgetRepositoryProvider);
-                final catList = selectedCats.toList();
-                if (isEdit) {
-                  await repo.update(
-                    id: existing.id,
-                    name: nameCtrl.text.trim(),
-                    amount: amount,
-                    period: period,
-                    categoryIds: catList,
-                    rollover: rollover,
-                  );
-                } else {
-                  final currency =
-                      ref.read(settingsControllerProvider).baseCurrency;
-                  await repo.add(
-                    name: nameCtrl.text.trim(),
-                    amount: amount,
-                    currency: currency,
-                    period: period,
-                    categoryIds: catList,
-                    rollover: rollover,
-                  );
-                }
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: Text(Tr.of(ctx).save),
-            ),
-            if (isEdit) ...[
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: ctx,
-                    builder: (dctx) => AlertDialog(
-                      title: Text(Tr.of(dctx).deleteBudgetTitle),
-                      content: Text(Tr.of(dctx).deleteTxBody),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dctx, false),
-                          child: Text(Tr.of(dctx).cancel),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(dctx, true),
-                          style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFFE53E3E),
-                          ),
-                          child: Text(Tr.of(dctx).delete),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirmed != true) return;
-                  await ref
-                      .read(budgetRepositoryProvider)
-                      .delete(existing.id);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFE53E3E),
-                ),
-                child: Text(Tr.of(ctx).delete),
-              ),
-            ],
-          ],
-        ),
-      ),
+        );
+      },
     ),
   );
+
 }

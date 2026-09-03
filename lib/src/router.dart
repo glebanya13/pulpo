@@ -237,6 +237,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/settings',
+        redirect: (context, state) {
+          // Only exact /settings — not /settings/currency etc.
+          if (state.uri.path == '/settings') return '/profile';
+          return null;
+        },
         pageBuilder: (context, state) =>
             _fadePage(state, const SettingsScreen()),
         routes: [

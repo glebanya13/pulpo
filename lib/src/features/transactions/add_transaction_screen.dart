@@ -773,6 +773,8 @@ class _AmountInput extends StatelessWidget {
           controller: controller,
           keyboardType:
               const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => FocusScope.of(context).unfocus(),
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 48,

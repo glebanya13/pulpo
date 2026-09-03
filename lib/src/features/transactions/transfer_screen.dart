@@ -180,20 +180,27 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
       children: [
         _Label(tr.transferFrom),
         _AccountRow(account: _from, onTap: () => _pickAccount(from: true)),
-        const SizedBox(height: 8),
-        Center(
-          child: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: context.emphasized,
-              shape: BoxShape.circle,
+        // Bridge between from/to — always dead-center of the form width.
+        SizedBox(
+          height: 44,
+          width: double.infinity,
+          child: Center(
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: context.emphasized,
+                shape: BoxShape.circle,
+                border: Border.all(color: context.scaffoldBg, width: 3),
+              ),
+              child: const Icon(
+                LucideIcons.arrowDown,
+                size: 16,
+                color: AppColors.lime,
+              ),
             ),
-            child: const Icon(LucideIcons.arrowDown,
-                size: 16, color: AppColors.lime),
           ),
         ),
-        const SizedBox(height: 8),
         _Label(tr.transferTo),
         _AccountRow(account: _to, onTap: () => _pickAccount(from: false)),
         const SizedBox(height: 20),
@@ -207,6 +214,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
           textAlign: TextAlign.center,
           keyboardType:
               const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => FocusScope.of(context).unfocus(),
           style: TextStyle(
             fontSize: 44,
             fontWeight: FontWeight.w800,
@@ -244,6 +253,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                     autofocus: true,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
                   ),
                   actions: [
                     TextButton(
@@ -303,6 +314,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                     autofocus: true,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
                   ),
                   actions: [
                     TextButton(

@@ -177,7 +177,7 @@ class _AboutSpainStoryCard extends StatelessWidget {
               fontSize: 14,
               height: 1.4,
               fontWeight: FontWeight.w800,
-              color: isDark ? AppColors.lime : AppColors.limeAccent,
+              color: context.accent,
             ),
           ),
         ],
