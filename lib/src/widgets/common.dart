@@ -138,18 +138,15 @@ class ScreenTitlePill extends StatelessWidget {
     final child = Container(
       width: expand ? double.infinity : null,
       padding: EdgeInsets.fromLTRB(
-        large ? 0 : 16,
-        large ? 4 : 10,
-        trailing != null ? (large ? 0 : 10) : (large ? 0 : 16),
-        large ? 4 : 10,
+        16,
+        large ? 12 : 10,
+        trailing != null ? 10 : 16,
+        large ? 12 : 10,
       ),
-      // Large tab titles sit on the page scaffold — no second "card" fill.
-      decoration: large
-          ? null
-          : BoxDecoration(
-              color: context.surface,
-              borderRadius: BorderRadius.circular(999),
-            ),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(large ? 22 : 999),
+      ),
       child: trailing == null
           ? textBlock
           : Row(

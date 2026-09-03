@@ -300,8 +300,12 @@ class _ProfileStickyHeader extends StatelessWidget {
         : AppColors.ink.withValues(alpha: 0.06);
     const size = PageHeader.controlSize;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 2, 0, 0),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(22),
+      ),
       child: Row(
         children: [
           Pressable(

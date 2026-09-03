@@ -323,15 +323,21 @@ class _RoundIconBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     return Pressable(
       onTap: onTap,
-      child: Container(
+      child: SizedBox(
         width: 40,
         height: 40,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: context.scaffoldBg,
-          borderRadius: BorderRadius.circular(12),
+        child: Center(
+          child: Container(
+            width: 28,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: context.scaffoldBg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 15, color: context.primaryText),
+          ),
         ),
-        child: Icon(icon, size: 20, color: context.primaryText),
       ),
     );
   }
