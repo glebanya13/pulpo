@@ -33,135 +33,140 @@ class ProfileScreen extends ConsumerWidget {
     final isPro = ref.watch(proControllerProvider).isPro;
 
     return Scaffold(
-      body: StickyScrollPage(
-        padding: AppSpacing.pushedPagePadding(context),
-        headerGap: 16,
-        header: Row(
+      body: SafeArea(
+        child: ListView(
+          padding: AppSpacing.pushedPagePadding(context),
           children: [
-            RoundIconButton(
-              icon: LucideIcons.arrowLeft,
-              onTap: () => context.pop(),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ScreenTitlePill(
-                title: tr.myProfile,
-                subtitle: tr.personalData,
-                large: true,
-                expand: true,
-                trailing: const WhatsAppSupportChip(dense: true),
-              ),
-            ),
-          ],
-        ),
-        children: [
-          _AvatarSection(
-            settings: settings,
-            authUser: authUser,
-            tr: tr,
-            ref: ref,
-          ),
-          const SizedBox(height: 20),
-          _FormGroup(
-            children: [
-              _FormRow(
-                label: tr.firstName,
-                value: settings.userName,
-                onTap: () => openNameSheet(context, ref, tr),
-              ),
-              _FormRow(
-                label: tr.lastName,
-                value: settings.lastName,
-                onTap: () => _editLastName(context, ref, tr, settings.lastName),
-              ),
-            ],
-          ),
-          if (authUser != null) ...[
-            const SizedBox(height: 12),
-            _FormGroup(
+            Row(
               children: [
-                _FormRow(
-                  label: 'Email',
-                  value: authUser.email ?? '',
-                  readOnly: true,
+                RoundIconButton(
+                  icon: LucideIcons.arrowLeft,
+                  onTap: () => context.pop(),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ScreenTitlePill(
+                    title: tr.myProfile,
+                    subtitle: tr.personalData,
+                    large: true,
+                    expand: true,
+                    trailing: const WhatsAppSupportChip(dense: true),
+                  ),
                 ),
               ],
             ),
-          ],
-          const SizedBox(height: 12),
-          _FormGroup(
-            children: [
-              _FormRow(
-                label: tr.birthday,
-                value: settings.birthday,
-                placeholder: tr.notSpecified,
-                onTap: () => _editBirthday(context, ref, tr, settings.birthday),
-              ),
-              _FormRow(
-                label: tr.gender,
-                value: _genderLabel(tr, settings.gender),
-                placeholder: tr.notSpecified,
-                onTap: () => _editGender(context, ref, tr, settings.gender),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          ProUpgradeCard(
-            title: isPro ? tr.proTitle : tr.proGo,
-            subtitle: isPro ? tr.proActive : tr.proCtaSubtitle,
-            onTap: () => openPaywall(context, ProGate.generic),
-          ),
-          if (authUser == null) ...[
+            const SizedBox(height: 16),
+            _AvatarSection(
+              settings: settings,
+              authUser: authUser,
+              tr: tr,
+              ref: ref,
+            ),
             const SizedBox(height: 20),
             _FormGroup(
               children: [
                 _FormRow(
-                  label: tr.signIn,
-                  onTap: () => context.push('/settings/account'),
-                  leading: LucideIcons.logIn,
-                  leadingColor: const Color(0xFFE0F2FE),
+                  label: tr.firstName,
+                  value: settings.userName,
+                  onTap: () => openNameSheet(context, ref, tr),
+                ),
+                _FormRow(
+                  label: tr.lastName,
+                  value: settings.lastName,
+                  onTap: () =>
+                      _editLastName(context, ref, tr, settings.lastName),
                 ),
               ],
             ),
-          ],
-          if (authUser != null) ...[
-            const SizedBox(height: 20),
+            if (authUser != null) ...[
+              const SizedBox(height: 12),
+              _FormGroup(
+                children: [
+                  _FormRow(
+                    label: 'Email',
+                    value: authUser.email ?? '',
+                    readOnly: true,
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
             _FormGroup(
               children: [
                 _FormRow(
-                  label: tr.deleteCloudAccount,
-                  onTap: () => _confirmDeleteAccount(context, ref, tr),
-                  leading: LucideIcons.trash2,
-                  leadingColor: const Color(0xFFFFE4E1),
-                  danger: true,
+                  label: tr.birthday,
+                  value: settings.birthday,
+                  placeholder: tr.notSpecified,
+                  onTap: () =>
+                      _editBirthday(context, ref, tr, settings.birthday),
+                ),
+                _FormRow(
+                  label: tr.gender,
+                  value: _genderLabel(tr, settings.gender),
+                  placeholder: tr.notSpecified,
+                  onTap: () =>
+                      _editGender(context, ref, tr, settings.gender),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Pressable(
-              onTap: () => ref.read(cloudAuthProvider).signOut(),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: context.emphasized,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: context.emphasizedBorder),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  tr.signOut,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+            const SizedBox(height: 20),
+            ProUpgradeCard(
+              title: isPro ? tr.proTitle : tr.proGo,
+              subtitle: isPro ? tr.proActive : tr.proCtaSubtitle,
+              onTap: () => openPaywall(context, ProGate.generic),
+            ),
+            if (authUser == null) ...[
+              const SizedBox(height: 20),
+              _FormGroup(
+                children: [
+                  _FormRow(
+                    label: tr.signIn,
+                    onTap: () => context.push('/settings/account'),
+                    leading: LucideIcons.logIn,
+                    leadingColor: const Color(0xFFE0F2FE),
+                  ),
+                ],
+              ),
+            ],
+            if (authUser != null) ...[
+              const SizedBox(height: 20),
+              _FormGroup(
+                children: [
+                  _FormRow(
+                    label: tr.deleteCloudAccount,
+                    onTap: () => _confirmDeleteAccount(context, ref, tr),
+                    leading: LucideIcons.trash2,
+                    leadingColor: const Color(0xFFFFE4E1),
+                    danger: true,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Pressable(
+                onTap: () => ref.read(cloudAuthProvider).signOut(),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: context.emphasized,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: context.emphasizedBorder),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    tr.signOut,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
+            const SizedBox(height: 8),
           ],
-          const SizedBox(height: 8),
-        ],
+        ),
       ),
     );
   }

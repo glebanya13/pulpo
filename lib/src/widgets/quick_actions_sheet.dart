@@ -15,13 +15,40 @@ import 'pressable.dart';
 import 'pro_badge.dart';
 import 'ai_assistant_mark.dart';
 
-Future<void> showQuickActionsSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
+enum _QuickAction {
+  income,
+  expense,
+  assistant,
+  scanReceipt,
+  transfer,
+  external,
+}
+
+Future<void> showQuickActionsSheet(BuildContext context, WidgetRef ref) async {
+  final action = await showModalBottomSheet<_QuickAction>(
     context: context,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) => const _QuickActionsSheet(),
   );
+  if (action == null || !context.mounted) return;
+
+  switch (action) {
+    case _QuickAction.income:
+      context.push('/add?type=income');
+    case _QuickAction.expense:
+      context.push('/add?type=expense');
+    case _QuickAction.transfer:
+      context.push('/add?type=transfer');
+    case _QuickAction.external:
+      context.push('/add?type=expense&mode=external');
+    case _QuickAction.assistant:
+      if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
+      if (context.mounted) context.push('/assistant');
+    case _QuickAction.scanReceipt:
+      if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
+      if (context.mounted) context.push('/assistant?scanReceipt=1');
+  }
 }
 
 class _QuickActionsSheet extends ConsumerWidget {
@@ -59,11 +86,7 @@ class _QuickActionsSheet extends ConsumerWidget {
                   icon: LucideIcons.arrowDownRight,
                   color: const Color(0xFF8BD44A),
                   label: tr.income,
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await Future.delayed(const Duration(milliseconds: 220));
-                    if (context.mounted) context.push('/add?type=income');
-                  },
+                  onTap: () => Navigator.pop(context, _QuickAction.income),
                 ),
               ),
               const SizedBox(width: 10),
@@ -72,24 +95,14 @@ class _QuickActionsSheet extends ConsumerWidget {
                   icon: LucideIcons.arrowUpRight,
                   color: const Color(0xFFFF5C5C),
                   label: tr.expense,
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await Future.delayed(const Duration(milliseconds: 220));
-                    if (context.mounted) context.push('/add?type=expense');
-                  },
+                  onTap: () => Navigator.pop(context, _QuickAction.expense),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
           Pressable(
-            onTap: () async {
-              Navigator.pop(context);
-              await Future.delayed(const Duration(milliseconds: 220));
-              if (!context.mounted) return;
-              if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
-              if (context.mounted) context.push('/assistant');
-            },
+            onTap: () => Navigator.pop(context, _QuickAction.assistant),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
@@ -189,15 +202,7 @@ class _QuickActionsSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           Pressable(
-            onTap: () async {
-              Navigator.pop(context);
-              if (!await requireAi(context, ref, allowFreeEnergy: true)) {
-                return;
-              }
-              if (context.mounted) {
-                context.push('/assistant?scanReceipt=1');
-              }
-            },
+            onTap: () => Navigator.pop(context, _QuickAction.scanReceipt),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -263,11 +268,7 @@ class _QuickActionsSheet extends ConsumerWidget {
                     color: AppColors.info,
                     label: tr.transferBetweenAccounts,
                     hint: tr.transferBetweenHint,
-                    onTap: () async {
-                      Navigator.pop(context);
-                      await Future.delayed(const Duration(milliseconds: 220));
-                      if (context.mounted) context.push('/add?type=transfer');
-                    },
+                    onTap: () => Navigator.pop(context, _QuickAction.transfer),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -277,11 +278,7 @@ class _QuickActionsSheet extends ConsumerWidget {
                     color: const Color(0xFFFFB020),
                     label: tr.transferExternal,
                     hint: tr.transferExternalHint,
-                    onTap: () async {
-                      Navigator.pop(context);
-                      await Future.delayed(const Duration(milliseconds: 220));
-                      if (context.mounted) context.push('/add?type=expense&mode=external');
-                    },
+                    onTap: () => Navigator.pop(context, _QuickAction.external),
                   ),
                 ),
               ],

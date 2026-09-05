@@ -58,7 +58,7 @@ class AppShell extends ConsumerWidget {
         // 0 home · 1 reports · 2 management
         currentIndex: navigationShell.currentIndex,
         onTap: _goTab,
-        onAddTap: () => showQuickActionsSheet(context),
+        onAddTap: () => showQuickActionsSheet(context, ref),
         onManagementTap: () => _goTab(2),
         onChatTap: () => _openAssistant(context, ref),
       ),
