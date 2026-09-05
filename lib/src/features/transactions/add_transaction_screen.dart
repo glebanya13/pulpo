@@ -707,9 +707,7 @@ class _TypeTabs extends StatelessWidget {
                         onSelect(TxType.expense, external: true);
                     }
                   },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    curve: Curves.easeOutCubic,
+                  child: Container(
                     padding: const EdgeInsets.symmetric(
                       vertical: 10,
                       horizontal: 8,

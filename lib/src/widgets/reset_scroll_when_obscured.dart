@@ -5,12 +5,17 @@ import 'package:go_router/go_router.dart';
 
 /// Resets scroll (and optional local state) whenever a tab page becomes visible
 /// again after the user left it — another bottom tab or a pushed route on top.
+///
+/// Set [preserveScrollOnPush] to `true` to keep scroll position when the user
+/// navigates to a pushed sub-route and returns — scroll only resets on a tab
+/// switch in that case.
 class ResetScrollWhenObscured extends StatefulWidget {
   const ResetScrollWhenObscured({
     super.key,
     required this.tabPath,
     required this.builder,
     this.onBecameVisible,
+    this.preserveScrollOnPush = false,
   });
 
   final String tabPath;
@@ -19,6 +24,9 @@ class ResetScrollWhenObscured extends StatefulWidget {
 
   /// Called when the user returns to [tabPath] — reset tabs, filters, etc.
   final VoidCallback? onBecameVisible;
+
+  /// When true, scroll is only reset on tab switches, not on push/pop.
+  final bool preserveScrollOnPush;
 
   @override
   State<ResetScrollWhenObscured> createState() =>
@@ -30,6 +38,7 @@ class _ResetScrollWhenObscuredState extends State<ResetScrollWhenObscured> {
   GoRouterDelegate? _delegate;
   Timer? _delay;
   var _visible = false;
+  var _leftViaTabSwitch = false;
 
   static const _tabPaths = {
     '/',
@@ -89,23 +98,32 @@ class _ResetScrollWhenObscuredState extends State<ResetScrollWhenObscured> {
     if (isVisible) {
       if (!_visible) {
         _visible = true;
-        _scheduleReset(notifyVisible: true);
+        final shouldReset =
+            !widget.preserveScrollOnPush || _leftViaTabSwitch;
+        _leftViaTabSwitch = false;
+        if (shouldReset) {
+          _scheduleReset(notifyVisible: true);
+        } else {
+          widget.onBecameVisible?.call();
+        }
       }
       return;
     }
 
     _visible = false;
 
-    void run() => _jump();
-
     // Other tabs are Offstage — jump immediately. Pushed pages fade over
     // this one, so wait until the cover is fully on screen.
     if (_tabPaths.contains(path)) {
-      run();
+      _leftViaTabSwitch = true;
+      _jump();
     } else {
-      _delay = Timer(const Duration(milliseconds: 360), () {
-        if (mounted) run();
-      });
+      _leftViaTabSwitch = false;
+      if (!widget.preserveScrollOnPush) {
+        _delay = Timer(const Duration(milliseconds: 360), () {
+          if (mounted) _jump();
+        });
+      }
     }
   }
 

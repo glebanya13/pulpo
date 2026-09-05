@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
-import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
@@ -15,12 +14,11 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import 'profile_avatar.dart';
 import '../settings/settings_screen.dart' show openNameSheet;
-import '../settings/reminder_settings.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../auth/cloud_auth.dart';
 import '../auth/cloud_restore_prompt.dart';
-import '../../widgets/common.dart';
+import '../../widgets/common.dart' show PageHeader;
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_badge.dart';
 import '../../widgets/pro_upgrade_card.dart';
@@ -97,22 +95,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (!isPro) ...[
-                        ProUpgradeCard(
-                          title: tr.proGo,
-                          subtitle: tr.proCtaSubtitle,
-                          onTap: () => openPaywall(context, ProGate.generic),
-                        ),
-                        const SizedBox(height: 20),
-                      ] else ...[
-                        ProUpgradeCard(
-                          title: tr.proTitle,
-                          subtitle: tr.proActive,
-                          onTap: () => openPaywall(context, ProGate.generic),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                      _SectionLabel(tr.sectionSettings),
+                      ProUpgradeCard(
+                        title: isPro ? tr.proTitle : tr.proGo,
+                        subtitle: isPro ? tr.proActive : tr.proCtaSubtitle,
+                        onTap: () => openPaywall(context, ProGate.generic),
+                      ),
+                      const SizedBox(height: 20),
                       _MenuGroup(
                         children: [
                           if (authUser == null)
@@ -123,32 +111,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               onTap: () => context.push('/settings/account'),
                             ),
                           _MenuRow(
-                            icon: LucideIcons.shield,
-                            iconBg: const Color(0xFFD4F5E0),
-                            label: tr.security,
-                            onTap: () => context.push('/settings/security'),
-                          ),
-                          _MenuRow(
-                            icon: LucideIcons.dollarSign,
-                            iconBg: AppColors.bgFood,
-                            label: tr.baseCurrency,
-                            trailing: currency,
-                            onTap: () => context.push('/settings/currency'),
-                          ),
-                          _MenuRow(
-                            icon: LucideIcons.globe,
-                            iconBg: const Color(0xFFE0F2FE),
-                            label: tr.language,
-                            onTap: () => context.push('/settings/language'),
-                          ),
-                          _MenuRow(
-                            icon: LucideIcons.moon,
-                            iconBg: const Color(0xFFE8E4FF),
-                            label: tr.theme,
-                            trailing: tr.themeLabel(settings.themeMode),
-                            onTap: () => context.push('/settings/theme'),
-                          ),
-                          _MenuRow(
                             icon: LucideIcons.database,
                             iconBg: const Color(0xFFF2F2F2),
                             label: tr.dataBackups,
@@ -157,45 +119,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 ? context.push('/settings/account')
                                 : context.push('/settings/backups'),
                           ),
-                          _MenuRow(
-                            icon: LucideIcons.download,
-                            iconBg: const Color(0xFFFFF3D6),
-                            label: tr.exportCsv,
-                            onTap: () => context.push('/settings/export'),
-                          ),
-                          _MenuRow(
-                            icon: LucideIcons.upload,
-                            iconBg: const Color(0xFFE0F2FE),
-                            label: tr.importCsv,
-                            showProMark: !isPro,
-                            proLocked: !isPro,
-                            onTap: () => context.push('/settings/import'),
-                          ),
-                          _MenuRow(
-                            icon: LucideIcons.info,
-                            iconBg: const Color(0xFFF2F2F2),
-                            label: tr.about,
-                            onTap: () => context.push('/settings/about'),
-                          ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      ReminderCtaButton(
-                        enabled: settings.dailyReminderEnabled ||
-                            (isPro && settings.smartRemindersEnabled),
-                        title: tr.dailyReminderCta,
-                        subtitle: settings.dailyReminderEnabled
-                            ? tr.dailyReminderCtaOn(
-                                formatReminderTime(
-                                  settings.dailyReminderHour,
-                                  settings.dailyReminderMinute,
-                                ),
-                              )
-                            : tr.dailyReminderCtaOff,
-                        onTap: () => context.push('/settings/reminders'),
-                      ),
                       if (authUser != null) ...[
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 20),
                         _MenuGroup(
                           children: [
                             _MenuRow(
@@ -232,18 +159,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 28),
-                      Text(
-                        'Monedero · v${AppInfo.version}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: context.faintText,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const MadeInSpainTagline(),
                     ],
                   ),
                 ),
@@ -537,27 +452,6 @@ Future<String?> _askDeletePassword(BuildContext context, Tr tr) async {
   controller.dispose();
   if (result == null || result.isEmpty) return null;
   return result;
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: context.mutedText,
-          letterSpacing: 1,
-        ),
-      ),
-    );
-  }
 }
 
 class _MenuGroup extends StatelessWidget {

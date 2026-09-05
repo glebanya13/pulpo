@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
@@ -15,7 +16,9 @@ import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_badge.dart';
+import '../../widgets/pro_upgrade_card.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
+import '../auth/cloud_auth.dart';
 import '../settings/reminder_settings.dart';
 
 class ManagementScreen extends ConsumerWidget {
@@ -27,9 +30,11 @@ class ManagementScreen extends ConsumerWidget {
     final isPro = ref.watch(proControllerProvider).isPro;
     final settings = ref.watch(settingsControllerProvider);
     final pro = ref.watch(proControllerProvider);
+    final authUser = ref.watch(authUserProvider).valueOrNull;
 
     return ResetScrollWhenObscured(
       tabPath: '/management',
+      preserveScrollOnPush: true,
       builder: (context, scroll) {
         return StickyScrollPage(
           useSafeArea: false,
@@ -44,9 +49,12 @@ class ManagementScreen extends ConsumerWidget {
             trailing: const HeaderSupportActions(dense: true),
           ),
           children: [
-            if (!isPro)
-              _ProBanner(onTap: () => openPaywall(context, ProGate.generic)),
-            if (!isPro) const SizedBox(height: 20),
+            ProUpgradeCard(
+              title: isPro ? tr.proTitle : tr.proGo,
+              subtitle: isPro ? tr.proActive : tr.proCtaSubtitle,
+              onTap: () => openPaywall(context, ProGate.generic),
+            ),
+            const SizedBox(height: 20),
 
             _SectionLabel(tr.accountSection.toUpperCase()),
             const SizedBox(height: 8),
@@ -228,6 +236,56 @@ class ManagementScreen extends ConsumerWidget {
                   : tr.dailyReminderCtaOff,
               onTap: () => context.push('/settings/reminders'),
             ),
+
+            if (authUser != null) ...[
+              const SizedBox(height: 20),
+              SoftCard(
+                padding: EdgeInsets.zero,
+                child: _MenuTile(
+                  icon: LucideIcons.trash2,
+                  label: tr.deleteCloudAccount,
+                  color: const Color(0xFFFFE4E1),
+                  showPro: false,
+                  danger: true,
+                  onTap: () => context.push('/profile'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Pressable(
+                onTap: () => ref.read(cloudAuthProvider).signOut(),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: context.emphasized,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: context.emphasizedBorder),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    tr.signOut,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 28),
+            Text(
+              'Monedero · v${AppInfo.version}',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                color: context.faintText,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const MadeInSpainTagline(),
             const SizedBox(height: 8),
           ],
         );
@@ -257,92 +315,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-class _ProBanner extends StatelessWidget {
-  const _ProBanner({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final tr = Tr.of(context);
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFD4FF00),
-              AppColors.lime,
-              Color(0xFFF0FF7A),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.lime.withValues(alpha: 0.4),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                LucideIcons.rocket,
-                size: 16,
-                color: AppColors.ink,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tr.proGo,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  Text(
-                    tr.proCtaSubtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.ink.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              LucideIcons.chevronRight,
-              size: 18,
-              color: AppColors.ink.withValues(alpha: 0.75),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _MenuTile extends StatelessWidget {
   const _MenuTile({
     required this.icon,
@@ -351,6 +323,7 @@ class _MenuTile extends StatelessWidget {
     required this.showPro,
     required this.onTap,
     this.trailing,
+    this.danger = false,
   });
 
   final IconData icon;
@@ -359,6 +332,7 @@ class _MenuTile extends StatelessWidget {
   final bool showPro;
   final VoidCallback onTap;
   final String? trailing;
+  final bool danger;
 
   @override
   Widget build(BuildContext context) {
@@ -385,9 +359,11 @@ class _MenuTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: showPro
-                      ? proLockedTextColor(context)
-                      : context.primaryText,
+                  color: danger
+                      ? const Color(0xFFE53E3E)
+                      : showPro
+                          ? proLockedTextColor(context)
+                          : context.primaryText,
                 ),
               ),
             ),
@@ -398,7 +374,8 @@ class _MenuTile extends StatelessWidget {
               ),
               const SizedBox(width: 4),
             ],
-            Icon(LucideIcons.chevronRight, size: 16, color: context.faintText),
+            if (!danger)
+              Icon(LucideIcons.chevronRight, size: 16, color: context.faintText),
           ],
         ),
       ),
