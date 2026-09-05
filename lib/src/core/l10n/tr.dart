@@ -233,6 +233,16 @@ class Tr {
   // ─────────────────────── PROFILE ───────────────────────
   String get management => _get('management');
   String get managementSubtitle => _get('management_subtitle');
+  String get myProfile => _get('my_profile');
+  String get personalData => _get('personal_data');
+  String get firstName => _get('first_name');
+  String get lastName => _get('last_name');
+  String get birthday => _get('birthday');
+  String get gender => _get('gender');
+  String get notSpecified => _get('not_specified');
+  String get editPhoto => _get('edit_photo');
+  String get male => _get('male');
+  String get female => _get('female');
   String get sectionFinance => _get('section_finance');
   String get sectionAppSettings => _get('section_app_settings');
   String get recurring => _get('recurring');
@@ -973,6 +983,16 @@ class Tr {
       'profile_avatar_removed': 'Foto de perfil eliminada',
       'management': 'Panel de control',
       'management_subtitle': 'Tus finanzas bajo control',
+      'my_profile': 'Mi perfil',
+      'personal_data': 'Datos personales',
+      'first_name': 'Nombre',
+      'last_name': 'Apellido',
+      'birthday': 'Nacimiento',
+      'gender': 'Género',
+      'not_specified': 'No especificado',
+      'edit_photo': 'Editar foto',
+      'male': 'Masculino',
+      'female': 'Femenino',
       'section_finance': 'FINANZAS',
       'section_app_settings': 'AJUSTES DE LA APP',
       'recurring': 'RECURRENTE',
@@ -1690,6 +1710,16 @@ class Tr {
       'profile_avatar_removed': 'Фото профиля удалено',
       'management': 'Панель управления',
       'management_subtitle': 'Ваши финансы под контролем',
+      'my_profile': 'Мой профиль',
+      'personal_data': 'Личные данные',
+      'first_name': 'Имя',
+      'last_name': 'Фамилия',
+      'birthday': 'День рождения',
+      'gender': 'Пол',
+      'not_specified': 'Не указано',
+      'edit_photo': 'Изменить фото',
+      'male': 'Мужской',
+      'female': 'Женский',
       'section_finance': 'ФИНАНСЫ',
       'section_app_settings': 'НАСТРОЙКИ ПРИЛОЖЕНИЯ',
       'recurring': 'РЕГУЛЯРНОЕ',
@@ -2406,6 +2436,16 @@ class Tr {
       'profile_avatar_removed': 'Profile photo removed',
       'management': 'Control panel',
       'management_subtitle': 'Your finances under control',
+      'my_profile': 'My Profile',
+      'personal_data': 'Personal data',
+      'first_name': 'First name',
+      'last_name': 'Last name',
+      'birthday': 'Birthday',
+      'gender': 'Gender',
+      'not_specified': 'Not specified',
+      'edit_photo': 'Edit photo',
+      'male': 'Male',
+      'female': 'Female',
       'section_finance': 'FINANCE',
       'section_app_settings': 'APP SETTINGS',
       'recurring': 'RECURRING',
@@ -3112,6 +3152,16 @@ class Tr {
       'weekday_sun': 'Нд',
       'management': 'Панель керування',
       'management_subtitle': 'Ваші фінанси під контролем',
+      'my_profile': 'Мій профіль',
+      'personal_data': 'Особисті дані',
+      'first_name': 'Ім\'я',
+      'last_name': 'Прізвище',
+      'birthday': 'День народження',
+      'gender': 'Стать',
+      'not_specified': 'Не вказано',
+      'edit_photo': 'Змінити фото',
+      'male': 'Чоловічий',
+      'female': 'Жіночий',
       'section_finance': 'ФІНАНСИ',
       'section_app_settings': 'НАЛАШТУВАННЯ ПРОГРАМИ',
       'profile_avatar_choose': 'Обрати фото',

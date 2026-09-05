@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,177 +12,344 @@ import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/theme/color_well.dart';
-import 'profile_avatar.dart';
+import 'profile_avatar.dart' show ProfileAvatar, openProfileAvatarSheet;
 import '../settings/settings_screen.dart' show openNameSheet;
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../auth/cloud_auth.dart';
 import '../auth/cloud_restore_prompt.dart';
-import '../../widgets/common.dart' show PageHeader;
+import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
-import '../../widgets/pro_badge.dart';
 import '../../widgets/pro_upgrade_card.dart';
 
-class ProfileScreen extends ConsumerStatefulWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  final _headerKey = GlobalKey();
-  final _scroll = ScrollController();
-  double _headerHeight = 56;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeader());
-  }
-
-  @override
-  void dispose() {
-    _scroll.dispose();
-    super.dispose();
-  }
-
-  void _measureHeader() {
-    final box = _headerKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return;
-    final h = box.size.height;
-    if ((h - _headerHeight).abs() > 0.5 && mounted) {
-      setState(() => _headerHeight = h);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
     final settings = ref.watch(settingsControllerProvider);
     final authUser = ref.watch(authUserProvider).valueOrNull;
-    final currency = settings.baseCurrency;
-    final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
     final isPro = ref.watch(proControllerProvider).isPro;
 
-    const side = AppSpacing.lg;
-    const headerGap = 16.0;
-    final top = MediaQuery.viewPaddingOf(context).top + AppSpacing.xs;
-    final bottomClearance = AppSpacing.pushedScrollBottomInset(context);
-
     return Scaffold(
-      body: Stack(
-        clipBehavior: Clip.none,
+      body: StickyScrollPage(
+        padding: AppSpacing.pushedPagePadding(context),
+        headerGap: 16,
+        header: Row(
+          children: [
+            RoundIconButton(
+              icon: LucideIcons.arrowLeft,
+              onTap: () => context.pop(),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ScreenTitlePill(
+                title: tr.myProfile,
+                subtitle: tr.personalData,
+                large: true,
+                expand: true,
+                trailing: const WhatsAppSupportChip(dense: true),
+              ),
+            ),
+          ],
+        ),
         children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final minBody = (constraints.maxHeight -
-                      top -
-                      _headerHeight -
-                      headerGap -
-                      bottomClearance)
-                  .clamp(0.0, double.infinity);
-              return SingleChildScrollView(
-                controller: _scroll,
-                padding: EdgeInsets.fromLTRB(
-                  side,
-                  top + _headerHeight + headerGap,
-                  side,
-                  bottomClearance,
+          _AvatarSection(
+            settings: settings,
+            authUser: authUser,
+            tr: tr,
+            ref: ref,
+          ),
+          const SizedBox(height: 20),
+          _FormGroup(
+            children: [
+              _FormRow(
+                label: tr.firstName,
+                value: settings.userName,
+                onTap: () => openNameSheet(context, ref, tr),
+              ),
+              _FormRow(
+                label: tr.lastName,
+                value: settings.lastName,
+                onTap: () => _editLastName(context, ref, tr, settings.lastName),
+              ),
+            ],
+          ),
+          if (authUser != null) ...[
+            const SizedBox(height: 12),
+            _FormGroup(
+              children: [
+                _FormRow(
+                  label: 'Email',
+                  value: authUser.email ?? '',
+                  readOnly: true,
                 ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: minBody),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ProUpgradeCard(
-                        title: isPro ? tr.proTitle : tr.proGo,
-                        subtitle: isPro ? tr.proActive : tr.proCtaSubtitle,
-                        onTap: () => openPaywall(context, ProGate.generic),
-                      ),
-                      const SizedBox(height: 20),
-                      _MenuGroup(
-                        children: [
-                          if (authUser == null)
-                            _MenuRow(
-                              icon: LucideIcons.logIn,
-                              iconBg: const Color(0xFFE0F2FE),
-                              label: tr.signIn,
-                              onTap: () => context.push('/settings/account'),
-                            ),
-                          _MenuRow(
-                            icon: LucideIcons.database,
-                            iconBg: const Color(0xFFF2F2F2),
-                            label: tr.dataBackups,
-                            authLocked: authUser == null,
-                            onTap: () => authUser == null
-                                ? context.push('/settings/account')
-                                : context.push('/settings/backups'),
-                          ),
-                        ],
-                      ),
-                      if (authUser != null) ...[
-                        const SizedBox(height: 20),
-                        _MenuGroup(
-                          children: [
-                            _MenuRow(
-                              icon: LucideIcons.trash2,
-                              iconBg: const Color(0xFFFFE4E1),
-                              label: tr.deleteCloudAccount,
-                              danger: true,
-                              onTap: () =>
-                                  _confirmDeleteAccount(context, ref, tr),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Pressable(
-                          onTap: () => ref.read(cloudAuthProvider).signOut(),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            decoration: BoxDecoration(
-                              color: context.emphasized,
-                              borderRadius: BorderRadius.circular(16),
-                              border:
-                                  Border.all(color: context.emphasizedBorder),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              tr.signOut,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+              ],
+            ),
+          ],
+          const SizedBox(height: 12),
+          _FormGroup(
+            children: [
+              _FormRow(
+                label: tr.birthday,
+                value: settings.birthday,
+                placeholder: tr.notSpecified,
+                onTap: () => _editBirthday(context, ref, tr, settings.birthday),
+              ),
+              _FormRow(
+                label: tr.gender,
+                value: _genderLabel(tr, settings.gender),
+                placeholder: tr.notSpecified,
+                onTap: () => _editGender(context, ref, tr, settings.gender),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          ProUpgradeCard(
+            title: isPro ? tr.proTitle : tr.proGo,
+            subtitle: isPro ? tr.proActive : tr.proCtaSubtitle,
+            onTap: () => openPaywall(context, ProGate.generic),
+          ),
+          if (authUser == null) ...[
+            const SizedBox(height: 20),
+            _FormGroup(
+              children: [
+                _FormRow(
+                  label: tr.signIn,
+                  onTap: () => context.push('/settings/account'),
+                  leading: LucideIcons.logIn,
+                  leadingColor: const Color(0xFFE0F2FE),
+                ),
+              ],
+            ),
+          ],
+          if (authUser != null) ...[
+            const SizedBox(height: 20),
+            _FormGroup(
+              children: [
+                _FormRow(
+                  label: tr.deleteCloudAccount,
+                  onTap: () => _confirmDeleteAccount(context, ref, tr),
+                  leading: LucideIcons.trash2,
+                  leadingColor: const Color(0xFFFFE4E1),
+                  danger: true,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Pressable(
+              onTap: () => ref.read(cloudAuthProvider).signOut(),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: context.emphasized,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: context.emphasizedBorder),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  tr.signOut,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
                 ),
-              );
-            },
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+String _genderLabel(Tr tr, String? gender) {
+  switch (gender) {
+    case 'male':
+      return tr.male;
+    case 'female':
+      return tr.female;
+    default:
+      return '';
+  }
+}
+
+Future<void> _editLastName(
+  BuildContext context,
+  WidgetRef ref,
+  Tr tr,
+  String? current,
+) async {
+  final controller = TextEditingController(text: current ?? '');
+  final result = await showDialog<String>(
+    context: context,
+    builder: (dctx) => AlertDialog(
+      title: Text(tr.lastName),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        textCapitalization: TextCapitalization.words,
+        decoration: InputDecoration(labelText: tr.lastName),
+        onSubmitted: (v) => Navigator.pop(dctx, v.trim()),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dctx),
+          child: Text(tr.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dctx, controller.text.trim()),
+          child: Text(tr.save),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  if (result == null || !context.mounted) return;
+  await ref.read(settingsControllerProvider.notifier).setLastName(
+        result.isEmpty ? null : result,
+      );
+}
+
+Future<void> _editBirthday(
+  BuildContext context,
+  WidgetRef ref,
+  Tr tr,
+  String? current,
+) async {
+  DateTime initial = DateTime.now();
+  if (current != null) {
+    try {
+      final parts = current.split('-');
+      if (parts.length == 3) {
+        initial = DateTime(
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          int.parse(parts[2]),
+        );
+      }
+    } catch (_) {}
+  }
+
+  DateTime? picked = initial;
+  await showCupertinoModalPopup<void>(
+    context: context,
+    builder: (pctx) => Container(
+      height: 300,
+      color: pctx.surface,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              CupertinoButton(
+                child: Text(tr.cancel),
+                onPressed: () {
+                  picked = null;
+                  Navigator.pop(pctx);
+                },
+              ),
+              CupertinoButton(
+                child: Text(tr.save),
+                onPressed: () => Navigator.pop(pctx),
+              ),
+            ],
           ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(side, top, side, 12),
-              child: KeyedSubtree(
-                key: _headerKey,
-                child: _ProfileStickyHeader(
-                  onBack: () => context.pop(),
-                  userName: authUser != null ? settings.userName : tr.guestName,
-                  subtitle: authUser?.email ??
-                      '${tr.accountsCount(accounts.length)} · $currency',
-                  localAvatarPath: settings.profileAvatarPath,
-                  photoUrl: authUser?.photoURL,
-                  onEditTap: () => openNameSheet(context, ref, tr),
-                ),
+          Expanded(
+            child: CupertinoDatePicker(
+              mode: CupertinoDatePickerMode.date,
+              initialDateTime: initial,
+              maximumDate: DateTime.now(),
+              minimumYear: 1900,
+              onDateTimeChanged: (d) => picked = d,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  if (picked == null || !context.mounted) return;
+  final formatted =
+      '${picked!.year}-${picked!.month.toString().padLeft(2, '0')}-${picked!.day.toString().padLeft(2, '0')}';
+  await ref.read(settingsControllerProvider.notifier).setBirthday(formatted);
+}
+
+Future<void> _editGender(
+  BuildContext context,
+  WidgetRef ref,
+  Tr tr,
+  String? current,
+) async {
+  final result = await showCupertinoModalPopup<String?>(
+    context: context,
+    builder: (pctx) => CupertinoActionSheet(
+      actions: [
+        CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(pctx, 'male'),
+          isDefaultAction: current == 'male',
+          child: Text(tr.male),
+        ),
+        CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(pctx, 'female'),
+          isDefaultAction: current == 'female',
+          child: Text(tr.female),
+        ),
+        CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(pctx, ''),
+          child: Text(tr.notSpecified),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        onPressed: () => Navigator.pop(pctx),
+        child: Text(tr.cancel),
+      ),
+    ),
+  );
+
+  if (result == null || !context.mounted) return;
+  await ref.read(settingsControllerProvider.notifier).setGender(
+        result.isEmpty ? null : result,
+      );
+}
+
+class _AvatarSection extends StatelessWidget {
+  const _AvatarSection({
+    required this.settings,
+    required this.authUser,
+    required this.tr,
+    required this.ref,
+  });
+
+  final SettingsState settings;
+  final dynamic authUser;
+  final Tr tr;
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        children: [
+          ProfileAvatar(
+            name: authUser != null ? settings.userName : tr.guestName,
+            localPath: settings.profileAvatarPath,
+            photoUrl: authUser?.photoURL as String?,
+            size: 80,
+          ),
+          const SizedBox(height: 10),
+          Pressable(
+            onTap: () => openProfileAvatarSheet(context, ref),
+            child: Text(
+              tr.editPhoto,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.lime,
               ),
             ),
           ),
@@ -191,105 +359,113 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
-class _ProfileStickyHeader extends StatelessWidget {
-  const _ProfileStickyHeader({
-    required this.onBack,
-    required this.userName,
-    required this.subtitle,
-    required this.localAvatarPath,
-    required this.photoUrl,
-    required this.onEditTap,
-  });
-
-  final VoidCallback onBack;
-  final String userName;
-  final String subtitle;
-  final String? localAvatarPath;
-  final String? photoUrl;
-  final VoidCallback onEditTap;
+class _FormGroup extends StatelessWidget {
+  const _FormGroup({required this.children});
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    final controlBg = context.isDark
-        ? Colors.white.withValues(alpha: 0.1)
-        : AppColors.ink.withValues(alpha: 0.06);
-    const size = PageHeader.controlSize;
-
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
       decoration: BoxDecoration(
         color: context.surface,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Pressable(
-            onTap: onBack,
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                color: controlBg,
-                shape: BoxShape.circle,
+          for (var i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i != children.length - 1)
+              Padding(
+                padding: const EdgeInsets.only(left: 16, right: 16),
+                child: Divider(height: 1, color: context.divider),
               ),
-              child: Icon(
-                LucideIcons.arrowLeft,
-                size: 18,
-                color: context.primaryText,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          ProfileAvatar(
-            name: userName,
-            localPath: localAvatarPath,
-            photoUrl: photoUrl,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  userName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: context.primaryText,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.mutedText,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Pressable(
-            onTap: onEditTap,
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                color: controlBg,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                LucideIcons.pencil,
-                size: 16,
-                color: context.primaryText,
-              ),
-            ),
-          ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _FormRow extends StatelessWidget {
+  const _FormRow({
+    required this.label,
+    this.value,
+    this.placeholder,
+    this.onTap,
+    this.readOnly = false,
+    this.danger = false,
+    this.leading,
+    this.leadingColor,
+  });
+
+  final String label;
+  final String? value;
+  final String? placeholder;
+  final VoidCallback? onTap;
+  final bool readOnly;
+  final bool danger;
+  final IconData? leading;
+  final Color? leadingColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final labelColor =
+        danger ? const Color(0xFFE53E3E) : context.primaryText;
+    final displayValue = (value != null && value!.isNotEmpty)
+        ? value!
+        : (placeholder ?? '');
+
+    return Pressable(
+      enabled: onTap != null,
+      onTap: onTap ?? () {},
+      scale: 0.98,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            if (leading != null) ...[
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: leadingColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(leading, size: 16, color: context.primaryText),
+              ),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: labelColor,
+                ),
+              ),
+            ),
+            if (displayValue.isNotEmpty)
+              Flexible(
+                child: Text(
+                  displayValue,
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: (value == null || value!.isEmpty)
+                        ? context.faintText
+                        : context.mutedText,
+                  ),
+                ),
+              ),
+            if (!readOnly && !danger) ...[
+              const SizedBox(width: 4),
+              Icon(LucideIcons.chevronRight, size: 16, color: context.faintText),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -325,7 +501,6 @@ Future<void> _confirmDeleteAccount(
   final cloud = ref.read(cloudAuthProvider);
   final provider = cloud.primaryAuthProviderId();
 
-  // Soft notice before Apple/Google sheet or password prompt.
   if (provider == 'apple.com' || provider == 'google.com') {
     final proceed = await showDialog<bool>(
       context: context,
@@ -452,130 +627,4 @@ Future<String?> _askDeletePassword(BuildContext context, Tr tr) async {
   controller.dispose();
   if (result == null || result.isEmpty) return null;
   return result;
-}
-
-class _MenuGroup extends StatelessWidget {
-  const _MenuGroup({required this.children});
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            children[i],
-            if (i != children.length - 1)
-              Padding(
-                padding: const EdgeInsets.only(left: 66, right: 16),
-                child: Divider(height: 1, color: context.divider),
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _MenuRow extends StatelessWidget {
-  const _MenuRow({
-    required this.icon,
-    required this.iconBg,
-    required this.label,
-    this.trailing,
-    this.onTap,
-    this.danger = false,
-    this.showProMark = false,
-    this.proLocked = false,
-    this.authLocked = false,
-  });
-  final IconData icon;
-  final Color iconBg;
-  final String label;
-  final String? trailing;
-  final VoidCallback? onTap;
-  final bool danger;
-  final bool showProMark;
-  final bool proLocked;
-  final bool authLocked;
-
-  @override
-  Widget build(BuildContext context) {
-    final labelColor = danger
-        ? const Color(0xFFE53E3E)
-        : proLocked
-            ? proLockedTextColor(context)
-            : authLocked
-                ? context.mutedText
-                : context.primaryText;
-    final iconWell = Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: context.wellBg(iconBg),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(
-        icon,
-        size: 18,
-        color: context.wellFg(iconBg),
-      ),
-    );
-    return Pressable(
-      enabled: onTap != null,
-      onTap: onTap ?? () {},
-      scale: 0.98,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            if (showProMark)
-              ProIconMark(size: 36, child: iconWell)
-            else
-              iconWell,
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: labelColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (trailing != null)
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Text(
-                  trailing!,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: context.mutedText,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            if (authLocked)
-              Icon(LucideIcons.lock, size: 14, color: context.faintText)
-            else if (onTap != null && !danger)
-              Icon(
-                LucideIcons.chevronRight,
-                size: 16,
-                color: context.faintText,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }

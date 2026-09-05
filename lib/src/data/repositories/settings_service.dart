@@ -22,6 +22,9 @@ class SettingsService {
   static const _kSmartReminders = 'smart_reminders';
   static const _kDemoData = 'is_demo_data';
   static const _kProfileAvatarPath = 'profile_avatar_path';
+  static const _kLastName = 'last_name';
+  static const _kBirthday = 'birthday';
+  static const _kGender = 'gender';
 
   bool get onboardingDone => _prefs.getBool(_kOnboardingDone) ?? false;
   Future<void> setOnboardingDone(bool v) =>
@@ -37,6 +40,33 @@ class SettingsService {
       await _prefs.remove(_kProfileAvatarPath);
     } else {
       await _prefs.setString(_kProfileAvatarPath, path);
+    }
+  }
+
+  String? get lastName => _prefs.getString(_kLastName);
+  Future<void> setLastName(String? v) async {
+    if (v == null || v.trim().isEmpty) {
+      await _prefs.remove(_kLastName);
+    } else {
+      await _prefs.setString(_kLastName, v.trim());
+    }
+  }
+
+  String? get birthday => _prefs.getString(_kBirthday);
+  Future<void> setBirthday(String? v) async {
+    if (v == null || v.trim().isEmpty) {
+      await _prefs.remove(_kBirthday);
+    } else {
+      await _prefs.setString(_kBirthday, v.trim());
+    }
+  }
+
+  String? get gender => _prefs.getString(_kGender);
+  Future<void> setGender(String? v) async {
+    if (v == null || v.trim().isEmpty) {
+      await _prefs.remove(_kGender);
+    } else {
+      await _prefs.setString(_kGender, v.trim());
     }
   }
 
@@ -141,6 +171,9 @@ class SettingsState {
     required this.dailyReminderMinute,
     required this.smartRemindersEnabled,
     this.profileAvatarPath,
+    this.lastName,
+    this.birthday,
+    this.gender,
   });
 
   final bool onboardingDone;
@@ -154,6 +187,9 @@ class SettingsState {
   final int dailyReminderMinute;
   final bool smartRemindersEnabled;
   final String? profileAvatarPath;
+  final String? lastName;
+  final String? birthday;
+  final String? gender;
 
   ThemeMode get materialThemeMode {
     switch (themeMode) {
@@ -179,6 +215,12 @@ class SettingsState {
     bool? smartRemindersEnabled,
     String? profileAvatarPath,
     bool clearProfileAvatarPath = false,
+    String? lastName,
+    bool clearLastName = false,
+    String? birthday,
+    bool clearBirthday = false,
+    String? gender,
+    bool clearGender = false,
   }) {
     return SettingsState(
       onboardingDone: onboardingDone ?? this.onboardingDone,
@@ -195,6 +237,9 @@ class SettingsState {
       profileAvatarPath: clearProfileAvatarPath
           ? null
           : (profileAvatarPath ?? this.profileAvatarPath),
+      lastName: clearLastName ? null : (lastName ?? this.lastName),
+      birthday: clearBirthday ? null : (birthday ?? this.birthday),
+      gender: clearGender ? null : (gender ?? this.gender),
     );
   }
 }
@@ -215,6 +260,9 @@ class SettingsController extends Notifier<SettingsState> {
       dailyReminderMinute: s.dailyReminderMinute,
       smartRemindersEnabled: s.smartRemindersEnabled,
       profileAvatarPath: s.profileAvatarPath,
+      lastName: s.lastName,
+      birthday: s.birthday,
+      gender: s.gender,
     );
   }
 
@@ -283,6 +331,27 @@ class SettingsController extends Notifier<SettingsState> {
     await ref.read(settingsServiceProvider).setProfileAvatarPath(path);
   }
 
+  Future<void> setLastName(String? v) async {
+    state = v == null
+        ? state.copyWith(clearLastName: true)
+        : state.copyWith(lastName: v);
+    await ref.read(settingsServiceProvider).setLastName(v);
+  }
+
+  Future<void> setBirthday(String? v) async {
+    state = v == null
+        ? state.copyWith(clearBirthday: true)
+        : state.copyWith(birthday: v);
+    await ref.read(settingsServiceProvider).setBirthday(v);
+  }
+
+  Future<void> setGender(String? v) async {
+    state = v == null
+        ? state.copyWith(clearGender: true)
+        : state.copyWith(gender: v);
+    await ref.read(settingsServiceProvider).setGender(v);
+  }
+
   /// Reload reactive state after importing SharedPreferences from a backup.
   void reloadFromDisk() {
     final s = ref.read(settingsServiceProvider);
@@ -298,6 +367,9 @@ class SettingsController extends Notifier<SettingsState> {
       dailyReminderMinute: s.dailyReminderMinute,
       smartRemindersEnabled: s.smartRemindersEnabled,
       profileAvatarPath: s.profileAvatarPath,
+      lastName: s.lastName,
+      birthday: s.birthday,
+      gender: s.gender,
     );
   }
 
