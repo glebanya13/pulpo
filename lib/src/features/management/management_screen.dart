@@ -63,11 +63,13 @@ class ManagementScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   _MenuTile(
-                    icon: LucideIcons.user,
-                    label: tr.myAccount,
+                    icon: authUser != null ? LucideIcons.user : LucideIcons.logIn,
+                    label: authUser != null ? tr.myAccount : tr.signIn,
                     color: AppColors.lime,
                     showPro: false,
-                    onTap: () => context.push('/profile'),
+                    onTap: () => authUser != null
+                        ? context.push('/profile')
+                        : context.push('/settings/account'),
                   ),
                   Divider(height: 1, color: context.divider),
                   _MenuTile(
@@ -237,43 +239,6 @@ class ManagementScreen extends ConsumerWidget {
               onTap: () => context.push('/settings/reminders'),
             ),
 
-            if (authUser != null) ...[
-              const SizedBox(height: 20),
-              SoftCard(
-                padding: EdgeInsets.zero,
-                child: _MenuTile(
-                  icon: LucideIcons.trash2,
-                  label: tr.deleteCloudAccount,
-                  color: const Color(0xFFFFE4E1),
-                  showPro: false,
-                  danger: true,
-                  onTap: () => context.push('/profile'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Pressable(
-                onTap: () => ref.read(cloudAuthProvider).signOut(),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: context.emphasized,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: context.emphasizedBorder),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    tr.signOut,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-
             const SizedBox(height: 28),
             Text(
               'Monedero · v${AppInfo.version}',
@@ -323,7 +288,6 @@ class _MenuTile extends StatelessWidget {
     required this.showPro,
     required this.onTap,
     this.trailing,
-    this.danger = false,
   });
 
   final IconData icon;
@@ -332,7 +296,6 @@ class _MenuTile extends StatelessWidget {
   final bool showPro;
   final VoidCallback onTap;
   final String? trailing;
-  final bool danger;
 
   @override
   Widget build(BuildContext context) {
@@ -359,11 +322,9 @@ class _MenuTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: danger
-                      ? const Color(0xFFE53E3E)
-                      : showPro
-                          ? proLockedTextColor(context)
-                          : context.primaryText,
+                  color: showPro
+                      ? proLockedTextColor(context)
+                      : context.primaryText,
                 ),
               ),
             ),
@@ -374,8 +335,7 @@ class _MenuTile extends StatelessWidget {
               ),
               const SizedBox(width: 4),
             ],
-            if (!danger)
-              Icon(LucideIcons.chevronRight, size: 16, color: context.faintText),
+            Icon(LucideIcons.chevronRight, size: 16, color: context.faintText),
           ],
         ),
       ),

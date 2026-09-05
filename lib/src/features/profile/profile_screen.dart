@@ -175,7 +175,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 key: _headerKey,
                 child: _ProfileStickyHeader(
                   onBack: () => context.pop(),
-                  userName: settings.userName,
+                  userName: authUser != null ? settings.userName : tr.guestName,
                   subtitle: authUser?.email ??
                       '${tr.accountsCount(accounts.length)} · $currency',
                   localAvatarPath: settings.profileAvatarPath,

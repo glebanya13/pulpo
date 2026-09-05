@@ -714,7 +714,9 @@ class _TypeTabs extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: i == _index
-                          ? (context.isDark ? AppColors.ink3 : AppColors.ink)
+                          ? (context.isDark
+                              ? Colors.white.withValues(alpha: 0.13)
+                              : AppColors.ink)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(100),
                     ),
