@@ -53,6 +53,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   bool _gateChecked = false;
   bool _listening = false;
   bool _resumingListen = false;
+  bool _needsRestart = false;
   bool _stopAndSendPending = false;
   String _listenBase = '';
   int _listenSeconds = 0;
@@ -261,8 +262,13 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   }
 
   Future<void> _continueListening() async {
-    if (!_listening || !mounted || _resumingListen) return;
+    if (!_listening || !mounted) return;
+    if (_resumingListen) {
+      _needsRestart = true;
+      return;
+    }
     _resumingListen = true;
+    _needsRestart = false;
     _listenBase = _input.text.trim();
     try {
       await Future<void>.delayed(const Duration(milliseconds: 250));
@@ -270,6 +276,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       await _startSpeechEngine();
     } finally {
       _resumingListen = false;
+      if (_needsRestart && _listening && mounted && !_stopAndSendPending) {
+        _needsRestart = false;
+        unawaited(_continueListening());
+      }
     }
   }
 

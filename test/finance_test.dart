@@ -308,48 +308,6 @@ void main() {
       expect(restored.single.initialBalance, 12);
     });
 
-    test('backup includes tags', () async {
-      final accountId = await db.into(db.accounts).insert(
-            AccountsCompanion.insert(
-              name: 'Cash',
-              type: AccountType.cash.index,
-              currency: 'EUR',
-            ),
-          );
-      final txId = await db.into(db.transactions).insert(
-            TransactionsCompanion.insert(
-              accountId: accountId,
-              amount: 5,
-              currency: 'EUR',
-              type: TxType.expense.index,
-              date: DateTime(2026, 8, 1),
-            ),
-          );
-      final tagId =
-          await db.into(db.tags).insert(TagsCompanion.insert(name: 'trip'));
-      await db.into(db.transactionTags).insert(
-            TransactionTagsCompanion.insert(
-              transactionId: txId,
-              tagId: tagId,
-            ),
-          );
-
-      SharedPreferences.setMockInitialValues({});
-      final prefs = await SharedPreferences.getInstance();
-      final backup = BackupService(db, SettingsService(prefs));
-      final snap = await backup.snapshot();
-      expect(snap['tags'], hasLength(1));
-      expect(snap['transactionTags'], hasLength(1));
-      expect(snap['appPrefs'], isA<Map>());
-
-      await db.delete(db.transactionTags).go();
-      await db.delete(db.tags).go();
-      await db.delete(db.transactions).go();
-      await backup.restoreFromMap(snap);
-      expect((await db.select(db.tags).get()).single.name, 'trip');
-      expect((await db.select(db.transactionTags).get()), hasLength(1));
-    });
-
     test('recurring posts due transaction', () async {
       final accountId = await db.into(db.accounts).insert(
             AccountsCompanion.insert(

@@ -19,8 +19,6 @@ part 'app_database.g.dart';
     Accounts,
     Categories,
     Transactions,
-    Tags,
-    TransactionTags,
     Budgets,
     Goals,
     Debts,
@@ -38,19 +36,17 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   /// Wipes every user-facing table. Keeps schema and settings intact.
   Future<void> resetAllData() async {
     await transaction(() async {
-      await delete(transactionTags).go();
       await delete(transactions).go();
       await delete(recurringRules).go();
       await delete(subscriptions).go();
       await delete(debts).go();
       await delete(budgets).go();
       await delete(goals).go();
-      await delete(tags).go();
       await delete(exchangeRates).go();
       await delete(categories).go();
       await delete(accounts).go();
@@ -101,6 +97,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 7) {
             await m.createTable(assistantMessages);
             await m.createTable(errorLogs);
+          }
+          if (from < 8) {
+            await customStatement('DROP TABLE IF EXISTS transaction_tags');
+            await customStatement('DROP TABLE IF EXISTS tags');
           }
         },
       );

@@ -91,17 +91,27 @@ class _NavItem extends StatelessWidget {
       child: Semantics(
         button: true,
         selected: active,
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
           width: 44,
           height: 44,
           decoration: BoxDecoration(
             color: active ? activeBg : Colors.transparent,
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            icon,
-            size: 21,
-            color: active ? activeFg : idle,
+          child: TweenAnimationBuilder<Color?>(
+            tween: ColorTween(
+              begin: active ? idle : activeFg,
+              end: active ? activeFg : idle,
+            ),
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            builder: (context, color, _) => Icon(
+              icon,
+              size: 21,
+              color: color ?? (active ? activeFg : idle),
+            ),
           ),
         ),
       ),

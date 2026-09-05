@@ -71,6 +71,33 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       );
     }
 
+    void closePaywall() => Navigator.pop(context);
+
+    Widget floatingControl({
+      required IconData icon,
+      required VoidCallback onTap,
+    }) {
+      return Pressable(
+        onTap: onTap,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: context.surface,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: context.isDark ? 0.35 : 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(icon, size: 18, color: context.primaryText),
+        ),
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -78,31 +105,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             ListView(
               padding: EdgeInsets.fromLTRB(
                 24,
-                8,
+                56,
                 24,
-                showPinnedCta ? 132 : 32,
+                showPinnedCta ? 100 : 32,
               ),
               children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: Pressable(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: context.surface,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    LucideIcons.x,
-                    size: 18,
-                    color: context.primaryText,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
             const Center(child: _PaywallProHero()),
             const SizedBox(height: 18),
             Text(
@@ -342,6 +349,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              const MadeInSpainTagline(),
               if (!pro.loading &&
                   (pro.products.isEmpty || !pro.storeAvailable))
                 Padding(
@@ -381,6 +390,24 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             ],
               ],
             ),
+            Positioned(
+              top: 8,
+              left: 16,
+              right: 16,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  floatingControl(
+                    icon: LucideIcons.arrowLeft,
+                    onTap: closePaywall,
+                  ),
+                  floatingControl(
+                    icon: LucideIcons.x,
+                    onTap: closePaywall,
+                  ),
+                ],
+              ),
+            ),
             if (showPinnedCta)
               Positioned(
                 left: 24,
@@ -391,8 +418,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     paywallCta(),
-                    const SizedBox(height: 10),
-                    const MadeInSpainTagline(),
                     if (pro.error != null) ...[
                       const SizedBox(height: 8),
                       Text(

@@ -32,6 +32,7 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
   db.Account? _account;
   bool _listening = false;
   bool _resumingListen = false;
+  bool _needsRestart = false;
   String _listenBase = '';
   bool _busy = false;
   bool _gateChecked = false;
@@ -110,8 +111,13 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
   }
 
   Future<void> _continueListening() async {
-    if (!_listening || !mounted || _resumingListen) return;
+    if (!_listening || !mounted) return;
+    if (_resumingListen) {
+      _needsRestart = true;
+      return;
+    }
     _resumingListen = true;
+    _needsRestart = false;
     _listenBase = _textCtrl.text.trim();
     try {
       await Future<void>.delayed(const Duration(milliseconds: 250));
@@ -119,6 +125,10 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
       await _startSpeechEngine();
     } finally {
       _resumingListen = false;
+      if (_needsRestart && _listening && mounted) {
+        _needsRestart = false;
+        unawaited(_continueListening());
+      }
     }
   }
 

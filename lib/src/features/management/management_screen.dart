@@ -11,29 +11,12 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
+import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_badge.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
-
-typedef ManagementMenuItem = (IconData, String, String, Color, bool);
-
-List<ManagementMenuItem> managementMenuItems(Tr tr) => [
-      (LucideIcons.wallet, tr.accounts, '/accounts', const Color(0xFF8BD44A), false),
-      (LucideIcons.pieChart, tr.budgets, '/budgets', const Color(0xFFFFB020), false),
-      (
-        LucideIcons.usersRound,
-        tr.sharedBudgetTitle,
-        '/shared-budget',
-        const Color(0xFF7C6CFF),
-        true,
-      ),
-      (LucideIcons.users, tr.debts, '/debts', const Color(0xFFFF5C5C), false),
-      (LucideIcons.tv, tr.subscriptions, '/subscriptions', const Color(0xFF7C6CFF), false),
-      (LucideIcons.repeat, tr.recurringOps, '/recurring', const Color(0xFF2EB5FF), false),
-      (LucideIcons.target, tr.goals, '/goals', const Color(0xFFCDFF3A), false),
-      (LucideIcons.layers, tr.categories, '/categories', const Color(0xFFD4F5E0), false),
-    ];
+import '../settings/reminder_settings.dart';
 
 class ManagementScreen extends ConsumerWidget {
   const ManagementScreen({super.key});
@@ -42,7 +25,8 @@ class ManagementScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
     final isPro = ref.watch(proControllerProvider).isPro;
-    final items = managementMenuItems(tr);
+    final settings = ref.watch(settingsControllerProvider);
+    final pro = ref.watch(proControllerProvider);
 
     return ResetScrollWhenObscured(
       tabPath: '/management',
@@ -54,10 +38,18 @@ class ManagementScreen extends ConsumerWidget {
           headerGap: 16,
           header: ScreenTitlePill(
             title: tr.management,
+            subtitle: tr.managementSubtitle,
             large: true,
             expand: true,
+            trailing: const HeaderSupportActions(dense: true),
           ),
           children: [
+            if (!isPro)
+              _ProBanner(onTap: () => openPaywall(context, ProGate.generic)),
+            if (!isPro) const SizedBox(height: 20),
+
+            _SectionLabel(tr.accountSection.toUpperCase()),
+            const SizedBox(height: 8),
             SoftCard(
               padding: EdgeInsets.zero,
               child: Column(
@@ -70,90 +62,283 @@ class ManagementScreen extends ConsumerWidget {
                     onTap: () => context.push('/profile'),
                   ),
                   Divider(height: 1, color: context.divider),
-                  for (var i = 0; i < items.length; i++) ...[
-                    _MenuTile(
-                      icon: items[i].$1,
-                      label: items[i].$2,
-                      color: items[i].$4,
-                      showPro: items[i].$5 && !isPro,
-                      onTap: () => context.push(items[i].$3),
-                    ),
-                    if (i != items.length - 1)
-                      Divider(height: 1, color: context.divider),
-                  ],
+                  _MenuTile(
+                    icon: LucideIcons.shield,
+                    label: tr.security,
+                    color: const Color(0xFF2EB5FF),
+                    showPro: false,
+                    onTap: () => context.push('/settings/security'),
+                  ),
                 ],
               ),
             ),
-            if (!isPro) ...[
-              const SizedBox(height: 16),
-              Pressable(
-                onTap: () => openPaywall(context, ProGate.generic),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 14,
+
+            const SizedBox(height: 20),
+            _SectionLabel(tr.sectionFinance),
+            const SizedBox(height: 8),
+            SoftCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _MenuTile(
+                    icon: LucideIcons.wallet,
+                    label: tr.accounts,
+                    color: const Color(0xFF8BD44A),
+                    showPro: false,
+                    onTap: () => context.push('/accounts'),
                   ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFFD4FF00),
-                        AppColors.lime,
-                        Color(0xFFF0FF7A),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.lime.withValues(alpha: 0.4),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.layers,
+                    label: tr.categories,
+                    color: const Color(0xFFD4F5E0),
+                    showPro: false,
+                    onTap: () => context.push('/categories'),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.35),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          LucideIcons.rocket,
-                          size: 16,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          tr.proGo,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.ink,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        LucideIcons.chevronRight,
-                        size: 18,
-                        color: AppColors.ink.withValues(alpha: 0.75),
-                      ),
-                    ],
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.pieChart,
+                    label: tr.budgets,
+                    color: const Color(0xFFFFB020),
+                    showPro: false,
+                    onTap: () => context.push('/budgets'),
                   ),
-                ),
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.usersRound,
+                    label: tr.sharedBudgetTitle,
+                    color: const Color(0xFF7C6CFF),
+                    showPro: !isPro,
+                    onTap: () => context.push('/shared-budget'),
+                  ),
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.users,
+                    label: tr.debts,
+                    color: const Color(0xFFFF5C5C),
+                    showPro: false,
+                    onTap: () => context.push('/debts'),
+                  ),
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.tv,
+                    label: tr.subscriptions,
+                    color: const Color(0xFF7C6CFF),
+                    showPro: false,
+                    onTap: () => context.push('/subscriptions'),
+                  ),
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.repeat,
+                    label: tr.recurringOps,
+                    color: const Color(0xFF2EB5FF),
+                    showPro: false,
+                    onTap: () => context.push('/recurring'),
+                  ),
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.target,
+                    label: tr.goals,
+                    color: const Color(0xFFCDFF3A),
+                    showPro: false,
+                    onTap: () => context.push('/goals'),
+                  ),
+                ],
               ),
-            ],
+            ),
+
+            const SizedBox(height: 20),
+            _SectionLabel(tr.sectionAppSettings),
+            const SizedBox(height: 8),
+            SoftCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _MenuTile(
+                    icon: LucideIcons.globe,
+                    label: tr.language,
+                    color: const Color(0xFF2EB5FF),
+                    showPro: false,
+                    onTap: () => context.push('/settings/language'),
+                  ),
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.dollarSign,
+                    label: tr.baseCurrency,
+                    color: const Color(0xFFFFB020),
+                    showPro: false,
+                    trailing: settings.baseCurrency,
+                    onTap: () => context.push('/settings/currency'),
+                  ),
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.moon,
+                    label: tr.theme,
+                    color: const Color(0xFF8BD44A),
+                    showPro: false,
+                    trailing: tr.themeLabel(settings.themeMode),
+                    onTap: () => context.push('/settings/theme'),
+                  ),
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.database,
+                    label: tr.dataBackups,
+                    color: const Color(0xFFD4F5E0),
+                    showPro: false,
+                    onTap: () => context.push('/settings/backups'),
+                  ),
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.download,
+                    label: tr.exportData,
+                    color: const Color(0xFF2EB5FF),
+                    showPro: false,
+                    onTap: () => context.push('/settings/export'),
+                  ),
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.upload,
+                    label: tr.importCsv,
+                    color: const Color(0xFF8BD44A),
+                    showPro: !isPro,
+                    onTap: () => context.push('/settings/import'),
+                  ),
+                  Divider(height: 1, color: context.divider),
+                  _MenuTile(
+                    icon: LucideIcons.info,
+                    label: tr.about,
+                    color: const Color(0xFFE8E4FF),
+                    showPro: false,
+                    onTap: () => context.push('/settings/about'),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+            ReminderCtaButton(
+              enabled: settings.dailyReminderEnabled ||
+                  (pro.isPro && settings.smartRemindersEnabled),
+              title: tr.dailyReminderCta,
+              subtitle: settings.dailyReminderEnabled
+                  ? tr.dailyReminderCtaOn(formatReminderTime(
+                      settings.dailyReminderHour,
+                      settings.dailyReminderMinute,
+                    ))
+                  : tr.dailyReminderCtaOff,
+              onTap: () => context.push('/settings/reminders'),
+            ),
+            const SizedBox(height: 8),
           ],
         );
       },
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
+          color: context.mutedText,
+        ),
+      ),
+    );
+  }
+}
+
+class _ProBanner extends StatelessWidget {
+  const _ProBanner({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = Tr.of(context);
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFD4FF00),
+              AppColors.lime,
+              Color(0xFFF0FF7A),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.lime.withValues(alpha: 0.4),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                LucideIcons.rocket,
+                size: 16,
+                color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tr.proGo,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                  Text(
+                    tr.proCtaSubtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.ink.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              LucideIcons.chevronRight,
+              size: 18,
+              color: AppColors.ink.withValues(alpha: 0.75),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -165,6 +350,7 @@ class _MenuTile extends StatelessWidget {
     required this.color,
     required this.showPro,
     required this.onTap,
+    this.trailing,
   });
 
   final IconData icon;
@@ -172,6 +358,7 @@ class _MenuTile extends StatelessWidget {
   final Color color;
   final bool showPro;
   final VoidCallback onTap;
+  final String? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -204,6 +391,13 @@ class _MenuTile extends StatelessWidget {
                 ),
               ),
             ),
+            if (trailing != null) ...[
+              Text(
+                trailing!,
+                style: TextStyle(fontSize: 13, color: context.mutedText),
+              ),
+              const SizedBox(width: 4),
+            ],
             Icon(LucideIcons.chevronRight, size: 16, color: context.faintText),
           ],
         ),

@@ -59,9 +59,10 @@ class _QuickActionsSheet extends ConsumerWidget {
                   icon: LucideIcons.arrowDownRight,
                   color: const Color(0xFF8BD44A),
                   label: tr.income,
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    context.push('/add?type=income');
+                    await Future.delayed(const Duration(milliseconds: 220));
+                    if (context.mounted) context.push('/add?type=income');
                   },
                 ),
               ),
@@ -71,9 +72,10 @@ class _QuickActionsSheet extends ConsumerWidget {
                   icon: LucideIcons.arrowUpRight,
                   color: const Color(0xFFFF5C5C),
                   label: tr.expense,
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    context.push('/add?type=expense');
+                    await Future.delayed(const Duration(milliseconds: 220));
+                    if (context.mounted) context.push('/add?type=expense');
                   },
                 ),
               ),
@@ -83,6 +85,8 @@ class _QuickActionsSheet extends ConsumerWidget {
           Pressable(
             onTap: () async {
               Navigator.pop(context);
+              await Future.delayed(const Duration(milliseconds: 220));
+              if (!context.mounted) return;
               if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
               if (context.mounted) context.push('/assistant');
             },
@@ -259,9 +263,10 @@ class _QuickActionsSheet extends ConsumerWidget {
                     color: AppColors.info,
                     label: tr.transferBetweenAccounts,
                     hint: tr.transferBetweenHint,
-                    onTap: () {
+                    onTap: () async {
                       Navigator.pop(context);
-                      context.push('/add?type=transfer');
+                      await Future.delayed(const Duration(milliseconds: 220));
+                      if (context.mounted) context.push('/add?type=transfer');
                     },
                   ),
                 ),
@@ -272,9 +277,10 @@ class _QuickActionsSheet extends ConsumerWidget {
                     color: const Color(0xFFFFB020),
                     label: tr.transferExternal,
                     hint: tr.transferExternalHint,
-                    onTap: () {
+                    onTap: () async {
                       Navigator.pop(context);
-                      context.push('/add?type=expense&mode=external');
+                      await Future.delayed(const Duration(milliseconds: 220));
+                      if (context.mounted) context.push('/add?type=expense&mode=external');
                     },
                   ),
                 ),

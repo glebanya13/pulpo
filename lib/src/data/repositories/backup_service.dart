@@ -28,9 +28,6 @@ class BackupService {
     final settings = await _db.select(_db.settings).get();
     final recurring = await _db.select(_db.recurringRules).get();
     final subscriptions = await _db.select(_db.subscriptions).get();
-    final tags = await _db.select(_db.tags).get();
-    final transactionTags = await _db.select(_db.transactionTags).get();
-
     return {
       'version': 4,
       'exportedAt': DateTime.now().toIso8601String(),
@@ -44,8 +41,6 @@ class BackupService {
       'settings': settings.map((e) => e.toJson()).toList(),
       'recurringRules': recurring.map((e) => e.toJson()).toList(),
       'subscriptions': subscriptions.map((e) => e.toJson()).toList(),
-      'tags': tags.map((e) => e.toJson()).toList(),
-      'transactionTags': transactionTags.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -74,8 +69,6 @@ class BackupService {
   /// Wipe sample money data and clear the demo flag. Leaves categories.
   Future<void> clearDemoData() async {
     await _db.transaction(() async {
-      await _db.delete(_db.transactionTags).go();
-      await _db.delete(_db.tags).go();
       await _db.delete(_db.transactions).go();
       await _db.delete(_db.budgets).go();
       await _db.delete(_db.goals).go();
@@ -239,8 +232,6 @@ class BackupService {
     final normalized = jsonDecode(jsonEncode(json)) as Map<String, dynamic>;
 
     await _db.transaction(() async {
-      await _db.delete(_db.transactionTags).go();
-      await _db.delete(_db.tags).go();
       await _db.delete(_db.transactions).go();
       await _db.delete(_db.budgets).go();
       await _db.delete(_db.goals).go();
@@ -266,18 +257,6 @@ class BackupService {
       for (final j in (normalized['transactions'] as List? ?? [])) {
         await _db.into(_db.transactions).insert(
               Transaction.fromJson(asMap(j)),
-              mode: InsertMode.insertOrReplace,
-            );
-      }
-      for (final j in (normalized['tags'] as List? ?? [])) {
-        await _db.into(_db.tags).insert(
-              Tag.fromJson(asMap(j)),
-              mode: InsertMode.insertOrReplace,
-            );
-      }
-      for (final j in (normalized['transactionTags'] as List? ?? [])) {
-        await _db.into(_db.transactionTags).insert(
-              TransactionTag.fromJson(asMap(j)),
               mode: InsertMode.insertOrReplace,
             );
       }

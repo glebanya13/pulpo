@@ -128,6 +128,7 @@ class Tr {
   String get cloudRestoreOk => _get('cloud_restore_ok');
   String get cloudEmpty => _get('cloud_empty');
   String get signInToSync => _get('sign_in_to_sync');
+  String get signInGuestInfo => _get('sign_in_guest_info');
   String get email => _get('email');
   String get password => _get('password');
   String get firebaseNotReady => _get('firebase_not_ready');
@@ -231,6 +232,9 @@ class Tr {
 
   // ─────────────────────── PROFILE ───────────────────────
   String get management => _get('management');
+  String get managementSubtitle => _get('management_subtitle');
+  String get sectionFinance => _get('section_finance');
+  String get sectionAppSettings => _get('section_app_settings');
   String get recurring => _get('recurring');
   String get sectionSettings => _get('section_settings');
   String get accounts => _get('accounts');
@@ -968,6 +972,9 @@ class Tr {
       'profile_avatar_updated_local': 'Foto guardada en el dispositivo',
       'profile_avatar_removed': 'Foto de perfil eliminada',
       'management': 'Panel de control',
+      'management_subtitle': 'Tus finanzas bajo control',
+      'section_finance': 'FINANZAS',
+      'section_app_settings': 'AJUSTES DE LA APP',
       'recurring': 'RECURRENTE',
       'section_settings': 'AJUSTES',
       'accounts': 'Cuentas',
@@ -1394,6 +1401,8 @@ class Tr {
       'cloud_restore_ok': 'Datos restaurados desde la nube',
       'cloud_empty': 'Aún no hay copia en la nube',
       'sign_in_to_sync': 'Inicia sesión para sincronizar',
+      'sign_in_guest_info':
+          'Puedes usar la app sin cuenta. La copia de seguridad y sincronización requieren inicio de sesión.',
       'email': 'Email',
       'password': 'Contraseña',
       'firebase_not_ready': 'La nube se activará cuando conectemos Firebase.',
@@ -1680,6 +1689,9 @@ class Tr {
       'profile_avatar_updated_local': 'Фото сохранено на устройстве',
       'profile_avatar_removed': 'Фото профиля удалено',
       'management': 'Панель управления',
+      'management_subtitle': 'Ваши финансы под контролем',
+      'section_finance': 'ФИНАНСЫ',
+      'section_app_settings': 'НАСТРОЙКИ ПРИЛОЖЕНИЯ',
       'recurring': 'РЕГУЛЯРНОЕ',
       'section_settings': 'НАСТРОЙКИ',
       'accounts': 'Счета',
@@ -2106,6 +2118,8 @@ class Tr {
       'cloud_restore_ok': 'Данные восстановлены из облака',
       'cloud_empty': 'В облаке пока нет копии',
       'sign_in_to_sync': 'Войдите, чтобы синхронизировать',
+      'sign_in_guest_info':
+          'Можно пользоваться без аккаунта. Резервная копия и синхронизация доступны только после входа.',
       'email': 'Email',
       'password': 'Пароль',
       'firebase_not_ready': 'Облако включим, когда заказчик даст Firebase.',
@@ -2391,6 +2405,9 @@ class Tr {
       'profile_avatar_updated_local': 'Photo saved on this device',
       'profile_avatar_removed': 'Profile photo removed',
       'management': 'Control panel',
+      'management_subtitle': 'Your finances under control',
+      'section_finance': 'FINANCE',
+      'section_app_settings': 'APP SETTINGS',
       'recurring': 'RECURRING',
       'section_settings': 'SETTINGS',
       'accounts': 'Accounts',
@@ -2817,6 +2834,8 @@ class Tr {
       'cloud_restore_ok': 'Data restored from the cloud',
       'cloud_empty': 'No cloud backup yet',
       'sign_in_to_sync': 'Sign in to sync',
+      'sign_in_guest_info':
+          'You can use the app without an account. Backup and sync require sign-in.',
       'email': 'Email',
       'password': 'Password',
       'firebase_not_ready': 'Cloud sign-in will turn on when Firebase is connected.',
@@ -3092,6 +3111,9 @@ class Tr {
       'weekday_sat': 'Сб',
       'weekday_sun': 'Нд',
       'management': 'Панель керування',
+      'management_subtitle': 'Ваші фінанси під контролем',
+      'section_finance': 'ФІНАНСИ',
+      'section_app_settings': 'НАЛАШТУВАННЯ ПРОГРАМИ',
       'profile_avatar_choose': 'Обрати фото',
       'profile_avatar_remove': 'Видалити фото',
       'profile_avatar_updating': 'Оновлюємо фото…',
@@ -3490,6 +3512,8 @@ class Tr {
       'cloud_restore_ok': 'Дані відновлено з хмари',
       'cloud_empty': 'Ще немає копії в хмарі',
       'sign_in_to_sync': 'Увійдіть, щоб синхронізувати',
+      'sign_in_guest_info':
+          'Можна користуватися без облікового запису. Резервна копія і синхронізація доступні тільки після входу.',
       'email': 'Email',
       'password': 'Пароль',
       'firebase_not_ready': 'Ми увімкнемо хмару, коли клієнт дасть нам Firebase.',

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -104,7 +105,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     super.dispose();
   }
 
-  double get _amount => double.tryParse(_amountCtrl.text.replaceAll(',', '.')) ?? 0.0;
+  double get _amount => double.tryParse(
+        _amountCtrl.text.replaceAll(_ThousandsFormatter.sep, '').replaceAll(',', '.'),
+      ) ?? 0.0;
 
   List<String> _localizedCategoryNames(Tr tr, List<db.Category> cats) {
     return cats.where((c) {
@@ -196,9 +199,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final cats = ref.read(categoriesProvider).valueOrNull ?? [];
     setState(() {
       if (amount != null && amount > 0) {
-        _amountCtrl.text = amount == amount.roundToDouble()
-            ? amount.toStringAsFixed(0)
-            : amount.toStringAsFixed(2);
+        _amountCtrl.text = _ThousandsFormatter.format(amount);
       }
       if (date != null) _date = date;
       final noteText = note?.trim().isNotEmpty == true
@@ -331,9 +332,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     if (tx == null) return;
     _hydrated = true;
     _type = TxType.values[tx.type];
-    _amountCtrl.text = tx.amount == tx.amount.roundToDouble()
-        ? tx.amount.toStringAsFixed(0)
-        : tx.amount.toString();
+    _amountCtrl.text = _ThousandsFormatter.format(tx.amount);
     _date = tx.date;
     _noteCtrl.text = tx.note ?? '';
     _originalReceiptPath = tx.receiptPath;
@@ -774,6 +773,7 @@ class _AmountInput extends StatelessWidget {
           controller: controller,
           keyboardType:
               const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [_ThousandsFormatter()],
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => FocusScope.of(context).unfocus(),
           textAlign: TextAlign.center,
@@ -1356,6 +1356,82 @@ class _AccountPicker extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Formats the integer part of an amount with thin no-break space (U+202F)
+/// as a thousands separator while preserving the decimal part as typed.
+class _ThousandsFormatter extends TextInputFormatter {
+  static const sep = ' '; // narrow no-break space
+
+  static String _formatInt(String s) {
+    if (s.length <= 3) return s;
+    final buf = StringBuffer();
+    for (var i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buf.write(sep);
+      buf.write(s[i]);
+    }
+    return buf.toString();
+  }
+
+  /// Format a double value for display in the field.
+  static String format(double value) {
+    if (value == 0) return '';
+    final isWhole = value == value.roundToDouble();
+    final abs = value.abs();
+    final str = isWhole ? abs.toInt().toString() : abs.toStringAsFixed(2);
+    final dotIdx = str.indexOf('.');
+    if (dotIdx >= 0) {
+      return _formatInt(str.substring(0, dotIdx)) + str.substring(dotIdx);
+    }
+    return _formatInt(str);
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // Strip separators to get raw input
+    final raw = newValue.text.replaceAll(sep, '');
+    if (raw.isEmpty) return newValue.copyWith(text: '');
+
+    // Split at the first decimal separator (. or ,)
+    final dotIdx = raw.indexOf('.');
+    final commaIdx = raw.indexOf(',');
+    final decIdx = dotIdx >= 0
+        ? dotIdx
+        : commaIdx >= 0
+            ? commaIdx
+            : -1;
+
+    final intPart = decIdx >= 0 ? raw.substring(0, decIdx) : raw;
+    final decPart = decIdx >= 0 ? raw.substring(decIdx) : '';
+
+    final formatted = _formatInt(intPart) + decPart;
+
+    // Map raw cursor position → formatted cursor position
+    final rawBefore = newValue.text
+        .substring(0, newValue.selection.extentOffset.clamp(0, newValue.text.length))
+        .replaceAll(sep, '');
+    final rawLen = rawBefore.length;
+
+    int fCursor = formatted.length;
+    int counted = 0;
+    for (var i = 0; i < formatted.length; i++) {
+      if (counted >= rawLen) {
+        fCursor = i;
+        break;
+      }
+      if (formatted[i] != sep) counted++;
+    }
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(
+        offset: fCursor.clamp(0, formatted.length),
       ),
     );
   }

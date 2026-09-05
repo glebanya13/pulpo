@@ -152,7 +152,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             icon: LucideIcons.database,
                             iconBg: const Color(0xFFF2F2F2),
                             label: tr.dataBackups,
-                            onTap: () => context.push('/settings/backups'),
+                            authLocked: authUser == null,
+                            onTap: () => authUser == null
+                                ? context.push('/settings/account')
+                                : context.push('/settings/backups'),
                           ),
                           _MenuRow(
                             icon: LucideIcons.download,
@@ -594,6 +597,7 @@ class _MenuRow extends StatelessWidget {
     this.danger = false,
     this.showProMark = false,
     this.proLocked = false,
+    this.authLocked = false,
   });
   final IconData icon;
   final Color iconBg;
@@ -603,6 +607,7 @@ class _MenuRow extends StatelessWidget {
   final bool danger;
   final bool showProMark;
   final bool proLocked;
+  final bool authLocked;
 
   @override
   Widget build(BuildContext context) {
@@ -610,7 +615,9 @@ class _MenuRow extends StatelessWidget {
         ? const Color(0xFFE53E3E)
         : proLocked
             ? proLockedTextColor(context)
-            : context.primaryText;
+            : authLocked
+                ? context.mutedText
+                : context.primaryText;
     final iconWell = Container(
       width: 36,
       height: 36,
@@ -664,7 +671,9 @@ class _MenuRow extends StatelessWidget {
                   ),
                 ),
               ),
-            if (onTap != null && !danger)
+            if (authLocked)
+              Icon(LucideIcons.lock, size: 14, color: context.faintText)
+            else if (onTap != null && !danger)
               Icon(
                 LucideIcons.chevronRight,
                 size: 16,

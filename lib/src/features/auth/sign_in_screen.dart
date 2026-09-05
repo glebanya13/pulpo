@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_theme.dart';
@@ -55,6 +56,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         header: PageHeader(first: tr.signIn, onBack: () => context.pop()),
         headerGap: 24,
         children: [
+          _GuestInfoCard(text: tr.signInGuestInfo),
+          const SizedBox(height: 20),
           _Btn(
             icon: Icons.apple,
             label: tr.signInApple,
@@ -115,6 +118,39 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             const SizedBox(height: 16),
             const Center(child: CircularProgressIndicator()),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _GuestInfoCard extends StatelessWidget {
+  const _GuestInfoCard({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(LucideIcons.info, size: 16, color: context.mutedText),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.4,
+                color: context.mutedText,
+              ),
+            ),
+          ),
         ],
       ),
     );

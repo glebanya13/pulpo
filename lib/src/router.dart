@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -125,13 +124,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/profile',
-        redirect: (context, state) {
-          // Guest / demo: open sign-in instead of an empty profile.
-          if (FirebaseAuth.instance.currentUser == null) {
-            return '/settings/account';
-          }
-          return null;
-        },
         pageBuilder: (context, state) =>
             _fadePage(state, const ProfileScreen()),
       ),
