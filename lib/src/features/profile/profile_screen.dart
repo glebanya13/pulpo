@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
@@ -12,6 +13,7 @@ import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_well.dart';
 import 'profile_avatar.dart' show ProfileAvatar, openProfileAvatarSheet;
 import '../settings/settings_screen.dart' show openNameSheet;
 import '../../data/repositories/providers.dart';
@@ -93,6 +95,7 @@ class ProfileScreen extends ConsumerWidget {
                       label: 'Email',
                       value: authUser.email ?? '',
                       readOnly: true,
+                      valueFull: true,
                     ),
                   ],
                 ),
@@ -102,7 +105,10 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   _FormRow(
                     label: tr.birthday,
-                    value: settings.birthday,
+                    value: _formatBirthday(
+                      context,
+                      settings.birthday,
+                    ),
                     placeholder: tr.notSpecified,
                     onTap: () =>
                         _editBirthday(context, ref, tr, settings.birthday),
@@ -171,11 +177,31 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
               ],
+              const SizedBox(height: 12),
+              const MadeInSpainTagline(),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+String? _formatBirthday(BuildContext context, String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  try {
+    final parts = raw.split('-');
+    if (parts.length != 3) return raw;
+    final date = DateTime(
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+      int.parse(parts[2]),
+    );
+    return DateFormat.yMMMMd(
+      Localizations.localeOf(context).toString(),
+    ).format(date);
+  } catch (_) {
+    return raw;
   }
 }
 
@@ -408,6 +434,7 @@ class _FormRow extends StatelessWidget {
     this.danger = false,
     this.leading,
     this.leadingColor,
+    this.valueFull = false,
   });
 
   final String label;
@@ -418,6 +445,7 @@ class _FormRow extends StatelessWidget {
   final bool danger;
   final IconData? leading;
   final Color? leadingColor;
+  final bool valueFull;
 
   @override
   Widget build(BuildContext context) {
@@ -426,6 +454,7 @@ class _FormRow extends StatelessWidget {
     final displayValue = (value != null && value!.isNotEmpty)
         ? value!
         : (placeholder ?? '');
+    final well = leadingColor;
 
     return Pressable(
       enabled: onTap != null,
@@ -435,20 +464,24 @@ class _FormRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            if (leading != null) ...[
+            if (leading != null && well != null) ...[
               Container(
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: leadingColor,
+                  color: context.wellBg(well),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(leading, size: 16, color: context.primaryText),
+                child: Icon(
+                  leading,
+                  size: 16,
+                  color: context.wellFg(well),
+                ),
               ),
               const SizedBox(width: 12),
             ],
-            Expanded(
-              child: Text(
+            if (valueFull) ...[
+              Text(
                 label,
                 style: TextStyle(
                   fontSize: 15,
@@ -456,25 +489,52 @@ class _FormRow extends StatelessWidget {
                   color: labelColor,
                 ),
               ),
-            ),
-            if (displayValue.isNotEmpty)
-              Flexible(
+              const SizedBox(width: 12),
+              Expanded(
                 child: Text(
                   displayValue,
                   textAlign: TextAlign.end,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
+                    height: 1.25,
                     color: (value == null || value!.isEmpty)
                         ? context.faintText
                         : context.mutedText,
                   ),
                 ),
               ),
-            if (!readOnly && !danger) ...[
-              const SizedBox(width: 4),
-              Icon(LucideIcons.chevronRight, size: 16, color: context.faintText),
+            ] else ...[
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: labelColor,
+                  ),
+                ),
+              ),
+              if (displayValue.isNotEmpty)
+                Flexible(
+                  child: Text(
+                    displayValue,
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: (value == null || value!.isEmpty)
+                          ? context.faintText
+                          : context.mutedText,
+                    ),
+                  ),
+                ),
+              if (!readOnly && !danger) ...[
+                const SizedBox(width: 4),
+                Icon(LucideIcons.chevronRight,
+                    size: 16, color: context.faintText),
+              ],
             ],
           ],
         ),
