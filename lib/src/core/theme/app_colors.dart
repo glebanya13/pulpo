@@ -7,7 +7,7 @@ class AppColors {
   static const limeDark = Color(0xFFA8D82F);
   static const limeAccent = Color(0xFF7A9E1F);
 
-  /// Brand purple plate (light logo / splash / launcher).
+  /// Legacy brand purple (UI accents / wells — not the launcher plate).
   static const brandPurple = Color(0xFF8C52FF);
 
   static const ink = Color(0xFF0F0F0F);

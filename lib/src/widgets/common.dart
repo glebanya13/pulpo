@@ -10,7 +10,7 @@ import '../core/theme/app_spacing.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
 
-/// Brand mark — Monedero app icon (purple plate + lime mascot).
+/// Brand mark — Monedero app icon (black plate + fox mascot).
 class BrandLogo extends StatelessWidget {
   const BrandLogo({
     super.key,

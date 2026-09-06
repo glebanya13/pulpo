@@ -34,138 +34,145 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: AppSpacing.pushedPagePadding(context),
-          children: [
-            Row(
-              children: [
-                RoundIconButton(
-                  icon: LucideIcons.arrowLeft,
-                  onTap: () => context.pop(),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ScreenTitlePill(
-                    title: tr.myProfile,
-                    subtitle: tr.personalData,
-                    large: true,
-                    expand: true,
-                    trailing: const WhatsAppSupportChip(dense: true),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _AvatarSection(
-              settings: settings,
-              authUser: authUser,
-              tr: tr,
-              ref: ref,
-            ),
-            const SizedBox(height: 20),
-            _FormGroup(
-              children: [
-                _FormRow(
-                  label: tr.firstName,
-                  value: settings.userName,
-                  onTap: () => openNameSheet(context, ref, tr),
-                ),
-                _FormRow(
-                  label: tr.lastName,
-                  value: settings.lastName,
-                  onTap: () =>
-                      _editLastName(context, ref, tr, settings.lastName),
-                ),
-              ],
-            ),
-            if (authUser != null) ...[
-              const SizedBox(height: 12),
-              _FormGroup(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.xs,
+            AppSpacing.lg,
+            AppSpacing.md,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
                 children: [
-                  _FormRow(
-                    label: 'Email',
-                    value: authUser.email ?? '',
-                    readOnly: true,
+                  RoundIconButton(
+                    icon: LucideIcons.arrowLeft,
+                    onTap: () => context.pop(),
                   ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 12),
-            _FormGroup(
-              children: [
-                _FormRow(
-                  label: tr.birthday,
-                  value: settings.birthday,
-                  placeholder: tr.notSpecified,
-                  onTap: () =>
-                      _editBirthday(context, ref, tr, settings.birthday),
-                ),
-                _FormRow(
-                  label: tr.gender,
-                  value: _genderLabel(tr, settings.gender),
-                  placeholder: tr.notSpecified,
-                  onTap: () =>
-                      _editGender(context, ref, tr, settings.gender),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            ProUpgradeCard(
-              title: isPro ? tr.proTitle : tr.proGo,
-              subtitle: isPro ? tr.proActive : tr.proCtaSubtitle,
-              onTap: () => openPaywall(context, ProGate.generic),
-            ),
-            if (authUser == null) ...[
-              const SizedBox(height: 20),
-              _FormGroup(
-                children: [
-                  _FormRow(
-                    label: tr.signIn,
-                    onTap: () => context.push('/settings/account'),
-                    leading: LucideIcons.logIn,
-                    leadingColor: const Color(0xFFE0F2FE),
-                  ),
-                ],
-              ),
-            ],
-            if (authUser != null) ...[
-              const SizedBox(height: 20),
-              _FormGroup(
-                children: [
-                  _FormRow(
-                    label: tr.deleteCloudAccount,
-                    onTap: () => _confirmDeleteAccount(context, ref, tr),
-                    leading: LucideIcons.trash2,
-                    leadingColor: const Color(0xFFFFE4E1),
-                    danger: true,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ScreenTitlePill(
+                      title: tr.myProfile,
+                      subtitle: tr.personalData,
+                      large: true,
+                      expand: true,
+                      trailing: const WhatsAppSupportChip(dense: true),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              Pressable(
-                onTap: () => ref.read(cloudAuthProvider).signOut(),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: context.emphasized,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: context.emphasizedBorder),
+              _AvatarSection(
+                settings: settings,
+                authUser: authUser,
+                tr: tr,
+                ref: ref,
+              ),
+              const SizedBox(height: 14),
+              _FormGroup(
+                children: [
+                  _FormRow(
+                    label: tr.firstName,
+                    value: settings.userName,
+                    onTap: () => openNameSheet(context, ref, tr),
                   ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    tr.signOut,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                  _FormRow(
+                    label: tr.lastName,
+                    value: settings.lastName,
+                    onTap: () =>
+                        _editLastName(context, ref, tr, settings.lastName),
+                  ),
+                ],
+              ),
+              if (authUser != null) ...[
+                const SizedBox(height: 10),
+                _FormGroup(
+                  children: [
+                    _FormRow(
+                      label: 'Email',
+                      value: authUser.email ?? '',
+                      readOnly: true,
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 10),
+              _FormGroup(
+                children: [
+                  _FormRow(
+                    label: tr.birthday,
+                    value: settings.birthday,
+                    placeholder: tr.notSpecified,
+                    onTap: () =>
+                        _editBirthday(context, ref, tr, settings.birthday),
+                  ),
+                  _FormRow(
+                    label: tr.gender,
+                    value: _genderLabel(tr, settings.gender),
+                    placeholder: tr.notSpecified,
+                    onTap: () =>
+                        _editGender(context, ref, tr, settings.gender),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              ProUpgradeCard(
+                title: isPro ? tr.proTitle : tr.proGo,
+                subtitle: isPro ? tr.proActive : tr.proCtaSubtitle,
+                onTap: () => openPaywall(context, ProGate.generic),
+              ),
+              if (authUser == null) ...[
+                const SizedBox(height: 14),
+                _FormGroup(
+                  children: [
+                    _FormRow(
+                      label: tr.signIn,
+                      onTap: () => context.push('/settings/account'),
+                      leading: LucideIcons.logIn,
+                      leadingColor: const Color(0xFFE0F2FE),
+                    ),
+                  ],
+                ),
+              ],
+              if (authUser != null) ...[
+                const SizedBox(height: 14),
+                _FormGroup(
+                  children: [
+                    _FormRow(
+                      label: tr.deleteCloudAccount,
+                      onTap: () => _confirmDeleteAccount(context, ref, tr),
+                      leading: LucideIcons.trash2,
+                      leadingColor: const Color(0xFFFFE4E1),
+                      danger: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Pressable(
+                  onTap: () => ref.read(cloudAuthProvider).signOut(),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: context.emphasized,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: context.emphasizedBorder),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      tr.signOut,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
-            const SizedBox(height: 8),
-          ],
+          ),
         ),
       ),
     );
@@ -344,9 +351,9 @@ class _AvatarSection extends StatelessWidget {
             name: authUser != null ? settings.userName : tr.guestName,
             localPath: settings.profileAvatarPath,
             photoUrl: authUser?.photoURL as String?,
-            size: 80,
+            size: 72,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Pressable(
             onTap: () => openProfileAvatarSheet(context, ref),
             child: Text(
@@ -425,7 +432,7 @@ class _FormRow extends StatelessWidget {
       onTap: onTap ?? () {},
       scale: 0.98,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             if (leading != null) ...[
