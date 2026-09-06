@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
@@ -13,6 +12,7 @@ import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
+import '../../core/utils/date_format_ext.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
@@ -77,9 +77,10 @@ class BudgetsScreen extends ConsumerWidget {
         headerGap: 16,
         children: [
             Text(
-              DateFormat('LLLL yyyy',
-                      Localizations.localeOf(context).languageCode)
-                  .format(now),
+              formatMonthYear(
+                now,
+                locale: Localizations.localeOf(context).languageCode,
+              ),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,

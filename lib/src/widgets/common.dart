@@ -28,7 +28,7 @@ class BrandLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = size * 0.22;
-    const asset = 'assets/icon_light.png';
+    const asset = 'assets/icon_transparent.png';
     final mark = ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: Image.asset(

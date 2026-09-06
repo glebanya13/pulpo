@@ -254,9 +254,7 @@ pulpo/
 │
 ├── assets/
 │   ├── fonts/
-│   ├── icon_light.png          # App icon (1024×1024, canonical)
-│   ├── icon_monedero_source.jpg
-│   ├── icon_monedero_source.png
+│   ├── icon_transparent.png
 │   └── splash_icon.png
 │
 ├── functions/

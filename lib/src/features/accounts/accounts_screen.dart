@@ -301,10 +301,11 @@ class _NetWorthCard extends StatelessWidget {
         border: Border.all(color: context.emphasizedBorder, width: 1),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             Tr.of(context).netWorth,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 11,
@@ -315,6 +316,7 @@ class _NetWorthCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             formatMoney(value, currency),
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 34,
