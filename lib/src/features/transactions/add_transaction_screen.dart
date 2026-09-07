@@ -1222,11 +1222,11 @@ class _CategoryPicker extends ConsumerWidget {
             children: [
               Center(
                 child: Container(
-                  width: 40,
+                  width: 36,
                   height: 4,
                   decoration: BoxDecoration(
                     color: context.handleBar,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(100),
                   ),
                 ),
               ),
@@ -1308,11 +1308,11 @@ class _AccountPicker extends ConsumerWidget {
             children: [
               Center(
                 child: Container(
-                  width: 40,
+                  width: 36,
                   height: 4,
                   decoration: BoxDecoration(
                     color: context.handleBar,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(100),
                   ),
                 ),
               ),

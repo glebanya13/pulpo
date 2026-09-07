@@ -13,7 +13,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
-import '../../widgets/app_bottom_sheet.dart';
+import '../../widgets/simple_picker_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/pro_badge.dart';
@@ -113,61 +113,34 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     required StatsPeriodKind current,
   }) async {
     final tr = Tr.of(context);
-    await showAppBottomSheet<void>(
+    await showSimpleSheet<void>(
       context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 10, 8, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: context.faintText.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                  ),
+      builder: (ctx) => SimplePickerSheet(
+        title: tr.choosePeriod,
+        maxHeightFraction: 0.65,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final k in StatsPeriodKind.values)
+                _PeriodSheetTile(
+                  label: _label(tr, k),
+                  selected: current == k,
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    if (k == StatsPeriodKind.custom) {
+                      await pickCustomStatsPeriod(context, ref);
+                      return;
+                    }
+                    ref.read(statsPeriodProvider.notifier).setKind(k);
+                  },
                 ),
-                const SizedBox(height: 14),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    tr.choosePeriod,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: context.primaryText,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                for (final k in StatsPeriodKind.values)
-                  _PeriodSheetTile(
-                    label: _label(tr, k),
-                    selected: current == k,
-                    onTap: () async {
-                      Navigator.pop(ctx);
-                      if (k == StatsPeriodKind.custom) {
-                        await pickCustomStatsPeriod(context, ref);
-                        return;
-                      }
-                      ref.read(statsPeriodProvider.notifier).setKind(k);
-                    },
-                  ),
-              ],
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

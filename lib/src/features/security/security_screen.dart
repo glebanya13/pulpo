@@ -6,6 +6,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../../widgets/common.dart';
+import '../../widgets/simple_picker_sheet.dart';
 import 'lock_controller.dart';
 import 'pin_pad.dart';
 
@@ -115,17 +116,15 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
   }
 
   Future<bool?> _askPin() async {
-    await showModalBottomSheet<void>(
+    await showSimpleSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (_) => _PinSetup(
-        onSave: (pin) async {
-          await ref.read(lockControllerProvider.notifier).setPin(pin);
-        },
+      builder: (_) => SimplePickerSheet(
+        maxHeightFraction: 0.6,
+        child: _PinSetup(
+          onSave: (pin) async {
+            await ref.read(lockControllerProvider.notifier).setPin(pin);
+          },
+        ),
       ),
     );
     return ref.read(lockControllerProvider).pinEnabled;
@@ -241,19 +240,10 @@ class _PinSetupState extends State<_PinSetup> {
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: context.handleBar,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 16),
           Text(
             _repeat ? tr.confirmPin : tr.setPin,
             style: TextStyle(

@@ -21,6 +21,7 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
+import '../../widgets/simple_picker_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
@@ -361,7 +362,6 @@ Future<void> _openBudgetEditor(
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setSt) {
         return KeyboardFormSheet(
-            showClose: true,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -551,55 +551,17 @@ Future<Set<int>?> _pickBudgetCategories(
   var local = Set<int>.from(selected);
   final tr = Tr.of(context);
 
-  return showAppBottomSheet<Set<int>>(
+  return showSimpleSheet<Set<int>>(
     context: context,
-    backgroundColor: Theme.of(context).cardColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
     builder: (ctx) {
-      final bottomInset = MediaQuery.viewPaddingOf(ctx).bottom;
-      final maxH = MediaQuery.sizeOf(ctx).height * 0.72;
-
       return StatefulBuilder(
         builder: (ctx, setSt) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: bottomInset),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: maxH),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: ctx.handleBar,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          tr.budgetCategories,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: ctx.primaryText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Flexible(
+          return SimplePickerSheet(
+            title: tr.budgetCategories,
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Flexible(
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                       itemCount: expenseCats.length + 1,
@@ -675,7 +637,6 @@ Future<Set<int>?> _pickBudgetCategories(
                   ),
                 ],
               ),
-            ),
           );
         },
       );

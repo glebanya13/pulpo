@@ -24,7 +24,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
-import '../../widgets/app_bottom_sheet.dart';
+import '../../widgets/simple_picker_sheet.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pro_badge.dart';
@@ -186,42 +186,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     required bool isPro,
     required String Function(StatsPeriodKind) periodLabel,
   }) async {
-    await showAppBottomSheet<void>(
+    await showSimpleSheet<void>(
       context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: AppSpacing.sheetOnTabScreen(ctx),
+      builder: (ctx) => SimplePickerSheet(
+        title: tr.choosePeriod,
+        maxHeightFraction: 0.65,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.faintText.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  tr.choosePeriod,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: context.primaryText,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
               for (final k in StatsPeriodKind.values)
                 _PeriodSheetTile(
                   label: periodLabel(k),
@@ -246,8 +221,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 ),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

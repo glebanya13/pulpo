@@ -15,6 +15,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/simple_picker_sheet.dart';
 
 db.Category? matchAiCategory(
   String? hint,
@@ -135,30 +136,16 @@ Future<db.Account?> showAccountPickerSheet(
   BuildContext context,
   List<db.Account> accounts,
 ) {
-  return showModalBottomSheet<db.Account>(
+  return showSimpleSheet<db.Account>(
     context: context,
-    backgroundColor: Theme.of(context).cardColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
     builder: (ctx) {
       final tr = Tr.of(ctx);
-      return SafeArea(
+      return SimplePickerSheet(
+        title: tr.selectAccount,
         child: ListView(
           shrinkWrap: true,
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-              child: Text(
-                tr.selectAccount,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: ctx.primaryText,
-                ),
-              ),
-            ),
             for (final a in accounts)
               ListTile(
                 leading: ColorWellIcon(

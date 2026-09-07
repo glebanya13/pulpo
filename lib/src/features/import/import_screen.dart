@@ -23,6 +23,7 @@ import '../../data/repositories/transaction_repository.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/simple_picker_sheet.dart';
 import '../../widgets/pro_badge.dart';
 import 'csv_import.dart';
 
@@ -235,61 +236,27 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     required List<Account> accounts,
   }) async {
     final tr = Tr.of(context);
-    await showModalBottomSheet<void>(
+    await showSimpleSheet<void>(
       context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) {
-        final maxH = MediaQuery.sizeOf(ctx).height * 0.65;
-        return SafeArea(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: maxH),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(8, 10, 8, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: context.faintText.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      tr.selectAccount,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: context.primaryText,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  for (final a in accounts)
-                    _AccountSheetTile(
-                      label: '${a.name} · ${a.currency}',
-                      selected: _accountId == a.id,
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        setState(() => _accountId = a.id);
-                      },
-                    ),
-                ],
+      builder: (ctx) => SimplePickerSheet(
+        title: tr.selectAccount,
+        maxHeightFraction: 0.65,
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+          children: [
+            for (final a in accounts)
+              _AccountSheetTile(
+                label: '${a.name} · ${a.currency}',
+                selected: _accountId == a.id,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  setState(() => _accountId = a.id);
+                },
               ),
-            ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 

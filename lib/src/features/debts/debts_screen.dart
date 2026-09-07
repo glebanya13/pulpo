@@ -18,6 +18,7 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/app_bottom_sheet.dart';
+import '../../widgets/simple_picker_sheet.dart';
 import '../../widgets/common.dart';
 import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
@@ -517,28 +518,16 @@ class _DebtCard extends ConsumerWidget {
 
   Future<void> _openDebtActions(BuildContext context, WidgetRef ref) async {
     final tr = Tr.of(context);
-    await showAppBottomSheet(
+    await showSimpleSheet(
       context: context,
-      transparent: true,
-      builder: (ctx) => SafeArea(
+      builder: (ctx) => SimplePickerSheet(
+        title: debt.counterparty,
+        maxHeightFraction: 0.5,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Center(
-                child: SizedBox(
-                  width: 36,
-                  child: Divider(thickness: 4, color: ctx.handleBar),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(debt.counterparty,
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: ctx.primaryText)),
-              const SizedBox(height: 16),
               _actionTile(ctx, LucideIcons.plus, tr.repayment, () {
                 Navigator.pop(ctx);
                 _openPay(context, ref);

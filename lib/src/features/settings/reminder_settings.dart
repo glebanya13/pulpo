@@ -9,7 +9,7 @@ import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/settings_service.dart';
-import '../../widgets/app_bottom_sheet.dart';
+import '../../widgets/simple_picker_sheet.dart';
 import '../../widgets/pressable.dart';
 
 String formatReminderTime(int hour, int minute) =>
@@ -20,12 +20,8 @@ Future<void> openReminderSheet(
   WidgetRef ref,
   Tr tr,
 ) async {
-  await showAppBottomSheet<void>(
+  await showSimpleSheet<void>(
     context: context,
-    backgroundColor: Theme.of(context).cardColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
     builder: (ctx) {
       return Consumer(
         builder: (context, ref, _) {
@@ -34,33 +30,15 @@ Future<void> openReminderSheet(
             settings.dailyReminderHour,
             settings.dailyReminderMinute,
           );
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          return SimplePickerSheet(
+            title: tr.dailyReminderCta,
+            maxHeightFraction: 0.55,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: context.faintText.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    tr.dailyReminderCta,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: context.primaryText,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
                   Text(
                     tr.dailyReminder,
                     style: TextStyle(

@@ -7,7 +7,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../data/db/app_database.dart' as db;
 import '../data/db/enums.dart';
-import 'app_bottom_sheet.dart';
+import 'simple_picker_sheet.dart';
 import 'common.dart';
 import 'pressable.dart';
 
@@ -313,94 +313,46 @@ Future<FilterPickResult<T>> openFilterPickSheet<T>(
   required List<(T, String)> items,
   required T selected,
 }) async {
-  final picked = await showAppBottomSheet<FilterPickResult<T>>(
+  final picked = await showSimpleSheet<FilterPickResult<T>>(
     context: context,
-    backgroundColor: Theme.of(context).cardColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
-    builder: (ctx) {
-      final bottomInset = MediaQuery.viewPaddingOf(ctx).bottom;
-      final maxH = MediaQuery.sizeOf(ctx).height * 0.72;
-
-      return Padding(
-        padding: EdgeInsets.only(bottom: bottomInset),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: maxH),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: ctx.handleBar,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: ctx.primaryText,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Flexible(
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  itemCount: items.length,
-                  separatorBuilder: (context, index) => Divider(
-                    height: 1,
-                    color: ctx.divider,
-                  ),
-                  itemBuilder: (_, i) {
-                    final item = items[i];
-                    final active = item.$1 == selected;
-                    return Pressable(
-                      onTap: () =>
-                          Navigator.pop(ctx, FilterPickResult.ok(item.$1)),
-                      scale: 0.98,
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          item.$2,
-                          style: TextStyle(
-                            fontWeight:
-                                active ? FontWeight.w700 : FontWeight.w500,
-                            color: ctx.primaryText,
-                          ),
-                        ),
-                        trailing: active
-                            ? Icon(
-                                LucideIcons.check,
-                                color: ctx.accent,
-                                size: 20,
-                              )
-                            : null,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+    builder: (ctx) => SimplePickerSheet(
+      title: title,
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        itemCount: items.length,
+        separatorBuilder: (context, index) => Divider(
+          height: 1,
+          color: ctx.divider,
         ),
-      );
-    },
+        itemBuilder: (_, i) {
+          final item = items[i];
+          final active = item.$1 == selected;
+          return Pressable(
+            onTap: () =>
+                Navigator.pop(ctx, FilterPickResult.ok(item.$1)),
+            scale: 0.98,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                item.$2,
+                style: TextStyle(
+                  fontWeight:
+                      active ? FontWeight.w700 : FontWeight.w500,
+                  color: ctx.primaryText,
+                ),
+              ),
+              trailing: active
+                  ? Icon(
+                      LucideIcons.check,
+                      color: ctx.accent,
+                      size: 20,
+                    )
+                  : null,
+            ),
+          );
+        },
+      ),
+    ),
   );
   return picked ?? FilterPickResult<T>.cancelled();
 }

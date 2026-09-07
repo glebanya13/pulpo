@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../core/l10n/tr.dart';
+import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_theme.dart';
+
+const _kDoneBarH = 44.0;
 
 /// Scrollable form inside a rounded sheet card.
 ///
@@ -13,7 +16,7 @@ class KeyboardFormSheet extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.fromLTRB(20, 8, 20, 24),
-    this.showClose = false,
+    this.showClose = true,
   });
 
   final Widget child;
@@ -24,39 +27,41 @@ class KeyboardFormSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final inset = media.viewInsets.bottom;
-    final doneH = inset > 0 ? 48.0 : 0.0;
     final topSafe = media.padding.top;
-    // Card grows from the bottom; leave room for status bar + keyboard + Done.
-    final maxH = (media.size.height - inset - doneH - topSafe - 12)
+    final hasKeyboard = inset > 0;
+
+    // Card height cap: leave room above keyboard (+ done bar if visible)
+    final aboveKeyboard = inset + (hasKeyboard ? _kDoneBarH : 0);
+    final maxH = (media.size.height - aboveKeyboard - topSafe - 12)
         .clamp(200.0, media.size.height * 0.92);
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: inset),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Theme(
-          data: Theme.of(context).copyWith(
-            inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
-              fillColor: context.scaffoldBg,
-            ),
-          ),
-          child: Material(
-            color: context.surface,
-            elevation: 0,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(AppSpacing.rXxl),
+    final card = Material(
+      color: context.surface,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.rXxl),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          inputDecorationTheme:
+              Theme.of(context).inputDecorationTheme.copyWith(
+                fillColor: context.scaffoldBg,
               ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 10),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Center(
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Handle bar + close button ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+              child: Row(
+                children: [
+                  const SizedBox(width: 32),
+                  Expanded(
+                    child: Center(
                       child: Container(
                         width: 36,
                         height: 4,
@@ -66,54 +71,106 @@ class KeyboardFormSheet extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (showClose)
-                      Positioned(
-                        right: 12,
-                        child: Material(
-                          color: context.scaffoldBg,
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: () => Navigator.of(context).pop(),
-                            child: const SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: Icon(Icons.close, size: 18),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: maxH),
-                  child: SingleChildScrollView(
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: padding,
-                    child: child,
                   ),
-                ),
-                if (inset > 0)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () =>
-                            FocusManager.instance.primaryFocus?.unfocus(),
-                        child: Text(
-                          Tr.of(context).done,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: context.accent,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+                  _CloseButton(onTap: () => Navigator.of(context).pop()),
+                ],
+              ),
+            ),
+
+            // ── Form content ──
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxH),
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: padding,
+                child: child,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!hasKeyboard) {
+      return Align(alignment: Alignment.bottomCenter, child: card);
+    }
+
+    // When keyboard is visible: card sits above done bar, done bar sits
+    // directly on top of the keyboard — mimics iOS input accessory view.
+    return Stack(
+      children: [
+        // Sheet card pushed above keyboard + done bar
+        Padding(
+          padding: EdgeInsets.only(bottom: inset + _kDoneBarH),
+          child: Align(alignment: Alignment.bottomCenter, child: card),
+        ),
+
+        // Done bar — glued to the top edge of the keyboard
+        Positioned(
+          bottom: inset,
+          left: 0,
+          right: 0,
+          height: _kDoneBarH,
+          child: _DoneBar(),
+        ),
+      ],
+    );
+  }
+}
+
+class _CloseButton extends StatelessWidget {
+  const _CloseButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = context.isDark
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.black.withValues(alpha: 0.07);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+        child: Icon(Icons.close_rounded, size: 17, color: context.mutedText),
+      ),
+    );
+  }
+}
+
+class _DoneBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: context.surface,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: context.divider,
+              width: 0.5,
+            ),
+          ),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.lime,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              Tr.of(context).done,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.black,
+              ),
             ),
           ),
         ),
