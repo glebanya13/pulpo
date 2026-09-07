@@ -387,7 +387,7 @@ class _AvatarSection extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.black,
+                color: AppColors.ink,
               ),
             ),
           ),
