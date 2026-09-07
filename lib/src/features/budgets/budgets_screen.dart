@@ -361,6 +361,7 @@ Future<void> _openBudgetEditor(
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setSt) {
         return KeyboardFormSheet(
+            showClose: true,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

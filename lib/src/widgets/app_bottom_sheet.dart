@@ -21,40 +21,6 @@ Future<T?> showAppBottomSheet<T>({
       curve: Curves.easeOutCubic,
       reverseCurve: Curves.easeInCubic,
     ),
-    builder: (context) {
-      return Stack(
-        children: [
-          // Основной контент модалки
-          Padding(
-            padding: const EdgeInsets.only(top: 48),
-            child: builder(context),
-          ),
-
-          // Кнопка закрытия
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Material(
-              color: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest,
-              shape: const CircleBorder(),
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: () => Navigator.of(context).pop(),
-                child: const SizedBox(
-                  width: 36,
-                  height: 36,
-                  child: Icon(
-                    Icons.close,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    },
+    builder: builder,
   );
 }

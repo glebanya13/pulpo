@@ -13,10 +13,12 @@ class KeyboardFormSheet extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.fromLTRB(20, 8, 20, 24),
+    this.showClose = false,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
+  final bool showClose;
 
   @override
   Widget build(BuildContext context) {
@@ -51,15 +53,37 @@ class KeyboardFormSheet extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 10),
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: context.handleBar,
-                      borderRadius: BorderRadius.circular(100),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: context.handleBar,
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                      ),
                     ),
-                  ),
+                    if (showClose)
+                      Positioned(
+                        right: 12,
+                        child: Material(
+                          color: context.scaffoldBg,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () => Navigator.of(context).pop(),
+                            child: const SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: Icon(Icons.close, size: 18),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: maxH),
