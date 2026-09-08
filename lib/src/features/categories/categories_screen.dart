@@ -106,7 +106,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                                   existing: child),
                             ),
                           if (i != roots.length - 1)
-                            const Divider(height: 1, color: AppColors.divider),
+                            Divider(height: 1, color: context.divider),
                         ],
                       ],
                     ),
