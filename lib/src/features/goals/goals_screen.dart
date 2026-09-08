@@ -77,9 +77,34 @@ class GoalsScreen extends ConsumerWidget {
                           onEdit: () =>
                               context.push('/goals/${g.id}/edit'),
                           onDelete: () async {
-                            await ref
-                                .read(goalRepositoryProvider)
-                                .delete(g.id);
+                            final tr = Tr.of(context);
+                            final ok = await showDialog<bool>(
+                              context: context,
+                              builder: (dctx) => AlertDialog(
+                                title: Text(tr.deleteGoalTitle),
+                                content: Text(tr.deleteTxBody),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(dctx, false),
+                                    child: Text(tr.cancel),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(dctx, true),
+                                    style: TextButton.styleFrom(
+                                        foregroundColor:
+                                            const Color(0xFFE53E3E)),
+                                    child: Text(tr.delete),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (ok == true) {
+                              await ref
+                                  .read(goalRepositoryProvider)
+                                  .delete(g.id);
+                            }
                           },
                         ),
                     ],

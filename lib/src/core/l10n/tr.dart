@@ -265,6 +265,7 @@ class Tr {
   String get goalSaved => _get('goal_saved');
   String get goalsEmptyTitle => _get('goals_empty_title');
   String get goalsEmptyDesc => _get('goals_empty_desc');
+  String get deleteGoalTitle => _get('delete_goal_title');
   String get addToGoal => _get('add_to_goal');
   String get allSettings => _get('all_settings');
   String get accountsCountLabel => _get('accounts_count_label');
@@ -1010,6 +1011,7 @@ class Tr {
       'goals': 'Metas',
       'new_goal': 'Nueva meta',
       'edit_goal': 'Editar meta',
+      'delete_goal_title': '¿Eliminar meta?',
       'goal_name': 'Nombre',
       'goal_target': 'Objetivo',
       'goal_saved': 'Ahorrado',
@@ -1735,6 +1737,7 @@ class Tr {
       'goals': 'Цели',
       'new_goal': 'Новая цель',
       'edit_goal': 'Изменить цель',
+      'delete_goal_title': 'Удалить цель?',
       'goal_name': 'Название',
       'goal_target': 'Сумма цели',
       'goal_saved': 'Накоплено',
@@ -2461,6 +2464,7 @@ class Tr {
       'goals': 'Goals',
       'new_goal': 'New goal',
       'edit_goal': 'Edit goal',
+      'delete_goal_title': 'Delete goal?',
       'goal_name': 'Name',
       'goal_target': 'Target',
       'goal_saved': 'Saved',
@@ -3183,6 +3187,7 @@ class Tr {
       'goals': 'Цілі',
       'new_goal': 'Нова ціль',
       'edit_goal': 'Редагувати ціль',
+      'delete_goal_title': 'Видалити ціль?',
       'goal_name': 'Назва',
       'goal_target': 'Сума цілі',
       'goal_saved': 'Накопичено',

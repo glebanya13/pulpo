@@ -224,7 +224,7 @@ class _DateRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: () async {
         final picked = await showDatePicker(
           context: context,
