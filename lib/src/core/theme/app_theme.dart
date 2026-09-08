@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart'; // ignore: unnecessary_import — not re-exported by material.dart in all Flutter SDK versions
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_spacing.dart';
