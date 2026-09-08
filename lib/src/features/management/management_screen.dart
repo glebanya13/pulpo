@@ -41,6 +41,7 @@ class ManagementScreen extends ConsumerWidget {
           controller: scroll,
           padding: AppSpacing.tabPagePadding(context),
           headerGap: 16,
+          headerContentHeight: 67,
           header: ScreenTitlePill(
             title: tr.management,
             subtitle: tr.managementSubtitle,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
@@ -97,7 +98,10 @@ class _QuickChip extends StatelessWidget {
         label: label,
         button: true,
         child: Pressable(
-          onTap: onTap,
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            onTap();
+          },
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             decoration: BoxDecoration(
