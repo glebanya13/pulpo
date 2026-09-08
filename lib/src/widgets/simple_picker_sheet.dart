@@ -44,69 +44,85 @@ class SimplePickerSheet extends StatelessWidget {
     final media = MediaQuery.of(context);
     final maxH = media.size.height * maxHeightFraction;
 
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Material(
-        color: context.surface,
-        elevation: 0,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppSpacing.rXxl),
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: SafeArea(
-        top: false,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: maxH),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── Handle + × ──
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-                child: Row(
+    void dismiss() => Navigator.of(context).pop();
+
+    return GestureDetector(
+      // Tap anywhere outside the card → close.
+      behavior: HitTestBehavior.opaque,
+      onTap: dismiss,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: GestureDetector(
+          onTap: () {},
+          child: Material(
+            color: context.surface,
+            elevation: 0,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(AppSpacing.rXxl),
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: SafeArea(
+              top: false,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxH),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(width: 32),
-                    Expanded(
-                      child: Center(
-                        child: Container(
-                          width: 36,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: context.handleBar,
-                            borderRadius: BorderRadius.circular(100),
-                          ),
+                    // ── Handle + × (drag down → close) ──
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragEnd: (d) {
+                        if ((d.primaryVelocity ?? 0) > 200) dismiss();
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 32),
+                            Expanded(
+                              child: Center(
+                                child: Container(
+                                  width: 36,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: context.handleBar,
+                                    borderRadius: BorderRadius.circular(100),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _CloseButton(onTap: dismiss),
+                          ],
                         ),
                       ),
                     ),
-                    _CloseButton(onTap: () => Navigator.of(context).pop()),
+
+                    // ── Optional title ──
+                    if (title != null) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 2, 20, 0),
+                        child: Text(
+                          title!,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: context.primaryText,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+
+                    // ── Content ──
+                    Flexible(child: child),
                   ],
                 ),
               ),
-
-              // ── Optional title ──
-              if (title != null) ...[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 2, 20, 0),
-                  child: Text(
-                    title!,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: context.primaryText,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-
-              // ── Content ──
-              Flexible(child: child),
-            ],
+            ),
           ),
-        ),
         ),
       ),
     );

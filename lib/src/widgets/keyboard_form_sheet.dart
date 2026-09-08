@@ -25,66 +25,86 @@ class KeyboardFormSheet extends StatelessWidget {
     final inset = media.viewInsets.bottom;
     final topSafe = media.padding.top;
 
-    final maxH = (media.size.height - inset - topSafe - 12)
-        .clamp(200.0, media.size.height * 0.92);
+    // Card height is capped so X is always reachable regardless of keyboard size.
+    const handleH = 54.0;
+    final availableH = media.size.height - inset - topSafe - 16;
+    final maxCardH = availableH.clamp(200.0, media.size.height * 0.62);
+    final maxScrollH = (maxCardH - handleH).clamp(80.0, double.infinity);
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: inset),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Material(
-          color: context.surface,
-          elevation: 0,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppSpacing.rXxl),
-            ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Theme(
-            data: Theme.of(context).copyWith(
-              inputDecorationTheme:
-                  Theme.of(context).inputDecorationTheme.copyWith(
-                    fillColor: context.scaffoldBg,
-                  ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // ── Handle bar + close button ──
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 32),
-                      Expanded(
-                        child: Center(
-                          child: Container(
-                            width: 36,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: context.handleBar,
-                              borderRadius: BorderRadius.circular(100),
+    void dismiss() => Navigator.of(context).pop();
+
+    return GestureDetector(
+      // Tap anywhere outside the card → close.
+      behavior: HitTestBehavior.opaque,
+      onTap: dismiss,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: inset),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: GestureDetector(
+            // Absorb taps on the card itself so they don't bubble to dismiss.
+            onTap: () {},
+            child: Material(
+              color: context.surface,
+              elevation: 0,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(AppSpacing.rXxl),
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  inputDecorationTheme:
+                      Theme.of(context).inputDecorationTheme.copyWith(
+                        fillColor: context.scaffoldBg,
+                      ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ── Handle bar + close button (drag down → close) ──
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragEnd: (d) {
+                        if ((d.primaryVelocity ?? 0) > 200) dismiss();
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 32),
+                            Expanded(
+                              child: Center(
+                                child: Container(
+                                  width: 36,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: context.handleBar,
+                                    borderRadius: BorderRadius.circular(100),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                            _CloseButton(onTap: dismiss),
+                          ],
                         ),
                       ),
-                      _CloseButton(onTap: () => Navigator.of(context).pop()),
-                    ],
-                  ),
-                ),
+                    ),
 
-                // ── Form content ──
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: maxH),
-                  child: SingleChildScrollView(
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: padding,
-                    child: child,
-                  ),
+                    // ── Form content ──
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: maxScrollH),
+                      child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: padding,
+                        child: child,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
