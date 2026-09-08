@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
@@ -221,6 +222,7 @@ class StickyScrollPage extends StatefulWidget {
     this.headerBottomPadding = 0,
     this.useSafeArea = true,
     this.physics,
+    this.onRefresh,
   });
 
   final Widget header;
@@ -235,6 +237,7 @@ class StickyScrollPage extends StatefulWidget {
   final double headerBottomPadding;
   final bool useSafeArea;
   final ScrollPhysics? physics;
+  final Future<void> Function()? onRefresh;
 
   @override
   State<StickyScrollPage> createState() => _StickyScrollPageState();
@@ -292,23 +295,32 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
       clipBehavior: Clip.none,
       children: [
         Positioned.fill(
-          child: CustomScrollView(
-            controller: widget.controller,
-            physics: widget.physics,
-            slivers: [
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  pad.left,
-                  topInset,
-                  pad.right,
-                  pad.bottom,
+          child: Builder(builder: (context) {
+            final scrollView = CustomScrollView(
+              controller: widget.controller,
+              physics: widget.onRefresh != null
+                  ? const AlwaysScrollableScrollPhysics()
+                  : widget.physics,
+              slivers: [
+                if (widget.onRefresh != null)
+                  CupertinoSliverRefreshControl(
+                    onRefresh: widget.onRefresh,
+                  ),
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    pad.left,
+                    topInset,
+                    pad.right,
+                    pad.bottom,
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate(widget.children),
+                  ),
                 ),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate(widget.children),
-                ),
-              ),
-            ],
-          ),
+              ],
+            );
+            return scrollView;
+          }),
         ),
         Positioned(
           top: 0,

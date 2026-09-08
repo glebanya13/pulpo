@@ -407,6 +407,9 @@ Future<void> _openAccountEditor(
             const SizedBox(height: 16),
             TextField(
               controller: nameCtrl,
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
               decoration:
                   InputDecoration(labelText: Tr.of(ctx).accountName),
             ),

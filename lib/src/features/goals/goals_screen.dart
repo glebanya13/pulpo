@@ -281,6 +281,9 @@ Future<void> _openGoalEditor(
   final isEdit = existing != null;
   final currency = ref.read(settingsControllerProvider).baseCurrency;
 
+  final targetFocus = FocusNode();
+  final currentFocus = FocusNode();
+
   await showAppBottomSheet(
     context: context,
     transparent: true,
@@ -295,20 +298,25 @@ Future<void> _openGoalEditor(
             const SizedBox(height: 16),
             TextField(
               controller: nameCtrl,
+              autofocus: true,
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => targetFocus.requestFocus(),
               decoration: InputDecoration(labelText: Tr.of(ctx).goalName),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: targetCtrl,
+              focusNode: targetFocus,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => currentFocus.requestFocus(),
               decoration: InputDecoration(labelText: Tr.of(ctx).goalTarget),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: currentCtrl,
+              focusNode: currentFocus,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.done,
@@ -355,4 +363,6 @@ Future<void> _openGoalEditor(
   nameCtrl.dispose();
   targetCtrl.dispose();
   currentCtrl.dispose();
+  targetFocus.dispose();
+  currentFocus.dispose();
 }

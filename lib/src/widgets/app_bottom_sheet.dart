@@ -12,6 +12,7 @@ Future<T?> showAppBottomSheet<T>({
     context: context,
     isScrollControlled: true,
     useRootNavigator: true,
+    enableDrag: false,
     backgroundColor: transparent ? Colors.transparent : backgroundColor,
     shape: shape,
     clipBehavior: Clip.antiAlias,

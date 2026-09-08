@@ -137,6 +137,8 @@ class AccountsScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
                 TextField(
                   controller: nameCtrl,
+                  autofocus: true,
+                  textInputAction: TextInputAction.next,
                   decoration:
                       InputDecoration(labelText: Tr.of(context).titleLabel),
                 ),

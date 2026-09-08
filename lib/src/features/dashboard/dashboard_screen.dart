@@ -28,7 +28,7 @@ class DashboardScreen extends ConsumerWidget {
     final accountsAsync = ref.watch(accountsProvider);
     final txsAsync = ref.watch(allTransactionsProvider);
 
-    void retryBalance() {
+    Future<void> retryBalance() async {
       ref.invalidate(accountsProvider);
       ref.invalidate(allTransactionsProvider);
     }
@@ -44,6 +44,7 @@ class DashboardScreen extends ConsumerWidget {
           padding: pad,
           headerGap: 0,
           headerBottomPadding: 10,
+          onRefresh: retryBalance,
           header: ScreenTitlePill(
             title: settings.userName,
             eyebrow: tr.greetingForHour(DateTime.now().hour),

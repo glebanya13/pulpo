@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +20,7 @@ import '../../widgets/transaction_tile.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../widgets/transaction_filters.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/simple_picker_sheet.dart';
 import 'calendar_date_picker_sheet.dart';
 
 /// Календарь-обзор транзакций за месяц.
@@ -70,6 +72,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
       _categoryId != null;
 
   Future<void> _deleteWithUndo(db.Transaction tx) async {
+    HapticFeedback.mediumImpact();
     final tr = Tr.of(context);
     await ref.read(transactionRepositoryProvider).delete(tx.id);
     ref.invalidate(allTransactionsProvider);
@@ -90,6 +93,63 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
             await ref.read(transactionRepositoryProvider).restore(tx);
             ref.invalidate(allTransactionsProvider);
           },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _duplicateTx(db.Transaction tx) async {
+    if (tx.type == TxType.transfer.index) return;
+    final currency = ref.read(settingsControllerProvider).baseCurrency;
+    await ref.read(transactionRepositoryProvider).add(
+      accountId: tx.accountId,
+      categoryId: tx.categoryId,
+      amount: tx.amount,
+      currency: currency,
+      type: TxType.values[tx.type],
+      date: DateTime.now(),
+      note: tx.note,
+      counterparty: tx.counterparty,
+    );
+    ref.invalidate(allTransactionsProvider);
+  }
+
+  Future<void> _longPressTx(db.Transaction tx) async {
+    final tr = Tr.of(context);
+    await showSimpleSheet<void>(
+      context: context,
+      builder: (_) => SimplePickerSheet(
+        maxHeightFraction: 0.38,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _TxActionTile(
+              icon: LucideIcons.pencil,
+              label: tr.edit,
+              onTap: () {
+                Navigator.of(context).pop();
+                context.push('/tx/${tx.id}/edit');
+              },
+            ),
+            if (tx.type != TxType.transfer.index)
+              _TxActionTile(
+                icon: LucideIcons.copy,
+                label: tr.txDuplicate,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _duplicateTx(tx);
+                },
+              ),
+            _TxActionTile(
+              icon: LucideIcons.trash2,
+              label: tr.delete,
+              danger: true,
+              onTap: () {
+                Navigator.of(context).pop();
+                _deleteWithUndo(tx);
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -236,6 +296,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
                         _openDaySheet(context, day, monthTxs),
                     onTapTx: (tx) => context.push('/tx/${tx.id}'),
                     onDeleteTx: _deleteWithUndo,
+                    onLongPressTx: _longPressTx,
                   )
                 else
                   _MonthTable(
@@ -471,6 +532,7 @@ class _DailyMonthList extends StatelessWidget {
     required this.onTapDay,
     required this.onTapTx,
     required this.onDeleteTx,
+    this.onLongPressTx,
   });
 
   final DateTime month;
@@ -482,6 +544,7 @@ class _DailyMonthList extends StatelessWidget {
   final ValueChanged<DateTime> onTapDay;
   final ValueChanged<db.Transaction> onTapTx;
   final ValueChanged<db.Transaction> onDeleteTx;
+  final ValueChanged<db.Transaction>? onLongPressTx;
 
   @override
   Widget build(BuildContext context) {
@@ -546,6 +609,7 @@ class _DailyMonthList extends StatelessWidget {
             onTapDay: () => onTapDay(days[i]),
             onTapTx: onTapTx,
             onDeleteTx: onDeleteTx,
+            onLongPressTx: onLongPressTx,
           ),
       ],
     );
@@ -562,6 +626,7 @@ class _DayBlock extends StatelessWidget {
     required this.onTapDay,
     required this.onTapTx,
     required this.onDeleteTx,
+    this.onLongPressTx,
   });
 
   final DateTime day;
@@ -572,6 +637,7 @@ class _DayBlock extends StatelessWidget {
   final VoidCallback onTapDay;
   final ValueChanged<db.Transaction> onTapTx;
   final ValueChanged<db.Transaction> onDeleteTx;
+  final ValueChanged<db.Transaction>? onLongPressTx;
 
   @override
   Widget build(BuildContext context) {
@@ -657,6 +723,9 @@ class _DayBlock extends StatelessWidget {
                       onDismissed: (_) => onDeleteTx(txs[i]),
                       child: Pressable(
                         onTap: () => onTapTx(txs[i]),
+                        onLongPress: onLongPressTx != null
+                            ? () => onLongPressTx!(txs[i])
+                            : null,
                         child: TransactionTile(
                           tx: txs[i],
                           embedded: true,
@@ -1195,6 +1264,40 @@ class _DaySheetTxList extends StatelessWidget {
       child: ListView.builder(
         itemCount: txs.length,
         itemBuilder: (ctx, i) => tile(i),
+      ),
+    );
+  }
+}
+
+class _TxActionTile extends StatelessWidget {
+  const _TxActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = danger ? AppColors.danger : context.primaryText;
+    return Pressable(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(width: 14),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w600, color: color)),
+          ],
+        ),
       ),
     );
   }

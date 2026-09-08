@@ -145,6 +145,8 @@ Future<void> _openRuleEditor(
             const SizedBox(height: 12),
             TextField(
               controller: nameCtrl,
+              autofocus: true,
+              textInputAction: TextInputAction.next,
               decoration:
                   InputDecoration(labelText: Tr.of(ctx).titleLabel),
             ),

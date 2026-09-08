@@ -6,12 +6,14 @@ class Pressable extends StatefulWidget {
   const Pressable({
     super.key,
     this.onTap,
+    this.onLongPress,
     required this.child,
     this.scale = 0.96,
     this.enabled = true,
   });
 
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final Widget child;
   final double scale;
   final bool enabled;
@@ -23,7 +25,7 @@ class Pressable extends StatefulWidget {
 class _PressableState extends State<Pressable> {
   var _down = false;
 
-  bool get _active => widget.enabled && widget.onTap != null;
+  bool get _active => widget.enabled && (widget.onTap != null || widget.onLongPress != null);
 
   void _set(bool down) {
     if (!_active || _down == down) return;
@@ -46,10 +48,16 @@ class _PressableState extends State<Pressable> {
             }
           : null,
       onTapCancel: _active ? () => _set(false) : null,
-      onTap: _active
+      onTap: widget.onTap != null && widget.enabled
           ? () {
               HapticFeedback.selectionClick();
               widget.onTap!();
+            }
+          : null,
+      onLongPress: widget.onLongPress != null && widget.enabled
+          ? () {
+              HapticFeedback.mediumImpact();
+              widget.onLongPress!();
             }
           : null,
       child: AnimatedScale(

@@ -44,16 +44,18 @@ class SimplePickerSheet extends StatelessWidget {
     final media = MediaQuery.of(context);
     final maxH = media.size.height * maxHeightFraction;
 
-    return Material(
-      color: context.surface,
-      elevation: 0,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.rXxl),
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Material(
+        color: context.surface,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppSpacing.rXxl),
+          ),
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: SafeArea(
+        clipBehavior: Clip.antiAlias,
+        child: SafeArea(
         top: false,
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: maxH),
@@ -104,6 +106,7 @@ class SimplePickerSheet extends StatelessWidget {
               Flexible(child: child),
             ],
           ),
+        ),
         ),
       ),
     );
