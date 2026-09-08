@@ -223,6 +223,7 @@ class StickyScrollPage extends StatefulWidget {
     this.useSafeArea = true,
     this.physics,
     this.onRefresh,
+    this.headerContentHeight,
   });
 
   final Widget header;
@@ -238,6 +239,9 @@ class StickyScrollPage extends StatefulWidget {
   final bool useSafeArea;
   final ScrollPhysics? physics;
   final Future<void> Function()? onRefresh;
+  /// Height of just the header widget (excluding pad.top) — used to eliminate
+  /// the first-frame jump when the auto-estimate doesn't match reality.
+  final double? headerContentHeight;
 
   @override
   State<StickyScrollPage> createState() => _StickyScrollPageState();
@@ -285,8 +289,9 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
   Widget build(BuildContext context) {
     final pad = _resolvePadding(context);
     // Prefer a status-bar-aware estimate so the first frame doesn't jump.
-    final estimatedHeader =
-        pad.top + 56 + widget.headerBottomPadding;
+    final estimatedHeader = pad.top +
+        (widget.headerContentHeight ?? 56) +
+        widget.headerBottomPadding;
     final topInset =
         (_headerHeight > 0 ? _headerHeight : estimatedHeader) + widget.headerGap;
 

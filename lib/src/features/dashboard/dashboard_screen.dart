@@ -44,6 +44,7 @@ class DashboardScreen extends ConsumerWidget {
           padding: pad,
           headerGap: 0,
           headerBottomPadding: 10,
+          headerContentHeight: 67,
           onRefresh: retryBalance,
           header: ScreenTitlePill(
             title: settings.userName,
