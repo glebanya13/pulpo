@@ -183,6 +183,7 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
     final text = _textCtrl.text.trim();
     if (text.isEmpty) return;
     await _stopListening();
+    if (!mounted) return;
     if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
     if (!mounted) return;
 

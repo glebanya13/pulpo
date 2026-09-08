@@ -7,10 +7,8 @@ import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
-import '../../core/theme/app_theme.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/account_repository.dart';
-import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
@@ -139,7 +137,7 @@ class _AccountAddScreenState extends ConsumerState<AccountAddScreen> {
               Expanded(
                 child: DropdownButtonFormField<String>(
                   key: ValueKey(_currency),
-                  value: uniqueAppCurrencies().any((c) => c.code == _currency)
+                  initialValue: uniqueAppCurrencies().any((c) => c.code == _currency)
                       ? _currency
                       : uniqueAppCurrencies().first.code,
                   items: [
@@ -172,7 +170,8 @@ class _AccountAddScreenState extends ConsumerState<AccountAddScreen> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<AccountType>(
-            value: _type,
+            key: ValueKey(_type.index),
+            initialValue: _type,
             items: [
               for (final t in AccountType.values)
                 DropdownMenuItem(

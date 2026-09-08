@@ -311,32 +311,32 @@ class _ProfileAvatarState extends State<ProfileAvatar>
       final local = widget.localPath!.trim();
       return _AvatarImage(
         size: widget.size,
+        fade: _fade,
+        showImage: true,
         child: Image.file(
           File(local),
           width: widget.size,
           height: widget.size,
           fit: BoxFit.cover,
           gaplessPlayback: true,
-          errorBuilder: (_, __, ___) => fallback,
+          errorBuilder: (_, _, _) => fallback,
         ),
-        fade: _fade,
-        showImage: true,
       );
     }
 
     if (_remoteFile != null) {
       return _AvatarImage(
         size: widget.size,
+        fade: _fade,
+        showImage: true,
         child: Image.file(
           _remoteFile!,
           width: widget.size,
           height: widget.size,
           fit: BoxFit.cover,
           gaplessPlayback: true,
-          errorBuilder: (_, __, ___) => fallback,
+          errorBuilder: (_, _, _) => fallback,
         ),
-        fade: _fade,
-        showImage: true,
       );
     }
 

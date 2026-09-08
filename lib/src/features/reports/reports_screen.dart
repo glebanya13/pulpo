@@ -698,7 +698,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     barWidth: 3,
                     dotData: FlDotData(
                       show: true,
-                      getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                      getDotPainter: (spot, _, _, _) => FlDotCirclePainter(
                         radius: 4,
                         color: context.accent,
                         strokeWidth: 0,
@@ -719,7 +719,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     barWidth: 3,
                     dotData: FlDotData(
                       show: true,
-                      getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                      getDotPainter: (spot, _, _, _) => FlDotCirclePainter(
                         radius: 4,
                         color: AppColors.danger,
                         strokeWidth: 0,
@@ -879,7 +879,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   barWidth: 3,
                   dotData: FlDotData(
                     show: true,
-                    getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                    getDotPainter: (spot, _, _, _) => FlDotCirclePainter(
                       radius: 4,
                       color: context.accent,
                       strokeWidth: 0,
@@ -900,7 +900,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   barWidth: 3,
                   dotData: FlDotData(
                     show: true,
-                    getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                    getDotPainter: (spot, _, _, _) => FlDotCirclePainter(
                       radius: 4,
                       color: AppColors.danger,
                       strokeWidth: 0,

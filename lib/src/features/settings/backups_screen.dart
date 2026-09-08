@@ -97,6 +97,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
       return;
     }
 
+    if (!mounted) return;
     await showCloudRestoreDialog(context, ref);
   }
 
@@ -240,10 +241,11 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               label: tr.createNow,
               filled: true,
               onTap: () async {
+                final messenger = ScaffoldMessenger.of(context);
                 await ref.read(backupServiceProvider).writeBackup();
                 await _loadBackups();
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     SnackBar(content: Text(tr.backupCreated)),
                   );
                 }
@@ -256,14 +258,16 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               filled: false,
               showPro: !isPro,
               onTap: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final router = GoRouter.of(context);
                 if (!await requirePro(context, ref, ProGate.cloud)) return;
                 final user = ref.read(authUserProvider).valueOrNull;
                 if (user == null) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(content: Text(tr.signInToSync)),
                     );
-                    context.push('/settings/account');
+                    router.push('/settings/account');
                   }
                   return;
                 }
@@ -276,13 +280,13 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                       );
                   if (mounted) {
                     setState(() => _lastCloud = now);
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(content: Text(tr.cloudBackupOk)),
                     );
                   }
                 } catch (e) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(content: Text(tr.cloudBackupFailed)),
                     );
                   }
@@ -333,17 +337,18 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
                   file: f,
                   onDeleted: _loadBackups,
                   onRestore: () async {
+                    final messenger = ScaffoldMessenger.of(context);
                     try {
                       await ref.read(backupServiceProvider).restoreFromFile(f);
                       refreshUiAfterMoneyRestore(ref);
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           SnackBar(content: Text(tr.dataRestored)),
                         );
                       }
                     } catch (_) {
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           SnackBar(content: Text(tr.restoreFailed)),
                         );
                       }

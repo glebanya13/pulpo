@@ -178,7 +178,8 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
-            value: _period,
+            key: ValueKey(_period),
+            initialValue: _period,
             decoration: InputDecoration(labelText: tr.periodicity),
             items: [
               DropdownMenuItem(value: 0, child: Text(tr.freqWeekly)),
@@ -261,7 +262,7 @@ Future<Set<int>?> _pickBudgetCategories(
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                 itemCount: expenseCats.length + 1,
-                separatorBuilder: (_, __) =>
+                separatorBuilder: (_, _) =>
                     Divider(height: 1, color: ctx.divider),
                 itemBuilder: (_, i) {
                   if (i == 0) {

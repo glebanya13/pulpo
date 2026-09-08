@@ -81,7 +81,8 @@ class _GoalProgressScreenState extends ConsumerState<GoalProgressScreen> {
           if (accounts.isNotEmpty) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
-              value: _accountId,
+              key: ValueKey(_accountId),
+              initialValue: _accountId,
               decoration: InputDecoration(labelText: tr.transferFrom),
               items: [
                 for (final a in accounts)

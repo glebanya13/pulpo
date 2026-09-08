@@ -433,7 +433,8 @@ class _ColumnMapRow extends StatelessWidget {
           ),
           Expanded(
             child: DropdownButtonFormField<int?>(
-              value: value,
+              key: ValueKey(value),
+              initialValue: value,
               isExpanded: true,
               decoration: InputDecoration(
                 isDense: true,

@@ -266,7 +266,7 @@ class HouseholdService {
       'members': {
         uid: {
           'displayName': name,
-          if (photo != null) 'photoUrl': photo,
+          'photoUrl': ?photo,
           'joinedAt': now,
         },
       },
@@ -330,7 +330,7 @@ class HouseholdService {
       );
       members[uid] = {
         'displayName': name,
-        if (photo != null) 'photoUrl': photo,
+        'photoUrl': ?photo,
         'joinedAt': FieldValue.serverTimestamp(),
       };
       tx.update(householdRef, {
@@ -459,7 +459,7 @@ class HouseholdService {
       'categoryColor': categoryColor,
       if (note != null && note.isNotEmpty) 'note': note,
       'date': Timestamp.fromDate(date),
-      if (localTxId != null) 'localTxId': localTxId,
+      'localTxId': ?localTxId,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }

@@ -168,7 +168,8 @@ class _RecurringEditorScreenState
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: _frequency,
+            key: ValueKey(_frequency),
+            initialValue: _frequency,
             decoration: InputDecoration(labelText: tr.frequencyLabel),
             items: [
               DropdownMenuItem(value: 'daily', child: Text(tr.freqDaily)),

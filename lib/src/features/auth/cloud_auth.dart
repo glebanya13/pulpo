@@ -395,9 +395,7 @@ class CloudAuth {
       );
     }
     final payload = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
-    if (updated == null) {
-      updated = DateTime.tryParse(payload['exportedAt']?.toString() ?? '');
-    }
+    updated ??= DateTime.tryParse(payload['exportedAt']?.toString() ?? '');
     return CloudSnapshotMeta(
       updatedAt: updated,
       accounts: (payload['accounts'] as List?)?.length ?? 0,
@@ -614,8 +612,8 @@ class CloudAuth {
     }
 
     await _profileRef(user.uid).set({
-      if (chosen != null) 'displayName': chosen,
-      if (picture != null) 'photoUrl': picture,
+      'displayName': ?chosen,
+      'photoUrl': ?picture,
       if (user.email != null) 'email': user.email,
       if (isNew) 'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),

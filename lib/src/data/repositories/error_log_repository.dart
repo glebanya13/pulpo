@@ -95,7 +95,7 @@ class ErrorLogRepository {
         'at': DateTime.now().toIso8601String(),
         'source': source,
         'message': message,
-        if (detail != null) 'detail': detail,
+        'detail': ?detail,
       });
       await file.writeAsString('$line\n', mode: FileMode.append, flush: true);
     } catch (_) {}

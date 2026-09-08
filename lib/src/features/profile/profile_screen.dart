@@ -10,7 +10,6 @@ import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
