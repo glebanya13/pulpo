@@ -4,22 +4,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'data/repositories/settings_service.dart';
+import 'features/accounts/account_add_screen.dart';
 import 'features/accounts/account_detail_screen.dart';
+import 'features/accounts/account_edit_screen.dart';
 import 'features/accounts/accounts_screen.dart';
+import 'features/budgets/budget_editor_screen.dart';
 import 'features/budgets/budgets_screen.dart';
 import 'features/categories/categories_screen.dart';
 import 'features/categories/category_editor_screen.dart';
 import 'data/db/enums.dart';
 import 'features/dashboard/dashboard_screen.dart';
+import 'features/debts/debt_editor_screen.dart';
 import 'features/debts/debts_screen.dart';
+import 'features/goals/goal_editor_screen.dart';
+import 'features/goals/goal_progress_screen.dart';
 import 'features/goals/goals_screen.dart';
 import 'features/management/management_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/onboarding/onboarding_setup_screen.dart';
 import 'features/assistant/assistant_chat_screen.dart';
 import 'features/profile/profile_screen.dart';
+import 'features/recurring/recurring_editor_screen.dart';
 import 'features/recurring/recurring_screen.dart';
 import 'features/reports/reports_screen.dart';
+import 'features/subscriptions/subscription_editor_screen.dart';
 import 'features/auth/sign_in_screen.dart';
 import 'features/security/security_screen.dart';
 import 'features/export/export_screen.dart';
@@ -186,6 +194,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             _fadePage(state, const AccountsScreen()),
         routes: [
           GoRoute(
+            path: 'new',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const AccountAddScreen()),
+          ),
+          GoRoute(
             path: ':id',
             pageBuilder: (context, state) => _fadePage(
               state,
@@ -193,6 +206,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 accountId: int.parse(state.pathParameters['id']!),
               ),
             ),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                pageBuilder: (context, state) => _fadePage(
+                  state,
+                  AccountEditScreen(
+                    existingId: int.parse(state.pathParameters['id']!),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -228,19 +252,87 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/budgets',
         pageBuilder: (context, state) =>
             _fadePage(state, const BudgetsScreen()),
+        routes: [
+          GoRoute(
+            path: 'new',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const BudgetEditorScreen()),
+          ),
+          GoRoute(
+            path: ':id/edit',
+            pageBuilder: (context, state) => _fadePage(
+              state,
+              BudgetEditorScreen(
+                  existingId: int.parse(state.pathParameters['id']!)),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/debts',
         pageBuilder: (context, state) => _fadePage(state, const DebtsScreen()),
+        routes: [
+          GoRoute(
+            path: 'new',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const DebtEditorScreen()),
+          ),
+          GoRoute(
+            path: ':id/edit',
+            pageBuilder: (context, state) => _fadePage(
+              state,
+              DebtEditorScreen(
+                  existingId: int.parse(state.pathParameters['id']!)),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/goals',
         pageBuilder: (context, state) => _fadePage(state, const GoalsScreen()),
+        routes: [
+          GoRoute(
+            path: 'new',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const GoalEditorScreen()),
+          ),
+          GoRoute(
+            path: ':id/edit',
+            pageBuilder: (context, state) => _fadePage(
+              state,
+              GoalEditorScreen(
+                  existingId: int.parse(state.pathParameters['id']!)),
+            ),
+          ),
+          GoRoute(
+            path: ':id/progress',
+            pageBuilder: (context, state) => _fadePage(
+              state,
+              GoalProgressScreen(
+                  goalId: int.parse(state.pathParameters['id']!)),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/subscriptions',
         pageBuilder: (context, state) =>
             _fadePage(state, const SubscriptionsScreen()),
+        routes: [
+          GoRoute(
+            path: 'new',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const SubscriptionEditorScreen()),
+          ),
+          GoRoute(
+            path: ':id/edit',
+            pageBuilder: (context, state) => _fadePage(
+              state,
+              SubscriptionEditorScreen(
+                  existingId: int.parse(state.pathParameters['id']!)),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/shared-budget',
@@ -251,6 +343,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/recurring',
         pageBuilder: (context, state) =>
             _fadePage(state, const RecurringScreen()),
+        routes: [
+          GoRoute(
+            path: 'new',
+            pageBuilder: (context, state) =>
+                _fadePage(state, const RecurringEditorScreen()),
+          ),
+          GoRoute(
+            path: ':id/edit',
+            pageBuilder: (context, state) => _fadePage(
+              state,
+              RecurringEditorScreen(
+                  existingId: int.parse(state.pathParameters['id']!)),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/settings',

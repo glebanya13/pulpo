@@ -17,10 +17,8 @@ import '../../data/repositories/debt_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
-import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/simple_picker_sheet.dart';
 import '../../widgets/common.dart';
-import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class DebtsScreen extends ConsumerStatefulWidget {
@@ -152,171 +150,8 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
         .length;
     if (!await requireQuota(context, ref, ProGate.debts, used)) return;
     if (!context.mounted) return;
-    await _openDebtEditor(context, ref, existing: null);
+    context.push('/debts/new');
   }
-}
-
-Future<void> _openDebtEditor(
-  BuildContext context,
-  WidgetRef ref, {
-  required db.Debt? existing,
-}) async {
-  final nameCtrl = TextEditingController(text: existing?.counterparty ?? '');
-  final amountCtrl = TextEditingController(
-      text: existing == null ? '' : existing.amount.toString());
-  var direction = existing == null
-      ? DebtDirection.iOwe
-      : DebtDirection.values[existing.direction];
-  DateTime? dueDate = existing?.dueDate;
-  final isEdit = existing != null;
-
-  await showAppBottomSheet(
-    context: context,
-    transparent: true,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => KeyboardFormSheet(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(isEdit ? Tr.of(ctx).editDebt : Tr.of(ctx).newDebt,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 16),
-            TabsPill(
-              tabs: [Tr.of(ctx).iOwe, Tr.of(ctx).owedToMe],
-              index: direction.index,
-              onChanged: (i) =>
-                  setSt(() => direction = DebtDirection.values[i]),
-              limeActive: true,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameCtrl,
-              decoration:
-                  InputDecoration(labelText: Tr.of(ctx).toFromWhom),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
-              decoration: InputDecoration(labelText: Tr.of(ctx).amount),
-            ),
-            const SizedBox(height: 12),
-            Pressable(
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: ctx,
-                  initialDate:
-                      dueDate ?? DateTime.now().add(const Duration(days: 30)),
-                  firstDate:
-                      DateTime.now().subtract(const Duration(days: 365)),
-                  lastDate:
-                      DateTime.now().add(const Duration(days: 365 * 5)),
-                );
-                if (picked != null) setSt(() => dueDate = picked);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: ctx.scaffoldBg,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.calendar,
-                        size: 18, color: ctx.primaryText),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(dueDate == null
-                          ? Tr.of(ctx).dueDateLabel
-                          : DateFormat('d MMMM y',
-                                  Localizations.localeOf(ctx).languageCode)
-                              .format(dueDate!)),
-                    ),
-                    if (dueDate != null)
-                      Pressable(
-                        onTap: () => setSt(() => dueDate = null),
-                        child: Icon(LucideIcons.x,
-                            size: 16, color: ctx.faintText),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ScaledElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(amountCtrl.text) ?? 0;
-                if (nameCtrl.text.trim().isEmpty || amount <= 0) return;
-                final repo = ref.read(debtRepositoryProvider);
-                if (isEdit) {
-                  await repo.update(
-                    id: existing.id,
-                    counterparty: nameCtrl.text.trim(),
-                    amount: amount,
-                    direction: direction,
-                    dueDate: dueDate,
-                    clearDueDate: dueDate == null,
-                  );
-                } else {
-                  final currency =
-                      ref.read(settingsControllerProvider).baseCurrency;
-                  await repo.add(
-                    counterparty: nameCtrl.text.trim(),
-                    amount: amount,
-                    currency: currency,
-                    direction: direction,
-                    dueDate: dueDate,
-                  );
-                }
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: Text(Tr.of(ctx).save),
-            ),
-            if (isEdit) ...[
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: ctx,
-                    builder: (dctx) => AlertDialog(
-                      title: Text(Tr.of(dctx).deleteDebtTitle),
-                      content: Text(Tr.of(dctx).deleteTxBody),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dctx, false),
-                          child: Text(Tr.of(dctx).cancel),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(dctx, true),
-                          style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFFE53E3E),
-                          ),
-                          child: Text(Tr.of(dctx).delete),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirmed != true) return;
-                  await ref.read(debtRepositoryProvider).delete(existing.id);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFE53E3E),
-                ),
-                child: Text(Tr.of(ctx).delete),
-              ),
-            ],
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 class _StatCard extends StatelessWidget {
@@ -534,7 +369,7 @@ class _DebtCard extends ConsumerWidget {
               }),
               _actionTile(ctx, LucideIcons.pencil, tr.edit, () {
                 Navigator.pop(ctx);
-                _openDebtEditor(context, ref, existing: debt);
+                context.push('/debts/${debt.id}/edit');
               }),
               _actionTile(
                 ctx,

@@ -14,12 +14,9 @@ import '../../core/theme/color_well.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
-import '../../data/repositories/providers.dart';
 import '../../data/repositories/recurring_repository.dart';
 import '../../widgets/async_value_view.dart';
-import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
-import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class RecurringScreen extends ConsumerStatefulWidget {
@@ -100,190 +97,8 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
     final used = rules.where((r) => !r.isPaused).length;
     if (!await requireQuota(context, ref, ProGate.recurring, used)) return;
     if (!context.mounted) return;
-    await _openRuleEditor(context, ref, existing: null);
+    context.push('/recurring/new');
   }
-}
-
-Future<void> _openRuleEditor(
-  BuildContext context,
-  WidgetRef ref, {
-  required db.RecurringRule? existing,
-}) async {
-  final template = existing == null
-      ? null
-      : RecurringTemplate.fromJson(existing.templateJson);
-  final nameCtrl = TextEditingController(text: template?.name ?? '');
-  final amountCtrl = TextEditingController(
-      text: template == null ? '' : template.amount.toString());
-  var frequency = existing?.frequency ?? 'monthly';
-  var type = template?.type ?? TxType.expense;
-  DateTime next =
-      existing?.nextRunAt ?? DateTime.now().add(const Duration(days: 7));
-  final isEdit = existing != null;
-
-  await showAppBottomSheet(
-    context: context,
-    transparent: true,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => KeyboardFormSheet(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(isEdit ? Tr.of(ctx).editRule : Tr.of(ctx).newRule,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 16),
-            TabsPill(
-              tabs: [Tr.of(ctx).expense, Tr.of(ctx).income],
-              index: type == TxType.expense ? 0 : 1,
-              onChanged: (i) => setSt(() {
-                type = i == 0 ? TxType.expense : TxType.income;
-              }),
-              limeActive: true,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: nameCtrl,
-              autofocus: true,
-              textInputAction: TextInputAction.next,
-              decoration:
-                  InputDecoration(labelText: Tr.of(ctx).titleLabel),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
-              decoration: InputDecoration(labelText: Tr.of(ctx).amount),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: frequency,
-              decoration:
-                  InputDecoration(labelText: Tr.of(ctx).frequencyLabel),
-              items: [
-                DropdownMenuItem(
-                    value: 'daily', child: Text(Tr.of(ctx).freqDaily)),
-                DropdownMenuItem(
-                    value: 'weekly', child: Text(Tr.of(ctx).freqWeekly)),
-                DropdownMenuItem(
-                    value: 'monthly', child: Text(Tr.of(ctx).monthlyLabel)),
-                DropdownMenuItem(
-                    value: 'yearly', child: Text(Tr.of(ctx).yearlyLabel)),
-              ],
-              onChanged: (v) => setSt(() => frequency = v ?? 'monthly'),
-            ),
-            const SizedBox(height: 12),
-            Pressable(
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: ctx,
-                  initialDate: next,
-                  firstDate:
-                      DateTime.now().subtract(const Duration(days: 365)),
-                  lastDate:
-                      DateTime.now().add(const Duration(days: 365 * 3)),
-                );
-                if (picked != null) setSt(() => next = picked);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: ctx.scaffoldBg,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.calendar,
-                        size: 18, color: ctx.primaryText),
-                    const SizedBox(width: 10),
-                    Text(
-                        '${Tr.of(ctx).nextRunPrefix}${DateFormat('d MMM y', Localizations.localeOf(ctx).languageCode).format(next)}'),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ScaledElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(amountCtrl.text) ?? 0;
-                if (nameCtrl.text.trim().isEmpty || amount <= 0) return;
-                final accounts =
-                    ref.read(accountsProvider).valueOrNull ?? const [];
-                if (accounts.isEmpty) return;
-                final repo = ref.read(recurringRepositoryProvider);
-                if (isEdit) {
-                  await repo.update(
-                    id: existing.id,
-                    name: nameCtrl.text.trim(),
-                    accountId: template!.accountId,
-                    categoryId: template.categoryId,
-                    amount: amount,
-                    currency: template.currency,
-                    type: type,
-                    frequency: frequency,
-                    nextRun: next,
-                  );
-                } else {
-                  await repo.add(
-                    name: nameCtrl.text.trim(),
-                    accountId: accounts.first.id,
-                    amount: amount,
-                    currency: accounts.first.currency,
-                    type: type,
-                    frequency: frequency,
-                    nextRun: next,
-                  );
-                }
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: Text(Tr.of(ctx).save),
-            ),
-            if (isEdit) ...[
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: ctx,
-                    builder: (dctx) => AlertDialog(
-                      title: Text(Tr.of(dctx).deleteRuleTitle),
-                      content: Text(Tr.of(dctx).deleteTxBody),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dctx, false),
-                          child: Text(Tr.of(dctx).cancel),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(dctx, true),
-                          style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFFE53E3E),
-                          ),
-                          child: Text(Tr.of(dctx).delete),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirmed != true) return;
-                  await ref
-                      .read(recurringRepositoryProvider)
-                      .delete(existing.id);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFE53E3E),
-                ),
-                child: Text(Tr.of(ctx).delete),
-              ),
-            ],
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 class _RuleCard extends ConsumerWidget {
@@ -298,7 +113,7 @@ class _RuleCard extends ConsumerWidget {
     final daysUntil = rule.nextRunAt.difference(DateTime.now()).inDays;
 
     return Pressable(
-      onTap: () => _openRuleEditor(context, ref, existing: rule),
+      onTap: () => context.push('/recurring/${rule.id}/edit'),
       child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),

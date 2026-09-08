@@ -15,9 +15,7 @@ import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/settings_service.dart';
 import '../../data/repositories/subscription_repository.dart';
 import '../../widgets/async_value_view.dart';
-import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
-import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class SubscriptionsScreen extends ConsumerWidget {
@@ -155,209 +153,8 @@ class SubscriptionsScreen extends ConsumerWidget {
       return;
     }
     if (!context.mounted) return;
-    await _openEditor(context, ref, existing: null);
+    context.push('/subscriptions/new');
   }
-}
-
-Future<void> _openEditor(
-  BuildContext context,
-  WidgetRef ref, {
-  required db.Subscription? existing,
-}) async {
-  final nameCtrl = TextEditingController(text: existing?.name ?? '');
-  final amountCtrl = TextEditingController(
-      text: existing == null ? '' : existing.amount.toString());
-  var cycle = existing?.cycle ?? 'monthly';
-  DateTime next =
-      existing?.nextPayment ?? DateTime.now().add(const Duration(days: 30));
-  final isEdit = existing != null;
-
-  await showAppBottomSheet(
-    context: context,
-    transparent: true,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) {
-        final tr = Tr.of(ctx);
-        Widget cycleChip(String value, String label) {
-          final active = cycle == value;
-          return Expanded(
-            child: Pressable(
-              onTap: () => setSt(() => cycle = value),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: active ? AppColors.lime : ctx.scaffoldBg,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: active ? AppColors.ink : ctx.primaryText,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-
-        return KeyboardFormSheet(
-          child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  isEdit ? tr.editSubscription : tr.newSubscription,
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameCtrl,
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(labelText: tr.serviceName),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: amountCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true),
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
-                  decoration: InputDecoration(labelText: tr.amount),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  tr.periodicity,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: ctx.mutedText,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    cycleChip('monthly', tr.monthlyLabel),
-                    const SizedBox(width: 8),
-                    cycleChip('yearly', tr.yearlyLabel),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Pressable(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: ctx,
-                      initialDate: next,
-                      firstDate: DateTime.now()
-                          .subtract(const Duration(days: 365)),
-                      lastDate: DateTime.now()
-                          .add(const Duration(days: 365 * 3)),
-                    );
-                    if (picked != null) setSt(() => next = picked);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: ctx.scaffoldBg,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(LucideIcons.calendar,
-                            size: 18, color: ctx.primaryText),
-                        const SizedBox(width: 10),
-                        Text(
-                          '${tr.nextPaymentPrefix}${DateFormat('d MMM y', Localizations.localeOf(ctx).languageCode).format(next)}',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ScaledElevatedButton(
-                  onPressed: () async {
-                    final name = nameCtrl.text.trim();
-                    final amount = double.tryParse(
-                          amountCtrl.text.trim().replaceAll(',', '.'),
-                        ) ??
-                        0;
-                    if (name.isEmpty || amount <= 0) {
-                      if (!ctx.mounted) return;
-                      ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(content: Text(tr.formIncomplete)),
-                      );
-                      return;
-                    }
-                    final currency =
-                        ref.read(settingsControllerProvider).baseCurrency;
-                    final repo = ref.read(subscriptionRepositoryProvider);
-                    if (isEdit) {
-                      await repo.update(
-                        id: existing.id,
-                        name: name,
-                        amount: amount,
-                        cycle: cycle,
-                        nextPayment: next,
-                      );
-                    } else {
-                      await repo.add(
-                        name: name,
-                        amount: amount,
-                        currency: currency,
-                        cycle: cycle,
-                        nextPayment: next,
-                      );
-                    }
-                    if (ctx.mounted) Navigator.pop(ctx);
-                  },
-                  child: Text(tr.save),
-                ),
-                if (isEdit) ...[
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () async {
-                      final confirmed = await showDialog<bool>(
-                        context: ctx,
-                        builder: (dctx) => AlertDialog(
-                          title: Text(Tr.of(dctx).deleteSubTitle),
-                          content: Text(Tr.of(dctx).deleteTxBody),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(dctx, false),
-                              child: Text(Tr.of(dctx).cancel),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(dctx, true),
-                              style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFFE53E3E),
-                              ),
-                              child: Text(Tr.of(dctx).delete),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirmed != true) return;
-                      await ref
-                          .read(subscriptionRepositoryProvider)
-                          .delete(existing.id);
-                      if (ctx.mounted) Navigator.pop(ctx);
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFFE53E3E),
-                    ),
-                    child: Text(tr.delete),
-                  ),
-                ],
-              ],
-            ),
-        );
-      },
-    ),
-  );
 }
 
 class _TotalCard extends StatelessWidget {
@@ -420,7 +217,7 @@ class _SubCard extends ConsumerWidget {
 
     final accentColor = context.accent;
     return Pressable(
-      onTap: () => _openEditor(context, ref, existing: sub),
+      onTap: () => context.push('/subscriptions/${sub.id}/edit'),
       child: Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(16),

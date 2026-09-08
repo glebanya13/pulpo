@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
-import '../../core/currencies.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
@@ -15,15 +14,11 @@ import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
-import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
-import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
-import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
-import '../../widgets/pro_badge.dart';
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
@@ -114,177 +109,7 @@ class AccountsScreen extends ConsumerWidget {
       return;
     }
     if (!context.mounted) return;
-    final nameCtrl = TextEditingController();
-    final balanceCtrl = TextEditingController();
-    AccountType type = AccountType.cash;
-    String currency = ref.read(settingsControllerProvider).baseCurrency;
-
-    await showAppBottomSheet(
-      context: context,
-      transparent: true,
-      builder: (context) {
-        return StatefulBuilder(builder: (context, setState) {
-          return KeyboardFormSheet(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  Tr.of(context).newAccount,
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: nameCtrl,
-                  autofocus: true,
-                  textInputAction: TextInputAction.next,
-                  decoration:
-                      InputDecoration(labelText: Tr.of(context).titleLabel),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: TextField(
-                        controller: balanceCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                        decoration: InputDecoration(
-                          labelText: Tr.of(context).initialBalance,
-                          hintText: '0',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Builder(
-                        builder: (context) {
-                          final base = ref
-                              .watch(settingsControllerProvider)
-                              .baseCurrency;
-                          final isPro =
-                              ref.watch(proControllerProvider).isPro;
-                          return DropdownButtonFormField<String>(
-                            key: ValueKey(currency),
-                            initialValue: uniqueAppCurrencies()
-                                    .any((c) => c.code == currency)
-                                ? currency
-                                : uniqueAppCurrencies().first.code,
-                            items: [
-                              for (final c in uniqueAppCurrencies())
-                                DropdownMenuItem(
-                                  value: c.code,
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                          child: Text('${c.flag} ${c.code}')),
-                                      if (c.code != base && !isPro)
-                                        const ProBadge(
-                                            dense: true, showLock: false),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                            decoration: InputDecoration(
-                              labelText: Tr.of(context).currency,
-                            ),
-                            onChanged: (v) async {
-                              final next = v ?? currency;
-                              if (next != base &&
-                                  !await requirePro(
-                                      context, ref, ProGate.currencies)) {
-                                if (context.mounted) setState(() {});
-                                return;
-                              }
-                              if (!context.mounted) return;
-                              setState(() => currency = next);
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<AccountType>(
-                  initialValue: type,
-                  items: [
-                    for (final t in AccountType.values)
-                      DropdownMenuItem(
-                        value: t,
-                        child: Text(Tr.of(context).accountTypeLabel(t.index)),
-                      ),
-                  ],
-                  decoration:
-                      InputDecoration(labelText: Tr.of(context).accountType),
-                  onChanged: (v) => setState(() => type = v ?? AccountType.cash),
-                ),
-                const SizedBox(height: 20),
-                ScaledElevatedButton(
-                  onPressed: () async {
-                    if (nameCtrl.text.trim().isEmpty) return;
-                    await ref.read(accountRepositoryProvider).add(
-                          name: nameCtrl.text.trim(),
-                          type: type,
-                          currency: currency,
-                          initialBalance:
-                              double.tryParse(balanceCtrl.text) ?? 0,
-                          icon: _defaultIconFor(type),
-                          color: _colorFor(type),
-                        );
-                    if (context.mounted) Navigator.pop(context);
-                  },
-                  child: Text(Tr.of(context).save),
-                ),
-                const SizedBox(height: 12),
-              ],
-            ),
-          );
-        });
-      },
-    );
-  }
-
-  static String _defaultIconFor(AccountType t) {
-    switch (t) {
-      case AccountType.cash:
-        return 'wallet';
-      case AccountType.card:
-        return 'credit-card';
-      case AccountType.bankAccount:
-        return 'coins';
-      case AccountType.eWallet:
-        return 'wallet';
-      case AccountType.crypto:
-        return 'coins';
-      case AccountType.investment:
-        return 'trending-up';
-      case AccountType.loan:
-        return 'piggy-bank';
-    }
-  }
-
-  static int _colorFor(AccountType t) {
-    switch (t) {
-      case AccountType.cash:
-        return 0xFF3DDC84;
-      case AccountType.card:
-        return 0xFF7C6CFF;
-      case AccountType.bankAccount:
-        return 0xFF8BD44A;
-      case AccountType.eWallet:
-        return 0xFF2EB5FF;
-      case AccountType.crypto:
-        return 0xFFFFB020;
-      case AccountType.investment:
-        return 0xFF3DDC84;
-      case AccountType.loan:
-        return 0xFFFF5C5C;
-    }
+    context.push('/accounts/new');
   }
 }
 

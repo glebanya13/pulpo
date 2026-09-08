@@ -16,9 +16,7 @@ import '../../data/repositories/goal_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
-import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
-import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class GoalsScreen extends ConsumerWidget {
@@ -49,7 +47,7 @@ class GoalsScreen extends ConsumerWidget {
                     return;
                   }
                   if (!context.mounted) return;
-                  await _openGoalEditor(context, ref, existing: null);
+                  context.push('/goals/new');
                 },
               ),
             ),
@@ -74,9 +72,10 @@ class GoalsScreen extends ConsumerWidget {
                         _GoalCard(
                           goal: g,
                           fallbackCurrency: currency,
-                          onAdd: () => _openProgress(context, ref, g),
+                          onAdd: () =>
+                              context.push('/goals/${g.id}/progress'),
                           onEdit: () =>
-                              _openGoalEditor(context, ref, existing: g),
+                              context.push('/goals/${g.id}/edit'),
                           onDelete: () async {
                             await ref
                                 .read(goalRepositoryProvider)
@@ -199,170 +198,4 @@ class _GoalCard extends StatelessWidget {
   }
 }
 
-Future<void> _openProgress(
-  BuildContext context,
-  WidgetRef ref,
-  db.Goal goal,
-) async {
-  final amountCtrl = TextEditingController();
-  final accounts = ref.read(accountsProvider).valueOrNull ?? const [];
-  var accountId = goal.accountId ??
-      (accounts.isNotEmpty ? accounts.first.id : null);
 
-  await showAppBottomSheet(
-    context: context,
-    transparent: true,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => KeyboardFormSheet(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(Tr.of(ctx).addToGoal,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: amountCtrl,
-              autofocus: true,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
-              decoration: InputDecoration(labelText: Tr.of(ctx).amount),
-            ),
-            if (accounts.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              DropdownButtonFormField<int>(
-                initialValue: accountId,
-                decoration:
-                    InputDecoration(labelText: Tr.of(ctx).transferFrom),
-                items: [
-                  for (final a in accounts)
-                    DropdownMenuItem(value: a.id, child: Text(a.name)),
-                ],
-                onChanged: (v) => setSt(() => accountId = v),
-              ),
-            ],
-            const SizedBox(height: 16),
-            ScaledFilledButton(
-              onPressed: () async {
-                final v =
-                    double.tryParse(amountCtrl.text.replaceAll(',', '.'));
-                if (v == null || v <= 0 || accountId == null) return;
-                await ref.read(goalRepositoryProvider).addProgress(
-                      id: goal.id,
-                      amount: v,
-                      accountId: accountId!,
-                    );
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: Text(Tr.of(ctx).save),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-  amountCtrl.dispose();
-}
-
-Future<void> _openGoalEditor(
-  BuildContext context,
-  WidgetRef ref, {
-  required db.Goal? existing,
-}) async {
-  final nameCtrl = TextEditingController(text: existing?.name ?? '');
-  final targetCtrl = TextEditingController(
-      text: existing == null ? '' : existing.targetAmount.toString());
-  final currentCtrl = TextEditingController(
-      text: existing == null ? '' : existing.currentAmount.toString());
-  final targetDate = existing?.targetDate;
-  final isEdit = existing != null;
-  final currency = ref.read(settingsControllerProvider).baseCurrency;
-
-  final targetFocus = FocusNode();
-  final currentFocus = FocusNode();
-
-  await showAppBottomSheet(
-    context: context,
-    transparent: true,
-    builder: (ctx) => KeyboardFormSheet(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(isEdit ? Tr.of(ctx).editGoal : Tr.of(ctx).newGoal,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameCtrl,
-              autofocus: true,
-              textInputAction: TextInputAction.next,
-              onSubmitted: (_) => targetFocus.requestFocus(),
-              decoration: InputDecoration(labelText: Tr.of(ctx).goalName),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: targetCtrl,
-              focusNode: targetFocus,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.next,
-              onSubmitted: (_) => currentFocus.requestFocus(),
-              decoration: InputDecoration(labelText: Tr.of(ctx).goalTarget),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: currentCtrl,
-              focusNode: currentFocus,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
-              decoration: InputDecoration(labelText: Tr.of(ctx).goalSaved),
-            ),
-            const SizedBox(height: 12),
-            ScaledFilledButton(
-              onPressed: () async {
-                final name = nameCtrl.text.trim();
-                final target =
-                    double.tryParse(targetCtrl.text.replaceAll(',', '.'));
-                if (name.isEmpty || target == null || target <= 0) return;
-                final current =
-                    double.tryParse(currentCtrl.text.replaceAll(',', '.')) ??
-                        0;
-                final repo = ref.read(goalRepositoryProvider);
-                if (isEdit) {
-                  await repo.update(
-                    id: existing.id,
-                    name: name,
-                    targetAmount: target,
-                    currentAmount: current,
-                    targetDate: targetDate,
-                    clearTargetDate: targetDate == null,
-                  );
-                } else {
-                  await repo.add(
-                    name: name,
-                    targetAmount: target,
-                    currency: currency,
-                    currentAmount: current,
-                    targetDate: targetDate,
-                  );
-                }
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: Text(Tr.of(ctx).save),
-            ),
-          ],
-        ),
-      ),
-  );
-  nameCtrl.dispose();
-  targetCtrl.dispose();
-  currentCtrl.dispose();
-  targetFocus.dispose();
-  currentFocus.dispose();
-}

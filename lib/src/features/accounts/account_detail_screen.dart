@@ -6,18 +6,14 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
-import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../widgets/async_value_view.dart';
-import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
-import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class AccountDetailScreen extends ConsumerWidget {
@@ -138,7 +134,7 @@ class _AccountDetailBody extends ConsumerWidget {
                 _CircleBtn(
                     icon: LucideIcons.pencil,
                     onTap: () =>
-                        _openAccountEditor(context, ref, existing: account)),
+                        context.push('/accounts/${account.id}/edit')),
               ],
             ),
         headerGap: 24,
@@ -292,7 +288,7 @@ class _AccountDetailBody extends ConsumerWidget {
                 Expanded(
                   child: Pressable(
                     onTap: () =>
-                        _openAccountEditor(context, ref, existing: account),
+                        context.push('/accounts/${account.id}/edit'),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
@@ -372,130 +368,7 @@ class _MiniStat extends StatelessWidget {
   }
 }
 
-Future<void> _openAccountEditor(
-  BuildContext context,
-  WidgetRef ref, {
-  required db.Account existing,
-}) async {
-  final nameCtrl = TextEditingController(text: existing.name);
-  final creditCtrl = TextEditingController(
-    text: existing.creditLimit?.toString() ?? '',
-  );
-  var includeInTotal = existing.includeInTotal;
-  final isCredit = existing.type == AccountType.card.index ||
-      existing.type == AccountType.loan.index;
 
-  await showAppBottomSheet(
-    context: context,
-    transparent: true,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => KeyboardFormSheet(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: SizedBox(
-                width: 36,
-                child: Divider(thickness: 4, color: ctx.handleBar),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(Tr.of(ctx).editAccount,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameCtrl,
-              autofocus: true,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
-              decoration:
-                  InputDecoration(labelText: Tr.of(ctx).accountName),
-            ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: includeInTotal,
-              onChanged: (v) => setSt(() => includeInTotal = v),
-              title: Text(Tr.of(ctx).includeInTotal),
-            ),
-            if (isCredit) ...[
-              const SizedBox(height: 8),
-              TextField(
-                controller: creditCtrl,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
-                decoration: InputDecoration(
-                  labelText: Tr.of(ctx).creditLimit,
-                  hintText: Tr.of(ctx).creditLimitHint,
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            ScaledElevatedButton(
-              onPressed: () async {
-                if (nameCtrl.text.trim().isEmpty) return;
-                final creditRaw = creditCtrl.text.trim();
-                final credit = creditRaw.isEmpty
-                    ? null
-                    : double.tryParse(creditRaw.replaceAll(',', '.'));
-                await ref.read(accountRepositoryProvider).update(
-                      id: existing.id,
-                      name: nameCtrl.text.trim(),
-                      includeInTotal: includeInTotal,
-                      creditLimit: credit,
-                      clearCreditLimit: isCredit && creditRaw.isEmpty,
-                    );
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: Text(Tr.of(ctx).save),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                  context: ctx,
-                  builder: (dctx) => AlertDialog(
-                    title: Text(Tr.of(dctx).deleteAccountTitle),
-                    content: Text(Tr.of(dctx).deleteAccountBody),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(dctx, false),
-                        child: Text(Tr.of(dctx).cancel),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(dctx, true),
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFFE53E3E),
-                        ),
-                        child: Text(Tr.of(dctx).delete),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirmed != true) return;
-                await ref
-                    .read(accountRepositoryProvider)
-                    .delete(existing.id);
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                  if (context.mounted) context.pop();
-                }
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFE53E3E),
-              ),
-              child: Text(Tr.of(ctx).delete),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
 
 class _DarkTxRow extends ConsumerWidget {
   const _DarkTxRow({required this.tx});
