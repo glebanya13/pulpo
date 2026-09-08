@@ -5,18 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
-import '../../data/repositories/category_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../widgets/async_value_view.dart';
-import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/common.dart';
-import '../../widgets/keyboard_form_sheet.dart';
 import '../../widgets/pressable.dart';
 
 class CategoriesScreen extends ConsumerStatefulWidget {
@@ -94,16 +90,16 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                           _CatRow(
                             category: roots[i],
                             count: counts[roots[i].id] ?? 0,
-                            onTap: () => _openCategoryEditor(context, ref,
-                                existing: roots[i]),
+                            onTap: () => context.push(
+                                '/categories/${roots[i].id}/edit'),
                           ),
                           for (final child in byParent[roots[i].id] ?? const [])
                             _CatRow(
                               category: child,
                               count: counts[child.id] ?? 0,
                               indent: true,
-                              onTap: () => _openCategoryEditor(context, ref,
-                                  existing: child),
+                              onTap: () => context.push(
+                                  '/categories/${child.id}/edit'),
                             ),
                           if (i != roots.length - 1)
                             Divider(height: 1, color: context.divider),
@@ -119,182 +115,12 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     );
   }
 
-  Future<void> _openAdd(BuildContext context) {
-    final defaultType = _tab == 0 ? CategoryType.expense : CategoryType.income;
-    return _openCategoryEditor(context, ref,
-        existing: null, defaultType: defaultType);
+  void _openAdd(BuildContext context) {
+    final type = _tab == 0 ? 'expense' : 'income';
+    context.push('/categories/new?type=$type');
   }
 }
 
-const _palette = categoryPalette;
-
-const _iconKeys = [
-  'utensils', 'car', 'home', 'heart-pulse', 'clapperboard', 'shirt',
-  'wifi', 'graduation-cap', 'gift', 'sparkles', 'briefcase', 'laptop',
-  'trending-up', 'wallet', 'credit-card', 'coins', 'piggy-bank',
-  'target', 'plane', 'shopping-bag', 'circle',
-];
-
-Future<void> _openCategoryEditor(
-  BuildContext context,
-  WidgetRef ref, {
-  required db.Category? existing,
-  CategoryType defaultType = CategoryType.expense,
-}) async {
-  final nameCtrl = TextEditingController(
-      text: existing == null ? '' : Tr.of(context).categoryName(existing.name));
-  var color = existing?.color ?? 0xFF8BD44A;
-  var icon = existing?.icon ?? 'circle';
-  final isEdit = existing != null;
-
-  await showAppBottomSheet(
-    context: context,
-    transparent: true,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSt) => KeyboardFormSheet(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-                isEdit ? Tr.of(ctx).editCategory : Tr.of(ctx).newCategory,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameCtrl,
-              decoration: InputDecoration(labelText: Tr.of(ctx).titleLabel),
-            ),
-            const SizedBox(height: 16),
-            Text(Tr.of(ctx).colorLabel,
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: ctx.mutedText)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 10,
-              children: _palette
-                  .map((c) => Pressable(
-                        onTap: () => setSt(() => color = c),
-                        child: Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: Color(c),
-                            shape: BoxShape.circle,
-                            border: color == c
-                                ? Border.all(
-                                    color: ctx.isDark
-                                        ? Colors.white
-                                        : AppColors.ink,
-                                    width: 2)
-                                : null,
-                          ),
-                        ),
-                      ))
-                  .toList(),
-            ),
-            const SizedBox(height: 16),
-            Text(Tr.of(ctx).iconLabel,
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: ctx.mutedText)),
-            const SizedBox(height: 8),
-            GridView.count(
-              shrinkWrap: true,
-              crossAxisCount: 6,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 1,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                for (final key in _iconKeys)
-                  Pressable(
-                    onTap: () => setSt(() => icon = key),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: icon == key
-                            ? AppColors.lime.withValues(alpha: 0.3)
-                            : ctx.scaffoldBg,
-                        borderRadius: BorderRadius.circular(14),
-                        border: icon == key
-                            ? Border.all(color: AppColors.lime, width: 2)
-                            : null,
-                      ),
-                      child: Icon(lucideByKey(key),
-                          color: ctx.primaryText),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            ScaledElevatedButton(
-              onPressed: () async {
-                if (nameCtrl.text.trim().isEmpty) return;
-                final repo = ref.read(categoryRepositoryProvider);
-                if (isEdit) {
-                  await repo.update(
-                    id: existing.id,
-                    name: nameCtrl.text.trim(),
-                    icon: icon,
-                    color: color,
-                  );
-                } else {
-                  await repo.add(
-                    name: nameCtrl.text.trim(),
-                    type: defaultType,
-                    icon: icon,
-                    color: color,
-                  );
-                }
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: Text(Tr.of(ctx).save),
-            ),
-            if (isEdit) ...[
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: ctx,
-                    builder: (dctx) => AlertDialog(
-                      title: Text(Tr.of(dctx).deleteCategoryTitle),
-                      content: Text(Tr.of(dctx).deleteTxBody),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dctx, false),
-                          child: Text(Tr.of(dctx).cancel),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(dctx, true),
-                          style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFFE53E3E),
-                          ),
-                          child: Text(Tr.of(dctx).delete),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirmed != true) return;
-                  await ref
-                      .read(categoryRepositoryProvider)
-                      .delete(existing.id);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFE53E3E),
-                ),
-                child: Text(Tr.of(ctx).delete),
-              ),
-            ],
-          ],
-        ),
-      ),
-    ),
-  );
-}
 
 class _CatRow extends StatelessWidget {
   const _CatRow({

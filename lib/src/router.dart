@@ -8,6 +8,8 @@ import 'features/accounts/account_detail_screen.dart';
 import 'features/accounts/accounts_screen.dart';
 import 'features/budgets/budgets_screen.dart';
 import 'features/categories/categories_screen.dart';
+import 'features/categories/category_editor_screen.dart';
+import 'data/db/enums.dart';
 import 'features/dashboard/dashboard_screen.dart';
 import 'features/debts/debts_screen.dart';
 import 'features/goals/goals_screen.dart';
@@ -198,6 +200,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/categories',
         pageBuilder: (context, state) =>
             _fadePage(state, const CategoriesScreen()),
+        routes: [
+          GoRoute(
+            path: 'new',
+            pageBuilder: (context, state) {
+              final q = state.uri.queryParameters;
+              final type = q['type'] == 'income'
+                  ? CategoryType.income
+                  : CategoryType.expense;
+              final parentId = int.tryParse(q['parentId'] ?? '');
+              return _fadePage(
+                state,
+                CategoryEditorScreen(defaultType: type, parentId: parentId),
+              );
+            },
+          ),
+          GoRoute(
+            path: ':id/edit',
+            pageBuilder: (context, state) {
+              final id = int.parse(state.pathParameters['id']!);
+              return _fadePage(state, CategoryEditorScreen(existingId: id));
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: '/budgets',
