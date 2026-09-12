@@ -80,6 +80,8 @@ class Tr {
   String get back => _get('back');
   String get restore => _get('restore');
   String get retry => _get('retry');
+  String get supportChatError => _get('support_chat_error');
+  String get supportChatOpenBrowser => _get('support_chat_browser');
   String get other => _get('other');
 
   // ─────────────────────── TX TYPES ───────────────────────
@@ -937,6 +939,8 @@ class Tr {
       'back': 'Atrás',
       'restore': 'Restaurar',
       'retry': 'Reintentar',
+      'support_chat_error': 'No se pudo cargar el chat. Comprueba tu conexión.',
+      'support_chat_browser': 'Abrir en el navegador',
       'other': 'Otro',
       // tx types
       'income': 'Ingreso',
@@ -1665,6 +1669,8 @@ class Tr {
       'back': 'Назад',
       'restore': 'Восстановить',
       'retry': 'Повторить',
+      'support_chat_error': 'Не удалось загрузить чат. Проверьте подключение.',
+      'support_chat_browser': 'Открыть в браузере',
       'other': 'Другое',
       // tx types
       'income': 'Доход',
@@ -2393,6 +2399,8 @@ class Tr {
       'back': 'Back',
       'restore': 'Restore',
       'retry': 'Retry',
+      'support_chat_error': 'Could not load the chat. Check your connection.',
+      'support_chat_browser': 'Open in browser',
       'other': 'Other',
       // tx types
       'income': 'Income',
@@ -3119,6 +3127,8 @@ class Tr {
       'back': 'Назад',
       'restore': 'Відновити',
       'retry': 'Повторити',
+      'support_chat_error': 'Не вдалося завантажити чат. Перевірте з’єднання.',
+      'support_chat_browser': 'Відкрити у браузері',
       'other': 'Інше',
       'income': 'Дохід',
       'expense': 'Витрата',
