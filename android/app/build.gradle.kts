@@ -68,3 +68,12 @@ flutter {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
+
+configurations.all {
+    // home_widget resolves "androidx.glance:glance-appwidget:1.+", whose newest
+    // 1.3.0-alpha02 requires compileSdk 37 (Flutter 3.38 ships 36). Pin stable.
+    resolutionStrategy {
+        force("androidx.glance:glance-appwidget:1.1.1")
+        force("androidx.glance:glance:1.1.1")
+    }
+}

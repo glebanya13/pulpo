@@ -661,7 +661,7 @@ class _DayBlock extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${day.day}',
+                      day.day.toString().padLeft(2, '0'),
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,

@@ -64,9 +64,11 @@ extension ColorWellX on BuildContext {
     final v = stored.asVivid;
     final hsl = HSLColor.fromColor(v);
     if (isDark) {
+      // Яркий, насыщенный глиф — на тёмной подложке приглушённые цвета
+      // сливаются с фоном и иконка «хромает».
       return hsl
-          .withSaturation((hsl.saturation * 0.55).clamp(0.25, 0.7))
-          .withLightness((hsl.lightness * 0.55).clamp(0.38, 0.55))
+          .withSaturation(hsl.saturation.clamp(0.65, 1.0))
+          .withLightness(hsl.lightness.clamp(0.72, 0.82))
           .toColor();
     }
     return hsl.withLightness((hsl.lightness * 0.42).clamp(0.18, 0.38)).toColor();

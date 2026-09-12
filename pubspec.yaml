@@ -1,7 +1,7 @@
 name: pulpo
 description: "Monedero — control de gastos personal offline-first para Android e iOS."
 publish_to: 'none'
-version: 1.0.1+84
+version: 1.1.1+85
 
 environment:
   sdk: ^3.10.0
@@ -54,6 +54,7 @@ dependencies:
   firebase_app_check: ^0.3.2+10
   firebase_storage: ^12.4.10
   speech_to_text: ^7.4.0
+  webview_flutter: ^4.14.1
 
 dev_dependencies:
   flutter_test:

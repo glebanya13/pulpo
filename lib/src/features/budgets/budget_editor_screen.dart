@@ -321,6 +321,7 @@ Future<Set<int>?> _pickBudgetCategories(
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
               child: ScaledElevatedButton(
+                expand: true,
                 onPressed: () => Navigator.pop(ctx, local),
                 child: Text(tr.done),
               ),

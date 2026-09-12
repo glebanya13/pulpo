@@ -1,5 +1,5 @@
 class AppInfo {
-  static const version = '1.0.1';
+  static const version = '1.1.1';
   /// Shown under the icon on the home screen (iOS/Android).
   static const displayName = 'Monedero';
   /// Set in App Store Connect — not read from the binary.
@@ -28,6 +28,10 @@ class AppInfo {
   /// WhatsApp username without @ — opens via wa.me (no phone number in the link).
   static const whatsAppUsername = 'monedero.mobi';
   static const whatsAppUrl = 'https://wa.me/$whatsAppUsername';
+
+  /// Crisp website ID (crisp.chat dashboard → Settings → Setup instructions).
+  /// While empty, the support chip falls back to WhatsApp.
+  static const crispWebsiteId = 'Xaxvet-9vobzy-zemkuk';
 
   static final privacyUri = Uri.parse(privacyUrl);
   static final termsUri = Uri.parse(termsUrl);

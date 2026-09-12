@@ -514,7 +514,8 @@ class _FormRow extends StatelessWidget {
                   ),
                 ),
               ),
-              if (displayValue.isNotEmpty)
+              if (displayValue.isNotEmpty) ...[
+                const SizedBox(width: 12),
                 Flexible(
                   child: Text(
                     displayValue,
@@ -529,6 +530,7 @@ class _FormRow extends StatelessWidget {
                     ),
                   ),
                 ),
+              ],
               if (!readOnly && !danger) ...[
                 const SizedBox(width: 4),
                 Icon(LucideIcons.chevronRight,

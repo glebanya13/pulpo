@@ -426,28 +426,33 @@ class MyAccountChip extends StatelessWidget {
   }
 }
 
-/// WhatsApp support — opens [AppInfo.whatsAppUri] (username, not phone).
+/// Support chat — opens the in-app Crisp chat when configured, otherwise
+/// falls back to WhatsApp ([AppInfo.whatsAppUri], username not phone).
 class WhatsAppSupportChip extends StatelessWidget {
   const WhatsAppSupportChip({super.key, this.dense = false});
 
   final bool dense;
 
-  static const _green = Color(0xFF25D366);
+  /// Crisp brand blue.
+  static const _blue = Color(0xFF1972F5);
 
   @override
   Widget build(BuildContext context) {
     final size = dense ? 34.0 : 40.0;
+    final crisp = AppInfo.crispWebsiteId.isNotEmpty;
     return Pressable(
-      onTap: () => openAppLink(context, AppInfo.whatsAppUri),
+      onTap: () => crisp
+          ? context.push('/support-chat')
+          : openAppLink(context, AppInfo.whatsAppUri),
       child: Semantics(
         button: true,
-        label: 'WhatsApp',
+        label: 'Soporte',
         child: Container(
           width: size,
           height: size,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _green,
+            color: _blue,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
