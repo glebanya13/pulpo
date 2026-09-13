@@ -308,55 +308,65 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
         (_headerHeight > 0 ? _headerHeight : estimatedHeader) + widget.headerGap;
 
     // Header floats above scroll content; only the pill/card keeps a surface fill.
-    final content = Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Positioned.fill(
-          child: Builder(builder: (context) {
-            final scrollView = CustomScrollView(
-              controller: widget.controller,
-              physics: widget.onRefresh != null
-                  ? const AlwaysScrollableScrollPhysics()
-                  : widget.physics,
-              slivers: [
-                if (widget.onRefresh != null)
-                  CupertinoSliverRefreshControl(
-                    onRefresh: widget.onRefresh,
-                  ),
-                SliverPadding(
+    // On overscroll (pull down) the header follows the content instead of
+    // staying pinned — otherwise a large detached gap opens under it.
+    final content = AnimatedBuilder(
+      animation: widget.controller ?? const AlwaysStoppedAnimation(0),
+      builder: (context, _) {
+        final c = widget.controller;
+        final overscroll =
+            (c != null && c.hasClients && c.offset < 0) ? -c.offset : 0.0;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              child: Builder(builder: (context) {
+                final scrollView = CustomScrollView(
+                  controller: widget.controller,
+                  physics: widget.onRefresh != null
+                      ? const AlwaysScrollableScrollPhysics()
+                      : widget.physics,
+                  slivers: [
+                    if (widget.onRefresh != null)
+                      CupertinoSliverRefreshControl(
+                        onRefresh: widget.onRefresh,
+                      ),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        pad.left,
+                        topInset,
+                        pad.right,
+                        pad.bottom,
+                      ),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate(widget.children),
+                      ),
+                    ),
+                  ],
+                );
+                return scrollView;
+              }),
+            ),
+            Positioned(
+              top: overscroll,
+              left: 0,
+              right: 0,
+              child: KeyedSubtree(
+                key: _headerKey,
+                child: Padding(
                   padding: EdgeInsets.fromLTRB(
                     pad.left,
-                    topInset,
+                    pad.top,
                     pad.right,
-                    pad.bottom,
+                    widget.headerBottomPadding,
                   ),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate(widget.children),
-                  ),
+                  child: widget.header,
                 ),
-              ],
-            );
-            return scrollView;
-          }),
-        ),
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: KeyedSubtree(
-            key: _headerKey,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                pad.left,
-                pad.top,
-                pad.right,
-                widget.headerBottomPadding,
               ),
-              child: widget.header,
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
     if (!widget.useSafeArea) return content;
     return SafeArea(child: content);
@@ -559,24 +569,43 @@ class PageHeader extends StatelessWidget {
     );
 
     final pill = LiquidGlass(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: RichText(
-        textAlign: TextAlign.center,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        text: TextSpan(
-          text: first,
-          style: titleStyle,
-          children: [
-            if (second != null)
-              TextSpan(
-                text: second,
-                style: titleStyle.copyWith(
-                  color: context.accent,
-                ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RichText(
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            text: TextSpan(
+              text: first,
+              style: titleStyle,
+              children: [
+                if (second != null)
+                  TextSpan(
+                    text: second,
+                    style: titleStyle.copyWith(
+                      color: context.accent,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 1),
+            Text(
+              subtitle!,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: context.mutedText,
               ),
+            ),
           ],
-        ),
+        ],
       ),
     );
 
@@ -615,27 +644,6 @@ class PageHeader extends StatelessWidget {
             ),
           ],
         ),
-        if (subtitle != null) ...[
-          const SizedBox(height: 8),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-              decoration: BoxDecoration(
-                color: context.surface,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                subtitle!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: context.mutedText,
-                ),
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }
