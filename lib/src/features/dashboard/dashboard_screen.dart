@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
@@ -48,8 +49,9 @@ class DashboardScreen extends ConsumerWidget {
           headerContentHeight: 70,
           onRefresh: retryBalance,
           header: ScreenTitlePill(
-            title: settings.userName,
-            eyebrow: tr.greetingForHour(DateTime.now().hour),
+            title: AppInfo.displayName,
+            subtitle: tr.dashboardSubtitle,
+            leading: BrandLogo(size: 34, plate: false),
             large: true,
             expand: true,
             trailing: const HeaderSupportActions(dense: true),

@@ -42,7 +42,6 @@ import 'features/settings/reminders_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/shared_budget/shared_budget_screen.dart';
 import 'features/subscriptions/subscriptions_screen.dart';
-import 'features/support/support_chat_screen.dart';
 import 'features/transactions/add_transaction_screen.dart';
 import 'features/transactions/transaction_detail_screen.dart';
 import 'features/transactions/transfer_screen.dart';
@@ -142,11 +141,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/assistant',
         pageBuilder: (context, state) =>
             _fadePage(state, const AssistantChatScreen()),
-      ),
-      GoRoute(
-        path: '/support-chat',
-        pageBuilder: (context, state) =>
-            _fadePage(state, const SupportChatScreen()),
       ),
       GoRoute(
         path: '/add',

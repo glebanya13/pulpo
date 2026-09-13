@@ -1,5 +1,7 @@
+import 'package:crisp_chat/crisp_chat.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -9,6 +11,7 @@ import '../core/open_link.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_theme.dart';
+import '../features/auth/cloud_auth.dart';
 import 'pressable.dart';
 
 /// Brand mark — Monedero app icon (black plate + fox mascot).
@@ -72,6 +75,7 @@ class ScreenTitlePill extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.eyebrow,
+    this.leading,
     this.trailing,
     this.large = false,
     this.expand = false,
@@ -81,6 +85,8 @@ class ScreenTitlePill extends StatelessWidget {
   final String? subtitle;
   /// Smaller muted line above the title (e.g. greeting).
   final String? eyebrow;
+  /// Optional widget before the text block (e.g. brand logo on home).
+  final Widget? leading;
   /// Optional control inside the pill (e.g. profile on home).
   final Widget? trailing;
   final bool large;
@@ -148,15 +154,19 @@ class ScreenTitlePill extends StatelessWidget {
         color: context.surface,
         borderRadius: BorderRadius.circular(large ? 22 : 999),
       ),
-      child: trailing == null
-          ? textBlock
-          : Row(
-              children: [
-                Expanded(child: textBlock),
-                const SizedBox(width: 8),
-                trailing!,
-              ],
-            ),
+      child: Row(
+        children: [
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: 10),
+          ],
+          Expanded(child: textBlock),
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
+        ],
+      ),
     );
     if (expand) return child;
     return Align(alignment: Alignment.centerLeft, child: child);
@@ -426,9 +436,9 @@ class MyAccountChip extends StatelessWidget {
   }
 }
 
-/// Support chat — opens the in-app Crisp chat when configured, otherwise
-/// falls back to WhatsApp ([AppInfo.whatsAppUri], username not phone).
-class WhatsAppSupportChip extends StatelessWidget {
+/// Support chat — opens the native Crisp SDK chat; falls back to the Crisp
+/// chatbox in the external browser if the SDK fails to present.
+class WhatsAppSupportChip extends ConsumerWidget {
   const WhatsAppSupportChip({super.key, this.dense = false});
 
   final bool dense;
@@ -436,14 +446,39 @@ class WhatsAppSupportChip extends StatelessWidget {
   /// Crisp brand blue.
   static const _blue = Color(0xFF1972F5);
 
+  Future<void> _open(BuildContext context, WidgetRef ref) async {
+    final email = ref
+        .read(authUserProvider)
+        .valueOrNull
+        ?.email
+        ?.trim();
+    try {
+      await FlutterCrispChat.openCrispChat(
+        config: CrispConfig(
+          websiteID: AppInfo.crispWebsiteId,
+          user: (email == null || email.isEmpty)
+              ? null
+              : User(email: email),
+        ),
+      );
+    } catch (_) {
+      // Absolute fallback: the same chatbox in the system browser.
+      if (!context.mounted) return;
+      await openAppLink(
+        context,
+        Uri.parse(
+          'https://go.crisp.chat/chat/embed/?website_id='
+          '${AppInfo.crispWebsiteId}',
+        ),
+      );
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final size = dense ? 34.0 : 40.0;
-    final crisp = AppInfo.crispWebsiteId.isNotEmpty;
     return Pressable(
-      onTap: () => crisp
-          ? context.push('/support-chat')
-          : openAppLink(context, AppInfo.whatsAppUri),
+      onTap: () => _open(context, ref),
       child: Semantics(
         button: true,
         label: 'Soporte',

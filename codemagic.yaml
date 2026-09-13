@@ -32,7 +32,7 @@ workflows:
           set +e
           LOG=/tmp/flutter_build_ipa.log
           flutter build ipa --release \
-            --build-number="${PROJECT_BUILD_NUMBER:-86}" \
+            --build-number="${PROJECT_BUILD_NUMBER:-87}" \
             --export-options-plist=/Users/builder/export_options.plist \
             2>&1 | tee "$LOG"
           STATUS=${PIPESTATUS[0]}
