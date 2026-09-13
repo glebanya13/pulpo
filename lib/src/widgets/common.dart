@@ -11,6 +11,7 @@ import '../core/open_link.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_theme.dart';
+import '../core/theme/liquid_glass.dart';
 import '../features/auth/cloud_auth.dart';
 import 'pressable.dart';
 
@@ -142,34 +143,31 @@ class ScreenTitlePill extends StatelessWidget {
       ],
     );
 
-    final child = Container(
+    // Same liquid-glass chrome as the bottom nav: translucent, blurred
+    // content behind, specular edge — headers and footer read as one system.
+    final child = SizedBox(
       width: expand ? double.infinity : null,
-      padding: EdgeInsets.fromLTRB(
-        16,
-        large ? 12 : 10,
-        trailing != null ? 10 : 16,
-        large ? 12 : 10,
-      ),
-      decoration: BoxDecoration(
-        color: context.surface,
+      child: LiquidGlass(
         borderRadius: BorderRadius.circular(large ? 22 : 999),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: context.isDark ? 0.28 : 0.72),
-          width: 0.6,
+        padding: EdgeInsets.fromLTRB(
+          16,
+          large ? 12 : 10,
+          trailing != null ? 10 : 16,
+          large ? 12 : 10,
         ),
-      ),
-      child: Row(
-        children: [
-          if (leading != null) ...[
-            leading!,
-            const SizedBox(width: 10),
+        child: Row(
+          children: [
+            if (leading != null) ...[
+              leading!,
+              const SizedBox(width: 10),
+            ],
+            Expanded(child: textBlock),
+            if (trailing != null) ...[
+              const SizedBox(width: 8),
+              trailing!,
+            ],
           ],
-          Expanded(child: textBlock),
-          if (trailing != null) ...[
-            const SizedBox(width: 8),
-            trailing!,
-          ],
-        ],
+        ),
       ),
     );
     if (expand) return child;
@@ -560,16 +558,8 @@ class PageHeader extends StatelessWidget {
       color: context.primaryText,
     );
 
-    final pill = Container(
+    final pill = LiquidGlass(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: context.isDark ? 0.28 : 0.72),
-          width: 0.6,
-        ),
-      ),
       child: RichText(
         textAlign: TextAlign.center,
         maxLines: 2,
