@@ -170,6 +170,10 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                   itemBuilder: (context, i) {
                     final m = i + 1;
                     final active = m == _month;
+                    // Current real month gets the same soft lime wash as
+                    // today's date in the day grid below.
+                    final isCurrent =
+                        today.year == _year && today.month == m;
                     return Pressable(
                       onTap: () => _setMonth(m),
                       child: Container(
@@ -177,7 +181,9 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                         decoration: BoxDecoration(
                           color: active
                               ? AppColors.lime
-                              : context.scaffoldBg,
+                              : (isCurrent
+                                  ? AppColors.lime.withValues(alpha: 0.25)
+                                  : context.scaffoldBg),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Text(

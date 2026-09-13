@@ -153,6 +153,10 @@ class ScreenTitlePill extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.surface,
         borderRadius: BorderRadius.circular(large ? 22 : 999),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: context.isDark ? 0.28 : 0.72),
+          width: 0.6,
+        ),
       ),
       child: Row(
         children: [
@@ -561,6 +565,10 @@ class PageHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.surface,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: context.isDark ? 0.28 : 0.72),
+          width: 0.6,
+        ),
       ),
       child: RichText(
         textAlign: TextAlign.center,

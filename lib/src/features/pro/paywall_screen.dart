@@ -714,7 +714,11 @@ class _ProActiveSectionState extends ConsumerState<_ProActiveSection> {
       ),
       child: Column(
         children: [
-          Icon(LucideIcons.badgeCheck, size: 28, color: AppColors.lime),
+          Icon(
+            LucideIcons.badgeCheck,
+            size: 28,
+            color: context.isDark ? AppColors.lime : AppColors.ink,
+          ),
           const SizedBox(height: 10),
           Text(
             tr.proActive,

@@ -31,7 +31,7 @@ class AppInfo {
 
   /// Crisp website ID (crisp.chat dashboard → Settings → Setup instructions).
   /// While empty, the support chip falls back to WhatsApp.
-  static const crispWebsiteId = 'Xaxvet-9vobzy-zemkuk';
+  static const crispWebsiteId = 'e3276d21-7c53-4cbc-aa43-5e9e3029bacb';
 
   static final privacyUri = Uri.parse(privacyUrl);
   static final termsUri = Uri.parse(termsUrl);

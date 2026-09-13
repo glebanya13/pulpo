@@ -160,9 +160,15 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
   }
 
   Future<void> _openDatePicker(BuildContext context) async {
+    final now = DateTime.now();
+    // Viewing the current month → open with today selected; otherwise the
+    // 1st of the viewed month (today isn't in it anyway).
+    final initial = now.year == _month.year && now.month == _month.month
+        ? DateTime(now.year, now.month, now.day)
+        : _month;
     final picked = await showCalendarDatePicker(
       context,
-      initial: _month,
+      initial: initial,
     );
     if (picked == null || !mounted) return;
     setState(() => _month = DateTime(picked.year, picked.month, 1));

@@ -196,7 +196,9 @@ String? _formatBirthday(BuildContext context, String? raw) {
       int.parse(parts[1]),
       int.parse(parts[2]),
     );
-    return DateFormat.yMMMMd(
+    // Compact form — "13 ene 1995" — fits the row; the long month name
+    // ("13 de enero de 1995") truncates with the label on one line.
+    return DateFormat.yMMMd(
       Localizations.localeOf(context).toString(),
     ).format(date);
   } catch (_) {
@@ -520,7 +522,7 @@ class _FormRow extends StatelessWidget {
                   child: Text(
                     displayValue,
                     textAlign: TextAlign.end,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 15,
