@@ -323,6 +323,8 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
               child: Builder(builder: (context) {
                 final scrollView = CustomScrollView(
                   controller: widget.controller,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   physics: widget.onRefresh != null
                       ? const AlwaysScrollableScrollPhysics()
                       : widget.physics,

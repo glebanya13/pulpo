@@ -509,7 +509,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     required String sign,
   }) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(top: 16, bottom: 16),
+      keyboardDismissBehavior:
+          ScrollViewKeyboardDismissBehavior.onDrag,padding: const EdgeInsets.only(top: 16, bottom: 16),
       child: Column(
         children: [
           _AmountInput(
@@ -1215,7 +1216,8 @@ class _CategoryPicker extends ConsumerWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxH),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          keyboardDismissBehavior:
+              ScrollViewKeyboardDismissBehavior.onDrag,padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1301,7 +1303,8 @@ class _AccountPicker extends ConsumerWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxH),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          keyboardDismissBehavior:
+              ScrollViewKeyboardDismissBehavior.onDrag,padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,

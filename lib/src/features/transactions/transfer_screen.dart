@@ -388,7 +388,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
 
     if (widget.embedded) {
       return SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 12, bottom: 12),
+        keyboardDismissBehavior:
+            ScrollViewKeyboardDismissBehavior.onDrag,padding: const EdgeInsets.only(top: 12, bottom: 12),
         child: form,
       );
     }
@@ -396,7 +397,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+          keyboardDismissBehavior:
+              ScrollViewKeyboardDismissBehavior.onDrag,padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
