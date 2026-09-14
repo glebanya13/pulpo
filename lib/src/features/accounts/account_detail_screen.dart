@@ -7,6 +7,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/color_well.dart';
+import '../../core/theme/liquid_glass.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
@@ -126,11 +127,17 @@ class _AccountDetailBody extends ConsumerWidget {
               children: [
                 _CircleBtn(
                     icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
-                Text(tr.account,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700)),
+                LiquidGlass(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Text(tr.account,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700)),
+                ),
                 _CircleBtn(
                     icon: LucideIcons.pencil,
                     onTap: () =>

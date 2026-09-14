@@ -1145,8 +1145,7 @@ class _DaySheet extends ConsumerWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          Align(
-            alignment: Alignment.centerLeft,
+          Center(
             child: Text(
               title,
               style: TextStyle(

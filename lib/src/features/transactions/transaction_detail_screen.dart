@@ -48,23 +48,13 @@ class TransactionDetailScreen extends ConsumerWidget {
         return Scaffold(
       body: StickyScrollPage(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-        header: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                RoundIconButton(
-                  icon: LucideIcons.arrowLeft,
-                  onTap: () => context.pop(),
-                ),
-                Text(tr.transactionSingular,
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: context.primaryText)),
-                RoundIconButton(
-                  icon: LucideIcons.pencil,
-                  onTap: () => context.push('/tx/${tx.id}/edit'),
-                ),
-              ],
+        header: PageHeader(
+              first: tr.transactionSingular,
+              onBack: () => context.pop(),
+              action: RoundIconButton(
+                icon: LucideIcons.pencil,
+                onTap: () => context.push('/tx/${tx.id}/edit'),
+              ),
             ),
         headerGap: 24,
         children: [
