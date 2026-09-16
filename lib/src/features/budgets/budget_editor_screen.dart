@@ -14,6 +14,7 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/segmented_pill.dart';
 import '../../widgets/simple_picker_sheet.dart';
 
 class BudgetEditorScreen extends ConsumerStatefulWidget {
@@ -177,16 +178,23 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
             decoration: InputDecoration(labelText: tr.amount),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<int>(
-            key: ValueKey(_period),
-            initialValue: _period,
-            decoration: InputDecoration(labelText: tr.periodicity),
-            items: [
-              DropdownMenuItem(value: 0, child: Text(tr.freqWeekly)),
-              DropdownMenuItem(value: 1, child: Text(tr.monthlyLabel)),
-              DropdownMenuItem(value: 3, child: Text(tr.yearlyLabel)),
+          Text(
+            tr.periodicity,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: context.faintText,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SegmentedPill<int>(
+            value: _period,
+            onChanged: (v) => setState(() => _period = v),
+            options: [
+              SegmentedPillOption(value: 0, label: tr.freqWeekly),
+              SegmentedPillOption(value: 1, label: tr.monthlyLabel),
+              SegmentedPillOption(value: 3, label: tr.yearlyLabel),
             ],
-            onChanged: (v) => setState(() => _period = v ?? 1),
           ),
           const SizedBox(height: 12),
           Pressable(

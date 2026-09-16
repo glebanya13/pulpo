@@ -11,6 +11,7 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/recurring_repository.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/segmented_pill.dart';
 
 class RecurringEditorScreen extends ConsumerStatefulWidget {
   const RecurringEditorScreen({super.key, this.existingId});
@@ -167,18 +168,24 @@ class _RecurringEditorScreenState
             decoration: InputDecoration(labelText: tr.amount),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            key: ValueKey(_frequency),
-            initialValue: _frequency,
-            decoration: InputDecoration(labelText: tr.frequencyLabel),
-            items: [
-              DropdownMenuItem(value: 'daily', child: Text(tr.freqDaily)),
-              DropdownMenuItem(value: 'weekly', child: Text(tr.freqWeekly)),
-              DropdownMenuItem(
-                  value: 'monthly', child: Text(tr.monthlyLabel)),
-              DropdownMenuItem(value: 'yearly', child: Text(tr.yearlyLabel)),
+          Text(
+            tr.frequencyLabel,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: context.faintText,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SegmentedPill<String>(
+            value: _frequency,
+            onChanged: (v) => setState(() => _frequency = v),
+            options: [
+              SegmentedPillOption(value: 'daily', label: tr.freqDaily),
+              SegmentedPillOption(value: 'weekly', label: tr.freqWeekly),
+              SegmentedPillOption(value: 'monthly', label: tr.monthlyLabel),
+              SegmentedPillOption(value: 'yearly', label: tr.yearlyLabel),
             ],
-            onChanged: (v) => setState(() => _frequency = v ?? 'monthly'),
           ),
           const SizedBox(height: 12),
           _DateRow(
