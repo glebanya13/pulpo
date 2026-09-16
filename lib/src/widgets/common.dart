@@ -235,6 +235,7 @@ class StickyScrollPage extends StatefulWidget {
     this.useSafeArea = true,
     this.physics,
     this.onRefresh,
+    this.clampOverscroll = false,
     this.headerContentHeight,
   });
 
@@ -251,6 +252,9 @@ class StickyScrollPage extends StatefulWidget {
   final bool useSafeArea;
   final ScrollPhysics? physics;
   final Future<void> Function()? onRefresh;
+  /// No rubber-band overscroll — pinned floating headers never detach from
+  /// the content. Use on tab screens with a floating header.
+  final bool clampOverscroll;
   /// Height of just the header widget (excluding pad.top) — used to eliminate
   /// the first-frame jump when the auto-estimate doesn't match reality.
   final double? headerContentHeight;
@@ -307,68 +311,62 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
     final topInset =
         (_headerHeight > 0 ? _headerHeight : estimatedHeader) + widget.headerGap;
 
-    // Header floats above scroll content; only the pill/card keeps a surface fill.
-    // On overscroll (pull down) the header follows the content instead of
-    // staying pinned — otherwise a large detached gap opens under it.
-    final content = AnimatedBuilder(
-      animation: widget.controller ?? const AlwaysStoppedAnimation(0),
-      builder: (context, _) {
-        final c = widget.controller;
-        final overscroll =
-            (c != null && c.hasClients && c.offset < 0) ? -c.offset : 0.0;
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned.fill(
-              child: Builder(builder: (context) {
-                final scrollView = CustomScrollView(
-                  controller: widget.controller,
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  physics: widget.onRefresh != null
+    // Header floats above scroll content; only the pill/card keeps a surface
+    // fill. With clampOverscroll the list never rubber-bands, so the pinned
+    // header can never detach from the content.
+    final content = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: Builder(builder: (context) {
+            final scrollView = CustomScrollView(
+              controller: widget.controller,
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
+              physics: widget.clampOverscroll
+                  ? const ClampingScrollPhysics()
+                  : (widget.onRefresh != null
                       ? const AlwaysScrollableScrollPhysics()
-                      : widget.physics,
-                  slivers: [
-                    if (widget.onRefresh != null)
-                      CupertinoSliverRefreshControl(
-                        onRefresh: widget.onRefresh,
-                      ),
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(
-                        pad.left,
-                        topInset,
-                        pad.right,
-                        pad.bottom,
-                      ),
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate(widget.children),
-                      ),
-                    ),
-                  ],
-                );
-                return scrollView;
-              }),
-            ),
-            Positioned(
-              top: overscroll,
-              left: 0,
-              right: 0,
-              child: KeyedSubtree(
-                key: _headerKey,
-                child: Padding(
+                      : widget.physics),
+              slivers: [
+                if (widget.onRefresh != null)
+                  CupertinoSliverRefreshControl(
+                    onRefresh: widget.onRefresh,
+                  ),
+                SliverPadding(
                   padding: EdgeInsets.fromLTRB(
                     pad.left,
-                    pad.top,
+                    topInset,
                     pad.right,
-                    widget.headerBottomPadding,
+                    pad.bottom,
                   ),
-                  child: widget.header,
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate(widget.children),
+                  ),
                 ),
+              ],
+            );
+            return scrollView;
+          }),
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: KeyedSubtree(
+            key: _headerKey,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                pad.left,
+                pad.top,
+                pad.right,
+                widget.headerBottomPadding,
               ),
+              child: widget.header,
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
     if (!widget.useSafeArea) return content;
     return SafeArea(child: content);
