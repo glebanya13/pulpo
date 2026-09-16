@@ -14,9 +14,10 @@ import '../../widgets/common.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
-import '../../widgets/reset_scroll_when_obscured.dart';
 import 'monthly_calendar.dart';
 
+/// Home tab: fixed chrome (header + balance). Only the calendar/list scrolls
+/// inside the remaining viewport — the page itself does not.
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -37,18 +38,12 @@ class DashboardScreen extends ConsumerWidget {
 
     final pad = AppSpacing.tabPagePadding(context);
 
-    return ResetScrollWhenObscured(
-      tabPath: '/',
-      builder: (context, scroll) {
-        return StickyScrollPage(
-          useSafeArea: false,
-          controller: scroll,
-          padding: pad,
-          headerGap: 0,
-          headerBottomPadding: 10,
-          headerContentHeight: 70,
-          clampOverscroll: true,
-          header: ScreenTitlePill(
+    return Padding(
+      padding: pad,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ScreenTitlePill(
             title: AppInfo.displayName,
             subtitle: tr.dashboardSubtitle,
             leading: BrandLogo(size: 34, plate: false),
@@ -56,21 +51,20 @@ class DashboardScreen extends ConsumerWidget {
             expand: true,
             trailing: const HeaderSupportActions(dense: true),
           ),
-          children: [
-            AsyncValuesGate(
-              values: [accountsAsync, txsAsync],
-              onRetry: retryBalance,
-              child: _BalanceActionCard(
-                total: total,
-                currency: currency,
-                fxApproximate: fxApprox.isNotEmpty,
-              ),
+          const SizedBox(height: 10),
+          AsyncValuesGate(
+            values: [accountsAsync, txsAsync],
+            onRetry: retryBalance,
+            child: _BalanceActionCard(
+              total: total,
+              currency: currency,
+              fxApproximate: fxApprox.isNotEmpty,
             ),
-            const SizedBox(height: 12),
-            const MonthlyCalendar(),
-          ],
-        );
-      },
+          ),
+          const SizedBox(height: 12),
+          const Expanded(child: MonthlyCalendar(fillHeight: true)),
+        ],
+      ),
     );
   }
 }
