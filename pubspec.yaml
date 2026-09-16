@@ -1,7 +1,7 @@
 name: pulpo
 description: "Monedero — control de gastos personal offline-first para Android e iOS."
 publish_to: 'none'
-version: 1.1.1+93
+version: 1.1.1+94
 
 environment:
   sdk: ^3.10.0
@@ -74,10 +74,11 @@ flutter_launcher_icons:
     image_path: assets/app_icon.png
   image_path: assets/app_icon.png
   image_path_ios: assets/app_icon_light.png
-  image_path_ios_dark_transparent: assets/app_icon_dark.png
-  image_path_ios_tinted_transparent: assets/app_icon_tinted_fg.png
+  # Do NOT use image_path_ios_dark_transparent / tinted_transparent:
+  # App Store Connect rejects binaries whose App Icon PNGs contain alpha.
+  # Dark icons are maintained as opaque RGB assets in AppIcon.appiconset.
   adaptive_icon_background: "#000000"
-  adaptive_icon_foreground: assets/app_icon_tinted_fg.png
+  adaptive_icon_foreground: assets/app_icon_tinted_fg_alpha.png
   remove_alpha_ios: true
   background_color_ios: "#FFFFFF"
 
