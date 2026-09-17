@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../core/utils/keyboard.dart';
-
 /// Scales and dims on press so taps are obvious.
 class Pressable extends StatefulWidget {
   const Pressable({
@@ -52,7 +50,6 @@ class _PressableState extends State<Pressable> {
       onTapCancel: _active ? () => _set(false) : null,
       onTap: widget.onTap != null && widget.enabled
           ? () {
-              dismissKeyboard();
               HapticFeedback.selectionClick();
               widget.onTap!();
             }

@@ -525,6 +525,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             controller: _amountCtrl,
             sign: sign,
             currency: currency,
+            autofocus: widget.editId == null,
           ),
           const SizedBox(height: 12),
           _AiQuickActions(
@@ -765,11 +766,13 @@ class _AmountInput extends StatelessWidget {
     required this.controller,
     required this.sign,
     required this.currency,
+    this.autofocus = false,
   });
 
   final TextEditingController controller;
   final String sign;
   final String currency;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -804,6 +807,7 @@ class _AmountInput extends StatelessWidget {
               child: IntrinsicWidth(
                 child: TextField(
                   controller: controller,
+                  autofocus: autofocus,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [_ThousandsFormatter()],
