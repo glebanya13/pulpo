@@ -35,6 +35,8 @@ class TransactionDraftFromAi {
     this.note,
     this.merchant,
     this.categoryHint,
+    this.accountHint,
+    this.toAccountHint,
     this.type = 'expense',
   });
 
@@ -44,7 +46,14 @@ class TransactionDraftFromAi {
   final String? note;
   final String? merchant;
   final String? categoryHint;
+  /// Debit / source account name as spoken (matched to user accounts).
+  final String? accountHint;
+  /// Destination account for transfers (matched to user accounts).
+  final String? toAccountHint;
+  /// `expense` | `income` | `transfer`
   final String type;
+
+  bool get isTransfer => type == 'transfer';
 
   DateTime? get date {
     final raw = dateIso;
@@ -59,6 +68,8 @@ class TransactionDraftFromAi {
     String? note,
     String? merchant,
     String? categoryHint,
+    String? accountHint,
+    String? toAccountHint,
     String? type,
   }) {
     return TransactionDraftFromAi(
@@ -68,6 +79,8 @@ class TransactionDraftFromAi {
       note: note ?? this.note,
       merchant: merchant ?? this.merchant,
       categoryHint: categoryHint ?? this.categoryHint,
+      accountHint: accountHint ?? this.accountHint,
+      toAccountHint: toAccountHint ?? this.toAccountHint,
       type: type ?? this.type,
     );
   }

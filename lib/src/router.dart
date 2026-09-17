@@ -45,6 +45,7 @@ import 'features/subscriptions/subscriptions_screen.dart';
 import 'features/transactions/add_transaction_screen.dart';
 import 'features/transactions/transaction_detail_screen.dart';
 import 'features/transactions/transfer_screen.dart';
+import 'core/utils/keyboard.dart';
 import 'shell/app_shell.dart';
 
 /// Native-feeling push / pop (horizontal). Avoids the janky vertical micro-slide.
@@ -72,6 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     refreshListenable: refresh,
+    observers: [KeyboardDismissObserver()],
     initialLocation:
         ref.read(settingsControllerProvider).onboardingDone ? '/' : '/onboarding',
     redirect: (context, state) {

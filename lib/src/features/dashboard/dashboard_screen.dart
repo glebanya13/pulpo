@@ -47,7 +47,6 @@ class DashboardScreen extends ConsumerWidget {
           headerGap: 0,
           headerBottomPadding: 10,
           headerContentHeight: 70,
-          onRefresh: retryBalance,
           header: ScreenTitlePill(
             title: AppInfo.displayName,
             subtitle: tr.dashboardSubtitle,

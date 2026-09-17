@@ -13,6 +13,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/speech_locale.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
@@ -62,29 +63,13 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
     await _startListening();
   }
 
-  String _localeId(String locale) => switch (locale) {
-        'uk' => 'uk_UA',
-        'ru' => 'ru_RU',
-        'en' => 'en_US',
-        _ => 'es_ES',
-      };
-
-  bool _isSoftSpeechError(Object error) {
-    final msg = error.toString().toLowerCase();
-    return msg.contains('no_match') ||
-        msg.contains('no_speech') ||
-        msg.contains('speech_timeout') ||
-        msg.contains('busy') ||
-        msg.contains('client');
-  }
-
   Future<void> _startListening() async {
     if (_busy) return;
     final tr = Tr.of(context);
     final available = await _speech.initialize(
       onError: (e) {
         debugPrint('speech error: $e');
-        if (_isSoftSpeechError(e)) {
+        if (isSoftSpeechError(e)) {
           if (mounted && _listening) unawaited(_continueListening());
           return;
         }
@@ -134,7 +119,7 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
 
   Future<void> _startSpeechEngine() async {
     if (!_listening || !mounted) return;
-    final preferred = _localeId(ref.read(settingsControllerProvider).locale);
+    final preferred = speechLocaleId(ref.read(settingsControllerProvider).locale);
     final locales = await _speech.locales();
     final matched = locales
         .where((l) =>
@@ -201,11 +186,14 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
       final cats = ref.read(categoriesProvider).valueOrNull ?? [];
       final locale = ref.read(settingsControllerProvider).locale;
       final names = cats.map((c) => tr.categoryName(c.name)).toList();
+      final accountNames =
+          accounts.where((a) => !a.isArchived).map((a) => a.name).toList();
       final drafts =
           await ref.read(pulpoAiServiceProvider).parseNaturalLanguageBatch(
                 text,
                 locale: locale,
                 categoryNames: names,
+                accountNames: accountNames,
                 currencyHint: account.currency,
               );
       if (!mounted) return;
@@ -213,6 +201,7 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
         context: context,
         drafts: drafts,
         account: account,
+        allAccounts: accounts,
         categories: cats,
         tr: tr,
       );
@@ -222,6 +211,7 @@ class _VoiceAiScreenState extends ConsumerState<VoiceAiScreen> {
         ref: ref,
         drafts: confirmed.drafts,
         accounts: confirmed.accounts,
+        toAccounts: confirmed.toAccounts,
         tr: tr,
       );
       if (!mounted) return;

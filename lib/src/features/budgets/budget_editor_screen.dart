@@ -190,6 +190,7 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
           SegmentedPill<int>(
             value: _period,
             onChanged: (v) => setState(() => _period = v),
+            scrollable: true,
             options: [
               SegmentedPillOption(value: 0, label: tr.freqWeekly),
               SegmentedPillOption(value: 1, label: tr.monthlyLabel),

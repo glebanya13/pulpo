@@ -676,6 +676,7 @@ class CloudAuth {
       SetOptions(merge: true),
     );
     await user.reload();
+    await ProfileAvatarCache.clear();
     unawaited(ProfileAvatarCache.warm(url));
   }
 

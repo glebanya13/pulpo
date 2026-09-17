@@ -276,12 +276,14 @@ If unsure about a field, use null.
     String text, {
     required String locale,
     required List<String> categoryNames,
+    List<String> accountNames = const [],
     String? currencyHint,
   }) async {
     final batch = await parseNaturalLanguageBatch(
       text,
       locale: locale,
       categoryNames: categoryNames,
+      accountNames: accountNames,
       currencyHint: currencyHint,
     );
     return batch.first;
@@ -292,6 +294,7 @@ If unsure about a field, use null.
     String text, {
     required String locale,
     required List<String> categoryNames,
+    List<String> accountNames = const [],
     String? currencyHint,
   }) async {
     final trimmed = text.trim();
@@ -303,6 +306,7 @@ If unsure about a field, use null.
       trimmed,
       currencyHint: currencyHint,
       categoryNames: categoryNames,
+      accountNames: accountNames,
     );
     if (local != null && local.isNotEmpty) {
       debugPrint('MonederoAI[nl_batch] local parse (${local.length})');
@@ -311,9 +315,15 @@ If unsure about a field, use null.
 
     return _withRetryParse(() async {
       final cats = _catsForPrompt(categoryNames);
+      final accounts = _catsForPrompt(accountNames, limit: 24);
+      final accountRule = accountNames.isEmpty
+          ? 'accountHint/toAccountHint null.'
+          : 'accountHint = debit/from account exact name from [$accounts] when user names it, else null. '
+              'For transfers type=transfer and toAccountHint from the same list.';
       final prompt = '''
-Parse into finance transactions. JSON only: {"transactions":[{amount,currency,date,note,merchant,categoryHint,type}]}
-amount>0; currency ISO${currencyHint != null ? ' (prefer $currencyHint)' : ''}; date ISO or null; type expense|income; categoryHint from [$cats] or null.
+Parse into finance transactions. JSON only: {"transactions":[{amount,currency,date,note,merchant,categoryHint,accountHint,toAccountHint,type}]}
+amount>0; currency ISO${currencyHint != null ? ' (prefer $currencyHint)' : ''}; date ISO or null; type expense|income|transfer; categoryHint from [$cats] or null.
+$accountRule
 Lang: ${_langName(locale)}.
 """$trimmed"""
 ''';
@@ -373,6 +383,7 @@ Top categories: $tops
     required String appContext,
     required String locale,
     required List<String> categoryNames,
+    List<String> accountNames = const [],
     required String currencyHint,
     required List<({String role, String text})> history,
   }) async {
@@ -391,15 +402,19 @@ Top categories: $tops
     try {
       return await _withRetryParse(() async {
         final cats = _catsForPrompt(categoryNames);
+        final accounts = _catsForPrompt(accountNames, limit: 24);
         final lang = _langName(locale);
         final hist = history
             .take(4)
             .map((h) =>
                 '${h.role == 'user' ? 'User' : 'Assistant'}: ${h.text}')
             .join('\n');
+        final accountRule = accountNames.isEmpty
+            ? ''
+            : ' When recording, set accountHint to an exact name from [$accounts] if the user names a debit/from account; for transfers use type=transfer and toAccountHint from the same list.';
         final prompt = '''
 Monedero AI. Reply in $lang, JSON only.
-intent "record": extract txs {amount,currency,date,note,merchant,categoryHint from [$cats],type}; short reply.
+intent "record": extract txs {amount,currency,date,note,merchant,categoryHint from [$cats],accountHint,toAccountHint,type expense|income|transfer}; short reply.$accountRule
 intent "question": answer from APP DATA only; transactions=[].
 Prefer "question" if unsure.
 

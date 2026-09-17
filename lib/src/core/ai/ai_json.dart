@@ -50,6 +50,13 @@ String _normalizeType(Object? v) {
       s == 'salary') {
     return 'income';
   }
+  if (s == 'transfer' ||
+      s == 'перевод' ||
+      s == 'переказ' ||
+      s == 'traspaso' ||
+      s == 'transferencia') {
+    return 'transfer';
+  }
   return 'expense';
 }
 
@@ -99,6 +106,12 @@ TransactionDraftFromAi _draftFromMap(Map<String, dynamic> m) {
     note: _asString(m['note']),
     merchant: _asString(m['merchant']),
     categoryHint: _asString(m['categoryHint'] ?? m['category']),
+    accountHint: _asString(
+      m['accountHint'] ?? m['account'] ?? m['fromAccount'] ?? m['from'],
+    ),
+    toAccountHint: _asString(
+      m['toAccountHint'] ?? m['toAccount'] ?? m['to'],
+    ),
     type: _normalizeType(m['type']),
   );
 }

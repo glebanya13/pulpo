@@ -441,6 +441,7 @@ class Tr {
 
   // ─────────────────────── TRANSACTIONS ───────────────────────
   String get newTransaction => _get('new_transaction');
+  String get editTransaction => _get('edit_transaction');
   String get category => _get('category');
   String get account => _get('account');
   String get date => _get('date');
@@ -1094,6 +1095,7 @@ class Tr {
       'currency': 'Moneda',
       // transactions
       'new_transaction': 'Nueva transacción',
+      'edit_transaction': 'Editar transacción',
       'category': 'Categoría',
       'account': 'Cuenta',
       'date': 'Fecha',
@@ -1267,8 +1269,8 @@ class Tr {
       'rules_empty_desc':
           'Automatiza cargos recurrentes: alquiler, facturas, salario.',
       'new_rule': 'Nueva operación',
-      'edit_rule': 'Editar regla',
-      'delete_rule_title': '¿Eliminar regla?',
+      'edit_rule': 'Editar operación',
+      'delete_rule_title': '¿Eliminar operación?',
       'frequency_label': 'Frecuencia',
       'freq_daily': 'Diario',
       'freq_weekly': 'Semanal',
@@ -1825,6 +1827,7 @@ class Tr {
       'currency': 'Валюта',
       // transactions
       'new_transaction': 'Новая транзакция',
+      'edit_transaction': 'Изменить транзакцию',
       'category': 'Категория',
       'account': 'Счёт',
       'date': 'Дата',
@@ -1998,8 +2001,8 @@ class Tr {
       'rules_empty_desc':
           'Автоматизируйте регулярные списания: аренду, счета, зарплату.',
       'new_rule': 'Новая операция',
-      'edit_rule': 'Изменить правило',
-      'delete_rule_title': 'Удалить правило?',
+      'edit_rule': 'Изменить операцию',
+      'delete_rule_title': 'Удалить операцию?',
       'frequency_label': 'Частота',
       'freq_daily': 'Ежедневно',
       'freq_weekly': 'Еженедельно',
@@ -2555,6 +2558,7 @@ class Tr {
       'currency': 'Currency',
       // transactions
       'new_transaction': 'New transaction',
+      'edit_transaction': 'Edit transaction',
       'category': 'Category',
       'account': 'Account',
       'date': 'Date',
@@ -2727,9 +2731,9 @@ class Tr {
       'rules_empty_title': 'No recurring operations',
       'rules_empty_desc':
           'Automate recurring transactions: rent, bills, salary.',
-      'new_rule': 'New transaction',
-      'edit_rule': 'Edit rule',
-      'delete_rule_title': 'Delete rule?',
+      'new_rule': 'New operation',
+      'edit_rule': 'Edit operation',
+      'delete_rule_title': 'Delete operation?',
       'frequency_label': 'Frequency',
       'freq_daily': 'Daily',
       'freq_weekly': 'Weekly',
@@ -3273,6 +3277,7 @@ class Tr {
       'initial_balance': 'Початковий баланс',
       'currency': 'Валюта',
       'new_transaction': 'Нова транзакція',
+      'edit_transaction': 'Змінити транзакцію',
       'category': 'Категорія',
       'account': 'Рахунок',
       'date': 'Дата',
@@ -3428,8 +3433,8 @@ class Tr {
       'rules_empty_title': 'Немає регулярних операцій',
       'rules_empty_desc': 'Автоматизуйте регулярні платежі: оренду, рахунки, зарплату.',
       'new_rule': 'Нова операція',
-      'edit_rule': 'Редагувати правило',
-      'delete_rule_title': 'Видалити правило?',
+      'edit_rule': 'Редагувати операцію',
+      'delete_rule_title': 'Видалити операцію?',
       'frequency_label': 'Частота',
       'freq_daily': 'Щодня',
       'freq_weekly': 'Щотижня',

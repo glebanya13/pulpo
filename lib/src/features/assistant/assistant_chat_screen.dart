@@ -23,7 +23,9 @@ import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
+import '../../core/utils/speech_locale.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/repositories/assistant_chat_repository.dart';
 import '../../data/repositories/error_log_repository.dart';
@@ -34,6 +36,8 @@ import '../../widgets/pressable.dart';
 import '../../widgets/ai_assistant_mark.dart';
 import 'app_chat_context.dart';
 import 'assistant_transactions.dart';
+
+part 'assistant_bubble.dart';
 
 class AssistantChatScreen extends ConsumerStatefulWidget {
   const AssistantChatScreen({super.key});
@@ -194,22 +198,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     }
   }
 
-  String _localeId(String locale) => switch (locale) {
-        'uk' => 'uk_UA',
-        'ru' => 'ru_RU',
-        'en' => 'en_US',
-        _ => 'es_ES',
-      };
-
-  bool _isSoftSpeechError(Object error) {
-    final msg = error.toString().toLowerCase();
-    return msg.contains('no_match') ||
-        msg.contains('no_speech') ||
-        msg.contains('speech_timeout') ||
-        msg.contains('busy') ||
-        msg.contains('client');
-  }
-
   Future<void> _toggleListening() async {
     if (_busy) return;
     if (_listening) {
@@ -223,7 +211,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final tr = Tr.of(context);
     final available = await _speech.initialize(
       onError: (error) {
-        if (_isSoftSpeechError(error)) {
+        if (isSoftSpeechError(error)) {
           if (mounted && _listening && !_stopAndSendPending) {
             unawaited(_continueListening());
           }
@@ -285,7 +273,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
   Future<void> _startSpeechEngine() async {
     if (!_listening || !mounted) return;
-    final preferred = _localeId(ref.read(settingsControllerProvider).locale);
+    final preferred = speechLocaleId(ref.read(settingsControllerProvider).locale);
     final locales = await _speech.locales();
     final matched = locales
         .where((l) =>
@@ -352,8 +340,12 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
   Future<db.Account?> _resolveAccount() async {
     final accounts = ref.read(accountsProvider).valueOrNull ?? [];
-    if (accounts.isEmpty) return null;
-    return _account ?? accounts.first;
+    final open = accounts.where((a) => !a.isArchived);
+    if (open.isEmpty) return null;
+    if (_account != null && open.any((a) => a.id == _account!.id)) {
+      return _account;
+    }
+    return open.first;
   }
 
   Future<void> _send([String? overrideText]) async {
@@ -402,6 +394,11 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final welcome = tr.aiChatWelcome;
     final cats = ref.read(categoriesProvider).valueOrNull ?? [];
     final names = cats.map((c) => tr.categoryName(c.name)).toList();
+    final allAccounts = ref.read(accountsProvider).valueOrNull ?? [];
+    final accountNames = allAccounts
+        .where((a) => !a.isArchived)
+        .map((a) => a.name)
+        .toList();
     final account = await _resolveAccount();
     final currencyHint = account?.currency ??
         ref.read(settingsControllerProvider).baseCurrency;
@@ -420,6 +417,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   text,
                   locale: locale,
                   categoryNames: names,
+                  accountNames: accountNames,
                   currencyHint: currencyHint,
                 );
         alreadyParsedBatch = true;
@@ -435,6 +433,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             locale: locale,
             welcome: welcome,
             names: names,
+            accountNames: accountNames,
             currencyHint: currencyHint,
           );
         }
@@ -448,6 +447,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           locale: locale,
           welcome: welcome,
           names: names,
+          accountNames: accountNames,
           currencyHint: currencyHint,
         );
       }
@@ -457,6 +457,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         locale: locale,
         welcome: welcome,
         names: names,
+        accountNames: accountNames,
         currencyHint: currencyHint,
       );
     }
@@ -474,6 +475,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   text,
                   locale: locale,
                   categoryNames: names,
+                  accountNames: accountNames,
                   currencyHint: currencyHint,
                 );
         turn = AssistantTurnResult(
@@ -497,6 +499,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         context: context,
         drafts: turn.transactions,
         account: account,
+        allAccounts: allAccounts,
         categories: cats,
         tr: tr,
       );
@@ -509,6 +512,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         ref: ref,
         drafts: confirmed.drafts,
         accounts: confirmed.accounts,
+        toAccounts: confirmed.toAccounts,
         tr: tr,
       );
       if (!mounted) return;
@@ -542,6 +546,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     required String locale,
     required String welcome,
     required List<String> names,
+    List<String> accountNames = const [],
     required String currencyHint,
   }) async {
     final stored = await _chat.all();
@@ -554,6 +559,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           appContext: buildAppChatContext(ref, scope: scope),
           locale: locale,
           categoryNames: names,
+          accountNames: accountNames,
           currencyHint: currencyHint,
           history: prior,
         );
@@ -632,6 +638,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         context: context,
         drafts: [draft],
         account: account,
+        allAccounts: ref.read(accountsProvider).valueOrNull ?? [],
         categories: cats,
         tr: tr,
       );
@@ -641,6 +648,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         ref: ref,
         drafts: confirmed.drafts,
         accounts: confirmed.accounts,
+        toAccounts: confirmed.toAccounts,
         tr: tr,
         receiptPath: dest,
       );
@@ -713,11 +721,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     });
   }
 
-  String _formatListenTime() {
-    final m = _listenSeconds ~/ 60;
-    final s = _listenSeconds % 60;
-    return '$m:${s.toString().padLeft(2, '0')}';
-  }
+  String _formatListenTime() => formatListenMmSs(_listenSeconds);
 
   void _closeChat() {
     if (context.canPop()) {
@@ -763,7 +767,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final messages =
         ref.watch(assistantMessagesProvider).valueOrNull ?? const [];
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
-    final account = _account ?? accounts.firstOrNull;
+    final openAccounts =
+        accounts.where((a) => !a.isArchived).toList(growable: false);
+    final account = _account ?? openAccounts.firstOrNull;
     final isPro = ref.watch(proControllerProvider).isPro;
 
     return Scaffold(
@@ -870,44 +876,62 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                       ),
                     ],
                   ),
-                  if (account != null) ...[
+                  if (openAccounts.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Pressable(
-                      onTap: () async {
-                        final picked =
-                            await pickAssistantAccount(context, ref);
-                        if (picked != null) {
-                          setState(() => _account = picked);
-                        }
-                      },
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: context.surface,
-                            borderRadius: BorderRadius.circular(100),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(LucideIcons.wallet,
-                                  size: 14, color: context.mutedText),
-                              const SizedBox(width: 6),
-                              Text(
-                                account.name,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: context.primaryText,
-                                ),
+                    SizedBox(
+                      height: 34,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: openAccounts.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
+                        itemBuilder: (context, i) {
+                          final a = openAccounts[i];
+                          final selected = account?.id == a.id;
+                          final fg = selected
+                              ? (context.isDark
+                                  ? AppColors.ink
+                                  : Colors.white)
+                              : context.primaryText;
+                          final bg = selected
+                              ? (context.isDark
+                                  ? AppColors.lime
+                                  : AppColors.ink)
+                              : context.surface;
+                          return Pressable(
+                            onTap: () => setState(() => _account = a),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
                               ),
-                            ],
-                          ),
-                        ),
+                              decoration: BoxDecoration(
+                                color: bg,
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    lucideByKey(a.icon),
+                                    size: 14,
+                                    color: selected
+                                        ? fg
+                                        : Color(a.color),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    a.name,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: fg,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -1110,178 +1134,3 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     );
   }
 }
-
-class _AssistantBubble extends StatelessWidget {
-  const _AssistantBubble({
-    this.fromUser = false,
-    required this.child,
-    this.time,
-    this.imagePath,
-  });
-
-  final bool fromUser;
-  final Widget child;
-  final TimeOfDay? time;
-  final String? imagePath;
-
-  static const double _rL = 18;
-  static const double _rS = 5;
-  static const double _minMetaWidth = 76;
-
-  @override
-  Widget build(BuildContext context) {
-    final inbound = !fromUser;
-    final timeLabel = time == null
-        ? null
-        : '${time!.hour.toString().padLeft(2, '0')}:${time!.minute.toString().padLeft(2, '0')}';
-    final hasImage =
-        imagePath != null && File(imagePath!).existsSync();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final maxBubbleWidth = (constraints.maxWidth * 0.86)
-              .clamp(0.0, constraints.maxWidth);
-          final margin = (constraints.maxWidth - maxBubbleWidth)
-              .clamp(0.0, constraints.maxWidth);
-          // Avatar sits beside inbound bubbles.
-          const avatarGap = 34.0;
-          final maxW = inbound
-              ? (maxBubbleWidth - avatarGap).clamp(0.0, maxBubbleWidth)
-              : maxBubbleWidth;
-
-          final bubble = Container(
-            clipBehavior: Clip.antiAlias,
-            constraints: BoxConstraints(
-              maxWidth: maxW,
-              minWidth: timeLabel != null
-                  ? (maxW < _minMetaWidth ? maxW : _minMetaWidth)
-                  : 0,
-            ),
-            decoration: BoxDecoration(
-              color: fromUser ? AppColors.lime : context.surface,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(_rL),
-                topRight: const Radius.circular(_rL),
-                bottomLeft: Radius.circular(fromUser ? _rL : _rS),
-                bottomRight: Radius.circular(fromUser ? _rS : _rL),
-              ),
-              border: fromUser
-                  ? null
-                  : Border.all(
-                      color: context.primaryText.withValues(alpha: 0.06),
-                    ),
-            ),
-            child: hasImage
-                ? _mediaBody(
-                    context: context,
-                    maxW: maxW,
-                    timeLabel: timeLabel,
-                  )
-                : IntrinsicWidth(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-                          child: child,
-                        ),
-                        if (timeLabel != null)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                timeLabel,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  height: 1.2,
-                                  color: fromUser
-                                      ? AppColors.ink.withValues(alpha: 0.5)
-                                      : context.faintText,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-          );
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (!inbound) SizedBox(width: margin),
-              if (!inbound) const Spacer(),
-              if (inbound)
-                const Padding(
-                  padding: EdgeInsets.only(right: 6, bottom: 2),
-                  child: AiAssistantMark(size: 28, iconSize: 13),
-                ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: inbound
-                    ? CrossAxisAlignment.start
-                    : CrossAxisAlignment.end,
-                children: [bubble],
-              ),
-              if (inbound) SizedBox(width: margin),
-              if (inbound) const Spacer(),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _mediaBody({
-    required BuildContext context,
-    required double maxW,
-    required String? timeLabel,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(_rL),
-            topRight: Radius.circular(_rL),
-            bottomLeft: Radius.circular(6),
-            bottomRight: Radius.circular(6),
-          ),
-          child: Image.file(
-            File(imagePath!),
-            height: 160,
-            width: maxW,
-            fit: BoxFit.cover,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-          child: child,
-        ),
-        if (timeLabel != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                timeLabel,
-                style: TextStyle(
-                  fontSize: 11,
-                  height: 1.2,
-                  color: fromUser
-                      ? AppColors.ink.withValues(alpha: 0.5)
-                      : context.faintText,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-

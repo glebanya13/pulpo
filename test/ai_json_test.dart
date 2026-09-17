@@ -204,6 +204,31 @@ void main() {
     expect(looksLikeBalanceQuestion('кофе 60'), isFalse);
   });
 
+  test('parses accountHint and transfer type', () {
+    final batch = parseTransactionDraftBatchJson('''
+{"transactions":[
+  {"amount":500,"note":"Такси","accountHint":"Карта","type":"expense"},
+  {"amount":1000,"fromAccount":"Карта","toAccount":"Наличные","type":"перевод"}
+]}''');
+    expect(batch.length, 2);
+    expect(batch[0].accountHint, 'Карта');
+    expect(batch[1].type, 'transfer');
+    expect(batch[1].accountHint, 'Карта');
+    expect(batch[1].toAccountHint, 'Наличные');
+    expect(batch[1].isTransfer, isTrue);
+  });
+
+  test('local parse picks account from spoken name', () {
+    final one = tryParseLocalTransactions(
+      'кофе 60 с карты тинькофф',
+      currencyHint: 'EUR',
+      categoryNames: const ['Еда'],
+      accountNames: const ['Наличные', 'Карта Тинькофф'],
+    );
+    expect(one, isNotNull);
+    expect(one!.first.accountHint, 'Карта Тинькофф');
+  });
+
   test('local parse handles simple single amount', () {
     final one = tryParseLocalTransactions(
       'кофе 60€',
@@ -225,3 +250,4 @@ void main() {
     );
   });
 }
+

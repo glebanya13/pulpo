@@ -1,5 +1,4 @@
 import 'package:crisp_chat/crisp_chat.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +11,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/liquid_glass.dart';
+import '../core/utils/keyboard.dart';
 import '../features/auth/cloud_auth.dart';
 import 'pressable.dart';
 
@@ -234,7 +234,6 @@ class StickyScrollPage extends StatefulWidget {
     this.headerBottomPadding = 0,
     this.useSafeArea = true,
     this.physics,
-    this.onRefresh,
     this.clampOverscroll = false,
     this.headerContentHeight,
   });
@@ -251,7 +250,6 @@ class StickyScrollPage extends StatefulWidget {
   final double headerBottomPadding;
   final bool useSafeArea;
   final ScrollPhysics? physics;
-  final Future<void> Function()? onRefresh;
   /// Prefer bounce; only set true if a screen must hard-pin without rubber-band.
   final bool clampOverscroll;
   /// Height of just the header widget (excluding pad.top) — used to eliminate
@@ -279,6 +277,9 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
   }
 
   void _measureHeader() {
+    // Prefer the caller-provided height — measuring + setState after first
+    // paint causes a visible layout jump on swipe / first frame.
+    if (widget.headerContentHeight != null) return;
     final box = _headerKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
     final h = box.size.height;
@@ -300,86 +301,71 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
     return AppSpacing.tabPagePadding(context);
   }
 
+  ScrollPhysics _resolvePhysics() {
+    if (widget.physics != null) return widget.physics!;
+    // No AlwaysScrollable parent: rubber-band only at real scroll edges.
+    // Forcing always-scrollable made pull-from-rest feel like a layout jump
+    // under the glass header (blur re-raster every frame).
+    if (widget.clampOverscroll) {
+      return const ClampingScrollPhysics();
+    }
+    return const BouncingScrollPhysics();
+  }
+
   @override
   Widget build(BuildContext context) {
     final pad = _resolvePadding(context);
-    // Prefer a status-bar-aware estimate so the first frame doesn't jump.
     final estimatedHeader = pad.top +
         (widget.headerContentHeight ?? 56) +
         widget.headerBottomPadding;
     final topInset =
         (_headerHeight > 0 ? _headerHeight : estimatedHeader) + widget.headerGap;
 
-    // Header floats above scroll content; only the pill/card keeps a surface fill.
-    // On overscroll (pull down) the header follows the content instead of
-    // staying pinned — otherwise a large detached gap opens under it.
-    // Prefer bounce (iOS feel) over clamp — clamping feels stiff/tопорно.
-    final content = AnimatedBuilder(
-      animation: widget.controller ?? const AlwaysStoppedAnimation(0),
-      builder: (context, _) {
-        final c = widget.controller;
-        final overscroll =
-            (c != null && c.hasClients && c.offset < 0) ? -c.offset : 0.0;
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned.fill(
-              child: Builder(builder: (context) {
-                final scrollView = CustomScrollView(
-                  controller: widget.controller,
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  physics: widget.clampOverscroll
-                      ? const ClampingScrollPhysics()
-                      : (widget.onRefresh != null
-                          ? const BouncingScrollPhysics(
-                              parent: AlwaysScrollableScrollPhysics(),
-                            )
-                          : (widget.physics ??
-                              const BouncingScrollPhysics(
-                                parent: AlwaysScrollableScrollPhysics(),
-                              ))),
-                  slivers: [
-                    if (widget.onRefresh != null)
-                      CupertinoSliverRefreshControl(
-                        onRefresh: widget.onRefresh,
-                      ),
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(
-                        pad.left,
-                        topInset,
-                        pad.right,
-                        pad.bottom,
-                      ),
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate(widget.children),
-                      ),
-                    ),
-                  ],
-                );
-                return scrollView;
-              }),
-            ),
-            Positioned(
-              top: overscroll,
-              left: 0,
-              right: 0,
-              child: KeyedSubtree(
-                key: _headerKey,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    pad.left,
-                    pad.top,
-                    pad.right,
-                    widget.headerBottomPadding,
-                  ),
-                  child: widget.header,
+    // Header stays pinned. Content scrolls underneath — never translate the
+    // glass pill with overscroll (that rebuilt / jumped every frame).
+    final content = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: CustomScrollView(
+            controller: widget.controller,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            physics: _resolvePhysics(),
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  pad.left,
+                  topInset,
+                  pad.right,
+                  pad.bottom,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate(widget.children),
                 ),
               ),
+            ],
+          ),
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: RepaintBoundary(
+            child: KeyedSubtree(
+              key: _headerKey,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  pad.left,
+                  pad.top,
+                  pad.right,
+                  widget.headerBottomPadding,
+                ),
+                child: widget.header,
+              ),
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
     if (!widget.useSafeArea) return content;
     return SafeArea(child: content);
@@ -461,6 +447,28 @@ class MyAccountChip extends StatelessWidget {
   }
 }
 
+/// Opens native Crisp chat; falls back to the Crisp web embed if the SDK fails.
+Future<void> openCrispSupport(BuildContext context, WidgetRef ref) async {
+  final email = ref.read(authUserProvider).valueOrNull?.email?.trim();
+  try {
+    await FlutterCrispChat.openCrispChat(
+      config: CrispConfig(
+        websiteID: AppInfo.crispWebsiteId,
+        user: (email == null || email.isEmpty) ? null : User(email: email),
+      ),
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    await openAppLink(
+      context,
+      Uri.parse(
+        'https://go.crisp.chat/chat/embed/?website_id='
+        '${AppInfo.crispWebsiteId}',
+      ),
+    );
+  }
+}
+
 /// Support chat — opens the native Crisp SDK chat; falls back to the Crisp
 /// chatbox in the external browser if the SDK fails to present.
 class WhatsAppSupportChip extends ConsumerWidget {
@@ -471,39 +479,11 @@ class WhatsAppSupportChip extends ConsumerWidget {
   /// Crisp brand blue.
   static const _blue = Color(0xFF1972F5);
 
-  Future<void> _open(BuildContext context, WidgetRef ref) async {
-    final email = ref
-        .read(authUserProvider)
-        .valueOrNull
-        ?.email
-        ?.trim();
-    try {
-      await FlutterCrispChat.openCrispChat(
-        config: CrispConfig(
-          websiteID: AppInfo.crispWebsiteId,
-          user: (email == null || email.isEmpty)
-              ? null
-              : User(email: email),
-        ),
-      );
-    } catch (_) {
-      // Absolute fallback: the same chatbox in the system browser.
-      if (!context.mounted) return;
-      await openAppLink(
-        context,
-        Uri.parse(
-          'https://go.crisp.chat/chat/embed/?website_id='
-          '${AppInfo.crispWebsiteId}',
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final size = dense ? 34.0 : 40.0;
     return Pressable(
-      onTap: () => _open(context, ref),
+      onTap: () => openCrispSupport(context, ref),
       child: Semantics(
         button: true,
         label: 'Soporte',
@@ -633,7 +613,10 @@ class PageHeader extends StatelessWidget {
               child: onBack != null
                   ? _RoundIconBtn(
                       icon: LucideIcons.arrowLeft,
-                      onTap: onBack!,
+                      onTap: () {
+                        dismissKeyboard();
+                        onBack!();
+                      },
                     )
                   : const SizedBox.shrink(),
             ),

@@ -58,6 +58,19 @@ AiErrorCode classifyAiRawError(String msg) {
   if (m.contains('not enabled') || m.contains('serviceapinotenabled')) {
     return AiErrorCode.apiNotEnabled;
   }
+  // App Check / attestation before generic "not supported" model checks —
+  // DeviceCheck simulator failures otherwise map to missingModel.
+  if (m.contains('permission') ||
+      m.contains('app check') ||
+      m.contains('app-check') ||
+      m.contains('firebaseappcheck') ||
+      m.contains('appcheck') ||
+      m.contains('devicecheck') ||
+      m.contains('attestation') ||
+      m.contains('unauthenticated') ||
+      RegExp(r'\b403\b').hasMatch(m)) {
+    return AiErrorCode.permissionDenied;
+  }
   if (m.contains('quota') ||
       m.contains('resource_exhausted') ||
       m.contains('prepayment') ||
@@ -71,15 +84,6 @@ AiErrorCode classifyAiRawError(String msg) {
       m.contains('not supported') ||
       m.contains('model_not_found')) {
     return AiErrorCode.missingModel;
-  }
-  if (m.contains('permission') ||
-      m.contains('app check') ||
-      m.contains('app-check') ||
-      m.contains('firebaseappcheck') ||
-      m.contains('appcheck') ||
-      m.contains('unauthenticated') ||
-      RegExp(r'\b403\b').hasMatch(m)) {
-    return AiErrorCode.permissionDenied;
   }
   if (m.contains('unavailable') ||
       m.contains('deadline') ||

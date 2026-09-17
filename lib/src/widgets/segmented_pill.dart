@@ -14,46 +14,64 @@ class SegmentedPill<T> extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.spacing = 8,
+    /// When true, pills size to their label and scroll horizontally instead of
+    /// sharing equal width (avoids ellipsis on long localized strings).
+    this.scrollable = false,
   });
 
   final List<SegmentedPillOption<T>> options;
   final T value;
   final ValueChanged<T> onChanged;
   final double spacing;
+  final bool scrollable;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final row = Row(
       children: [
         for (var i = 0; i < options.length; i++) ...[
           if (i > 0) SizedBox(width: spacing),
-          _option(context, options[i]),
+          scrollable
+              ? _option(context, options[i], expand: false)
+              : Expanded(child: _option(context, options[i], expand: true)),
         ],
       ],
     );
+    if (!scrollable) return row;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      child: row,
+    );
   }
 
-  Widget _option(BuildContext context, SegmentedPillOption<T> option) {
+  Widget _option(
+    BuildContext context,
+    SegmentedPillOption<T> option, {
+    required bool expand,
+  }) {
     final active = option.value == value;
-    return Expanded(
-      child: Pressable(
-        onTap: () => onChanged(option.value),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: active ? AppColors.lime : context.scaffoldBg,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            option.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: active ? AppColors.ink : context.primaryText,
-            ),
+    return Pressable(
+      onTap: () => onChanged(option.value),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: expand ? 8 : 16,
+        ),
+        decoration: BoxDecoration(
+          color: active ? AppColors.lime : context.scaffoldBg,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          option.label,
+          maxLines: 1,
+          softWrap: false,
+          overflow: expand ? TextOverflow.ellipsis : TextOverflow.visible,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: active ? AppColors.ink : context.primaryText,
           ),
         ),
       ),

@@ -145,10 +145,13 @@ class _AccountAddScreenState extends ConsumerState<AccountAddScreen> {
                       DropdownMenuItem(
                         value: c.code,
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Expanded(child: Text('${c.flag} ${c.code}')),
-                            if (c.code != base && !isPro)
+                            Text('${c.flag} ${c.code}'),
+                            if (c.code != base && !isPro) ...[
+                              const SizedBox(width: 6),
                               const ProBadge(dense: true, showLock: false),
+                            ],
                           ],
                         ),
                       ),

@@ -6,6 +6,7 @@ List<TransactionDraftFromAi>? tryParseLocalTransactions(
   String text, {
   String? currencyHint,
   List<String> categoryNames = const [],
+  List<String> accountNames = const [],
 }) {
   final trimmed = text.trim();
   if (trimmed.isEmpty || trimmed.length > 80) return null;
@@ -37,6 +38,18 @@ List<TransactionDraftFromAi>? tryParseLocalTransactions(
     type = 'income';
   }
 
+  final accountHint = _matchAccount(lower, accountNames);
+  final toAccountHint = _matchTransferTo(lower, accountNames, accountHint);
+
+  if (toAccountHint != null &&
+      accountHint != null &&
+      toAccountHint.toLowerCase() != accountHint.toLowerCase() &&
+      RegExp(
+        r'(перевод|перевёл|перевел|переказ|transfer|traspaso)',
+      ).hasMatch(lower)) {
+    type = 'transfer';
+  }
+
   // Strip amount + currency tokens to leave a note.
   var note = trimmed
       .replaceAll(RegExp(r'\d+(?:[.,]\d{1,2})?'), ' ')
@@ -51,7 +64,10 @@ List<TransactionDraftFromAi>? tryParseLocalTransactions(
         RegExp(
           r'(spent|spend|paid|pay|bought|buy|cost|earned|earn|received|'
           r'потратил|потратила|купил|купила|заплатил|заработал|'
-          r'витратив|купив|заплатив|заробив|gast[eé]|pagué|compré|ingreso)',
+          r'витратив|купив|заплатив|заробив|gast[eé]|pagué|compré|ingreso|'
+          r'перевод|перевёл|перевел|переказ|transfer|с\s+карт|с\s+карты|'
+          r'с\s+карты|с\s+карточки|с\s+счета|со\s+счета|с\s+счёта|'
+          r'на\s+карт|на\s+карту|на\s+счет|на\s+счёт)',
           caseSensitive: false,
         ),
         ' ',
@@ -59,16 +75,36 @@ List<TransactionDraftFromAi>? tryParseLocalTransactions(
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 
-  if (note.length < 2) return null;
+  // Drop matched account names from the leftover note.
+  if (accountHint != null) {
+    note = note
+        .replaceAll(RegExp(RegExp.escape(accountHint), caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+  if (toAccountHint != null) {
+    note = note
+        .replaceAll(
+          RegExp(RegExp.escape(toAccountHint), caseSensitive: false),
+          ' ',
+        )
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
 
-  final categoryHint = _matchCategory(note, categoryNames);
+  if (note.length < 2 && type != 'transfer') return null;
+
+  final categoryHint =
+      type == 'transfer' ? null : _matchCategory(note, categoryNames);
 
   return [
     TransactionDraftFromAi(
       amount: amount,
       currency: currency?.toUpperCase(),
-      note: note,
+      note: note.isEmpty ? null : note,
       categoryHint: categoryHint,
+      accountHint: accountHint,
+      toAccountHint: type == 'transfer' ? toAccountHint : null,
       type: type,
     ),
   ];
@@ -121,6 +157,84 @@ String? _matchCategory(String note, List<String> categoryNames) {
       final cn = c.toLowerCase();
       if (entry.value.any(cn.contains) || cn.contains(entry.key)) return c;
     }
+  }
+  return null;
+}
+
+/// Longest account name whose tokens appear in [lower] (handles RU case endings
+/// like «карты» ≈ «карта»).
+String? _matchAccount(String lower, List<String> accountNames) {
+  if (accountNames.isEmpty) return null;
+  final sorted = [...accountNames]
+    ..sort((a, b) => b.length.compareTo(a.length));
+  for (final name in sorted) {
+    final tokens = name
+        .trim()
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((t) => t.length >= 2);
+    if (tokens.isEmpty) continue;
+    if (tokens.every((t) => _tokenIn(lower, t))) return name;
+  }
+  return null;
+}
+
+bool _tokenIn(String hay, String token) {
+  if (hay.contains(token)) return true;
+  // Soft stem: drop 1–2 trailing letters for Slavic case endings.
+  if (token.length >= 4 && hay.contains(token.substring(0, token.length - 1))) {
+    return true;
+  }
+  if (token.length >= 5 && hay.contains(token.substring(0, token.length - 2))) {
+    return true;
+  }
+  return false;
+}
+
+String? _matchTransferTo(
+  String lower,
+  List<String> accountNames,
+  String? fromHint,
+) {
+  if (accountNames.isEmpty) return null;
+  final sorted = [...accountNames]
+    ..sort((a, b) => b.length.compareTo(a.length));
+  for (final name in sorted) {
+    if (fromHint != null && name.toLowerCase() == fromHint.toLowerCase()) {
+      continue;
+    }
+    final tokens = name
+        .trim()
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((t) => t.length >= 2)
+        .toList();
+    if (tokens.isEmpty) continue;
+    if (!tokens.every((t) => _tokenIn(lower, t))) continue;
+    // Prefer names after "на …" / "to …".
+    final last = tokens.last;
+    if (RegExp(
+      r'(?:на|to|hacia)\s+[^\d]{0,24}' + RegExp.escape(last.substring(0, last.length > 1 ? last.length - 1 : last.length)),
+    ).hasMatch(lower)) {
+      return name;
+    }
+  }
+  // Second distinct account mentioned anywhere.
+  final found = <String>[];
+  for (final name in sorted) {
+    final tokens = name
+        .trim()
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((t) => t.length >= 2);
+    if (tokens.isEmpty) continue;
+    if (tokens.every((t) => _tokenIn(lower, t))) found.add(name);
+  }
+  if (found.length >= 2) {
+    return found.firstWhere(
+      (a) => fromHint == null || a.toLowerCase() != fromHint.toLowerCase(),
+      orElse: () => found.last,
+    );
   }
   return null;
 }

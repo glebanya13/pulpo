@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/painting.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -51,7 +52,9 @@ class ProfileAvatarCache {
       if (response.statusCode != 200) return null;
 
       final file = await _cacheFile();
+      await FileImage(file).evict();
       await file.writeAsBytes(response.bodyBytes, flush: true);
+      await FileImage(file).evict();
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_cachedUrlKey, normalized);
@@ -66,7 +69,10 @@ class ProfileAvatarCache {
     await prefs.remove(_cachedUrlKey);
     try {
       final file = await _cacheFile();
-      if (file.existsSync()) await file.delete();
+      if (file.existsSync()) {
+        await FileImage(file).evict();
+        await file.delete();
+      }
     } catch (_) {}
   }
 }

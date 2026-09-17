@@ -17,11 +17,17 @@ import '../auth/cloud_auth.dart';
 import 'profile_avatar_cache.dart';
 
 const _avatarSize = 48.0;
-const _avatarFileName = 'profile_avatar.jpg';
 
+/// New file each pick so [Image.file] / [FileImage] cache cannot keep the
+/// previous bytes (same path → stale avatar until app restart).
 Future<File> profileAvatarFile() async {
   final dir = await getApplicationDocumentsDirectory();
-  return File(p.join(dir.path, _avatarFileName));
+  final name = 'profile_avatar_${DateTime.now().millisecondsSinceEpoch}.jpg';
+  return File(p.join(dir.path, name));
+}
+
+Future<void> _evictFileImage(File file) async {
+  await FileImage(file).evict();
 }
 
 Future<void> openProfileAvatarSheet(BuildContext context, WidgetRef ref) async {
@@ -88,12 +94,29 @@ Future<void> _pickAndApplyAvatar(BuildContext context, WidgetRef ref) async {
   );
   if (picked == null || !context.mounted) return;
 
+  final previous =
+      ref.read(settingsControllerProvider).profileAvatarPath?.trim();
   final dest = await profileAvatarFile();
   await File(picked.path).copy(dest.path);
+  await _evictFileImage(dest);
 
-  final settings = ref.read(settingsServiceProvider);
-  await settings.setProfileAvatarPath(dest.path);
-  ref.read(settingsControllerProvider.notifier).setProfileAvatarPath(dest.path);
+  // Drive UI from the notifier only — path changes every pick so watchers
+  // rebuild with a fresh [FileImage] key.
+  await ref
+      .read(settingsControllerProvider.notifier)
+      .setProfileAvatarPath(dest.path);
+
+  if (previous != null &&
+      previous.isNotEmpty &&
+      previous != dest.path) {
+    try {
+      final old = File(previous);
+      if (old.existsSync()) {
+        await _evictFileImage(old);
+        await old.delete();
+      }
+    } catch (_) {}
+  }
 
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(
@@ -120,16 +143,19 @@ Future<void> _pickAndApplyAvatar(BuildContext context, WidgetRef ref) async {
 
 Future<void> _removeAvatar(BuildContext context, WidgetRef ref) async {
   final tr = Tr.of(context);
-  final settings = ref.read(settingsServiceProvider);
-  final path = settings.profileAvatarPath;
+  final path = ref.read(settingsControllerProvider).profileAvatarPath;
   if (path != null && path.isNotEmpty) {
     try {
       final file = File(path);
-      if (file.existsSync()) await file.delete();
+      if (file.existsSync()) {
+        await _evictFileImage(file);
+        await file.delete();
+      }
     } catch (_) {}
   }
-  await settings.setProfileAvatarPath(null);
-  ref.read(settingsControllerProvider.notifier).setProfileAvatarPath(null);
+  await ref
+      .read(settingsControllerProvider.notifier)
+      .setProfileAvatarPath(null);
   await ProfileAvatarCache.clear();
 
   try {
@@ -309,12 +335,17 @@ class _ProfileAvatarState extends State<ProfileAvatar>
 
     if (_hasLocalAvatar) {
       final local = widget.localPath!.trim();
+      final file = File(local);
+      final bust = file.existsSync()
+          ? file.lastModifiedSync().millisecondsSinceEpoch
+          : 0;
       return _AvatarImage(
         size: widget.size,
         fade: _fade,
         showImage: true,
         child: Image.file(
-          File(local),
+          file,
+          key: ValueKey('local_${local}_$bust'),
           width: widget.size,
           height: widget.size,
           fit: BoxFit.contain,
@@ -325,12 +356,17 @@ class _ProfileAvatarState extends State<ProfileAvatar>
     }
 
     if (_remoteFile != null) {
+      final remote = _remoteFile!;
+      final bust = remote.existsSync()
+          ? remote.lastModifiedSync().millisecondsSinceEpoch
+          : 0;
       return _AvatarImage(
         size: widget.size,
         fade: _fade,
         showImage: true,
         child: Image.file(
-          _remoteFile!,
+          remote,
+          key: ValueKey('remote_${remote.path}_$bust'),
           width: widget.size,
           height: widget.size,
           fit: BoxFit.contain,

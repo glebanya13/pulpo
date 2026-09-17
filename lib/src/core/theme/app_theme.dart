@@ -17,6 +17,20 @@ class AppTheme {
       onSecondary: AppColors.ink,
       surface: AppColors.surface,
       onSurface: AppColors.textPrimary,
+      // Neutral / brand containers — lime seed otherwise paints M3
+      // primaryContainer a muddy yellow (TimePicker, DatePicker, chips).
+      primaryContainer: AppColors.lime,
+      onPrimaryContainer: AppColors.ink,
+      secondaryContainer: AppColors.bgAlt,
+      onSecondaryContainer: AppColors.ink,
+      tertiaryContainer: AppColors.bgAlt,
+      onTertiaryContainer: AppColors.ink,
+      surfaceContainerLowest: AppColors.bg,
+      surfaceContainerLow: AppColors.surface,
+      surfaceContainer: AppColors.surface,
+      surfaceContainerHigh: AppColors.bgAlt,
+      surfaceContainerHighest: AppColors.bgAlt,
+      surfaceTint: Colors.transparent,
       error: AppColors.danger,
     );
 
@@ -37,6 +51,48 @@ class AppTheme {
       dialogTheme: const DialogThemeData(
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        headerBackgroundColor: AppColors.surface,
+        dividerColor: AppColors.divider,
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.lime;
+          return null;
+        }),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.ink;
+          return null;
+        }),
+        todayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.lime;
+          return null;
+        }),
+        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.ink;
+          return AppColors.ink;
+        }),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: AppColors.surface,
+        hourMinuteColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.lime;
+          return AppColors.bgAlt;
+        }),
+        hourMinuteTextColor: AppColors.ink,
+        dialHandColor: AppColors.ink,
+        dialBackgroundColor: AppColors.bg,
+        dialTextColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return AppColors.ink;
+        }),
+        entryModeIconColor: AppColors.textMuted,
+        dayPeriodColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.lime;
+          return AppColors.bgAlt;
+        }),
+        dayPeriodTextColor: AppColors.ink,
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.surface,
@@ -142,11 +198,18 @@ class AppTheme {
       onSecondary: AppColors.ink,
       surface: surface,
       onSurface: onSurface,
+      primaryContainer: AppColors.lime,
+      onPrimaryContainer: AppColors.ink,
+      secondaryContainer: surface2,
+      onSecondaryContainer: onSurface,
+      tertiaryContainer: surface2,
+      onTertiaryContainer: onSurface,
       surfaceContainerLowest: bg,
       surfaceContainerLow: surface,
       surfaceContainer: surface2,
       surfaceContainerHigh: surface2,
       surfaceContainerHighest: surface2,
+      surfaceTint: Colors.transparent,
       error: AppColors.danger,
     );
 
@@ -167,6 +230,53 @@ class AppTheme {
       dialogTheme: const DialogThemeData(
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        headerBackgroundColor: surface,
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.lime;
+          return null;
+        }),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.ink;
+          return null;
+        }),
+        todayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.lime;
+          return null;
+        }),
+        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.ink;
+          return Colors.white;
+        }),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: surface,
+        hourMinuteColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.lime;
+          return surface2;
+        }),
+        hourMinuteTextColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.ink;
+          return Colors.white;
+        }),
+        dialHandColor: AppColors.lime,
+        dialBackgroundColor: surface2,
+        dialTextColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.ink;
+          return Colors.white;
+        }),
+        entryModeIconColor: Colors.white70,
+        dayPeriodColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.lime;
+          return surface2;
+        }),
+        dayPeriodTextColor: WidgetStateColor.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.ink;
+          return Colors.white;
+        }),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: surface,

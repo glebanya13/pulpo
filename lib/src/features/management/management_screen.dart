@@ -240,7 +240,7 @@ class ManagementScreen extends ConsumerWidget {
               onTap: () => context.push('/settings/reminders'),
             ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 20),
             Text(
               'Monedero · v${AppInfo.version}',
               textAlign: TextAlign.center,
@@ -250,9 +250,9 @@ class ManagementScreen extends ConsumerWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 10),
-            const MadeInSpainTagline(),
             const SizedBox(height: 8),
+            const MadeInSpainTagline(),
+            const SizedBox(height: 12),
           ],
         );
       },

@@ -6,6 +6,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/keyboard.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/recurring_repository.dart';
@@ -64,6 +65,7 @@ class _RecurringEditorScreenState
 
   @override
   void dispose() {
+    dismissKeyboard();
     _nameCtrl.dispose();
     _amountCtrl.dispose();
     super.dispose();
@@ -101,7 +103,10 @@ class _RecurringEditorScreenState
           nextRun: _next,
         );
       }
-      if (mounted) context.pop();
+      if (mounted) {
+        dismissKeyboard();
+        context.pop();
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -180,6 +185,7 @@ class _RecurringEditorScreenState
           SegmentedPill<String>(
             value: _frequency,
             onChanged: (v) => setState(() => _frequency = v),
+            scrollable: true,
             options: [
               SegmentedPillOption(value: 'daily', label: tr.freqDaily),
               SegmentedPillOption(value: 'weekly', label: tr.freqWeekly),

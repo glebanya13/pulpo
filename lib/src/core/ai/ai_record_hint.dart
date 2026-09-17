@@ -38,6 +38,7 @@ bool looksLikeTransactionRecord(String text) {
     'received',
     'income',
     'expense',
+    'transfer',
     'потрат',
     'купил',
     'заплат',
@@ -45,6 +46,10 @@ bool looksLikeTransactionRecord(String text) {
     'получил',
     'расход',
     'доход',
+    'перевод',
+    'перевёл',
+    'перевел',
+    'переказ',
     'витрат',
     'купив',
     'заплатив',
@@ -54,6 +59,7 @@ bool looksLikeTransactionRecord(String text) {
     'compré',
     'ingreso',
     'cobré',
+    'traspaso',
   ];
   return markers.any(t.contains);
 }

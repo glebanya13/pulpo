@@ -449,7 +449,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           children: [
             PageHeader(
               first: widget.editId != null
-                  ? '${tr.edit} ${tr.transactionSingular}'
+                  ? tr.editTransaction
                   : tr.newTransaction,
               onBack: () =>
                   widget.editId != null ? context.pop() : context.go('/'),

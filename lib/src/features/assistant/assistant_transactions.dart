@@ -42,6 +42,42 @@ db.Category? matchAiCategory(
   return null;
 }
 
+db.Account? matchAiAccount(String? hint, List<db.Account> accounts) {
+  if (hint == null || hint.trim().isEmpty || accounts.isEmpty) return null;
+  final h = hint.toLowerCase().trim();
+  final open = accounts.where((a) => !a.isArchived).toList();
+  for (final a in open) {
+    if (a.name.toLowerCase() == h) return a;
+  }
+  // Longest partial match first — "карта тинькофф" vs "карта".
+  final partial = open.where((a) {
+    final n = a.name.toLowerCase();
+    return n.contains(h) || h.contains(n);
+  }).toList()
+    ..sort((a, b) => b.name.length.compareTo(a.name.length));
+  return partial.isEmpty ? null : partial.first;
+}
+
+List<db.Account> resolveDraftAccounts({
+  required List<TransactionDraftFromAi> drafts,
+  required List<db.Account> accounts,
+  required db.Account fallback,
+}) {
+  return [
+    for (final d in drafts) matchAiAccount(d.accountHint, accounts) ?? fallback,
+  ];
+}
+
+List<db.Account?> resolveDraftToAccounts({
+  required List<TransactionDraftFromAi> drafts,
+  required List<db.Account> accounts,
+}) {
+  return [
+    for (final d in drafts)
+      d.isTransfer ? matchAiAccount(d.toAccountHint, accounts) : null,
+  ];
+}
+
 TransactionDraftFromAi receiptToDraft(ReceiptParseResult receipt) {
   return TransactionDraftFromAi(
     amount: receipt.amount,
@@ -58,10 +94,13 @@ class AssistantConfirmResult {
   const AssistantConfirmResult({
     required this.drafts,
     required this.accounts,
+    this.toAccounts = const [],
   });
 
   final List<TransactionDraftFromAi> drafts;
   final List<db.Account> accounts;
+  /// Parallel to [drafts]; non-null only for transfers.
+  final List<db.Account?> toAccounts;
 }
 
 Future<AssistantConfirmResult?> confirmAssistantDrafts({
@@ -70,7 +109,9 @@ Future<AssistantConfirmResult?> confirmAssistantDrafts({
   required db.Account account,
   required List<db.Category> categories,
   required Tr tr,
+  List<db.Account>? allAccounts,
 }) {
+  final accounts = allAccounts ?? const <db.Account>[];
   return showModalBottomSheet<AssistantConfirmResult>(
     context: context,
     isScrollControlled: true,
@@ -81,6 +122,7 @@ Future<AssistantConfirmResult?> confirmAssistantDrafts({
     builder: (ctx) => AssistantConfirmSheet(
       drafts: drafts,
       account: account,
+      allAccounts: accounts,
       categories: categories,
       matchCategory: (hint, type) =>
           matchAiCategory(hint, categories, tr, type),
@@ -93,6 +135,7 @@ Future<int> saveAssistantDrafts({
   required List<TransactionDraftFromAi> drafts,
   required List<db.Account> accounts,
   required Tr tr,
+  List<db.Account?> toAccounts = const [],
   String? receiptPath,
 }) async {
   assert(drafts.length == accounts.length);
@@ -101,21 +144,38 @@ Future<int> saveAssistantDrafts({
   var i = 0;
   for (final draft in drafts) {
     final account = accounts[i];
-    final type = draft.type == 'income' ? TxType.income : TxType.expense;
-    final cat = matchAiCategory(draft.categoryHint, cats, tr, type);
-    final note = draft.note?.trim().isNotEmpty == true
-        ? draft.note!.trim()
-        : draft.merchant?.trim();
-    await repo.add(
-      accountId: account.id,
-      categoryId: cat?.id,
-      amount: draft.amount!,
-      currency: draft.currency ?? account.currency,
-      type: type,
-      date: draft.date ?? DateTime.now(),
-      note: note,
-      receiptPath: i == 0 ? receiptPath : null,
-    );
+    final to = i < toAccounts.length ? toAccounts[i] : null;
+    if (draft.isTransfer && to != null && to.id != account.id) {
+      final amount = draft.amount!;
+      await repo.addTransfer(
+        fromAccountId: account.id,
+        toAccountId: to.id,
+        fromAmount: amount,
+        toAmount: amount,
+        fromCurrency: draft.currency ?? account.currency,
+        toCurrency: draft.currency ?? to.currency,
+        date: draft.date ?? DateTime.now(),
+        note: draft.note?.trim().isNotEmpty == true
+            ? draft.note!.trim()
+            : draft.merchant?.trim(),
+      );
+    } else {
+      final type = draft.type == 'income' ? TxType.income : TxType.expense;
+      final cat = matchAiCategory(draft.categoryHint, cats, tr, type);
+      final note = draft.note?.trim().isNotEmpty == true
+          ? draft.note!.trim()
+          : draft.merchant?.trim();
+      await repo.add(
+        accountId: account.id,
+        categoryId: cat?.id,
+        amount: draft.amount!,
+        currency: draft.currency ?? account.currency,
+        type: type,
+        date: draft.date ?? DateTime.now(),
+        note: note,
+        receiptPath: i == 0 ? receiptPath : null,
+      );
+    }
     i++;
   }
   return drafts.length;
@@ -173,10 +233,12 @@ class AssistantConfirmSheet extends ConsumerStatefulWidget {
     required this.account,
     required this.categories,
     required this.matchCategory,
+    this.allAccounts = const [],
   });
 
   final List<TransactionDraftFromAi> drafts;
   final db.Account account;
+  final List<db.Account> allAccounts;
   final List<db.Category> categories;
   final db.Category? Function(String? hint, TxType type) matchCategory;
 
@@ -188,24 +250,38 @@ class AssistantConfirmSheet extends ConsumerStatefulWidget {
 class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
   late List<TransactionDraftFromAi> _drafts;
   late List<db.Account> _accounts;
+  late List<db.Account?> _toAccounts;
 
   @override
   void initState() {
     super.initState();
     _drafts = List<TransactionDraftFromAi>.from(widget.drafts);
-    _accounts = List<db.Account>.filled(
-      widget.drafts.length,
-      widget.account,
-      growable: true,
+    final pool = widget.allAccounts.isNotEmpty
+        ? widget.allAccounts
+        : [widget.account];
+    _accounts = resolveDraftAccounts(
+      drafts: _drafts,
+      accounts: pool,
+      fallback: widget.account,
+    );
+    _toAccounts = resolveDraftToAccounts(
+      drafts: _drafts,
+      accounts: pool,
     );
   }
 
-  Future<void> _pickAccount(int index) async {
+  Future<void> _pickAccount(int index, {required bool to}) async {
     final accounts = ref.read(accountsProvider).valueOrNull ?? [];
     if (accounts.isEmpty) return;
     final picked = await showAccountPickerSheet(context, accounts);
     if (picked == null || !mounted) return;
-    setState(() => _accounts[index] = picked);
+    setState(() {
+      if (to) {
+        _toAccounts[index] = picked;
+      } else {
+        _accounts[index] = picked;
+      }
+    });
   }
 
   Future<void> _pickDate(int index) async {
@@ -290,17 +366,26 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
               itemBuilder: (context, i) {
                 final d = _drafts[i];
                 final account = _accounts[i];
-                final type =
-                    d.type == 'income' ? TxType.income : TxType.expense;
-                final cat = widget.matchCategory(d.categoryHint, type);
+                final toAccount = _toAccounts[i];
+                final isTransfer = d.isTransfer;
+                final type = d.type == 'income'
+                    ? TxType.income
+                    : (isTransfer ? TxType.transfer : TxType.expense);
+                final cat = isTransfer
+                    ? null
+                    : widget.matchCategory(d.categoryHint, type);
                 final note = d.note?.trim().isNotEmpty == true
                     ? d.note!
                     : (d.merchant ?? '');
                 final amount = d.amount ?? 0;
-                final sign = type == TxType.income ? '+' : '−';
-                final color = type == TxType.income
-                    ? AppColors.income
-                    : AppColors.expense;
+                final sign = isTransfer
+                    ? ''
+                    : (type == TxType.income ? '+' : '−');
+                final color = isTransfer
+                    ? context.primaryText
+                    : (type == TxType.income
+                        ? AppColors.income
+                        : AppColors.expense);
                 return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -312,10 +397,14 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
                       ColorWellIcon(
                         color: cat != null
                             ? Color(cat.color)
-                            : AppColors.violet,
+                            : (isTransfer
+                                ? AppColors.violet
+                                : AppColors.violet),
                         icon: cat != null
                             ? lucideByKey(cat.icon)
-                            : LucideIcons.circle,
+                            : (isTransfer
+                                ? LucideIcons.arrowLeftRight
+                                : LucideIcons.circle),
                         size: 40,
                         iconSize: 18,
                         radius: 12,
@@ -326,9 +415,11 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              cat != null
-                                  ? tr.categoryName(cat.name)
-                                  : (d.categoryHint ?? tr.other),
+                              isTransfer
+                                  ? tr.transfer
+                                  : (cat != null
+                                      ? tr.categoryName(cat.name)
+                                      : (d.categoryHint ?? tr.other)),
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -341,9 +432,18 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
                               runSpacing: 4,
                               children: [
                                 _Chip(
-                                  text: account.name,
-                                  onTap: () => _pickAccount(i),
+                                  text: isTransfer
+                                      ? '${account.name} →'
+                                      : account.name,
+                                  onTap: () =>
+                                      _pickAccount(i, to: false),
                                 ),
+                                if (isTransfer)
+                                  _Chip(
+                                    text: toAccount?.name ?? tr.selectAccount,
+                                    onTap: () =>
+                                        _pickAccount(i, to: true),
+                                  ),
                                 if (note.isNotEmpty) _Chip(text: note),
                                 _Chip(
                                   text: DateFormat('d MMM', locale)
@@ -378,6 +478,7 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
                 AssistantConfirmResult(
                   drafts: List.unmodifiable(_drafts),
                   accounts: List.unmodifiable(_accounts),
+                  toAccounts: List.unmodifiable(_toAccounts),
                 ),
               ),
               child: Text(tr.aiVoiceApprove),
