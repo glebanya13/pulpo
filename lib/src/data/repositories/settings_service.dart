@@ -20,6 +20,7 @@ class SettingsService {
   static const _kDailyReminderHour = 'daily_reminder_hour';
   static const _kDailyReminderMinute = 'daily_reminder_minute';
   static const _kSmartReminders = 'smart_reminders';
+  static const _kHideBalances = 'hide_balances';
   static const _kDemoData = 'is_demo_data';
   static const _kProfileAvatarPath = 'profile_avatar_path';
   static const _kLastName = 'last_name';
@@ -101,6 +102,7 @@ class SettingsService {
         'dailyReminderHour': dailyReminderHour,
         'dailyReminderMinute': dailyReminderMinute,
         'smartRemindersEnabled': smartRemindersEnabled,
+        'hideBalances': hideBalances,
       };
 
   Future<void> importAppPrefs(Map<String, dynamic> raw) async {
@@ -126,6 +128,8 @@ class SettingsService {
     if (minute is num) await setDailyReminderMinute(minute.toInt());
     final smart = raw['smartRemindersEnabled'];
     if (smart is bool) await setSmartRemindersEnabled(smart);
+    final hide = raw['hideBalances'];
+    if (hide is bool) await setHideBalances(hide);
   }
 
   bool get dailyReminderEnabled => _prefs.getBool(_kDailyReminder) ?? true;
@@ -143,6 +147,9 @@ class SettingsService {
   bool get smartRemindersEnabled => _prefs.getBool(_kSmartReminders) ?? false;
   Future<void> setSmartRemindersEnabled(bool v) =>
       _prefs.setBool(_kSmartReminders, v);
+
+  bool get hideBalances => _prefs.getBool(_kHideBalances) ?? false;
+  Future<void> setHideBalances(bool v) => _prefs.setBool(_kHideBalances, v);
 
   /// Sample / App Review seed — must never be uploaded as the user's cloud data.
   bool get isDemoData => _prefs.getBool(_kDemoData) ?? false;
@@ -170,6 +177,7 @@ class SettingsState {
     required this.dailyReminderHour,
     required this.dailyReminderMinute,
     required this.smartRemindersEnabled,
+    required this.hideBalances,
     this.profileAvatarPath,
     this.lastName,
     this.birthday,
@@ -186,6 +194,7 @@ class SettingsState {
   final int dailyReminderHour;
   final int dailyReminderMinute;
   final bool smartRemindersEnabled;
+  final bool hideBalances;
   final String? profileAvatarPath;
   final String? lastName;
   final String? birthday;
@@ -213,6 +222,7 @@ class SettingsState {
     int? dailyReminderHour,
     int? dailyReminderMinute,
     bool? smartRemindersEnabled,
+    bool? hideBalances,
     String? profileAvatarPath,
     bool clearProfileAvatarPath = false,
     String? lastName,
@@ -234,6 +244,7 @@ class SettingsState {
       dailyReminderMinute: dailyReminderMinute ?? this.dailyReminderMinute,
       smartRemindersEnabled:
           smartRemindersEnabled ?? this.smartRemindersEnabled,
+      hideBalances: hideBalances ?? this.hideBalances,
       profileAvatarPath: clearProfileAvatarPath
           ? null
           : (profileAvatarPath ?? this.profileAvatarPath),
@@ -259,6 +270,7 @@ class SettingsController extends Notifier<SettingsState> {
       dailyReminderHour: s.dailyReminderHour,
       dailyReminderMinute: s.dailyReminderMinute,
       smartRemindersEnabled: s.smartRemindersEnabled,
+      hideBalances: s.hideBalances,
       profileAvatarPath: s.profileAvatarPath,
       lastName: s.lastName,
       birthday: s.birthday,
@@ -366,6 +378,7 @@ class SettingsController extends Notifier<SettingsState> {
       dailyReminderHour: s.dailyReminderHour,
       dailyReminderMinute: s.dailyReminderMinute,
       smartRemindersEnabled: s.smartRemindersEnabled,
+      hideBalances: s.hideBalances,
       profileAvatarPath: s.profileAvatarPath,
       lastName: s.lastName,
       birthday: s.birthday,
@@ -391,6 +404,11 @@ class SettingsController extends Notifier<SettingsState> {
   Future<void> setSmartRemindersEnabled(bool enabled) async {
     await ref.read(settingsServiceProvider).setSmartRemindersEnabled(enabled);
     state = state.copyWith(smartRemindersEnabled: enabled);
+  }
+
+  Future<void> setHideBalances(bool hide) async {
+    await ref.read(settingsServiceProvider).setHideBalances(hide);
+    state = state.copyWith(hideBalances: hide);
   }
 }
 

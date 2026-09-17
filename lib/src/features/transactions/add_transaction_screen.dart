@@ -199,7 +199,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final cats = ref.read(categoriesProvider).valueOrNull ?? [];
     setState(() {
       if (amount != null && amount > 0) {
-        _amountCtrl.text = _ThousandsFormatter.format(amount);
+        final formatted = _ThousandsFormatter.format(amount);
+        _amountCtrl.value = TextEditingValue(
+          text: formatted,
+          selection: TextSelection.collapsed(offset: formatted.length),
+        );
       }
       if (date != null) _date = date;
       final noteText = note?.trim().isNotEmpty == true
@@ -332,7 +336,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     if (tx == null) return;
     _hydrated = true;
     _type = TxType.values[tx.type];
-    _amountCtrl.text = _ThousandsFormatter.format(tx.amount);
+    final formatted = _ThousandsFormatter.format(tx.amount);
+    _amountCtrl.value = TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
     _date = tx.date;
     _noteCtrl.text = tx.note ?? '';
     _originalReceiptPath = tx.receiptPath;
@@ -765,49 +773,58 @@ class _AmountInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final amountStyle = TextStyle(
+      fontSize: 48,
+      fontWeight: FontWeight.w800,
+      color: context.isDark ? AppColors.lime : AppColors.limeAccent,
+      letterSpacing: -2,
+      height: 1,
+    );
+    final signStyle = TextStyle(
+      fontSize: 48,
+      fontWeight: FontWeight.w800,
+      color: context.primaryText,
+      letterSpacing: -2,
+      height: 1,
+    );
+
     return Column(
       children: [
         Text(currency,
             style: TextStyle(fontSize: 14, color: context.faintText)),
         const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType:
-              const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [_ThousandsFormatter()],
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => FocusScope.of(context).unfocus(),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 48,
-            fontWeight: FontWeight.w800,
-            color: context.isDark
-                ? AppColors.lime
-                : AppColors.limeAccent,
-            letterSpacing: -2,
-            height: 1,
-          ),
-          decoration: InputDecoration(
-            hintText: '${sign.isEmpty ? '' : sign}0.00',
-            hintStyle: TextStyle(
-              fontSize: 48,
-              fontWeight: FontWeight.w800,
-              color: context.primaryText.withValues(alpha: 0.25),
-              letterSpacing: -2,
+        // Sign sits outside the field; field is intrinsically sized and
+        // end-aligned so the caret opens at the end of "0.00", not mid-hint.
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (sign.isNotEmpty) Text(sign, style: signStyle),
+            Flexible(
+              child: IntrinsicWidth(
+                child: TextField(
+                  controller: controller,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [_ThousandsFormatter()],
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                  textAlign: TextAlign.end,
+                  style: amountStyle,
+                  decoration: InputDecoration(
+                    hintText: '0.00',
+                    hintStyle: amountStyle.copyWith(
+                      color: context.primaryText.withValues(alpha: 0.25),
+                    ),
+                    border: InputBorder.none,
+                    isCollapsed: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                    filled: false,
+                  ),
+                ),
+              ),
             ),
-            prefixText: sign.isNotEmpty ? sign : null,
-            prefixStyle: TextStyle(
-              fontSize: 48,
-              fontWeight: FontWeight.w800,
-              color: context.primaryText,
-              letterSpacing: -2,
-              height: 1,
-            ),
-            border: InputBorder.none,
-            isCollapsed: true,
-            contentPadding: const EdgeInsets.symmetric(vertical: 4),
-            filled: false,
-          ),
+          ],
         ),
       ],
     );

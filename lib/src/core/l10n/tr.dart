@@ -207,6 +207,8 @@ class Tr {
     return greetingNight;
   }
   String get totalBalance => _get('total_balance');
+  String get hideBalance => _get('hide_balance');
+  String get showBalance => _get('show_balance');
   String get recentTransactions => _get('recent_transactions');
   String get seeAll => _get('see_all');
   String get emptyTransactions => _get('empty_transactions');
@@ -960,6 +962,8 @@ class Tr {
       'greeting_evening': 'Buenas noches 👋',
       'greeting_night': 'Buenas noches 🌙',
       'total_balance': 'SALDO TOTAL',
+      'hide_balance': 'Ocultar saldo',
+      'show_balance': 'Mostrar saldo',
       'recent_transactions': 'Transacciones recientes',
       'see_all': 'Ver todo →',
       'empty_transactions': 'Aún no hay transacciones. Toca + para añadir.',
@@ -1692,6 +1696,8 @@ class Tr {
       'greeting_evening': 'Добрый вечер 👋',
       'greeting_night': 'Доброй ночи 🌙',
       'total_balance': 'ОБЩИЙ БАЛАНС',
+      'hide_balance': 'Скрыть баланс',
+      'show_balance': 'Показать баланс',
       'recent_transactions': 'Недавние транзакции',
       'see_all': 'Все →',
       'empty_transactions': 'Пока пусто. Нажмите + чтобы добавить.',
@@ -2424,6 +2430,8 @@ class Tr {
       'greeting_evening': 'Good evening 👋',
       'greeting_night': 'Good night 🌙',
       'total_balance': 'TOTAL BALANCE',
+      'hide_balance': 'Hide balance',
+      'show_balance': 'Show balance',
       'recent_transactions': 'Recent transactions',
       'see_all': 'See all →',
       'empty_transactions': 'No transactions yet. Tap + to add.',
@@ -3151,6 +3159,8 @@ class Tr {
       'greeting_evening': 'Добрий вечір 👋',
       'greeting_night': 'Надобраніч 🌙',
       'total_balance': 'Загальний баланс',
+      'hide_balance': 'Приховати баланс',
+      'show_balance': 'Показати баланс',
       'recent_transactions': 'Останні транзакції',
       'see_all': 'Усі',
       'empty_transactions': 'Поки що порожньо. Натисніть +, щоб додати.',

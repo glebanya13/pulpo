@@ -113,13 +113,16 @@ class AccountsScreen extends ConsumerWidget {
   }
 }
 
-class _NetWorthCard extends StatelessWidget {
+class _NetWorthCard extends ConsumerWidget {
   const _NetWorthCard({required this.value, required this.currency});
   final double value;
   final String currency;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hidden = ref.watch(
+      settingsControllerProvider.select((s) => s.hideBalances),
+    );
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -142,7 +145,7 @@ class _NetWorthCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            formatMoney(value, currency),
+            hidden ? kMaskedMoney : formatMoney(value, currency),
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
@@ -174,13 +177,16 @@ class _NetWorthCard extends StatelessWidget {
   }
 }
 
-class _AccountCard extends StatelessWidget {
+class _AccountCard extends ConsumerWidget {
   const _AccountCard({required this.account, required this.balance});
   final db.Account account;
   final double balance;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hidden = ref.watch(
+      settingsControllerProvider.select((s) => s.hideBalances),
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Pressable(
@@ -225,17 +231,19 @@ class _AccountCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    formatMoney(balance, account.currency),
+                    hidden
+                        ? kMaskedMoney
+                        : formatMoney(balance, account.currency),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: balance < 0
+                      color: !hidden && balance < 0
                           ? AppColors.danger
                           : context.primaryText,
                       letterSpacing: -0.3,
                     ),
                   ),
-                  if (account.creditLimit != null)
+                  if (account.creditLimit != null && !hidden)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(

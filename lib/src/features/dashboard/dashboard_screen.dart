@@ -137,7 +137,7 @@ class _QuickChip extends StatelessWidget {
   }
 }
 
-class _BalanceActionCard extends StatelessWidget {
+class _BalanceActionCard extends ConsumerWidget {
   const _BalanceActionCard({
     required this.total,
     required this.currency,
@@ -149,8 +149,11 @@ class _BalanceActionCard extends StatelessWidget {
   final bool fxApproximate;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
+    final hidden = ref.watch(
+      settingsControllerProvider.select((s) => s.hideBalances),
+    );
 
     return Container(
       width: double.infinity,
@@ -163,19 +166,44 @@ class _BalanceActionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            tr.totalBalance,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-              letterSpacing: 0.8,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                tr.totalBalance,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Semantics(
+                button: true,
+                label: hidden ? tr.showBalance : tr.hideBalance,
+                child: Pressable(
+                  onTap: () {
+                    ref
+                        .read(settingsControllerProvider.notifier)
+                        .setHideBalances(!hidden);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      hidden ? LucideIcons.eyeOff : LucideIcons.eye,
+                      size: 16,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
           Text(
-            formatMoney(total, currency),
+            hidden ? kMaskedMoney : formatMoney(total, currency),
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
@@ -185,7 +213,7 @@ class _BalanceActionCard extends StatelessWidget {
               letterSpacing: -1,
             ),
           ),
-          if (fxApproximate) ...[
+          if (fxApproximate && !hidden) ...[
             const SizedBox(height: 6),
             Text(
               tr.fxApproximateBalance,

@@ -100,7 +100,8 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
     final tr = Tr.fromLang(locale);
     final snap = buildWidgetSnapshot(
       totalBalance: total,
-      formattedBalance: formatMoney(total, currency),
+      formattedBalance:
+          settings.hideBalances ? kMaskedMoney : formatMoney(total, currency),
       formattedSpent: formatMoney(spent, currency),
       currency: currency,
       txs: txs,
@@ -136,7 +137,9 @@ class _HomeWidgetBinderState extends ConsumerState<HomeWidgetBinder> {
 
     ref.listen(totalBalanceProvider, (_, _) => _scheduleSync());
     ref.listen(
-      settingsControllerProvider.select((s) => '${s.baseCurrency}|${s.locale}'),
+      settingsControllerProvider.select(
+        (s) => '${s.baseCurrency}|${s.locale}|${s.hideBalances}',
+      ),
       (_, _) => _scheduleSync(),
     );
     ref.listen(allTransactionsProvider, (_, _) => _scheduleSync());

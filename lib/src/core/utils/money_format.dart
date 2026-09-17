@@ -2,6 +2,9 @@ import 'package:intl/intl.dart';
 
 import '../currencies.dart';
 
+/// Placeholder when [SettingsState.hideBalances] is on.
+const kMaskedMoney = '••••';
+
 String formatMoney(
   num amount,
   String currency, {
