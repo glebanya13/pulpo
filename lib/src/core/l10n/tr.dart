@@ -1108,7 +1108,7 @@ class Tr {
       'enter_note': 'Escribe una nota',
       'transaction_singular': 'Transacción',
       // reports
-      'analytics_subtitle': 'A dónde va el dinero',
+      'analytics_subtitle': 'Resumen financiero',
 'dashboard_subtitle': 'Tu dinero. Tus reglas.',
       'tab_overview': 'Resumen',
       'tab_categories': 'Categorías',
@@ -1840,7 +1840,7 @@ class Tr {
       'enter_note': 'Введите заметку',
       'transaction_singular': 'Транзакция',
       // reports
-      'analytics_subtitle': 'Куда уходят деньги',
+      'analytics_subtitle': 'Финансовый обзор',
 'dashboard_subtitle': 'Твои деньги. Твои правила.',
       'tab_overview': 'Общее',
       'tab_categories': 'Категории',
@@ -2571,7 +2571,7 @@ class Tr {
       'enter_note': 'Enter a note',
       'transaction_singular': 'Transaction',
       // reports
-      'analytics_subtitle': 'Where the money goes',
+      'analytics_subtitle': 'Financial overview',
 'dashboard_subtitle': 'Your money. Your rules.',
       'tab_overview': 'Overview',
       'tab_categories': 'Categories',
@@ -3289,7 +3289,7 @@ class Tr {
       'empty_transactions_list': 'Немає транзакцій',
       'enter_note': 'Введіть нотатку',
       'transaction_singular': 'Транзакція',
-      'analytics_subtitle': 'Куди йдуть гроші',
+      'analytics_subtitle': 'Фінансовий огляд',
 'dashboard_subtitle': 'Твої гроші. Твої правила.',
       'tab_overview': 'Огляд',
       'tab_categories': 'Категорії',
