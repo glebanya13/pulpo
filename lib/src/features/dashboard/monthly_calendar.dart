@@ -27,11 +27,7 @@ import 'calendar_date_picker_sheet.dart';
 /// Ячейка дня: число + до двух пилюль (расход красная, доход зелёная).
 /// Тап по дню — bottom sheet со списком транзакций этого дня.
 class MonthlyCalendar extends ConsumerStatefulWidget {
-  const MonthlyCalendar({super.key, this.fillHeight = false});
-
-  /// When true (home tab), expand to parent height and scroll the day list
-  /// inside — the outer page does not scroll.
-  final bool fillHeight;
+  const MonthlyCalendar({super.key});
 
   @override
   ConsumerState<MonthlyCalendar> createState() => _MonthlyCalendarState();
@@ -201,7 +197,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
 
-    final body = AsyncValueView(
+    return AsyncValueView(
       value: allTxsAsync,
       onRetry: () => ref.invalidate(allTransactionsProvider),
       data: (allTxs) {
@@ -255,8 +251,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
             child: Column(
-              mainAxisSize:
-                  widget.fillHeight ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _Header(
@@ -296,36 +291,28 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
                 ],
                 SizedBox(height: _viewIndex == 0 ? 6 : 10),
                 if (_viewIndex == 0)
-                  _wrapBody(
-                    _DailyMonthList(
-                      month: _month,
-                      txs: monthTxs,
-                      currency: currency,
-                      hasFilters: _hasActiveFilters,
-                      monthHasTxs: monthTxsUnfiltered.isNotEmpty,
-                      onClearFilters: _clearFilters,
-                      onTapDay: (day) =>
-                          _openDaySheet(context, day, monthTxs),
-                      onTapTx: (tx) => context.push('/tx/${tx.id}'),
-                      onDeleteTx: _deleteWithUndo,
-                      onLongPressTx: _longPressTx,
-                      scrollable: widget.fillHeight,
-                    ),
+                  _DailyMonthList(
+                    month: _month,
+                    txs: monthTxs,
+                    currency: currency,
+                    hasFilters: _hasActiveFilters,
+                    monthHasTxs: monthTxsUnfiltered.isNotEmpty,
+                    onClearFilters: _clearFilters,
+                    onTapDay: (day) =>
+                        _openDaySheet(context, day, monthTxs),
+                    onTapTx: (tx) => context.push('/tx/${tx.id}'),
+                    onDeleteTx: _deleteWithUndo,
+                    onLongPressTx: _longPressTx,
                   )
                 else
-                  _wrapBody(
-                    SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: _MonthTable(
-                        month: _month,
-                        leading: leading,
-                        daysInMonth: daysInMonth,
-                        byDay: byDay,
-                        currency: currency,
-                        onTapDay: (day) =>
-                            _openDaySheet(context, day, monthTxs),
-                      ),
-                    ),
+                  _MonthTable(
+                    month: _month,
+                    leading: leading,
+                    daysInMonth: daysInMonth,
+                    byDay: byDay,
+                    currency: currency,
+                    onTapDay: (day) =>
+                        _openDaySheet(context, day, monthTxs),
                   ),
               ],
             ),
@@ -333,12 +320,6 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
         );
       },
     );
-    return widget.fillHeight ? SizedBox.expand(child: body) : body;
-  }
-
-  Widget _wrapBody(Widget child) {
-    if (!widget.fillHeight) return child;
-    return Expanded(child: child);
   }
 
   Future<void> _openDaySheet(
@@ -563,7 +544,6 @@ class _DailyMonthList extends StatelessWidget {
     required this.onTapTx,
     required this.onDeleteTx,
     this.onLongPressTx,
-    this.scrollable = false,
   });
 
   final DateTime month;
@@ -576,7 +556,6 @@ class _DailyMonthList extends StatelessWidget {
   final ValueChanged<db.Transaction> onTapTx;
   final ValueChanged<db.Transaction> onDeleteTx;
   final ValueChanged<db.Transaction>? onLongPressTx;
-  final bool scrollable;
 
   @override
   Widget build(BuildContext context) {
@@ -624,25 +603,6 @@ class _DailyMonthList extends StatelessWidget {
           tr.noTxThisDay,
           textAlign: TextAlign.center,
           style: TextStyle(color: context.mutedText, fontWeight: FontWeight.w600),
-        ),
-      );
-    }
-
-    if (scrollable) {
-      return ListView.builder(
-        physics: const BouncingScrollPhysics(),
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        itemCount: days.length,
-        itemBuilder: (_, i) => _DayBlock(
-          day: days[i],
-          txs: grouped[days[i]]!,
-          currency: currency,
-          locale: locale,
-          isLast: i == days.length - 1,
-          onTapDay: () => onTapDay(days[i]),
-          onTapTx: onTapTx,
-          onDeleteTx: onDeleteTx,
-          onLongPressTx: onLongPressTx,
         ),
       );
     }
