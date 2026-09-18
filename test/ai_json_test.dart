@@ -163,7 +163,7 @@ void main() {
           'Server Error [500]: boom',
         ),
       ),
-      contains('boom'),
+      tr.aiNetworkError,
     );
     expect(
       const PulpoAiException(AiErrorCode.invalidJson).allowsChatFallback,

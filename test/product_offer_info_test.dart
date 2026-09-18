@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:pulpo/src/core/pro/pro_limits.dart';
 import 'package:pulpo/src/core/pro/product_offer_info.dart';
 import 'package:pulpo/src/core/pro/store_pricing.dart';
