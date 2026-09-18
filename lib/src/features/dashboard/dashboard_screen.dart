@@ -28,7 +28,6 @@ class DashboardScreen extends ConsumerWidget {
     final currency = settings.baseCurrency;
     final fxApprox = ref.watch(fxApproximateProvider);
     final accountsAsync = ref.watch(accountsProvider);
-    final txsAsync = ref.watch(allTransactionsProvider);
 
     Future<void> retryBalance() async {
       ref.invalidate(accountsProvider);
@@ -40,14 +39,10 @@ class DashboardScreen extends ConsumerWidget {
     return ResetScrollWhenObscured(
       tabPath: '/',
       builder: (context, scroll) {
-        return StickyScrollPage(
-          useSafeArea: false,
-          controller: scroll,
+        return MonthlyCalendar(
+          scrollController: scroll,
           padding: pad,
-          headerGap: 0,
-          headerBottomPadding: 10,
-          headerContentHeight: 70,
-          header: ScreenTitlePill(
+          pageHeader: ScreenTitlePill(
             title: AppInfo.displayName,
             subtitle: tr.dashboardSubtitle,
             leading: BrandLogo(size: 34, plate: false),
@@ -55,9 +50,9 @@ class DashboardScreen extends ConsumerWidget {
             expand: true,
             trailing: const HeaderSupportActions(dense: true),
           ),
-          children: [
+          leading: [
             AsyncValuesGate(
-              values: [accountsAsync, txsAsync],
+              values: [accountsAsync],
               onRetry: retryBalance,
               child: _BalanceActionCard(
                 total: total,
@@ -66,7 +61,6 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const MonthlyCalendar(),
           ],
         );
       },

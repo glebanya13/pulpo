@@ -1,96 +1,185 @@
 part of 'monthly_calendar.dart';
 
-class _DailyMonthList extends StatelessWidget {
-  const _DailyMonthList({
+class _CalendarChrome extends StatelessWidget {
+  const _CalendarChrome({
     required this.month,
-    required this.txs,
+    required this.onShift,
+    required this.onTitleTap,
+    required this.calendarView,
+    required this.onToggleCalendar,
+    required this.income,
+    required this.expense,
+    required this.net,
     required this.currency,
-    required this.hasFilters,
-    required this.monthHasTxs,
-    required this.onClearFilters,
-    required this.onTapDay,
-    required this.onTapTx,
-    required this.onDeleteTx,
-    this.onLongPressTx,
+    required this.searchController,
+    required this.query,
+    required this.filterType,
+    required this.accountId,
+    required this.categoryId,
+    required this.accounts,
+    required this.categories,
+    required this.onQueryChanged,
+    required this.onFilterTypeChanged,
+    required this.onAccountChanged,
+    required this.onCategoryChanged,
+    required this.showFilters,
+    required this.loading,
+    required this.errorMessage,
+    required this.onRetry,
+    required this.roundBottom,
+    this.body,
   });
 
   final DateTime month;
-  final List<db.Transaction> txs;
+  final ValueChanged<int> onShift;
+  final VoidCallback onTitleTap;
+  final bool calendarView;
+  final VoidCallback onToggleCalendar;
+  final double income;
+  final double expense;
+  final double net;
   final String currency;
+  final TextEditingController searchController;
+  final String query;
+  final TxType? filterType;
+  final int? accountId;
+  final int? categoryId;
+  final List<db.Account> accounts;
+  final List<db.Category> categories;
+  final ValueChanged<String> onQueryChanged;
+  final ValueChanged<TxType?> onFilterTypeChanged;
+  final ValueChanged<int?> onAccountChanged;
+  final ValueChanged<int?> onCategoryChanged;
+  final bool showFilters;
+  final bool loading;
+  final String? errorMessage;
+  final VoidCallback onRetry;
+  final bool roundBottom;
+  final Widget? body;
+
+  @override
+  Widget build(BuildContext context) {
+    final bodyWidget = body;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.vertical(
+          top: const Radius.circular(18),
+          bottom: roundBottom ? const Radius.circular(18) : Radius.zero,
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(6, 6, 6, roundBottom ? 6 : 0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _Header(
+              month: month,
+              onShift: onShift,
+              onTitleTap: onTitleTap,
+              calendarView: calendarView,
+              onToggleCalendar: onToggleCalendar,
+            ),
+            const SizedBox(height: 6),
+            _MonthTotals(
+              income: income,
+              expense: expense,
+              net: net,
+              currency: currency,
+            ),
+            if (showFilters) ...[
+              const SizedBox(height: 6),
+              TransactionFiltersBar(
+                searchController: searchController,
+                query: query,
+                filterType: filterType,
+                accountId: accountId,
+                categoryId: categoryId,
+                accounts: accounts,
+                categories: categories,
+                onQueryChanged: onQueryChanged,
+                onFilterTypeChanged: onFilterTypeChanged,
+                onAccountChanged: onAccountChanged,
+                onCategoryChanged: onCategoryChanged,
+              ),
+            ],
+            SizedBox(height: showFilters ? 6 : 10),
+            ...switch ((errorMessage, loading, bodyWidget)) {
+              (final msg?, _, _) => [
+                  ErrorView(message: msg, onRetry: onRetry),
+                ],
+              (_, true, _) => const [
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 28),
+                    child: Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ],
+              (_, _, final b?) => [b],
+              _ => const <Widget>[],
+            },
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DailyEmptyState extends StatelessWidget {
+  const _DailyEmptyState({
+    required this.hasFilters,
+    required this.monthHasTxs,
+    required this.onClearFilters,
+  });
+
   final bool hasFilters;
   final bool monthHasTxs;
   final VoidCallback onClearFilters;
-  final ValueChanged<DateTime> onTapDay;
-  final ValueChanged<db.Transaction> onTapTx;
-  final ValueChanged<db.Transaction> onDeleteTx;
-  final ValueChanged<db.Transaction>? onLongPressTx;
 
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final locale = Localizations.localeOf(context).toString();
-    final grouped = groupBy<db.Transaction, DateTime>(
-      txs,
-      (t) => DateTime(t.date.year, t.date.month, t.date.day),
-    );
-    final days = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
-
-    if (days.isEmpty) {
-      if (hasFilters && monthHasTxs) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-          child: Column(
-            children: [
-              Text(
-                tr.emptyFilterResults,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: context.mutedText,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Pressable(
-                onTap: onClearFilters,
-                child: Text(
-                  tr.clearFilters,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: context.accent,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      }
+    if (hasFilters && monthHasTxs) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
-        child: Text(
-          tr.noTxThisDay,
-          textAlign: TextAlign.center,
-          style: TextStyle(color: context.mutedText, fontWeight: FontWeight.w600),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        child: Column(
+          children: [
+            Text(
+              tr.emptyFilterResults,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: context.mutedText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Pressable(
+              onTap: onClearFilters,
+              child: Text(
+                tr.clearFilters,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: context.accent,
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < days.length; i++)
-          _DayBlock(
-            day: days[i],
-            txs: grouped[days[i]]!,
-            currency: currency,
-            locale: locale,
-            isLast: i == days.length - 1,
-            onTapDay: () => onTapDay(days[i]),
-            onTapTx: onTapTx,
-            onDeleteTx: onDeleteTx,
-            onLongPressTx: onLongPressTx,
-          ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+      child: Text(
+        tr.noTxThisDay,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: context.mutedText,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

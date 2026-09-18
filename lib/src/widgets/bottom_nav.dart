@@ -19,6 +19,7 @@ class BudgetBottomNav extends StatelessWidget {
     required this.onAddTap,
     required this.onManagementTap,
     required this.onChatTap,
+    this.lightGlass = false,
   });
 
   /// Shell tab index: 0 home, 1 reports, 2 management.
@@ -27,6 +28,8 @@ class BudgetBottomNav extends StatelessWidget {
   final VoidCallback onAddTap;
   final VoidCallback onManagementTap;
   final VoidCallback onChatTap;
+  /// Cheaper blur while the body is scrolling underneath.
+  final bool lightGlass;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +37,7 @@ class BudgetBottomNav extends StatelessWidget {
       top: false,
       minimum: const EdgeInsets.symmetric(horizontal: 20),
       child: LiquidGlass(
+        light: lightGlass,
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -127,7 +131,9 @@ class _AiNavItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isPro = ref.watch(proControllerProvider).isPro;
-    final hasEnergy = ref.watch(assistantEnergyProvider).hasEnergy;
+    final hasEnergy = ref.watch(
+      assistantEnergyProvider.select((e) => e.hasEnergy),
+    );
     final needsUpgrade = !isPro && !hasEnergy;
     return Pressable(
       onTap: onTap,

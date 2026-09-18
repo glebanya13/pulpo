@@ -141,12 +141,17 @@ Future<int> saveAssistantDrafts({
   assert(drafts.length == accounts.length);
   final cats = ref.read(categoriesProvider).valueOrNull ?? [];
   final repo = ref.read(transactionRepositoryProvider);
-  var i = 0;
-  for (final draft in drafts) {
+  var saved = 0;
+  for (var i = 0; i < drafts.length; i++) {
+    final draft = drafts[i];
+    final amount = draft.amount;
+    if (amount == null || amount <= 0) continue;
     final account = accounts[i];
     final to = i < toAccounts.length ? toAccounts[i] : null;
-    if (draft.isTransfer && to != null && to.id != account.id) {
-      final amount = draft.amount!;
+    if (draft.isTransfer) {
+      if (to == null || to.id == account.id) {
+        throw StateError(tr.aiTransferNeedsDestination);
+      }
       await repo.addTransfer(
         fromAccountId: account.id,
         toAccountId: to.id,
@@ -168,17 +173,17 @@ Future<int> saveAssistantDrafts({
       await repo.add(
         accountId: account.id,
         categoryId: cat?.id,
-        amount: draft.amount!,
+        amount: amount,
         currency: draft.currency ?? account.currency,
         type: type,
         date: draft.date ?? DateTime.now(),
         note: note,
-        receiptPath: i == 0 ? receiptPath : null,
+        receiptPath: saved == 0 ? receiptPath : null,
       );
     }
-    i++;
+    saved++;
   }
-  return drafts.length;
+  return saved;
 }
 
 Future<db.Account?> pickAssistantAccount(
@@ -303,6 +308,204 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
     });
   }
 
+  Future<void> _editAmount(int index) async {
+    final tr = Tr.of(context);
+    final current = _drafts[index].amount;
+    final ctrl = TextEditingController(
+      text: current == null
+          ? ''
+          : (current == current.roundToDouble()
+              ? current.toStringAsFixed(0)
+              : current.toStringAsFixed(2)),
+    );
+    final result = await showDialog<double>(
+      context: context,
+      builder: (dctx) => AlertDialog(
+        title: Text(tr.aiEditAmount),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(hintText: tr.enterAmount),
+          onSubmitted: (v) =>
+              Navigator.pop(dctx, double.tryParse(v.replaceAll(',', '.'))),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dctx),
+            child: Text(tr.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+              dctx,
+              double.tryParse(ctrl.text.replaceAll(',', '.')),
+            ),
+            child: Text(tr.save),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (result == null || result <= 0 || !mounted) return;
+    setState(() {
+      _drafts[index] = _drafts[index].copyWith(amount: result);
+    });
+  }
+
+  Future<void> _editNote(int index) async {
+    final tr = Tr.of(context);
+    final d = _drafts[index];
+    final ctrl = TextEditingController(
+      text: d.note?.trim().isNotEmpty == true
+          ? d.note!
+          : (d.merchant ?? ''),
+    );
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dctx) => AlertDialog(
+        title: Text(tr.aiEditNote),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          maxLines: 3,
+          decoration: InputDecoration(hintText: tr.note),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dctx),
+            child: Text(tr.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dctx, ctrl.text.trim()),
+            child: Text(tr.save),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (result == null || !mounted) return;
+    setState(() {
+      _drafts[index] = _drafts[index].copyWith(note: result);
+    });
+  }
+
+  Future<void> _pickCategory(int index) async {
+    final d = _drafts[index];
+    if (d.isTransfer) return;
+    final tr = Tr.of(context);
+    final type = d.type == 'income' ? TxType.income : TxType.expense;
+    final options = widget.categories.where((c) {
+      final catType = CategoryType.values[c.type];
+      if (type == TxType.expense) return catType != CategoryType.income;
+      return catType != CategoryType.expense;
+    }).toList();
+    final picked = await showSimpleSheet<db.Category>(
+      context: context,
+      builder: (ctx) => SimplePickerSheet(
+        title: tr.category,
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+          children: [
+            for (final c in options)
+              ListTile(
+                leading: ColorWellIcon(
+                  color: Color(c.color),
+                  icon: lucideByKey(c.icon),
+                  size: 40,
+                  iconSize: 18,
+                  radius: 12,
+                ),
+                title: Text(tr.categoryName(c.name)),
+                onTap: () => Navigator.pop(ctx, c),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _drafts[index] = _drafts[index].copyWith(
+        categoryHint: tr.categoryName(picked.name),
+      );
+    });
+  }
+
+  Future<void> _pickType(int index) async {
+    final tr = Tr.of(context);
+    final picked = await showSimpleSheet<String>(
+      context: context,
+      builder: (ctx) => SimplePickerSheet(
+        title: tr.aiVoiceConfirmTitle,
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+          children: [
+            for (final entry in [
+              ('expense', tr.expense),
+              ('income', tr.income),
+              ('transfer', tr.transfer),
+            ])
+              ListTile(
+                title: Text(entry.$2),
+                onTap: () => Navigator.pop(ctx, entry.$1),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _drafts[index] = _drafts[index].copyWith(type: picked);
+      if (picked != 'transfer') {
+        _toAccounts[index] = null;
+      }
+    });
+  }
+
+  void _removeDraft(int index) {
+    if (_drafts.length <= 1) {
+      Navigator.pop(context);
+      return;
+    }
+    setState(() {
+      _drafts.removeAt(index);
+      _accounts.removeAt(index);
+      _toAccounts.removeAt(index);
+    });
+  }
+
+  bool get _canApprove {
+    if (_drafts.isEmpty) return false;
+    for (var i = 0; i < _drafts.length; i++) {
+      final d = _drafts[i];
+      if (d.amount == null || d.amount! <= 0) return false;
+      if (d.isTransfer) {
+        final to = _toAccounts[i];
+        if (to == null || to.id == _accounts[i].id) return false;
+      }
+    }
+    return true;
+  }
+
+  void _onApprove() {
+    final tr = Tr.of(context);
+    if (!_canApprove) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr.aiTransferNeedsDestination)),
+      );
+      return;
+    }
+    Navigator.pop(
+      context,
+      AssistantConfirmResult(
+        drafts: List.unmodifiable(_drafts),
+        accounts: List.unmodifiable(_accounts),
+        toAccounts: List.unmodifiable(_toAccounts),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
@@ -386,6 +589,16 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
                     : (type == TxType.income
                         ? AppColors.income
                         : AppColors.expense);
+                final typeLabel = isTransfer
+                    ? tr.transfer
+                    : (type == TxType.income ? tr.income : tr.expense);
+                final categoryLabel = isTransfer
+                    ? null
+                    : (cat != null
+                        ? tr.categoryName(cat.name)
+                        : (d.categoryHint?.trim().isNotEmpty == true
+                            ? d.categoryHint!
+                            : tr.other));
                 return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -393,40 +606,45 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ColorWellIcon(
-                        color: cat != null
-                            ? Color(cat.color)
-                            : (isTransfer
-                                ? AppColors.violet
-                                : AppColors.violet),
-                        icon: cat != null
-                            ? lucideByKey(cat.icon)
-                            : (isTransfer
-                                ? LucideIcons.arrowLeftRight
-                                : LucideIcons.circle),
-                        size: 40,
-                        iconSize: 18,
-                        radius: 12,
+                      Pressable(
+                        onTap: isTransfer ? null : () => _pickCategory(i),
+                        child: ColorWellIcon(
+                          color: cat != null
+                              ? Color(cat.color)
+                              : AppColors.violet,
+                          icon: cat != null
+                              ? lucideByKey(cat.icon)
+                              : (isTransfer
+                                  ? LucideIcons.arrowLeftRight
+                                  : LucideIcons.circle),
+                          size: 40,
+                          iconSize: 18,
+                          radius: 12,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              isTransfer
-                                  ? tr.transfer
-                                  : (cat != null
-                                      ? tr.categoryName(cat.name)
-                                      : (d.categoryHint ?? tr.other)),
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: context.primaryText,
-                              ),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: [
+                                _Chip(
+                                  text: typeLabel,
+                                  onTap: () => _pickType(i),
+                                ),
+                                if (categoryLabel != null)
+                                  _Chip(
+                                    text: categoryLabel,
+                                    onTap: () => _pickCategory(i),
+                                  ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
                             Wrap(
                               spacing: 6,
                               runSpacing: 4,
@@ -440,11 +658,17 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
                                 ),
                                 if (isTransfer)
                                   _Chip(
-                                    text: toAccount?.name ?? tr.selectAccount,
+                                    text: toAccount?.name ??
+                                        tr.selectAccount,
                                     onTap: () =>
                                         _pickAccount(i, to: true),
                                   ),
-                                if (note.isNotEmpty) _Chip(text: note),
+                                _Chip(
+                                  text: note.isNotEmpty
+                                      ? note
+                                      : tr.aiEditNote,
+                                  onTap: () => _editNote(i),
+                                ),
                                 _Chip(
                                   text: DateFormat('d MMM', locale)
                                       .format(d.date ?? DateTime.now()),
@@ -455,13 +679,33 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
                           ],
                         ),
                       ),
-                      Text(
-                        '$sign${formatMoney(amount, d.currency ?? account.currency)}',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: color,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Pressable(
+                            onTap: () => _editAmount(i),
+                            child: Text(
+                              '$sign${formatMoney(amount, d.currency ?? account.currency)}',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: color,
+                                decoration: TextDecoration.underline,
+                                decorationColor:
+                                    color.withValues(alpha: 0.35),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Pressable(
+                            onTap: () => _removeDraft(i),
+                            child: Icon(
+                              LucideIcons.trash2,
+                              size: 16,
+                              color: context.mutedText,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -473,14 +717,7 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
           SizedBox(
             width: double.infinity,
             child: ScaledElevatedButton(
-              onPressed: () => Navigator.pop(
-                context,
-                AssistantConfirmResult(
-                  drafts: List.unmodifiable(_drafts),
-                  accounts: List.unmodifiable(_accounts),
-                  toAccounts: List.unmodifiable(_toAccounts),
-                ),
-              ),
+              onPressed: _canApprove ? _onApprove : null,
               child: Text(tr.aiVoiceApprove),
             ),
           ),

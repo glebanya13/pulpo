@@ -102,6 +102,9 @@ String describeAiError(Tr tr, Object error) {
   if (error is! PulpoAiException) {
     final raw = error.toString().trim();
     if (raw.isEmpty) return tr.aiFailed;
+    if (classifyAiRawError(raw) == AiErrorCode.network) {
+      return tr.aiNetworkError;
+    }
     final short = raw.length > 160 ? '${raw.substring(0, 160)}…' : raw;
     return '${tr.aiFailed}\n$short';
   }
@@ -130,7 +133,6 @@ String describeAiError(Tr tr, Object error) {
       return tr.aiInvalidResponse;
     case AiErrorCode.emptyInput:
     case AiErrorCode.missingModel:
-    case AiErrorCode.network:
     case AiErrorCode.requestFailed:
       final detail = error.detail?.trim() ?? '';
       if (detail.isEmpty) return tr.aiFailed;
@@ -139,5 +141,7 @@ String describeAiError(Tr tr, Object error) {
       final short =
           detail.length > 160 ? '${detail.substring(0, 160)}…' : detail;
       return '${tr.aiFailed}\n$short';
+    case AiErrorCode.network:
+      return tr.aiNetworkError;
   }
 }

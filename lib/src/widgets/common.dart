@@ -228,6 +228,8 @@ class StickyScrollPage extends StatefulWidget {
     super.key,
     required this.header,
     required this.children,
+    this.itemBuilder,
+    this.itemCount = 0,
     this.controller,
     this.padding,
     this.headerGap = 16,
@@ -236,10 +238,17 @@ class StickyScrollPage extends StatefulWidget {
     this.physics,
     this.clampOverscroll = false,
     this.headerContentHeight,
-  });
+  }) : assert(
+          itemCount == 0 || itemBuilder != null,
+          'itemBuilder required when itemCount > 0',
+        );
 
   final Widget header;
+  /// Eager leading widgets (balance card, chrome, etc.).
   final List<Widget> children;
+  /// Lazy tail items (e.g. day blocks). Built only when approaching viewport.
+  final NullableIndexedWidgetBuilder? itemBuilder;
+  final int itemCount;
   final ScrollController? controller;
   /// When null: safe-area pages get a modest bottom gap; tab pages
   /// (`useSafeArea: false`) should pass [AppSpacing.tabPagePadding].
@@ -340,7 +349,21 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
                   pad.bottom,
                 ),
                 sliver: SliverList(
-                  delegate: SliverChildListDelegate(widget.children),
+                  delegate: widget.itemCount > 0
+                      ? SliverChildBuilderDelegate(
+                          (context, index) {
+                            final lead = widget.children.length;
+                            if (index < lead) return widget.children[index];
+                            return widget.itemBuilder!(
+                              context,
+                              index - lead,
+                            );
+                          },
+                          childCount:
+                              widget.children.length + widget.itemCount,
+                          addAutomaticKeepAlives: false,
+                        )
+                      : SliverChildListDelegate(widget.children),
                 ),
               ),
             ],

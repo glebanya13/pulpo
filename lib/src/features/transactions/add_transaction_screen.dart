@@ -1125,6 +1125,8 @@ class _ReceiptSection extends StatelessWidget {
                 width: double.infinity,
                 height: 180,
                 fit: BoxFit.cover,
+                cacheWidth: (MediaQuery.devicePixelRatioOf(context) * 400)
+                    .round(),
               ),
             ),
             const SizedBox(height: 10),

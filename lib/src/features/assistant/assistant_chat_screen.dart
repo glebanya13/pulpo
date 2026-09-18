@@ -61,9 +61,13 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   bool _stopAndSendPending = false;
   String _listenBase = '';
   int _listenSeconds = 0;
+  int _speechRestartCount = 0;
   Timer? _listenTimer;
   Timer? _burnTimer;
   DateTime? _burnAnchor;
+
+  /// Cap STT auto-restarts so a flaky mic can't drain battery / free energy.
+  static const _maxSpeechRestarts = 40;
 
   AssistantChatRepository get _chat =>
       ref.read(assistantChatRepositoryProvider);
@@ -91,7 +95,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   @override
   void initState() {
     super.initState();
-    _input.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ref.read(assistantChatSyncProvider.future);
       if (!mounted) return;
@@ -141,7 +144,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     }
     _burnAnchor ??= DateTime.now();
     _burnTimer ??= Timer.periodic(
-      const Duration(milliseconds: 250),
+      const Duration(milliseconds: 1000),
       (_) => unawaited(_tickEnergyBurn()),
     );
   }
@@ -220,9 +223,11 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         if (mounted) unawaited(_stopListening());
       },
       onStatus: (status) {
+        // Platform STT ends on pause/timeout — keep the mic open until the
+        // user taps stop. Auto-sending here was cutting long dictation short.
         if (status == 'done' || status == 'notListening') {
           if (mounted && _listening && !_stopAndSendPending) {
-            unawaited(_stopListeningAndSend());
+            unawaited(_continueListening());
           }
         }
       },
@@ -239,6 +244,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       _listening = true;
       _listenBase = _input.text.trim();
       _listenSeconds = 0;
+      _speechRestartCount = 0;
     });
     _syncEnergyBurn();
     _listenTimer?.cancel();
@@ -251,12 +257,17 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
   Future<void> _continueListening() async {
     if (!_listening || !mounted) return;
+    if (_speechRestartCount >= _maxSpeechRestarts) {
+      await _stopListening();
+      return;
+    }
     if (_resumingListen) {
       _needsRestart = true;
       return;
     }
     _resumingListen = true;
     _needsRestart = false;
+    _speechRestartCount++;
     _listenBase = _input.text.trim();
     try {
       await Future<void>.delayed(const Duration(milliseconds: 250));
@@ -290,11 +301,15 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             ? chunk
             : (chunk.isEmpty ? _listenBase : '$_listenBase $chunk');
         setState(() => _input.text = combined);
+        // Lock committed words so the next listen segment appends cleanly.
+        if (result.finalResult && combined.isNotEmpty) {
+          _listenBase = combined;
+        }
       },
       listenOptions: stt.SpeechListenOptions(
         localeId: matched ?? preferred,
-        listenFor: const Duration(minutes: 3),
-        pauseFor: const Duration(seconds: 3),
+        listenFor: const Duration(minutes: 10),
+        pauseFor: const Duration(seconds: 20),
         partialResults: true,
         listenMode: stt.ListenMode.dictation,
         cancelOnError: false,
@@ -311,11 +326,13 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         _listening = false;
         _listenBase = '';
         _listenSeconds = 0;
+        _speechRestartCount = 0;
       });
       _syncEnergyBurn();
     } else {
       _listening = false;
       _listenBase = '';
+      _speechRestartCount = 0;
     }
     await _speech.stop();
   }
@@ -367,8 +384,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     _scrollToEnd();
 
     try {
-      await _handleUserText(text);
-      await _chargeTextTurn();
+      final charge = await _handleUserText(text);
+      if (charge) await _chargeTextTurn();
     } catch (e, st) {
       await _logError(e, st);
       if (!mounted) return;
@@ -388,7 +405,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     }
   }
 
-  Future<void> _handleUserText(String text) async {
+  /// Returns true when the turn should consume free-energy quota.
+  Future<bool> _handleUserText(String text) async {
     final tr = Tr.of(context);
     final locale = ref.read(settingsControllerProvider).locale;
     final welcome = tr.aiChatWelcome;
@@ -462,10 +480,11 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       );
     }
 
-    // Only retry batch once if the full turn claimed "record" with no txs.
+    // Retry batch only for bare "record" with no txs — not for clarify.
     if (!alreadyParsedBatch &&
         turn.intent == 'record' &&
-        turn.transactions.isEmpty) {
+        turn.transactions.isEmpty &&
+        !turn.isClarify) {
       if (mounted) {
         setState(() => _busyLabel = tr.aiParsing);
       }
@@ -491,10 +510,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     if (turn.isRecord) {
       if (account == null) {
         await _append(isFromUser: false, body: tr.addAccountFirst);
-        return;
+        return true;
       }
 
-      if (!mounted) return;
+      if (!mounted) return false;
       final confirmed = await confirmAssistantDrafts(
         context: context,
         drafts: turn.transactions,
@@ -505,7 +524,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       );
       if (!mounted || confirmed == null) {
         await _append(isFromUser: false, body: tr.cancel);
-        return;
+        return false;
       }
 
       await saveAssistantDrafts(
@@ -515,7 +534,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         toAccounts: confirmed.toAccounts,
         tr: tr,
       );
-      if (!mounted) return;
+      if (!mounted) return false;
 
       final total = confirmed.drafts.fold<double>(
         0,
@@ -529,7 +548,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             );
 
       await _append(isFromUser: false, body: reply);
-      return;
+      return true;
     }
 
     final reply = turn.reply.trim();
@@ -537,8 +556,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       throw const PulpoAiException(AiErrorCode.emptyResponse);
     }
 
-    if (!mounted) return;
+    if (!mounted) return false;
     await _append(isFromUser: false, body: reply);
+    return true;
   }
 
   Future<AssistantTurnResult> _fullAssistantTurn({
@@ -553,7 +573,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final prior = _chatHistory(stored, welcome);
     final scope = looksLikeBalanceQuestion(text)
         ? AppContextScope.balances
-        : AppContextScope.compact;
+        : AppContextScope.full;
     return ref.read(pulpoAiServiceProvider).assistantTurn(
           userMessage: text,
           appContext: buildAppChatContext(ref, scope: scope),
@@ -642,7 +662,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         categories: cats,
         tr: tr,
       );
-      if (!mounted || confirmed == null) return;
+      if (!mounted || confirmed == null) {
+        await _append(isFromUser: false, body: tr.cancel);
+        return;
+      }
 
       await saveAssistantDrafts(
         ref: ref,
@@ -660,6 +683,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           formatMoney(receipt.amount!, receipt.currency ?? account.currency),
         ),
       );
+      await _chargeTextTurn();
     } catch (e, st) {
       await _logError(e, st);
       if (!mounted) return;
@@ -763,7 +787,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final hasText = _input.text.trim().isNotEmpty;
     final messages =
         ref.watch(assistantMessagesProvider).valueOrNull ?? const [];
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
@@ -1082,48 +1105,57 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Pressable(
-                    onTap: _busy
-                        ? null
-                        : () {
-                            if (_listening) {
-                              unawaited(_stopListeningAndSend());
-                            } else if (hasText) {
-                              unawaited(_send());
-                            } else {
-                              unawaited(_toggleListening());
-                            }
-                          },
-                    child: Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: _listening
-                            ? AppColors.danger.withValues(alpha: 0.85)
-                            : (hasText ? AppColors.lime : context.surface),
-                        shape: BoxShape.circle,
-                        boxShadow: hasText && !_listening
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.lime.withValues(alpha: 0.35),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Icon(
-                        _listening
-                            ? LucideIcons.square
-                            : (hasText
-                                ? LucideIcons.send
-                                : LucideIcons.mic),
-                        size: 18,
-                        color: hasText || _listening
-                            ? AppColors.ink
-                            : context.primaryText,
-                      ),
-                    ),
+                  ListenableBuilder(
+                    listenable: _input,
+                    builder: (context, _) {
+                      final hasText = _input.text.trim().isNotEmpty;
+                      return Pressable(
+                        onTap: _busy
+                            ? null
+                            : () {
+                                if (_listening) {
+                                  unawaited(_stopListeningAndSend());
+                                } else if (hasText) {
+                                  unawaited(_send());
+                                } else {
+                                  unawaited(_toggleListening());
+                                }
+                              },
+                        child: Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: _listening
+                                ? AppColors.danger.withValues(alpha: 0.85)
+                                : (hasText
+                                    ? AppColors.lime
+                                    : context.surface),
+                            shape: BoxShape.circle,
+                            boxShadow: hasText && !_listening
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.lime
+                                          .withValues(alpha: 0.35),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Icon(
+                            _listening
+                                ? LucideIcons.square
+                                : (hasText
+                                    ? LucideIcons.send
+                                    : LucideIcons.mic),
+                            size: 18,
+                            color: hasText || _listening
+                                ? AppColors.ink
+                                : context.primaryText,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

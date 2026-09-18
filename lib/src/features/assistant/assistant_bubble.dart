@@ -146,6 +146,8 @@ class _AssistantBubble extends StatelessWidget {
             height: 160,
             width: maxW,
             fit: BoxFit.cover,
+            cacheWidth: (MediaQuery.devicePixelRatioOf(context) * maxW)
+                .round(),
           ),
         ),
         Padding(

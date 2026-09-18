@@ -238,7 +238,7 @@ class PulpoAiService {
     }
   }
 
-  String _catsForPrompt(List<String> categoryNames, {int limit = 12}) {
+  String _catsForPrompt(List<String> categoryNames, {int limit = 40}) {
     return categoryNames.take(limit).join(', ');
   }
 
@@ -404,8 +404,10 @@ Top categories: $tops
         final cats = _catsForPrompt(categoryNames);
         final accounts = _catsForPrompt(accountNames, limit: 24);
         final lang = _langName(locale);
-        final hist = history
-            .take(4)
+        final recent = history.length <= 8
+            ? history
+            : history.sublist(history.length - 8);
+        final hist = recent
             .map((h) =>
                 '${h.role == 'user' ? 'User' : 'Assistant'}: ${h.text}')
             .join('\n');
@@ -415,8 +417,9 @@ Top categories: $tops
         final prompt = '''
 Monedero AI. Reply in $lang, JSON only.
 intent "record": extract txs {amount,currency,date,note,merchant,categoryHint from [$cats],accountHint,toAccountHint,type expense|income|transfer}; short reply.$accountRule
+intent "clarify": ask ONE short question for missing amount, account, type, or transfer destination; transactions=[].
 intent "question": answer from APP DATA only; transactions=[].
-Prefer "question" if unsure.
+Use "clarify" when the user wants to record but amount is missing, or a transfer lacks destination. Prefer "question" only for data questions.
 
 Chat:
 $hist
@@ -426,7 +429,7 @@ $appContext
 
 User: """$trimmed"""
 
-{"intent":"record"|"question","reply":"...","transactions":[...]}
+{"intent":"record"|"clarify"|"question","reply":"...","transactions":[...]}
 ''';
         return _generate([Content.text(prompt)], label: 'assistant_turn');
       }, parseAssistantTurnJson);
@@ -469,8 +472,10 @@ Hard rules:
 APP DATA:
 $appContext
 ''';
-    final hist = history
-        .take(4)
+    final recent = history.length <= 8
+        ? history
+        : history.sublist(history.length - 8);
+    final hist = recent
         .map((h) => '${h.role == 'user' ? 'User' : 'Assistant'}: ${h.text}')
         .join('\n');
     final prompt = '''

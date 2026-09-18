@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +18,7 @@ import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
+import '../../widgets/common.dart';
 import '../../widgets/transaction_tile.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../widgets/transaction_filters.dart';
@@ -27,11 +30,21 @@ part 'monthly_calendar_chrome.dart';
 part 'monthly_calendar_views.dart';
 part 'monthly_calendar_day_sheet.dart';
 
-/// Календарь-обзор транзакций за месяц.
-/// Ячейка дня: число + до двух пилюль (расход красная, доход зелёная).
-/// Тап по дню — bottom sheet со списком транзакций этого дня.
+/// Home month calendar — owns the tab [StickyScrollPage] so day blocks can
+/// be built lazily via [StickyScrollPage.itemBuilder].
 class MonthlyCalendar extends ConsumerStatefulWidget {
-  const MonthlyCalendar({super.key});
+  const MonthlyCalendar({
+    super.key,
+    required this.scrollController,
+    required this.pageHeader,
+    required this.leading,
+    required this.padding,
+  });
+
+  final ScrollController scrollController;
+  final Widget pageHeader;
+  final List<Widget> leading;
+  final EdgeInsets padding;
 
   @override
   ConsumerState<MonthlyCalendar> createState() => _MonthlyCalendarState();
@@ -45,6 +58,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
   int? _accountId;
   int? _categoryId;
   final _searchCtrl = TextEditingController();
+  Timer? _queryDebounce;
 
   @override
   void initState() {
@@ -55,11 +69,23 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
 
   @override
   void dispose() {
+    _queryDebounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
 
+  void _onQueryChanged(String v) {
+    _queryDebounce?.cancel();
+    _queryDebounce = Timer(const Duration(milliseconds: 200), () {
+      if (!mounted) return;
+      final next = v.trim();
+      if (next == _query) return;
+      setState(() => _query = next);
+    });
+  }
+
   void _clearFilters() {
+    _queryDebounce?.cancel();
     setState(() {
       _query = '';
       _searchCtrl.clear();
@@ -175,18 +201,17 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
       initial: initial,
     );
     if (picked == null || !mounted) return;
-    setState(() => _month = DateTime(picked.year, picked.month, 1));
-    final monthTxs = ref.read(allTransactionsProvider).valueOrNull;
-    if (monthTxs == null) return;
     final monthStart = DateTime(picked.year, picked.month, 1);
     final monthEnd = DateTime(picked.year, picked.month + 1, 1);
-    final filtered = monthTxs
-        .where(
-          (t) => !t.date.isBefore(monthStart) && t.date.isBefore(monthEnd),
-        )
-        .toList();
+    setState(() => _month = monthStart);
+    final monthTxs = ref
+            .read(
+              transactionsInRangeProvider((start: monthStart, end: monthEnd)),
+            )
+            .valueOrNull ??
+        const <db.Transaction>[];
     if (!context.mounted) return;
-    await _openDaySheet(context, picked, filtered);
+    await _openDaySheet(context, picked, monthTxs);
   }
 
   @override
@@ -195,134 +220,151 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     final tr = Tr.of(context);
     final monthStart = _month;
     final monthEnd = DateTime(_month.year, _month.month + 1, 1);
-    // Use the full stream (already warm on dashboard) so month switches never
-    // flash a loading spinner / collapse height.
-    final allTxsAsync = ref.watch(allTransactionsProvider);
+    final range = (start: monthStart, end: monthEnd);
+    final monthTxsAsync = ref.watch(transactionsInRangeProvider(range));
     final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
+    final monthRaw = monthTxsAsync.valueOrNull;
+    final loading = monthRaw == null && monthTxsAsync.isLoading;
 
-    return AsyncValueView(
-      value: allTxsAsync,
-      onRetry: () => ref.invalidate(allTransactionsProvider),
-      data: (allTxs) {
-        final monthTxs = applyTransactionFilters(
-          txs: allTxs
-              .where(
-                (t) =>
-                    !t.date.isBefore(monthStart) && t.date.isBefore(monthEnd),
-              )
-              .toList(),
-          query: _query,
-          filterType: _filterType,
-          accountId: _accountId,
-          categoryId: _categoryId,
-          categories: cats,
-          tr: tr,
-        );
-        final monthTxsUnfiltered = allTxs
-            .where(
-              (t) => !t.date.isBefore(monthStart) && t.date.isBefore(monthEnd),
+    final monthTxs = monthRaw == null
+        ? const <db.Transaction>[]
+        : applyTransactionFilters(
+            txs: monthRaw,
+            query: _query,
+            filterType: _filterType,
+            accountId: _accountId,
+            categoryId: _categoryId,
+            categories: cats,
+            tr: tr,
+          );
+    var income = 0.0;
+    var expense = 0.0;
+    final byDay = <int, ({double income, double expense})>{};
+    for (final t in monthTxs) {
+      final key = t.date.day;
+      final prev = byDay[key] ?? (income: 0.0, expense: 0.0);
+      final type = TxType.values[t.type];
+      if (type == TxType.income) {
+        income += t.amount;
+        byDay[key] = (income: prev.income + t.amount, expense: prev.expense);
+      } else if (type == TxType.expense) {
+        expense += t.amount;
+        byDay[key] = (income: prev.income, expense: prev.expense + t.amount);
+      }
+    }
+    final net = income - expense;
+    final firstWeekday = monthStart.weekday;
+    final leadingDays = firstWeekday - 1;
+    final daysInMonth = DateTime(_month.year, _month.month + 1, 0).day;
+
+    final locale = Localizations.localeOf(context).toString();
+    final grouped = groupBy<db.Transaction, DateTime>(
+      monthTxs,
+      (t) => DateTime(t.date.year, t.date.month, t.date.day),
+    );
+    final days = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+    final listView = _viewIndex == 0;
+    final monthHasTxs = monthRaw != null && monthRaw.isNotEmpty;
+
+    final chrome = _CalendarChrome(
+      month: _month,
+      onShift: _shiftMonth,
+      onTitleTap: () => _openDatePicker(context),
+      calendarView: !listView,
+      onToggleCalendar: () => setState(
+        () => _viewIndex = _viewIndex == 0 ? 1 : 0,
+      ),
+      income: income,
+      expense: expense,
+      net: net,
+      currency: currency,
+      searchController: _searchCtrl,
+      query: _query,
+      filterType: _filterType,
+      accountId: _accountId,
+      categoryId: _categoryId,
+      accounts: accounts,
+      categories: cats,
+      onQueryChanged: _onQueryChanged,
+      onFilterTypeChanged: (t) => setState(() => _filterType = t),
+      onAccountChanged: (id) => setState(() => _accountId = id),
+      onCategoryChanged: (id) => setState(() => _categoryId = id),
+      showFilters: listView,
+      loading: loading,
+      errorMessage: monthTxsAsync.hasError && monthRaw == null
+          ? dataLoadErrorMessage(tr, monthTxsAsync.error!)
+          : null,
+      onRetry: () => ref.invalidate(transactionsInRangeProvider(range)),
+      // Table / empty states live inside chrome; lazy days are scroll items.
+      body: !listView
+          ? _MonthTable(
+              month: _month,
+              leading: leadingDays,
+              daysInMonth: daysInMonth,
+              byDay: byDay,
+              currency: currency,
+              onTapDay: (day) => _openDaySheet(context, day, monthTxs),
             )
-            .toList();
-        var income = 0.0;
-        var expense = 0.0;
-        final byDay = <int, ({double income, double expense})>{};
-        for (final t in monthTxs) {
-          final key = t.date.day;
-          final prev = byDay[key] ?? (income: 0.0, expense: 0.0);
-          final type = TxType.values[t.type];
-          if (type == TxType.income) {
-            income += t.amount;
-            byDay[key] =
-                (income: prev.income + t.amount, expense: prev.expense);
-          } else if (type == TxType.expense) {
-            expense += t.amount;
-            byDay[key] =
-                (income: prev.income, expense: prev.expense + t.amount);
-          }
-        }
-        final net = income - expense;
+          : (days.isEmpty && !loading
+              ? _DailyEmptyState(
+                  hasFilters: _hasActiveFilters,
+                  monthHasTxs: monthHasTxs,
+                  onClearFilters: _clearFilters,
+                )
+              : null),
+      roundBottom: !listView || days.isEmpty || loading,
+    );
 
-        final firstWeekday = monthStart.weekday;
-        final leading = firstWeekday - 1;
-        final daysInMonth = DateTime(_month.year, _month.month + 1, 0).day;
+    final lazyDayCount =
+        listView && days.isNotEmpty ? days.length + 1 /* footer */ : 0;
 
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            color: context.surface,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _Header(
-                  month: _month,
-                  onShift: _shiftMonth,
-                  onTitleTap: () => _openDatePicker(context),
-                  calendarView: _viewIndex == 1,
-                  onToggleCalendar: () => setState(
-                    () => _viewIndex = _viewIndex == 0 ? 1 : 0,
+    return StickyScrollPage(
+      useSafeArea: false,
+      controller: widget.scrollController,
+      padding: widget.padding,
+      headerGap: 0,
+      headerBottomPadding: 10,
+      headerContentHeight: 70,
+      header: widget.pageHeader,
+      itemCount: lazyDayCount,
+      itemBuilder: lazyDayCount == 0
+          ? null
+          : (context, index) {
+              if (index == days.length) {
+                return DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: context.surface,
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(18),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                _MonthTotals(
-                  income: income,
-                  expense: expense,
-                  net: net,
-                  currency: currency,
-                ),
-                if (_viewIndex == 0) ...[
-                  const SizedBox(height: 6),
-                  TransactionFiltersBar(
-                    searchController: _searchCtrl,
-                    query: _query,
-                    filterType: _filterType,
-                    accountId: _accountId,
-                    categoryId: _categoryId,
-                    accounts: accounts,
-                    categories: cats,
-                    onQueryChanged: (v) => setState(() => _query = v),
-                    onFilterTypeChanged: (t) =>
-                        setState(() => _filterType = t),
-                    onAccountChanged: (id) =>
-                        setState(() => _accountId = id),
-                    onCategoryChanged: (id) =>
-                        setState(() => _categoryId = id),
-                  ),
-                ],
-                SizedBox(height: _viewIndex == 0 ? 6 : 10),
-                if (_viewIndex == 0)
-                  _DailyMonthList(
-                    month: _month,
-                    txs: monthTxs,
+                  child: const SizedBox(height: 6),
+                );
+              }
+              final day = days[index];
+              return ColoredBox(
+                color: context.surface,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: _DayBlock(
+                    day: day,
+                    txs: grouped[day]!,
                     currency: currency,
-                    hasFilters: _hasActiveFilters,
-                    monthHasTxs: monthTxsUnfiltered.isNotEmpty,
-                    onClearFilters: _clearFilters,
-                    onTapDay: (day) =>
-                        _openDaySheet(context, day, monthTxs),
+                    locale: locale,
+                    isLast: index == days.length - 1,
+                    onTapDay: () => _openDaySheet(context, day, monthTxs),
                     onTapTx: (tx) => context.push('/tx/${tx.id}'),
                     onDeleteTx: _deleteWithUndo,
                     onLongPressTx: _longPressTx,
-                  )
-                else
-                  _MonthTable(
-                    month: _month,
-                    leading: leading,
-                    daysInMonth: daysInMonth,
-                    byDay: byDay,
-                    currency: currency,
-                    onTapDay: (day) =>
-                        _openDaySheet(context, day, monthTxs),
                   ),
-              ],
-            ),
-          ),
-        );
-      },
+                ),
+              );
+            },
+      children: [
+        ...widget.leading,
+        chrome,
+      ],
     );
   }
 

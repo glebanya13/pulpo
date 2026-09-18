@@ -26,9 +26,11 @@ class AssistantEnergyChip extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final energy = ref.watch(assistantEnergyProvider);
-    final units = energy.units;
-    final empty = !energy.hasEnergy;
+    final energy = ref.watch(
+      assistantEnergyProvider.select((e) => (e.units, e.hasEnergy)),
+    );
+    final units = energy.$1;
+    final empty = !energy.$2;
     final bolt = empty
         ? context.mutedText
         : const Color(0xFF5B9DFF);

@@ -20,18 +20,25 @@ List<db.Transaction> applyTransactionFilters({
   required List<db.Category> categories,
   required Tr tr,
 }) {
-  return txs.where((t) {
-    if (filterType != null && TxType.values[t.type] != filterType) {
-      return false;
-    }
-    if (accountId != null && t.accountId != accountId) return false;
-    if (categoryId != null && t.categoryId != categoryId) return false;
-    if (query.isEmpty) return true;
-    final q = query.toLowerCase();
-    final cat = categories.firstWhereOrNull((c) => c.id == t.categoryId);
-    return (t.note ?? '').toLowerCase().contains(q) ||
-        (cat != null && tr.categoryName(cat.name).toLowerCase().contains(q));
-  }).toList();
+  if (txs.isEmpty) return const [];
+  final q = query.trim().toLowerCase();
+  final catNames = q.isEmpty
+      ? null
+      : {
+          for (final c in categories)
+            c.id: tr.categoryName(c.name).toLowerCase(),
+        };
+  return [
+    for (final t in txs)
+      if ((filterType == null || TxType.values[t.type] == filterType) &&
+          (accountId == null || t.accountId == accountId) &&
+          (categoryId == null || t.categoryId == categoryId) &&
+          (q.isEmpty ||
+              (t.note ?? '').toLowerCase().contains(q) ||
+              (t.categoryId != null &&
+                  (catNames?[t.categoryId]?.contains(q) ?? false))))
+        t,
+  ];
 }
 
 class TransactionFiltersBar extends StatefulWidget {

@@ -125,10 +125,15 @@ class AssistantTurnResult {
     this.transactions = const [],
   });
 
-  /// `record` — save transactions; `question` — answer from app data only.
+  /// `record` — save transactions; `clarify` — ask for missing fields;
+  /// `question` — answer from app data only.
   final String intent;
   final String reply;
   final List<TransactionDraftFromAi> transactions;
 
   bool get isRecord => intent == 'record' && transactions.isNotEmpty;
+
+  bool get isClarify =>
+      intent == 'clarify' ||
+      (intent == 'record' && transactions.isEmpty && reply.trim().isNotEmpty);
 }

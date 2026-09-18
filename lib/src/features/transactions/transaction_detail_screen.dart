@@ -154,6 +154,9 @@ class TransactionDetailScreen extends ConsumerWidget {
                           width: double.infinity,
                           height: 200,
                           fit: BoxFit.cover,
+                          cacheWidth:
+                              (MediaQuery.devicePixelRatioOf(context) * 400)
+                                  .round(),
                         ),
                       ),
                     ],
@@ -264,7 +267,13 @@ class TransactionDetailScreen extends ConsumerWidget {
           ),
           body: InteractiveViewer(
             child: Center(
-              child: Image.file(File(path)),
+              child: Image.file(
+                File(path),
+                cacheWidth:
+                    (MediaQuery.devicePixelRatioOf(context) *
+                            MediaQuery.sizeOf(context).width)
+                        .round(),
+              ),
             ),
           ),
         ),

@@ -112,14 +112,7 @@ double computeAccountBalance(Account account, List<Transaction> txs) {
         balance += t.amount;
         break;
       case TxType.expense:
-        balance -= t.amount;
-        break;
       case TxType.transfer:
-        // transfer хранится двумя транзакциями (out и in), связанными transferGroupId
-        // out = expense-like на исходном счёте, in = income-like на целевом
-        // Здесь просто следуем знаку амаунта (out < 0 хранится как отдельная запись)
-        // Для простоты: transferGroupId != null и type == transfer — считаем как расход,
-        // а на приёмном счёте будет вторая запись с типом income.
         balance -= t.amount;
         break;
     }
@@ -127,13 +120,26 @@ double computeAccountBalance(Account account, List<Transaction> txs) {
   return balance;
 }
 
-/// Балансы всех счетов в мапе.
+/// Балансы всех счетов — один проход по транзакциям.
 final accountBalancesProvider = Provider<Map<int, double>>((ref) {
   final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
   final txs = ref.watch(allTransactionsProvider).valueOrNull ?? [];
-  return {
-    for (final a in accounts) a.id: computeAccountBalance(a, txs),
+  final balances = <int, double>{
+    for (final a in accounts) a.id: a.initialBalance,
   };
+  for (final t in txs) {
+    final current = balances[t.accountId];
+    if (current == null) continue;
+    final type = TxType.values[t.type];
+    switch (type) {
+      case TxType.income:
+        balances[t.accountId] = current + t.amount;
+      case TxType.expense:
+      case TxType.transfer:
+        balances[t.accountId] = current - t.amount;
+    }
+  }
+  return balances;
 });
 
 /// FX rates to base currency (base => 1.0).

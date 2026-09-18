@@ -350,6 +350,8 @@ class _ProfileAvatarState extends State<ProfileAvatar>
           height: widget.size,
           fit: BoxFit.contain,
           gaplessPlayback: true,
+          cacheWidth:
+              (MediaQuery.devicePixelRatioOf(context) * widget.size).round(),
           errorBuilder: (_, _, _) => fallback,
         ),
       );
@@ -371,6 +373,8 @@ class _ProfileAvatarState extends State<ProfileAvatar>
           height: widget.size,
           fit: BoxFit.contain,
           gaplessPlayback: true,
+          cacheWidth:
+              (MediaQuery.devicePixelRatioOf(context) * widget.size).round(),
           errorBuilder: (_, _, _) => fallback,
         ),
       );

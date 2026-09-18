@@ -799,6 +799,10 @@ class Tr {
   String aiVoiceConfirmCount(int n) =>
       _get('ai_voice_confirm_count').replaceAll('{}', '$n');
   String get aiVoiceApprove => _get('ai_voice_approve');
+  String get aiTransferNeedsDestination =>
+      _get('ai_transfer_needs_destination');
+  String get aiEditAmount => _get('ai_edit_amount');
+  String get aiEditNote => _get('ai_edit_note');
   String aiVoiceSaved(int n) =>
       _get('ai_voice_saved').replaceAll('{}', '$n');
   String get aiListening => _get('ai_listening');
@@ -830,6 +834,7 @@ class Tr {
   String get aiBusy => _get('ai_busy');
   String get aiParsing => _get('ai_parsing');
   String get aiFailed => _get('ai_failed');
+  String get aiNetworkError => _get('ai_network_error');
   String get aiBlocked => _get('ai_blocked');
   String get aiEmptyResponse => _get('ai_empty_response');
   String get aiInvalidResponse => _get('ai_invalid_response');
@@ -1607,6 +1612,10 @@ class Tr {
       'ai_voice_confirm_title': 'Confirmación',
       'ai_voice_confirm_count': '{} transacciones',
       'ai_voice_approve': 'Aprobar',
+      'ai_transfer_needs_destination':
+          'Elige la cuenta de destino para el traslado',
+      'ai_edit_amount': 'Importe',
+      'ai_edit_note': 'Nota',
       'ai_voice_saved': 'Guardadas {} operaciones',
       'ai_listening': 'Escuchando…',
       'ai_confirm_transcript': '¿Usar este texto?',
@@ -1635,6 +1644,8 @@ class Tr {
       'ai_busy': 'Pensando…',
       'ai_parsing': 'Leyendo operaciones…',
       'ai_failed': 'No se pudo completar la solicitud de IA. Inténtalo de nuevo.',
+      'ai_network_error':
+          'Sin conexión. Comprueba internet e inténtalo de nuevo.',
       'ai_blocked': 'La IA bloqueó la respuesta. Reformula el mensaje.',
       'ai_empty_response': 'La IA no devolvió texto. Inténtalo de nuevo.',
       'ai_invalid_response': 'La IA devolvió un formato inesperado. Inténtalo de nuevo.',
@@ -2341,6 +2352,9 @@ class Tr {
       'ai_voice_confirm_title': 'Подтверждение',
       'ai_voice_confirm_count': '{} транзакции',
       'ai_voice_approve': 'Одобрить',
+      'ai_transfer_needs_destination': 'Выберите счёт назначения для перевода',
+      'ai_edit_amount': 'Сумма',
+      'ai_edit_note': 'Заметка',
       'ai_voice_saved': 'Сохранено операций: {}',
       'ai_listening': 'Слушаю…',
       'ai_confirm_transcript': 'Использовать этот текст?',
@@ -2369,6 +2383,8 @@ class Tr {
       'ai_busy': 'Думаю…',
       'ai_parsing': 'Разбираю операции…',
       'ai_failed': 'Не удалось выполнить запрос к ИИ. Попробуйте ещё раз.',
+      'ai_network_error':
+          'Нет сети. Проверьте интернет и попробуйте ещё раз.',
       'ai_blocked': 'ИИ заблокировал ответ. Переформулируйте сообщение.',
       'ai_empty_response': 'ИИ вернул пустой ответ. Попробуйте ещё раз.',
       'ai_invalid_response': 'ИИ вернул неожиданный формат. Попробуйте ещё раз.',
@@ -3074,6 +3090,9 @@ class Tr {
       'ai_voice_confirm_title': 'Confirmation',
       'ai_voice_confirm_count': '{} transactions',
       'ai_voice_approve': 'Approve',
+      'ai_transfer_needs_destination': 'Pick a destination account for the transfer',
+      'ai_edit_amount': 'Amount',
+      'ai_edit_note': 'Note',
       'ai_voice_saved': 'Saved {} transactions',
       'ai_listening': 'Listening…',
       'ai_confirm_transcript': 'Use this text?',
@@ -3102,6 +3121,8 @@ class Tr {
       'ai_busy': 'Thinking…',
       'ai_parsing': 'Parsing transactions…',
       'ai_failed': 'Could not complete the AI request. Try again.',
+      'ai_network_error':
+          'No connection. Check your internet and try again.',
       'ai_blocked': 'The AI blocked that reply. Rephrase your message.',
       'ai_empty_response': 'The AI returned an empty reply. Try again.',
       'ai_invalid_response': 'The AI returned an unexpected format. Try again.',
@@ -3743,6 +3764,9 @@ class Tr {
       'ai_voice_confirm_title': 'Підтвердження',
       'ai_voice_confirm_count': '{} транзакції',
       'ai_voice_approve': 'Схвалити',
+      'ai_transfer_needs_destination': 'Оберіть рахунок призначення для переказу',
+      'ai_edit_amount': 'Сума',
+      'ai_edit_note': 'Нотатка',
       'ai_voice_saved': 'Збережено транзакцій: {}',
       'ai_listening': 'Слухаю…',
       'ai_confirm_transcript': 'Використати цей текст?',
@@ -3769,6 +3793,8 @@ class Tr {
       'ai_busy': 'Думаю…',
       'ai_parsing': 'Розбираю операції…',
       'ai_failed': 'Не вдалося виконати запит до ШІ. Спробуйте ще раз.',
+      'ai_network_error':
+          'Немає мережі. Перевірте інтернет і спробуйте ще раз.',
       'ai_blocked': 'ШІ заблокував відповідь. Переформулюйте повідомлення.',
       'ai_empty_response': 'ШІ повернув порожню відповідь. Спробуйте ще раз.',
       'ai_invalid_response': 'ШІ повернув неочікуваний формат. Спробуйте ще раз.',
