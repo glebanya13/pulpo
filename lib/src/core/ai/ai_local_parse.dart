@@ -1,7 +1,8 @@
 import 'ai_models.dart';
 
-/// Ultra-fast path: parse simple single-amount messages without calling Gemini.
-/// Returns null when the text is too complex / ambiguous.
+/// Fast path: parse spoken/typed expense lines without calling Gemini.
+/// Handles a single amount or a list of amounts in one message.
+/// Returns null when the text is too ambiguous for local rules.
 List<TransactionDraftFromAi>? tryParseLocalTransactions(
   String text, {
   String? currencyHint,
@@ -9,50 +10,238 @@ List<TransactionDraftFromAi>? tryParseLocalTransactions(
   List<String> accountNames = const [],
 }) {
   final trimmed = text.trim();
-  if (trimmed.isEmpty || trimmed.length > 80) return null;
+  if (trimmed.isEmpty || trimmed.length > 800) return null;
+  if (trimmed.contains('?') || trimmed.contains('¿')) return null;
 
-  // Multiple amounts → AI.
-  final amountMatches = RegExp(
-    r'(\d+(?:[.,]\d{1,2})?)',
-  ).allMatches(trimmed);
-  if (amountMatches.length != 1) return null;
+  final normalized = _normalizeWordAmounts(trimmed);
+  final amounts = _amountMatches(normalized);
+  if (amounts.isEmpty) return null;
 
-  final amountRaw = amountMatches.first.group(1)!;
-  final amount = double.tryParse(amountRaw.replaceAll(',', '.'));
-  if (amount == null || amount <= 0) return null;
-
-  final lower = trimmed.toLowerCase();
-
-  // Skip questions and multi-clause sentences.
-  if (lower.contains('?') || lower.contains('¿')) return null;
-  if (RegExp(r'\b(и|and|y|та)\b').hasMatch(lower) &&
-      lower.split(RegExp(r'\s+')).length > 6) {
-    return null;
+  if (amounts.length == 1) {
+    return _parseSingle(
+      normalized,
+      amounts.first,
+      currencyHint: currencyHint,
+      categoryNames: categoryNames,
+      accountNames: accountNames,
+    );
   }
 
-  var currency = _detectCurrency(lower) ?? currencyHint;
-  var type = 'expense';
-  if (RegExp(
-    r'(earned|earn|income|зарплат|заработал|заробив|получил|доход|дохід|ingreso|cobré)',
-  ).hasMatch(lower)) {
-    type = 'income';
-  }
+  return _parseMulti(
+    normalized,
+    amounts,
+    currencyHint: currencyHint,
+    categoryNames: categoryNames,
+    accountNames: accountNames,
+  );
+}
 
+class _AmountHit {
+  const _AmountHit({
+    required this.amount,
+    required this.start,
+    required this.end,
+    this.currency,
+  });
+
+  final double amount;
+  final int start;
+  final int end;
+  final String? currency;
+}
+
+final _amountRe = RegExp(
+  r'(?:(€|\$|£|₴|₽|¥)\s*)?'
+  r'(\d+(?:[.,]\d{1,2})?)'
+  r'(?:\s*(€|\$|£|₴|₽|¥|euros?|eur|usd|uah|pln|gbp|грн|руб|евро|доллар(?:ов|а)?))?',
+  caseSensitive: false,
+);
+
+List<_AmountHit> _amountMatches(String text) {
+  final out = <_AmountHit>[];
+  for (final m in _amountRe.allMatches(text)) {
+    final raw = m.group(2);
+    if (raw == null) continue;
+    final amount = double.tryParse(raw.replaceAll(',', '.'));
+    if (amount == null || amount <= 0) continue;
+    final sym = m.group(1) ?? m.group(3);
+    out.add(
+      _AmountHit(
+        amount: amount,
+        start: m.start,
+        end: m.end,
+        currency: _currencyFromToken(sym),
+      ),
+    );
+  }
+  return out;
+}
+
+String? _currencyFromToken(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  final t = raw.toLowerCase();
+  if (t == '€' || t.startsWith('eur') || t == 'евро') return 'EUR';
+  if (t == r'$' || t.startsWith('usd') || t.startsWith('доллар')) return 'USD';
+  if (t == '₴' || t == 'uah' || t == 'грн') return 'UAH';
+  if (t == '£' || t == 'gbp') return 'GBP';
+  if (t == '₽' || t.startsWith('руб')) return 'RUB';
+  if (t == '¥') return 'JPY';
+  if (t == 'pln') return 'PLN';
+  return null;
+}
+
+/// "un euro" / "cinco euros" / "два евро" → digit+symbol so multi-split works.
+String _normalizeWordAmounts(String text) {
+  var t = text;
+  const pairs = <(String, String)>[
+    (r'\bun\s+euro\b', '1€'),
+    (r'\buna\s+euro\b', '1€'),
+    (r'\bun\s+euros?\b', '1€'),
+    (r'\bdos\s+euros?\b', '2€'),
+    (r'\btres\s+euros?\b', '3€'),
+    (r'\bcuatro\s+euros?\b', '4€'),
+    (r'\bcinco\s+euros?\b', '5€'),
+    (r'\bseis\s+euros?\b', '6€'),
+    (r'\bsiete\s+euros?\b', '7€'),
+    (r'\bocho\s+euros?\b', '8€'),
+    (r'\bnueve\s+euros?\b', '9€'),
+    (r'\bdiez\s+euros?\b', '10€'),
+    (r'\bодин\s+евро\b', '1€'),
+    (r'\bодна\s+евро\b', '1€'),
+    (r'\bдва\s+евро\b', '2€'),
+    (r'\bдве\s+евро\b', '2€'),
+    (r'\bтри\s+евро\b', '3€'),
+    (r'\bпять\s+евро\b', '5€'),
+    (r'\bдесять\s+евро\b', '10€'),
+    (r'\bодин\s+долар\b', r'$1'),
+    (r'\bun\s+d[oó]lar\b', r'$1'),
+  ];
+  for (final (pattern, repl) in pairs) {
+    t = t.replaceAll(RegExp(pattern, caseSensitive: false), repl);
+  }
+  return t;
+}
+
+List<TransactionDraftFromAi>? _parseSingle(
+  String text,
+  _AmountHit hit, {
+  String? currencyHint,
+  List<String> categoryNames = const [],
+  List<String> accountNames = const [],
+}) {
+  // Keep old guard: very chatty single-amount prose → AI.
+  if (text.length > 120) return null;
+
+  final lower = text.toLowerCase();
+  final type = _detectType(lower);
+  final currency =
+      hit.currency ?? _detectCurrency(lower) ?? currencyHint?.toUpperCase();
   final accountHint = _matchAccount(lower, accountNames);
   final toAccountHint = _matchTransferTo(lower, accountNames, accountHint);
-
+  var resolvedType = type;
   if (toAccountHint != null &&
       accountHint != null &&
       toAccountHint.toLowerCase() != accountHint.toLowerCase() &&
       RegExp(
         r'(перевод|перевёл|перевел|переказ|transfer|traspaso)',
       ).hasMatch(lower)) {
-    type = 'transfer';
+    resolvedType = 'transfer';
   }
 
-  // Strip amount + currency tokens to leave a note.
-  var note = trimmed
-      .replaceAll(RegExp(r'\d+(?:[.,]\d{1,2})?'), ' ')
+  var note = _cleanNote(
+    text.replaceRange(hit.start, hit.end, ' '),
+    accountHint: accountHint,
+    toAccountHint: toAccountHint,
+  );
+  if (note.length < 2 && resolvedType != 'transfer') return null;
+
+  return [
+    TransactionDraftFromAi(
+      amount: hit.amount,
+      currency: currency,
+      note: note.isEmpty ? null : note,
+      categoryHint: resolvedType == 'transfer'
+          ? null
+          : _matchCategory(note, categoryNames),
+      accountHint: accountHint,
+      toAccountHint: resolvedType == 'transfer' ? toAccountHint : null,
+      type: resolvedType,
+    ),
+  ];
+}
+
+List<TransactionDraftFromAi>? _parseMulti(
+  String text,
+  List<_AmountHit> amounts, {
+  String? currencyHint,
+  List<String> categoryNames = const [],
+  List<String> accountNames = const [],
+}) {
+  if (amounts.length > 25) return null;
+
+  final globalCurrency =
+      _detectCurrency(text.toLowerCase()) ?? currencyHint?.toUpperCase();
+  final drafts = <TransactionDraftFromAi>[];
+
+  for (var i = 0; i < amounts.length; i++) {
+    final hit = amounts[i];
+    final prevEnd = i == 0 ? 0 : amounts[i - 1].end;
+    final nextStart = i + 1 < amounts.length ? amounts[i + 1].start : text.length;
+
+    final before = text.substring(prevEnd, hit.start).trim();
+    final after = text.substring(hit.end, nextStart).trim();
+    final slice = '$before $after'.trim();
+    if (slice.isEmpty && before.isEmpty && after.isEmpty) continue;
+
+    final lower = slice.toLowerCase();
+    final type = _detectType(lower);
+    var note = _cleanNote(slice);
+    // Drop leading connectors left from splitting.
+    note = note
+        .replaceFirst(
+          RegExp(
+            r'^(y\s+tambi[eé]n|и\s+ещё|и\s+также|and\s+also|tambi[eé]n|también|y|и|and)\s+',
+            caseSensitive: false,
+          ),
+          '',
+        )
+        .trim();
+    if (note.length < 2) {
+      // Still keep amount-only scraps from spoken lists.
+      note = type == 'income' ? 'income' : 'expense';
+    }
+
+    drafts.add(
+      TransactionDraftFromAi(
+        amount: hit.amount,
+        currency: hit.currency ?? globalCurrency,
+        note: note,
+        categoryHint: _matchCategory(note, categoryNames),
+        accountHint: _matchAccount(lower, accountNames),
+        type: type,
+      ),
+    );
+  }
+
+  return drafts.length >= 2 ? drafts : null;
+}
+
+String _detectType(String lower) {
+  if (RegExp(
+    r'(earned|earn|income|зарплат|заработал|заробив|получил|доход|дохід|'
+    r'ingreso|cobré|gan[eé]|ganaste|выиграл)',
+  ).hasMatch(lower)) {
+    return 'income';
+  }
+  return 'expense';
+}
+
+String _cleanNote(
+  String raw, {
+  String? accountHint,
+  String? toAccountHint,
+}) {
+  var note = raw
       .replaceAll(
         RegExp(
           r'(€|\$|£|₴|₽|¥)|(eur|usd|uah|pln|gbp|euro|euros|доллар|евро|грн|руб)',
@@ -65,9 +254,11 @@ List<TransactionDraftFromAi>? tryParseLocalTransactions(
           r'(spent|spend|paid|pay|bought|buy|cost|earned|earn|received|'
           r'потратил|потратила|купил|купила|заплатил|заработал|'
           r'витратив|купив|заплатив|заробив|gast[eé]|pagué|compré|ingreso|'
+          r'gan[eé]|también|tambien|'
           r'перевод|перевёл|перевел|переказ|transfer|с\s+карт|с\s+карты|'
-          r'с\s+карты|с\s+карточки|с\s+счета|со\s+счета|с\s+счёта|'
-          r'на\s+карт|на\s+карту|на\s+счет|на\s+счёт)',
+          r'с\s+карточки|с\s+счета|со\s+счета|с\s+счёта|'
+          r'на\s+карт|на\s+карту|на\s+счет|на\s+счёт|'
+          r'\bpor\b|\ben\s+unas?\b|\bunos?\b|\bunas?\b|\bpara\b)',
           caseSensitive: false,
         ),
         ' ',
@@ -75,10 +266,12 @@ List<TransactionDraftFromAi>? tryParseLocalTransactions(
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 
-  // Drop matched account names from the leftover note.
   if (accountHint != null) {
     note = note
-        .replaceAll(RegExp(RegExp.escape(accountHint), caseSensitive: false), ' ')
+        .replaceAll(
+          RegExp(RegExp.escape(accountHint), caseSensitive: false),
+          ' ',
+        )
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
   }
@@ -91,23 +284,7 @@ List<TransactionDraftFromAi>? tryParseLocalTransactions(
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
   }
-
-  if (note.length < 2 && type != 'transfer') return null;
-
-  final categoryHint =
-      type == 'transfer' ? null : _matchCategory(note, categoryNames);
-
-  return [
-    TransactionDraftFromAi(
-      amount: amount,
-      currency: currency?.toUpperCase(),
-      note: note.isEmpty ? null : note,
-      categoryHint: categoryHint,
-      accountHint: accountHint,
-      toAccountHint: type == 'transfer' ? toAccountHint : null,
-      type: type,
-    ),
-  ];
+  return note;
 }
 
 String? _detectCurrency(String lower) {
@@ -115,7 +292,7 @@ String? _detectCurrency(String lower) {
       RegExp(r'(eur|euro|euros|евро)').hasMatch(lower)) {
     return 'EUR';
   }
-  if (lower.contains('\$') ||
+  if (lower.contains(r'$') ||
       RegExp(r'(usd|dollar|доллар)').hasMatch(lower)) {
     return 'USD';
   }
@@ -138,17 +315,38 @@ String? _matchCategory(String note, List<String> categoryNames) {
     final cn = c.toLowerCase();
     if (cn == n || n.contains(cn) || cn.contains(n)) return c;
   }
-  // Light keyword map → first matching localized category name containing key.
   const keys = <String, List<String>>{
-    'food': ['еда', 'їжа', 'comida', 'food', 'кофе', 'кава', 'cafe', 'coffee'],
+    'food': [
+      'еда',
+      'їжа',
+      'comida',
+      'food',
+      'кофе',
+      'кава',
+      'cafe',
+      'café',
+      'coffee',
+      'хлеб',
+      'pan',
+      'leche',
+      'молоко',
+      'chuches',
+      'flores',
+      'цветы',
+      'patatas',
+      'sneakers',
+    ],
     'transport': [
       'транспорт',
       'transport',
       'такси',
       'taxi',
       'автобус',
+      'autobús',
+      'autobus',
       'bus',
       'metro',
+      'billete',
     ],
   };
   for (final entry in keys.entries) {
@@ -181,7 +379,6 @@ String? _matchAccount(String lower, List<String> accountNames) {
 
 bool _tokenIn(String hay, String token) {
   if (hay.contains(token)) return true;
-  // Soft stem: drop 1–2 trailing letters for Slavic case endings.
   if (token.length >= 4 && hay.contains(token.substring(0, token.length - 1))) {
     return true;
   }
@@ -211,15 +408,16 @@ String? _matchTransferTo(
         .toList();
     if (tokens.isEmpty) continue;
     if (!tokens.every((t) => _tokenIn(lower, t))) continue;
-    // Prefer names after "на …" / "to …".
     final last = tokens.last;
     if (RegExp(
-      r'(?:на|to|hacia)\s+[^\d]{0,24}' + RegExp.escape(last.substring(0, last.length > 1 ? last.length - 1 : last.length)),
+      r'(?:на|to|hacia)\s+[^\d]{0,24}' +
+          RegExp.escape(
+            last.substring(0, last.length > 1 ? last.length - 1 : last.length),
+          ),
     ).hasMatch(lower)) {
       return name;
     }
   }
-  // Second distinct account mentioned anywhere.
   final found = <String>[];
   for (final name in sorted) {
     final tokens = name

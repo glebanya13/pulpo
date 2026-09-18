@@ -38,7 +38,7 @@ class PulpoAiService {
   /// Primary: Flash-Lite (minimal thinking by default). One fast fallback.
   static const _primaryModel = 'gemini-3.5-flash-lite';
   static const _fallbackModels = <String>[
-    'gemini-2.5-flash-lite',
+    'gemini-2.5-flash',
   ];
 
   static const _attemptTimeout = Duration(seconds: 12);

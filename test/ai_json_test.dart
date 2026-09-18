@@ -240,14 +240,35 @@ void main() {
     expect(one.first.amount, 60);
     expect(one.first.currency, 'EUR');
     expect(one.first.note?.toLowerCase(), contains('кофе'));
+  });
 
-    expect(
-      tryParseLocalTransactions(
-        'чай 20 евро ставки 10 евро',
-        currencyHint: 'EUR',
-      ),
-      isNull,
+  test('local parse handles multi-amount spoken list', () {
+    final batch = tryParseLocalTransactions(
+      'чай 20 евро ставки 10 евро',
+      currencyHint: 'EUR',
     );
+    expect(batch, isNotNull);
+    expect(batch!, hasLength(2));
+    expect(batch[0].amount, 20);
+    expect(batch[1].amount, 10);
+  });
+
+  test('local parse handles long Spanish expense list offline', () {
+    const text =
+        'Gasté €20 en café 31 billete del autobús 40 en el taxi '
+        'un euro para unos chuches y también compré leche por cinco euros '
+        'unos sneakers por dos euros y unas patatas fritas por €20 '
+        'un euro para comprar unas flores y también gané €50 en unas apuestas.';
+    final batch = tryParseLocalTransactions(
+      text,
+      currencyHint: 'EUR',
+      categoryNames: const ['Comida', 'Transporte'],
+    );
+    expect(batch, isNotNull);
+    expect(batch!.length, greaterThanOrEqualTo(6));
+    expect(batch.any((d) => d.amount == 20 && d.type == 'expense'), isTrue);
+    expect(batch.any((d) => d.amount == 50 && d.type == 'income'), isTrue);
+    expect(batch.any((d) => d.amount == 5), isTrue);
   });
 }
 

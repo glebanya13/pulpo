@@ -9,11 +9,11 @@ import 'package:flutter/foundation.dart';
 /// iOS bundle id: `com.pulpo.app`.
 ///
 /// **Debug builds** use the debug provider on every device (simulator + phone).
-/// Copy the printed token into Firebase Console → App Check → Manage debug tokens.
+/// Copy the native UUID from Xcode/sim logs (`Firebase App Check Debug Token:`)
+/// into Firebase Console → App Check → Apps → com.pulpo.app → Manage debug tokens.
+/// Do **not** paste the JWT from `getToken()` — only the UUID.
 ///
 /// **Release / profile** use DeviceCheck (iOS) and Play Integrity (Android).
-/// Those providers must be registered in the Firebase Console before AI Logic
-/// enforcement will accept production traffic.
 Future<void> activateFirebaseAppCheck() async {
   final useDebug = kDebugMode;
 
@@ -28,14 +28,7 @@ Future<void> activateFirebaseAppCheck() async {
     try {
       final token = await FirebaseAppCheck.instance.getToken(true);
       if (token != null && token.isNotEmpty) {
-        debugPrint(
-          '═══════════════════════════════════════════════════════════\n'
-          'App Check DEBUG token (register in Firebase Console →\n'
-          'App Check → Apps → com.pulpo.app / com.pulpo.android →\n'
-          'Manage debug tokens). AI will fail until this is saved:\n'
-          '$token\n'
-          '═══════════════════════════════════════════════════════════',
-        );
+        debugPrint('App Check OK (debug provider).');
       } else {
         debugPrint(
           'App Check getToken returned null. AI will fail until a debug '
@@ -45,7 +38,8 @@ Future<void> activateFirebaseAppCheck() async {
     } catch (e, st) {
       debugPrint(
         'App Check getToken failed — Firebase AI will reject requests.\n'
-        'Fix: Firebase Console → App Check → Manage debug tokens.\n'
+        'Fix: Firebase Console → App Check → Manage debug tokens '
+        '(register the UUID from "Firebase App Check Debug Token" logs).\n'
         'Error: $e\n$st',
       );
     }
