@@ -985,7 +985,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                     fromUser: m.isFromUser,
                     time: TimeOfDay.fromDateTime(m.createdAt),
                     imagePath: m.imagePath,
-                    child: Text(
+                    child: SelectableText(
                       m.body,
                       style: TextStyle(
                         fontSize: 14,

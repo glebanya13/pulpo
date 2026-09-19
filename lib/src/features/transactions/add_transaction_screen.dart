@@ -451,7 +451,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           20,
           MediaQuery.viewPaddingOf(context).top + 6,
           20,
-          8 + MediaQuery.viewPaddingOf(context).bottom,
+          // Keep clear air above the keyboard / home indicator.
+          20 + MediaQuery.viewPaddingOf(context).bottom,
         ),
         child: Column(
           children: [
@@ -497,7 +498,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 ],
               ),
             ),
-            if (_type != TxType.transfer)
+            if (_type != TxType.transfer) ...[
+              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: ScaledElevatedButton(
@@ -505,6 +507,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   child: Text(tr.save),
                 ),
               ),
+            ],
           ],
         ),
       ),
@@ -517,15 +520,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     required String sign,
   }) {
     return SingleChildScrollView(
-      keyboardDismissBehavior:
-          ScrollViewKeyboardDismissBehavior.onDrag,padding: const EdgeInsets.only(top: 16, bottom: 16),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.only(top: 16, bottom: 16),
       child: Column(
         children: [
           _AmountInput(
             controller: _amountCtrl,
             sign: sign,
             currency: currency,
-            autofocus: widget.editId == null,
+            autofocus: false,
           ),
           const SizedBox(height: 12),
           _AiQuickActions(
