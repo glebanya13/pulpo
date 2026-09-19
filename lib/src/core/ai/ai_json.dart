@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'ai_local_parse.dart';
 import 'ai_models.dart';
 
 /// Parse model text into JSON map. Strips markdown fences if present.
@@ -47,7 +48,12 @@ String _normalizeType(Object? v) {
       s == 'доход' ||
       s == 'дохід' ||
       s == 'зарплата' ||
-      s == 'salary') {
+      s == 'salary' ||
+      s == 'sueldo' ||
+      s == 'nómina' ||
+      s == 'nomina' ||
+      s == 'wage' ||
+      s == 'paycheck') {
     return 'income';
   }
   if (s == 'transfer' ||
@@ -99,7 +105,7 @@ PeriodInsight parsePeriodInsightJson(String raw) {
 }
 
 TransactionDraftFromAi _draftFromMap(Map<String, dynamic> m) {
-  return TransactionDraftFromAi(
+  final draft = TransactionDraftFromAi(
     amount: _asDouble(m['amount']),
     currency: _asString(m['currency']),
     dateIso: _asString(m['date']),
@@ -114,6 +120,7 @@ TransactionDraftFromAi _draftFromMap(Map<String, dynamic> m) {
     ),
     type: _normalizeType(m['type']),
   );
+  return sanitizeTransactionDrafts([draft]).first;
 }
 
 /// Parses `{"transactions":[...]}` or a single draft object.

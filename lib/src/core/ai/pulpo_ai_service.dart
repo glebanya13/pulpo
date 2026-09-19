@@ -321,9 +321,19 @@ If unsure about a field, use null.
           : 'accountHint = debit/from account exact name from [$accounts] when user names it, else null. '
               'For transfers type=transfer and toAccountHint from the same list.';
       final prompt = '''
-Parse into finance transactions. JSON only: {"transactions":[{amount,currency,date,note,merchant,categoryHint,accountHint,toAccountHint,type}]}
-amount>0; currency ISO${currencyHint != null ? ' (prefer $currencyHint)' : ''}; date ISO or null; type expense|income|transfer; categoryHint from [$cats] or null.
-$accountRule
+Parse spoken/typed finance into transactions. JSON only:
+{"transactions":[{amount,currency,date,note,merchant,categoryHint,accountHint,toAccountHint,type}]}
+
+Rules:
+- amount>0; currency ISO${currencyHint != null ? ' (prefer $currencyHint)' : ''}; date ISO or null
+- type expense|income|transfer; categoryHint from [$cats] or null
+- Salary/wage words are ALWAYS income: зарплата, salary, sueldo, nómina, аванс, paycheck, доход, ingreso (pay). Food/taxi/etc. are expense.
+- $accountRule
+- note AND merchant: 1–3 word item/merchant ONLY (examples: "хлеб", "taxi", "Uber", "leche"). Never the full sentence.
+- Strip greetings/commands: "привет", "hello", "hola", "запиши расходы", "record expenses", "anota gasto".
+- One amount → one transaction. Keep order as spoken. Do not invent amounts.
+- If user lists many items, extract each amount with its nearest item word — not surrounding filler.
+
 Lang: ${_langName(locale)}.
 """$trimmed"""
 ''';
@@ -416,10 +426,16 @@ Top categories: $tops
             : ' When recording, set accountHint to an exact name from [$accounts] if the user names a debit/from account; for transfers use type=transfer and toAccountHint from the same list.';
         final prompt = '''
 Monedero AI. Reply in $lang, JSON only.
-intent "record": extract txs {amount,currency,date,note,merchant,categoryHint from [$cats],accountHint,toAccountHint,type expense|income|transfer}; short reply.$accountRule
-intent "clarify": ask ONE short question for missing amount, account, type, or transfer destination; transactions=[].
+intent "record": extract txs; short confirm reply.$accountRule
+  Each tx: {amount,currency,date,note,merchant,categoryHint from [$cats],accountHint,toAccountHint,type expense|income|transfer}
+  note/merchant = 1–3 words (item or merchant). Examples:
+    "привет запиши расходы хлеб 10 евро" → [{amount:10,currency:EUR,note:"хлеб",type:expense}]
+    "зарплата 2000 евро" → [{amount:2000,currency:EUR,note:"зарплата",type:income}]
+    "taxi 8€ and bread 12€" → two txs notes "taxi" and "bread"
+  Salary/wage (зарплата, salary, sueldo, nómina, аванс, paycheck) = type income. NEVER mark salary as expense.
+  NEVER put greetings, "record expenses", or the full transcript into note.
+intent "clarify": ONE short question if amount/account/transfer destination missing; transactions=[].
 intent "question": answer from APP DATA only; transactions=[].
-Use "clarify" when the user wants to record but amount is missing, or a transfer lacks destination. Prefer "question" only for data questions.
 
 Chat:
 $hist

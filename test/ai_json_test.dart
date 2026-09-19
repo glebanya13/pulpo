@@ -3,6 +3,7 @@ import 'package:pulpo/src/core/ai/ai_errors.dart';
 import 'package:pulpo/src/core/ai/ai_greeting.dart';
 import 'package:pulpo/src/core/ai/ai_json.dart';
 import 'package:pulpo/src/core/ai/ai_local_parse.dart';
+import 'package:pulpo/src/core/ai/ai_models.dart';
 import 'package:pulpo/src/core/ai/ai_record_hint.dart';
 import 'package:pulpo/src/core/ai/assistant_energy.dart';
 import 'package:pulpo/src/core/l10n/tr.dart';
@@ -269,6 +270,71 @@ void main() {
     expect(batch.any((d) => d.amount == 20 && d.type == 'expense'), isTrue);
     expect(batch.any((d) => d.amount == 50 && d.type == 'income'), isTrue);
     expect(batch.any((d) => d.amount == 5), isTrue);
+  });
+
+  test('local parse strips greetings and record commands from note', () {
+    final one = tryParseLocalTransactions(
+      'привет запиши расходы хлеб 10 евро',
+      currencyHint: 'EUR',
+    );
+    expect(one, isNotNull);
+    expect(one!.first.amount, 10);
+    expect(one.first.currency, 'EUR');
+    final note = one.first.note!.toLowerCase();
+    expect(note, contains('хлеб'));
+    expect(note, isNot(contains('привет')));
+    expect(note, isNot(contains('запиши')));
+    expect(note, isNot(contains('расход')));
+  });
+
+  test('local parse shortens English record command to item', () {
+    final one = tryParseLocalTransactions(
+      'hello record expenses bread 10 euros',
+      currencyHint: 'EUR',
+    );
+    expect(one, isNotNull);
+    expect(one!.first.amount, 10);
+    final note = one.first.note!.toLowerCase();
+    expect(note, contains('bread'));
+    expect(note, isNot(contains('hello')));
+    expect(note, isNot(contains('record')));
+  });
+
+  test('chatty multi with greetings defers to Gemini (null local)', () {
+    final batch = tryParseLocalTransactions(
+      'привет запиши расходы хлеб 10 евро и такси 8 евро потому что ездил',
+      currencyHint: 'EUR',
+    );
+    expect(batch, isNull);
+  });
+
+  test('sanitizeLedgerLabel strips commands from long AI notes', () {
+    final cleaned = sanitizeLedgerLabel(
+      'привет запиши расходы на хлеб пожалуйста',
+    );
+    expect(cleaned, isNotNull);
+    expect(cleaned!.toLowerCase(), contains('хлеб'));
+    expect(cleaned.toLowerCase(), isNot(contains('привет')));
+  });
+
+  test('salary is income locally and when Gemini mislabels expense', () {
+    final one = tryParseLocalTransactions(
+      'зарплата 2000 евро',
+      currencyHint: 'EUR',
+    );
+    expect(one, isNotNull);
+    expect(one!.first.type, 'income');
+    expect(one.first.amount, 2000);
+
+    final fixed = sanitizeTransactionDrafts([
+      const TransactionDraftFromAi(
+        amount: 2000,
+        currency: 'EUR',
+        note: 'зарплата',
+        type: 'expense',
+      ),
+    ]);
+    expect(fixed.first.type, 'income');
   });
 }
 

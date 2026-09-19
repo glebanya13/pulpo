@@ -2,7 +2,7 @@ import 'ai_models.dart';
 
 /// Fast path: parse spoken/typed expense lines without calling Gemini.
 /// Handles a single amount or a list of amounts in one message.
-/// Returns null when the text is too ambiguous for local rules.
+/// Returns null when the text is too ambiguous for local rules (caller uses Gemini).
 List<TransactionDraftFromAi>? tryParseLocalTransactions(
   String text, {
   String? currencyHint,
@@ -16,6 +16,11 @@ List<TransactionDraftFromAi>? tryParseLocalTransactions(
   final normalized = _normalizeWordAmounts(trimmed);
   final amounts = _amountMatches(normalized);
   if (amounts.isEmpty) return null;
+
+  // Chatty multi-amount speech → Gemini (local splits make garbage notes).
+  if (amounts.length >= 2 && _isChattySpeech(normalized)) {
+    return null;
+  }
 
   if (amounts.length == 1) {
     return _parseSingle(
@@ -34,6 +39,92 @@ List<TransactionDraftFromAi>? tryParseLocalTransactions(
     categoryNames: categoryNames,
     accountNames: accountNames,
   );
+}
+
+/// True when local multi-split would mangle notes — prefer Gemini.
+bool _isChattySpeech(String text) {
+  final lower = text.toLowerCase();
+  if (_hasGreetingOrRecordCommand(lower)) return true;
+  // Dictation / narrative filler (not list words like "también").
+  if (RegExp(
+    r'(потому\s+что|because|например|for\s+example|por\s+ejemplo|'
+    r'and\s+then\s+i|сначала\s+я|я\s+(говорил|сказала|сказал)|'
+    r'i\s+(said|told|spoke)|me\s+dijo)',
+    caseSensitive: false,
+  ).hasMatch(lower)) {
+    return true;
+  }
+  // Very long multi-amount with lots of words per amount.
+  if (text.length > 220) {
+    final amounts = _amountMatches(text);
+    if (amounts.length >= 2 && text.length / amounts.length > 50) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool _hasGreetingOrRecordCommand(String lower) {
+  return RegExp(
+    r'(^|[^\p{L}\p{N}_])('
+    r'привет|здравствуй(?:те)?|хай|hello|hi|hey|hola|buenas?|'
+    r'запиши|записывай|запишите|добавь|добавить|внеси|внести|'
+    r'record|anota|anotar|registra|registrar|'
+    r'расход(?:ы|ов)?|доход(?:ы|ов)?|expense[s]?|gasto[s]?'
+    r')(?=$|[^\p{L}\p{N}_])',
+    caseSensitive: false,
+    unicode: true,
+  ).hasMatch(lower);
+}
+
+/// Shorten/clean note or merchant from local or Gemini output.
+String? sanitizeLedgerLabel(String? raw) {
+  if (raw == null) return null;
+  final cleaned = _cleanNote(raw);
+  if (cleaned.length < 2) return null;
+  return cleaned;
+}
+
+/// Apply [sanitizeLedgerLabel] to note/merchant on every draft.
+List<TransactionDraftFromAi> sanitizeTransactionDrafts(
+  List<TransactionDraftFromAi> drafts,
+) {
+  return drafts.map((d) {
+    final note = sanitizeLedgerLabel(d.note);
+    final merchant = sanitizeLedgerLabel(d.merchant);
+    // Prefer the shorter clean label as note when both exist.
+    String? bestNote = note;
+    if (merchant != null) {
+      if (bestNote == null || merchant.length < bestNote.length) {
+        bestNote = merchant;
+      }
+    }
+    final blob = [
+      d.note,
+      d.merchant,
+      bestNote,
+      merchant,
+      d.categoryHint,
+    ].whereType<String>().join(' ').toLowerCase();
+    var type = d.type;
+    if (type != 'transfer' && _looksLikeIncome(blob)) {
+      type = 'income';
+    }
+    return d.copyWith(
+      note: bestNote ?? d.note ?? d.merchant,
+      merchant: merchant ?? d.merchant,
+      type: type,
+    );
+  }).toList();
+}
+
+bool _looksLikeIncome(String lower) {
+  return RegExp(
+    r'(зарплат|заработн|аванс|преми|salary|salaries|wage|wages|paycheck|'
+    r'payroll|income|earned|sueldo|n[oó]mina|ingreso|доход|дохід|'
+    r'заработал|заробив|получил|cobr[eé]|gan[eé]|ganaste|выиграл)',
+    caseSensitive: false,
+  ).hasMatch(lower);
 }
 
 class _AmountHit {
@@ -227,20 +318,19 @@ List<TransactionDraftFromAi>? _parseMulti(
 }
 
 String _detectType(String lower) {
-  if (RegExp(
-    r'(earned|earn|income|зарплат|заработал|заробив|получил|доход|дохід|'
-    r'ingreso|cobré|gan[eé]|ganaste|выиграл)',
-  ).hasMatch(lower)) {
+  if (_looksLikeIncome(lower)) {
     return 'income';
   }
   return 'expense';
 }
 
+/// Strip commands/filler and keep a short merchant/item label for the ledger.
 String _cleanNote(
   String raw, {
   String? accountHint,
   String? toAccountHint,
 }) {
+  // Dart `\b` is ASCII-only — use explicit edges for ru/uk/es words.
   var note = raw
       .replaceAll(
         RegExp(
@@ -248,6 +338,21 @@ String _cleanNote(
           caseSensitive: false,
         ),
         ' ',
+      )
+      // Greetings + “record this” commands — never part of the note.
+      .replaceAllMapped(
+        RegExp(
+          r'(^|[^\p{L}\p{N}_])('
+          r'привет|здравствуй(?:те)?|хай|hello|hi|hey|hola|buenas?|'
+          r'запиши|записывай|запишите|добавь|добавить|внеси|внести|'
+          r'record|add|log|save|anota|anotar|registra|registrar|'
+          r'расход(?:ы|ов)?|доход(?:ы|ов)?|трат[аыу]|expense[s]?|income|'
+          r'gasto[s]?|ingreso[s]?|операци[юя]|transaction[s]?'
+          r')(?=$|[^\p{L}\p{N}_])',
+          caseSensitive: false,
+          unicode: true,
+        ),
+        (m) => '${m[1]} ',
       )
       .replaceAll(
         RegExp(
@@ -258,11 +363,14 @@ String _cleanNote(
           r'перевод|перевёл|перевел|переказ|transfer|с\s+карт|с\s+карты|'
           r'с\s+карточки|с\s+счета|со\s+счета|с\s+счёта|'
           r'на\s+карт|на\s+карту|на\s+счет|на\s+счёт|'
-          r'\bpor\b|\ben\s+unas?\b|\bunos?\b|\bunas?\b|\bpara\b)',
+          r'\bpor\b|\ben\s+unas?\b|\bunos?\b|\bunas?\b|\bpara\b|'
+          r'porque|потому\s+что|так\s+как|because|'
+          r'вчера|сегодня|завтра|ayer|hoy|yesterday|today)',
           caseSensitive: false,
         ),
         ' ',
       )
+      .replaceAll(RegExp(r'(?:^|[^\p{L}])en(?=$|[^\p{L}])', caseSensitive: false, unicode: true), ' ')
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 
@@ -284,7 +392,25 @@ String _cleanNote(
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
   }
-  return note;
+
+  return _compactNote(note);
+}
+
+/// Prefer a short item/merchant label (last meaningful words).
+String _compactNote(String note) {
+  if (note.isEmpty) return note;
+  final words = note
+      .split(RegExp(r'\s+'))
+      .where((w) => w.length > 1)
+      .where((w) => !RegExp(r'^[\d.,]+$').hasMatch(w))
+      .toList();
+  if (words.isEmpty) return note;
+  if (words.length <= 3 && note.length <= 40) {
+    return words.join(' ');
+  }
+  // Spoken prose: keep the last 1–3 content words near the amount.
+  final take = words.length >= 3 ? 3 : words.length;
+  return words.sublist(words.length - take).join(' ');
 }
 
 String? _detectCurrency(String lower) {
