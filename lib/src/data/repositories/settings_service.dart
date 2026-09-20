@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/ai/ai_category_rules.dart';
 import '../../core/currencies.dart';
 import 'account_repository.dart';
 
@@ -26,6 +27,7 @@ class SettingsService {
   static const _kLastName = 'last_name';
   static const _kBirthday = 'birthday';
   static const _kGender = 'gender';
+  static const _kAiCategoryRules = 'ai_category_rules';
 
   bool get onboardingDone => _prefs.getBool(_kOnboardingDone) ?? false;
   Future<void> setOnboardingDone(bool v) =>
@@ -154,6 +156,25 @@ class SettingsService {
   /// Sample / App Review seed — must never be uploaded as the user's cloud data.
   bool get isDemoData => _prefs.getBool(_kDemoData) ?? false;
   Future<void> setDemoData(bool v) => _prefs.setBool(_kDemoData, v);
+
+  /// Learned merchant/note → category mappings for the AI assistant.
+  List<AiCategoryRule> get aiCategoryRules =>
+      decodeAiCategoryRules(_prefs.getString(_kAiCategoryRules));
+
+  Future<void> setAiCategoryRules(List<AiCategoryRule> rules) =>
+      _prefs.setString(_kAiCategoryRules, encodeAiCategoryRules(rules));
+
+  Future<void> learnAiCategoryRule({
+    required String pattern,
+    required String categoryName,
+  }) async {
+    final next = upsertAiCategoryRule(
+      aiCategoryRules,
+      pattern: pattern,
+      categoryName: categoryName,
+    );
+    await setAiCategoryRules(next);
+  }
 }
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(

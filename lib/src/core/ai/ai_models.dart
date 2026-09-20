@@ -1,6 +1,18 @@
 /// DTOs for Firebase AI Logic (Gemini) structured JSON responses.
 library;
 
+class ReceiptLineItem {
+  const ReceiptLineItem({
+    this.amount,
+    this.note,
+    this.categoryHint,
+  });
+
+  final double? amount;
+  final String? note;
+  final String? categoryHint;
+}
+
 class ReceiptParseResult {
   const ReceiptParseResult({
     this.amount,
@@ -10,6 +22,7 @@ class ReceiptParseResult {
     this.note,
     this.categoryHint,
     this.type = 'expense',
+    this.items = const [],
   });
 
   final double? amount;
@@ -19,12 +32,17 @@ class ReceiptParseResult {
   final String? note;
   final String? categoryHint;
   final String type;
+  /// Line items when the receipt lists multiple products.
+  final List<ReceiptLineItem> items;
 
   DateTime? get date {
     final raw = dateIso;
     if (raw == null || raw.isEmpty) return null;
     return DateTime.tryParse(raw);
   }
+
+  bool get hasLineItems =>
+      items.where((i) => i.amount != null && i.amount! > 0).length >= 2;
 }
 
 class TransactionDraftFromAi {

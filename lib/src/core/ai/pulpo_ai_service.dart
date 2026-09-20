@@ -11,11 +11,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/error_log_repository.dart';
+import 'ai_category_rules.dart';
 import 'ai_errors.dart';
+import 'ai_few_shot.dart';
 import 'ai_greeting.dart';
 import 'ai_json.dart';
 import 'ai_local_parse.dart';
 import 'ai_models.dart';
+import 'ai_record_hint.dart';
 
 export 'ai_errors.dart' show PulpoAiException, AiErrorCode;
 
@@ -24,6 +27,22 @@ typedef AiErrorLogger = Future<void> Function(
   Object error,
   StackTrace? stackTrace,
 );
+
+typedef AiPartialCallback = void Function(String partialText);
+
+/// Compact account lines for NL prompts: name + currency + balance.
+String formatAccountsForAi(
+  List<({String name, String currency, double balance})> accounts, {
+  int limit = 24,
+}) {
+  if (accounts.isEmpty) return '';
+  return accounts.take(limit).map((a) {
+    final bal = a.balance.toStringAsFixed(
+      a.balance.abs() >= 100 ? 0 : 2,
+    );
+    return '${a.name} (${a.currency}, bal $bal)';
+  }).join(', ');
+}
 
 class PulpoAiService {
   PulpoAiService({
@@ -42,6 +61,7 @@ class PulpoAiService {
   ];
 
   static const _attemptTimeout = Duration(seconds: 12);
+  static const _strongAttemptTimeout = Duration(seconds: 22);
 
   FirebaseAI? _firebaseAi;
   final _modelCache = <String, GenerativeModel>{};
@@ -95,7 +115,7 @@ class PulpoAiService {
       generationConfig: GenerationConfig(
         temperature: json ? 0.1 : 0.3,
         responseMimeType: json ? 'application/json' : null,
-        maxOutputTokens: json ? 1536 : 768,
+        maxOutputTokens: json ? 2048 : 768,
         thinkingConfig:
             disableThinking ? ThinkingConfig(thinkingBudget: 0) : null,
       ),
@@ -124,18 +144,23 @@ class PulpoAiService {
     List<Content> contents, {
     required String label,
     bool json = true,
+    bool preferStrong = false,
+    AiPartialCallback? onPartial,
   }) async {
     _requireSignedIn();
     await _ensureAuthWarm();
 
-    // Primary → one fallback. Retry without JSON mime only after those fail.
+    final orderedModels = preferStrong
+        ? <String>[..._fallbackModels, _primaryModel]
+        : <String>[_primaryModel, ..._fallbackModels];
+    final timeout =
+        preferStrong ? _strongAttemptTimeout : _attemptTimeout;
+
+    // Primary (or strong) → fallback. Retry without JSON mime only after those fail.
     final attempts = <({String model, bool json})>[
-      (model: _primaryModel, json: json),
-      for (final m in _fallbackModels) (model: m, json: json),
-      if (json) ...[
-        (model: _primaryModel, json: false),
-        for (final m in _fallbackModels) (model: m, json: false),
-      ],
+      for (final m in orderedModels) (model: m, json: json),
+      if (json)
+        for (final m in orderedModels) (model: m, json: false),
     ];
 
     PulpoAiException? lastError;
@@ -149,11 +174,21 @@ class PulpoAiService {
             debugPrint('MonederoAI[$label] App Check refresh: $e');
           }
         }
-        final response = await _model(
+        final model = _model(
           name: attempt.model,
           json: attempt.json,
-        ).generateContent(contents).timeout(_attemptTimeout);
-        final text = response.text;
+        );
+        final text = onPartial != null
+            ? await _streamText(
+                model,
+                contents,
+                timeout: timeout,
+                onPartial: onPartial,
+              )
+            : await model
+                .generateContent(contents)
+                .timeout(timeout)
+                .then((r) => r.text);
         if (text == null || text.trim().isEmpty) {
           throw const PulpoAiException(AiErrorCode.emptyResponse);
         }
@@ -206,6 +241,49 @@ class PulpoAiService {
     throw failed;
   }
 
+  Future<String> _streamText(
+    GenerativeModel model,
+    List<Content> contents, {
+    required Duration timeout,
+    required AiPartialCallback onPartial,
+  }) async {
+    final buf = StringBuffer();
+    await Future(() async {
+      await for (final chunk in model.generateContentStream(contents)) {
+        final piece = chunk.text;
+        if (piece == null || piece.isEmpty) continue;
+        buf.write(piece);
+        final preview = _previewForUi(buf.toString());
+        if (preview.isNotEmpty) onPartial(preview);
+      }
+    }).timeout(timeout);
+    return buf.toString();
+  }
+
+  /// Soft preview for the busy bubble (strip JSON noise when present).
+  static String _previewForUi(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return '';
+    // Prefer streaming "reply" field from assistant JSON.
+    final replyMatch = RegExp(
+      r'"reply"\s*:\s*"((?:\\.|[^"\\])*)',
+      dotAll: true,
+    ).firstMatch(trimmed);
+    if (replyMatch != null) {
+      final reply = replyMatch
+          .group(1)!
+          .replaceAll(r'\"', '"')
+          .replaceAll(r'\n', '\n');
+      if (reply.trim().isNotEmpty) return reply.trim();
+    }
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      // Don't flash raw JSON braces at the user.
+      return '';
+    }
+    if (trimmed.length <= 280) return trimmed;
+    return trimmed.substring(trimmed.length - 280);
+  }
+
   Future<T> _withRetryParse<T>(
     Future<String> Function() call,
     T Function(String) parse,
@@ -247,6 +325,7 @@ class PulpoAiService {
     required String locale,
     required List<String> categoryNames,
     String? currencyHint,
+    List<AiCategoryRule> categoryRules = const [],
   }) {
     return _withRetryParse(() async {
       final bytes = await image.readAsBytes();
@@ -254,10 +333,16 @@ class PulpoAiService {
           ? 'image/png'
           : 'image/jpeg';
       final cats = _catsForPrompt(categoryNames, limit: 20);
+      final rules = categoryRulesPromptBlock(categoryRules, limit: 20);
       final prompt = '''
 You are a receipt parser for a personal finance app.
 Reply with JSON only. Language for merchant/note/categoryHint: ${_langName(locale)}.
-Extract: amount (number), currency (ISO 4217 if clear${currencyHint != null ? ', prefer $currencyHint' : ''}), date (ISO-8601 if found), merchant, note (short), categoryHint (best match from: [$cats] or null), type ("expense" or "income").
+Extract: amount (number = TOTAL if present), currency (ISO 4217 if clear${currencyHint != null ? ', prefer $currencyHint' : ''}), date (ISO-8601 if found), merchant, note (short), categoryHint (best match from: [$cats] or null), type ("expense" or "income").
+When the receipt lists multiple product lines with prices, also fill:
+  items: [{amount, note (1–3 words product name), categoryHint from list or null}, ...]
+If only a total is clear and line items are unreadable, use items: [].
+Do not invent line items. Prefer splitting when ≥2 priced lines are readable.
+$rules
 If unsure about a field, use null.
 ''';
       return _generate(
@@ -268,6 +353,7 @@ If unsure about a field, use null.
           ]),
         ],
         label: 'receipt',
+        preferStrong: true,
       );
     }, parseReceiptJson);
   }
@@ -277,68 +363,82 @@ If unsure about a field, use null.
     required String locale,
     required List<String> categoryNames,
     List<String> accountNames = const [],
+    String? accountContext,
     String? currencyHint,
+    bool fromSpeech = false,
+    List<AiCategoryRule> categoryRules = const [],
   }) async {
     final batch = await parseNaturalLanguageBatch(
       text,
       locale: locale,
       categoryNames: categoryNames,
       accountNames: accountNames,
+      accountContext: accountContext,
       currencyHint: currencyHint,
+      fromSpeech: fromSpeech,
+      categoryRules: categoryRules,
     );
     return batch.first;
   }
 
   /// Parse one spoken/typed message into one or more transaction drafts.
+  /// Always uses Gemini (no on-device local parse) — natural speech like Budget IA.
   Future<List<TransactionDraftFromAi>> parseNaturalLanguageBatch(
     String text, {
     required String locale,
     required List<String> categoryNames,
     List<String> accountNames = const [],
+    String? accountContext,
     String? currencyHint,
+    bool fromSpeech = false,
+    List<AiCategoryRule> categoryRules = const [],
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) {
       throw const PulpoAiException(AiErrorCode.emptyInput);
     }
 
-    final local = tryParseLocalTransactions(
-      trimmed,
-      currencyHint: currencyHint,
-      categoryNames: categoryNames,
-      accountNames: accountNames,
-    );
-    if (local != null && local.isNotEmpty) {
-      debugPrint('MonederoAI[nl_batch] local parse (${local.length})');
-      return local;
-    }
-
-    return _withRetryParse(() async {
+    final parsed = await _withRetryParse(() async {
       final cats = _catsForPrompt(categoryNames);
-      final accounts = _catsForPrompt(accountNames, limit: 24);
-      final accountRule = accountNames.isEmpty
+      final accountsBlob = (accountContext != null && accountContext.isNotEmpty)
+          ? accountContext
+          : _catsForPrompt(accountNames, limit: 24);
+      final hasAccounts = accountsBlob.isNotEmpty;
+      final accountRule = !hasAccounts
           ? 'accountHint/toAccountHint null.'
-          : 'accountHint = debit/from account exact name from [$accounts] when user names it, else null. '
+          : 'Accounts (name, currency, balance): [$accountsBlob]. '
+              'accountHint = debit/from account exact name when user names it, else null. '
               'For transfers type=transfer and toAccountHint from the same list.';
+      final rules = categoryRulesPromptBlock(categoryRules);
+      final fewShot = fewShotBlockForLocale(locale);
       final prompt = '''
-Parse spoken/typed finance into transactions. JSON only:
-{"transactions":[{amount,currency,date,note,merchant,categoryHint,accountHint,toAccountHint,type}]}
+You are a personal finance parser (like Budget AI). User speaks or types naturally — extract ALL transactions.
+JSON only: {"transactions":[{amount,currency,date,note,merchant,categoryHint,accountHint,toAccountHint,type}]}
 
 Rules:
 - amount>0; currency ISO${currencyHint != null ? ' (prefer $currencyHint)' : ''}; date ISO or null
-- type expense|income|transfer; categoryHint from [$cats] or null
-- Salary/wage words are ALWAYS income: зарплата, salary, sueldo, nómina, аванс, paycheck, доход, ingreso (pay). Food/taxi/etc. are expense.
+- type expense|income|transfer; categoryHint MUST be from [$cats] or null
 - $accountRule
-- note AND merchant: 1–3 word item/merchant ONLY (examples: "хлеб", "taxi", "Uber", "leche"). Never the full sentence.
-- Strip greetings/commands: "привет", "hello", "hola", "запиши расходы", "record expenses", "anota gasto".
-- One amount → one transaction. Keep order as spoken. Do not invent amounts.
-- If user lists many items, extract each amount with its nearest item word — not surrounding filler.
+$rules
+$fewShot
+- Natural speech is OK. Split multiple amounts into separate txs.
+- note/merchant: 1–3 words (item or merchant), NEVER the full utterance or greetings/commands
+- Salary/wage/cashback/refund → ALWAYS income (зарплата, salary, sueldo, nómina, аванс, paycheck, кешбек, возврат, ingreso de sueldo)
+- Keep spoken order. Do not invent amounts. Prefer categoryHint from the list when clear.
 
 Lang: ${_langName(locale)}.
 """$trimmed"""
 ''';
-      return _generate([Content.text(prompt)], label: 'nl_batch');
+      return _generate(
+        [Content.text(prompt)],
+        label: 'nl_batch',
+        preferStrong: fromSpeech || needsStrongAiModel(trimmed),
+      );
     }, parseTransactionDraftBatchJson);
+    return applyAiCategoryRules(
+      retypeDraftsFromSource(parsed, trimmed),
+      categoryRules,
+    );
   }
 
   Future<CategorySuggestion?> suggestCategory({
@@ -394,8 +494,12 @@ Top categories: $tops
     required String locale,
     required List<String> categoryNames,
     List<String> accountNames = const [],
+    String? accountContext,
     required String currencyHint,
     required List<({String role, String text})> history,
+    bool fromSpeech = false,
+    List<AiCategoryRule> categoryRules = const [],
+    AiPartialCallback? onPartial,
   }) async {
     final trimmed = userMessage.trim();
     if (trimmed.isEmpty) {
@@ -410,9 +514,12 @@ Top categories: $tops
     }
 
     try {
-      return await _withRetryParse(() async {
+      final turn = await _withRetryParse(() async {
         final cats = _catsForPrompt(categoryNames);
-        final accounts = _catsForPrompt(accountNames, limit: 24);
+        final accountsBlob =
+            (accountContext != null && accountContext.isNotEmpty)
+                ? accountContext
+                : _catsForPrompt(accountNames, limit: 24);
         final lang = _langName(locale);
         final recent = history.length <= 8
             ? history
@@ -421,21 +528,21 @@ Top categories: $tops
             .map((h) =>
                 '${h.role == 'user' ? 'User' : 'Assistant'}: ${h.text}')
             .join('\n');
-        final accountRule = accountNames.isEmpty
+        final accountRule = accountsBlob.isEmpty
             ? ''
-            : ' When recording, set accountHint to an exact name from [$accounts] if the user names a debit/from account; for transfers use type=transfer and toAccountHint from the same list.';
+            : ' When recording, set accountHint to an exact name from Accounts [$accountsBlob] if the user names a debit/from account; for transfers use type=transfer and toAccountHint from the same list.';
+        final rules = categoryRulesPromptBlock(categoryRules);
+        final fewShot = fewShotBlockForLocale(locale);
         final prompt = '''
-Monedero AI. Reply in $lang, JSON only.
-intent "record": extract txs; short confirm reply.$accountRule
+Pulpo budget assistant (natural speech, like Budget AI). Reply in $lang, JSON only.
+intent "record": extract ALL txs from casual speech; short confirm reply.$accountRule
   Each tx: {amount,currency,date,note,merchant,categoryHint from [$cats],accountHint,toAccountHint,type expense|income|transfer}
-  note/merchant = 1–3 words (item or merchant). Examples:
-    "привет запиши расходы хлеб 10 евро" → [{amount:10,currency:EUR,note:"хлеб",type:expense}]
-    "зарплата 2000 евро" → [{amount:2000,currency:EUR,note:"зарплата",type:income}]
-    "taxi 8€ and bread 12€" → two txs notes "taxi" and "bread"
-  Salary/wage (зарплата, salary, sueldo, nómina, аванс, paycheck) = type income. NEVER mark salary as expense.
-  NEVER put greetings, "record expenses", or the full transcript into note.
+$rules
+$fewShot
+  Salary/wage/cashback/refund = income. NEVER mark those as expense after a spend list.
+  note/merchant = 1–3 words, never full transcript or greetings.
 intent "clarify": ONE short question if amount/account/transfer destination missing; transactions=[].
-intent "question": answer from APP DATA only; transactions=[].
+intent "question": answer from APP DATA only; transactions=[]. Use month totals and top categories when relevant.
 
 Chat:
 $hist
@@ -447,16 +554,56 @@ User: """$trimmed"""
 
 {"intent":"record"|"clarify"|"question","reply":"...","transactions":[...]}
 ''';
-        return _generate([Content.text(prompt)], label: 'assistant_turn');
+        return _generate(
+          [Content.text(prompt)],
+          label: 'assistant_turn',
+          preferStrong: fromSpeech || needsStrongAiModel(trimmed),
+          onPartial: onPartial,
+        );
       }, parseAssistantTurnJson);
+      if (!turn.isRecord || turn.transactions.isEmpty) return turn;
+      return AssistantTurnResult(
+        intent: turn.intent,
+        reply: turn.reply,
+        transactions: applyAiCategoryRules(
+          retypeDraftsFromSource(turn.transactions, trimmed),
+          categoryRules,
+        ),
+      );
     } on PulpoAiException catch (e) {
       if (!e.allowsChatFallback) rethrow;
+      // Soft JSON failure on a record-looking message → try batch, not chat.
+      if (looksLikeTransactionRecord(trimmed)) {
+        debugPrint('MonederoAI assistant_turn soft-fail → nl_batch: $e');
+        try {
+          final drafts = await parseNaturalLanguageBatch(
+            trimmed,
+            locale: locale,
+            categoryNames: categoryNames,
+            accountNames: accountNames,
+            accountContext: accountContext,
+            currencyHint: currencyHint,
+            fromSpeech: fromSpeech,
+            categoryRules: categoryRules,
+          );
+          if (drafts.isNotEmpty) {
+            return AssistantTurnResult(
+              intent: 'record',
+              reply: '',
+              transactions: drafts,
+            );
+          }
+        } catch (batchErr) {
+          debugPrint('MonederoAI assistant_turn batch retry failed: $batchErr');
+        }
+      }
       debugPrint('MonederoAI assistant_turn fallback to chat: $e');
       final reply = await chatAboutApp(
         userMessage: trimmed,
         appContext: appContext,
         locale: locale,
         history: history,
+        onPartial: onPartial,
       );
       return AssistantTurnResult(intent: 'question', reply: reply);
     }
@@ -468,6 +615,7 @@ User: """$trimmed"""
     required String appContext,
     required String locale,
     required List<({String role, String text})> history,
+    AiPartialCallback? onPartial,
   }) async {
     final trimmed = userMessage.trim();
     if (isCasualGreeting(trimmed)) {
@@ -475,13 +623,13 @@ User: """$trimmed"""
     }
 
     final system = '''
-You are Monedero Assistant inside a personal budget app.
+You are Pulpo Assistant inside a personal budget app.
 Reply in ${_langName(locale)}. Be concise and clear.
 
 Hard rules:
 - Use ONLY facts from APP DATA below. Do not invent numbers, accounts, or transactions.
 - Do NOT give financial, investment, tax, credit, or budgeting advice. Do not recommend what to buy, cut, save, invest, or borrow.
-- You may restate, filter, compare, and explain what is already in APP DATA (balances, recent txs, budgets, goals, debts).
+- You may restate, filter, compare, and explain what is already in APP DATA (balances, month totals, top categories, recent txs, budgets, goals, debts).
 - If the user asks for advice or anything outside APP DATA, politely refuse and say you can only talk about data already in the app.
 - If APP DATA does not contain the answer, say you don't have that information in the app.
 
@@ -502,7 +650,12 @@ $hist
 
 User message: """$trimmed"""
 ''';
-    return _generate([Content.text(prompt)], label: 'chat', json: false);
+    return _generate(
+      [Content.text(prompt)],
+      label: 'chat',
+      json: false,
+      onPartial: onPartial,
+    );
   }
 }
 

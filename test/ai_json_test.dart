@@ -336,5 +336,71 @@ void main() {
     ]);
     expect(fixed.first.type, 'income');
   });
+
+  test('mixed spends then salary retyped from source when AI drops keyword', () {
+    const source =
+        'потратил 10 евро на это, 20 евро на это, 5 евро на другое. '
+        'и также мне пришла зарплата в размере 3000 евро';
+    final fixed = retypeDraftsFromSource(
+      const [
+        TransactionDraftFromAi(
+          amount: 10,
+          currency: 'EUR',
+          note: 'это',
+          type: 'expense',
+        ),
+        TransactionDraftFromAi(
+          amount: 20,
+          currency: 'EUR',
+          note: 'это',
+          type: 'expense',
+        ),
+        TransactionDraftFromAi(
+          amount: 5,
+          currency: 'EUR',
+          note: 'другое',
+          type: 'expense',
+        ),
+        TransactionDraftFromAi(
+          amount: 3000,
+          currency: 'EUR',
+          note: 'также',
+          type: 'expense',
+        ),
+      ],
+      source,
+    );
+    expect(fixed.map((d) => d.type).toList(), [
+      'expense',
+      'expense',
+      'expense',
+      'income',
+    ]);
+  });
+
+  test('parses receipt with line items', () {
+    final r = parseReceiptJson('''
+{"amount":57,"currency":"EUR","merchant":"Mercadona","type":"expense",
+ "items":[
+   {"amount":12.5,"note":"leche","categoryHint":"Comida"},
+   {"amount":44.5,"note":"fruta","category":"Comida"}
+ ]}''');
+    expect(r.amount, 57);
+    expect(r.hasLineItems, isTrue);
+    expect(r.items, hasLength(2));
+    expect(r.items.first.note, 'leche');
+    expect(r.items.last.amount, closeTo(44.5, 0.001));
+  });
+
+  test('sums receipt amount from items when total missing', () {
+    final r = parseReceiptJson('''
+{"merchant":"Cafe","items":[
+  {"amount":3,"note":"espresso"},
+  {"amount":2.5,"note":"croissant"}
+]}''');
+    expect(r.amount, closeTo(5.5, 0.001));
+    expect(r.hasLineItems, isTrue);
+  });
 }
+
 

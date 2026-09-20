@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../../core/ai/ai_category_rules.dart';
 import '../../core/ai/ai_errors.dart';
 import '../../core/ai/ai_models.dart';
 import '../../core/ai/ai_record_hint.dart';
@@ -65,6 +66,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   Timer? _listenTimer;
   Timer? _burnTimer;
   DateTime? _burnAnchor;
+  String _streamPreview = '';
+  String? _pendingRetryText;
+  bool _pendingRetryFromSpeech = false;
 
   /// Cap STT auto-restarts so a flaky mic can't drain battery / free energy.
   static const _maxSpeechRestarts = 40;
@@ -341,7 +345,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     if (_busy || _stopAndSendPending) return;
     if (!_listening) {
       final text = _input.text.trim();
-      if (text.isNotEmpty) await _send(text);
+      if (text.isNotEmpty) await _send(overrideText: text);
       return;
     }
     _stopAndSendPending = true;
@@ -349,7 +353,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       final text = _input.text.trim();
       await _stopListening();
       if (!mounted || text.isEmpty) return;
-      await _send(text);
+      await _send(overrideText: text, fromSpeech: true);
     } finally {
       _stopAndSendPending = false;
     }
@@ -365,7 +369,37 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     return open.first;
   }
 
-  Future<void> _send([String? overrideText]) async {
+  String _accountContextForAi() {
+    final allAccounts = ref.read(accountsProvider).valueOrNull ?? [];
+    final balances = ref.read(accountBalancesProvider);
+    final open = allAccounts.where((a) => !a.isArchived).toList();
+    return formatAccountsForAi([
+      for (final a in open)
+        (
+          name: a.name,
+          currency: a.currency,
+          balance: balances[a.id] ?? a.initialBalance,
+        ),
+    ]);
+  }
+
+  void _onAiPartial(String partial) {
+    if (!mounted || partial.trim().isEmpty) return;
+    setState(() {
+      _streamPreview = partial.trim();
+      _busyLabel = '';
+    });
+  }
+
+  bool _isNetworkAiError(Object e) {
+    if (e is PulpoAiException) return e.code == AiErrorCode.network;
+    return classifyAiRawError(e.toString()) == AiErrorCode.network;
+  }
+
+  Future<void> _send({
+    String? overrideText,
+    bool fromSpeech = false,
+  }) async {
     final text = (overrideText ?? _input.text).trim();
     if (text.isEmpty || _busy) return;
 
@@ -378,26 +412,36 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       _input.clear();
       _busy = true;
       _busyLabel = Tr.of(context).aiBusy;
+      _streamPreview = '';
+      _pendingRetryText = null;
     });
     await _append(isFromUser: true, body: text);
     _syncEnergyBurn();
     _scrollToEnd();
 
     try {
-      final charge = await _handleUserText(text);
+      final charge = await _handleUserText(text, fromSpeech: fromSpeech);
       if (charge) await _chargeTextTurn();
     } catch (e, st) {
       await _logError(e, st);
       if (!mounted) return;
-      await _append(
-        isFromUser: false,
-        body: describeAiError(Tr.of(context), e),
-      );
+      final tr = Tr.of(context);
+      final body = _isNetworkAiError(e)
+          ? tr.aiNeedInternet
+          : describeAiError(tr, e);
+      await _append(isFromUser: false, body: body);
+      if (_isNetworkAiError(e) && mounted) {
+        setState(() {
+          _pendingRetryText = text;
+          _pendingRetryFromSpeech = fromSpeech;
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
           _busy = false;
           _busyLabel = '';
+          _streamPreview = '';
         });
         _syncEnergyBurn();
       }
@@ -405,8 +449,22 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     }
   }
 
+  Future<void> _retryPending() async {
+    final text = _pendingRetryText;
+    if (text == null || text.isEmpty || _busy) return;
+    final fromSpeech = _pendingRetryFromSpeech;
+    setState(() {
+      _pendingRetryText = null;
+      _pendingRetryFromSpeech = false;
+    });
+    await _send(overrideText: text, fromSpeech: fromSpeech);
+  }
+
   /// Returns true when the turn should consume free-energy quota.
-  Future<bool> _handleUserText(String text) async {
+  Future<bool> _handleUserText(
+    String text, {
+    bool fromSpeech = false,
+  }) async {
     final tr = Tr.of(context);
     final locale = ref.read(settingsControllerProvider).locale;
     final welcome = tr.aiChatWelcome;
@@ -417,6 +475,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         .where((a) => !a.isArchived)
         .map((a) => a.name)
         .toList();
+    final accountContext = _accountContextForAi();
+    final categoryRules =
+        ref.read(settingsServiceProvider).aiCategoryRules;
     final account = await _resolveAccount();
     final currencyHint = account?.currency ??
         ref.read(settingsControllerProvider).baseCurrency;
@@ -427,7 +488,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     // Record-looking messages: local/AI batch only — no full app snapshot.
     if (looksLikeTransactionRecord(text)) {
       if (mounted) {
-        setState(() => _busyLabel = tr.aiParsing);
+        setState(() {
+          _busyLabel = tr.aiParsing;
+          _streamPreview = '';
+        });
       }
       try {
         final drafts =
@@ -436,7 +500,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   locale: locale,
                   categoryNames: names,
                   accountNames: accountNames,
+                  accountContext: accountContext,
                   currencyHint: currencyHint,
+                  fromSpeech: fromSpeech,
+                  categoryRules: categoryRules,
                 );
         alreadyParsedBatch = true;
         if (drafts.isNotEmpty) {
@@ -452,13 +519,20 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             welcome: welcome,
             names: names,
             accountNames: accountNames,
+            accountContext: accountContext,
             currencyHint: currencyHint,
+            fromSpeech: fromSpeech,
+            categoryRules: categoryRules,
           );
         }
       } catch (e, st) {
         await _logError(e, st);
+        if (_isNetworkAiError(e)) rethrow;
         if (mounted) {
-          setState(() => _busyLabel = tr.aiBusy);
+          setState(() {
+            _busyLabel = tr.aiBusy;
+            _streamPreview = '';
+          });
         }
         turn = await _fullAssistantTurn(
           text: text,
@@ -466,7 +540,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           welcome: welcome,
           names: names,
           accountNames: accountNames,
+          accountContext: accountContext,
           currencyHint: currencyHint,
+          fromSpeech: fromSpeech,
+          categoryRules: categoryRules,
         );
       }
     } else {
@@ -476,7 +553,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         welcome: welcome,
         names: names,
         accountNames: accountNames,
+        accountContext: accountContext,
         currencyHint: currencyHint,
+        fromSpeech: fromSpeech,
+        categoryRules: categoryRules,
       );
     }
 
@@ -486,7 +566,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         turn.transactions.isEmpty &&
         !turn.isClarify) {
       if (mounted) {
-        setState(() => _busyLabel = tr.aiParsing);
+        setState(() {
+          _busyLabel = tr.aiParsing;
+          _streamPreview = '';
+        });
       }
       try {
         final drafts =
@@ -495,7 +578,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   locale: locale,
                   categoryNames: names,
                   accountNames: accountNames,
+                  accountContext: accountContext,
                   currencyHint: currencyHint,
+                  fromSpeech: fromSpeech,
+                  categoryRules: categoryRules,
                 );
         turn = AssistantTurnResult(
           intent: 'record',
@@ -504,6 +590,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         );
       } catch (e, st) {
         await _logError(e, st);
+        if (_isNetworkAiError(e)) rethrow;
       }
     }
 
@@ -533,6 +620,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         accounts: confirmed.accounts,
         toAccounts: confirmed.toAccounts,
         tr: tr,
+        originalDrafts: turn.transactions,
       );
       if (!mounted) return false;
 
@@ -567,21 +655,30 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     required String welcome,
     required List<String> names,
     List<String> accountNames = const [],
+    String? accountContext,
     required String currencyHint,
+    bool fromSpeech = false,
+    List<AiCategoryRule> categoryRules = const [],
   }) async {
     final stored = await _chat.all();
     final prior = _chatHistory(stored, welcome);
     final scope = looksLikeBalanceQuestion(text)
         ? AppContextScope.balances
-        : AppContextScope.full;
+        : (looksLikeDeepFinanceQuestion(text)
+            ? AppContextScope.full
+            : AppContextScope.compact);
     return ref.read(pulpoAiServiceProvider).assistantTurn(
           userMessage: text,
           appContext: buildAppChatContext(ref, scope: scope),
           locale: locale,
           categoryNames: names,
           accountNames: accountNames,
+          accountContext: accountContext,
           currencyHint: currencyHint,
           history: prior,
+          fromSpeech: fromSpeech,
+          categoryRules: categoryRules,
+          onPartial: _onAiPartial,
         );
   }
 
@@ -593,9 +690,12 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     for (var i = 0; i < messages.length - 1; i++) {
       final m = messages[i];
       if (!m.isFromUser && m.body == welcome) continue;
+      // Skip long error dumps — they pollute the model context.
+      if (!m.isFromUser && m.body.length > 280) continue;
       prior.add((role: m.isFromUser ? 'user' : 'model', text: m.body));
     }
-    return prior;
+    if (prior.length <= 8) return prior;
+    return prior.sublist(prior.length - 8);
   }
 
   Future<void> _pickReceipt(ImageSource source) async {
@@ -645,18 +745,23 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             locale: locale,
             categoryNames: names,
             currencyHint: account.currency,
+            categoryRules: ref.read(settingsServiceProvider).aiCategoryRules,
           );
 
-      if (receipt.amount == null || receipt.amount! <= 0) {
+      final drafts = applyAiCategoryRules(
+        receiptToDrafts(receipt),
+        ref.read(settingsServiceProvider).aiCategoryRules,
+      );
+      if (drafts.isEmpty ||
+          drafts.every((d) => d.amount == null || d.amount! <= 0)) {
         await _append(isFromUser: false, body: tr.aiReceiptUnreadable);
         return;
       }
 
-      final draft = receiptToDraft(receipt);
       if (!mounted) return;
       final confirmed = await confirmAssistantDrafts(
         context: context,
-        drafts: [draft],
+        drafts: drafts,
         account: account,
         allAccounts: ref.read(accountsProvider).valueOrNull ?? [],
         categories: cats,
@@ -674,20 +779,38 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         toAccounts: confirmed.toAccounts,
         tr: tr,
         receiptPath: dest,
+        originalDrafts: drafts,
       );
       if (!mounted) return;
 
+      final total = confirmed.drafts.fold<double>(
+        0,
+        (s, d) => s + (d.amount ?? 0),
+      );
       await _append(
         isFromUser: false,
-        body: tr.aiAssistantReceiptSaved(
-          formatMoney(receipt.amount!, receipt.currency ?? account.currency),
-        ),
+        body: confirmed.drafts.length > 1
+            ? tr.aiAssistantRecorded(
+                confirmed.drafts.length,
+                formatMoney(total, receipt.currency ?? account.currency),
+              )
+            : tr.aiAssistantReceiptSaved(
+                formatMoney(total, receipt.currency ?? account.currency),
+              ),
       );
       await _chargeTextTurn();
     } catch (e, st) {
       await _logError(e, st);
       if (!mounted) return;
-      await _append(isFromUser: false, body: describeAiError(tr, e));
+      final body = _isNetworkAiError(e)
+          ? tr.aiNeedInternet
+          : describeAiError(tr, e);
+      await _append(isFromUser: false, body: body);
+      if (_isNetworkAiError(e) && mounted) {
+        setState(() {
+          _pendingRetryText = null; // receipt retry is photo-based; skip
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -969,13 +1092,18 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                 itemCount: messages.length + (_busy ? 1 : 0),
                 itemBuilder: (context, i) {
                   if (_busy && i == messages.length) {
+                    final preview = _streamPreview.trim();
                     return _AssistantBubble(
                       child: Text(
-                        _busyLabel.isNotEmpty ? _busyLabel : tr.aiBusy,
+                        preview.isNotEmpty
+                            ? preview
+                            : (_busyLabel.isNotEmpty ? _busyLabel : tr.aiBusy),
                         style: TextStyle(
                           fontSize: 14,
                           color: context.mutedText,
-                          fontStyle: FontStyle.italic,
+                          fontStyle: preview.isEmpty
+                              ? FontStyle.italic
+                              : FontStyle.normal,
                         ),
                       ),
                     );
@@ -1000,6 +1128,57 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                 },
               ),
             ),
+            if (_pendingRetryText != null && !_busy)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: Pressable(
+                  onTap: _retryPending,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.lime.withValues(alpha: 0.55),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          LucideIcons.refreshCw,
+                          size: 16,
+                          color: context.primaryText,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            tr.aiNeedInternet,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: context.primaryText,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          tr.retry,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: context.isDark
+                                ? AppColors.lime
+                                : AppColors.ink,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             if (_listening)
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),

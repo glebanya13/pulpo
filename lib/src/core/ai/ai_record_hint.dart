@@ -12,7 +12,7 @@ bool looksLikeTransactionRecord(String text) {
     return false;
   }
   if (RegExp(
-    r'\b(сколько|скільки|how\s+much)\b.+\b(потрат|витрат|spent|gast)',
+    r'(сколько|скільки|how\s+much).+(потрат|витрат|spent|gast|еду|comida|food)',
   ).hasMatch(t)) {
     return false;
   }
@@ -39,13 +39,23 @@ bool looksLikeTransactionRecord(String text) {
     'income',
     'expense',
     'transfer',
+    'salary',
+    'paycheck',
+    'cashback',
+    'refund',
     'потрат',
     'купил',
     'заплат',
     'заработал',
     'получил',
+    'пришла',
     'расход',
     'доход',
+    'зарплат',
+    'аванс',
+    'кешбек',
+    'кэшбек',
+    'возврат',
     'перевод',
     'перевёл',
     'перевел',
@@ -58,6 +68,9 @@ bool looksLikeTransactionRecord(String text) {
     'pagué',
     'compré',
     'ingreso',
+    'sueldo',
+    'nómina',
+    'nomina',
     'cobré',
     'traspaso',
   ];
@@ -75,4 +88,38 @@ bool looksLikeBalanceQuestion(String text) {
     r'how\s+much\s+(money|do\s+i\s+have)|cu[aá]nto\s+(tengo|dinero)|'
     r'счета|рахунки|accounts?|кошел[её]к|wallet)',
   ).hasMatch(t);
+}
+
+/// Budgets / goals / debts / category spend — needs a fuller snapshot.
+bool looksLikeDeepFinanceQuestion(String text) {
+  final t = text.trim().toLowerCase();
+  if (t.isEmpty || t.length > 240) return false;
+  if (looksLikeTransactionRecord(t)) return false;
+  return RegExp(
+    r'(бюджет|budget|цел[ьи]|goal|долг|debt|подписк|subscription|'
+    r'категор|category|потратил.*(месяц|month|еду|food|транспорт)|'
+    r'сколько.*(на|по)|топ\s+трат|overview|обзор)',
+  ).hasMatch(t);
+}
+
+/// Multi-amount / mixed income / long narrative → prefer stronger model.
+bool needsStrongAiModel(String text) {
+  final t = text.trim();
+  if (t.length > 160) return true;
+  final amounts = RegExp(r'\d+(?:[.,]\d{1,2})?').allMatches(t).length;
+  if (amounts >= 3) return true;
+  final lower = t.toLowerCase();
+  final hasIncome = RegExp(
+    r'(зарплат|аванс|преми|salary|sueldo|n[oó]mina|paycheck|кешбек|'
+    r'кэшбек|доход|ingreso|пришл|получ)',
+  ).hasMatch(lower);
+  final hasSpend = RegExp(
+    r'(потрат|купил|расход|spent|bought|gast|taxi|хлеб|еда)',
+  ).hasMatch(lower);
+  if (hasIncome && hasSpend) return true;
+  if (RegExp(r'(перевод|перевёл|перевел|transfer|traspaso)').hasMatch(lower) &&
+      amounts >= 1) {
+    return true;
+  }
+  return false;
 }

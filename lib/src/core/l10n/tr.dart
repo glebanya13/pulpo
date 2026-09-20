@@ -835,6 +835,7 @@ class Tr {
   String get aiParsing => _get('ai_parsing');
   String get aiFailed => _get('ai_failed');
   String get aiNetworkError => _get('ai_network_error');
+  String get aiNeedInternet => _get('ai_need_internet');
   String get aiBlocked => _get('ai_blocked');
   String get aiEmptyResponse => _get('ai_empty_response');
   String get aiInvalidResponse => _get('ai_invalid_response');
@@ -1646,6 +1647,8 @@ class Tr {
       'ai_failed': 'No se pudo completar la solicitud de IA. Inténtalo de nuevo.',
       'ai_network_error':
           'Sin conexión. Comprueba internet e inténtalo de nuevo.',
+      'ai_need_internet':
+          'Se necesita internet para el asistente. Reintenta cuando tengas red.',
       'ai_blocked': 'La IA bloqueó la respuesta. Reformula el mensaje.',
       'ai_empty_response': 'La IA no devolvió texto. Inténtalo de nuevo.',
       'ai_invalid_response': 'La IA devolvió un formato inesperado. Inténtalo de nuevo.',
@@ -2385,6 +2388,8 @@ class Tr {
       'ai_failed': 'Не удалось выполнить запрос к ИИ. Попробуйте ещё раз.',
       'ai_network_error':
           'Нет сети. Проверьте интернет и попробуйте ещё раз.',
+      'ai_need_internet':
+          'Для ассистента нужен интернет. Повторите, когда появится сеть.',
       'ai_blocked': 'ИИ заблокировал ответ. Переформулируйте сообщение.',
       'ai_empty_response': 'ИИ вернул пустой ответ. Попробуйте ещё раз.',
       'ai_invalid_response': 'ИИ вернул неожиданный формат. Попробуйте ещё раз.',
@@ -3123,6 +3128,8 @@ class Tr {
       'ai_failed': 'Could not complete the AI request. Try again.',
       'ai_network_error':
           'No connection. Check your internet and try again.',
+      'ai_need_internet':
+          'Internet is required for the assistant. Retry when you are online.',
       'ai_blocked': 'The AI blocked that reply. Rephrase your message.',
       'ai_empty_response': 'The AI returned an empty reply. Try again.',
       'ai_invalid_response': 'The AI returned an unexpected format. Try again.',
@@ -3795,6 +3802,8 @@ class Tr {
       'ai_failed': 'Не вдалося виконати запит до ШІ. Спробуйте ще раз.',
       'ai_network_error':
           'Немає мережі. Перевірте інтернет і спробуйте ще раз.',
+      'ai_need_internet':
+          'Для асистента потрібен інтернет. Повторіть, коли з’явиться мережа.',
       'ai_blocked': 'ШІ заблокував відповідь. Переформулюйте повідомлення.',
       'ai_empty_response': 'ШІ повернув порожню відповідь. Спробуйте ще раз.',
       'ai_invalid_response': 'ШІ повернув неочікуваний формат. Спробуйте ще раз.',

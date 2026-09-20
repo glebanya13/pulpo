@@ -118,13 +118,122 @@ List<TransactionDraftFromAi> sanitizeTransactionDrafts(
   }).toList();
 }
 
+/// Force income when [sourceText] has salary/pay words near that amount.
+///
+/// Gemini often labels every tx as expense after "потратил…" even when a later
+/// amount is clearly зарплата — notes may omit the keyword after compression.
+List<TransactionDraftFromAi> retypeDraftsFromSource(
+  List<TransactionDraftFromAi> drafts,
+  String sourceText,
+) {
+  final cleaned = sanitizeTransactionDrafts(drafts);
+  final lower = sourceText.toLowerCase();
+  final incomeHits = RegExp(
+    r'зарплат\w*|заработн\w*|аванс\w*|преми\w*|salary|salaries|wage|wages|'
+    r'paycheck|payroll|sueldo|n[oó]mina|доход\w*|дохід\w*|'
+    r'заработал\w*|заробив\w*|получ(?:ил|ила|или)\w*|пришл[аои]\w*|'
+    r'выплат\w*|начислен\w*|кешбек|кэшбек|cashback|возврат|refund|bono|bonus',
+    caseSensitive: false,
+  ).allMatches(lower);
+  if (incomeHits.isEmpty) return cleaned;
+
+  final located = _locateDraftAmounts(cleaned, lower);
+  final incomeIndexes = <int>{};
+  for (final hit in incomeHits) {
+    final kStart = hit.start;
+    final kEnd = hit.end;
+    var bestIdx = -1;
+    var bestScore = 1 << 30;
+    for (var i = 0; i < located.length; i++) {
+      final pos = located[i];
+      if (pos < 0) continue;
+      // Distance to keyword; prefer amounts after the pay word ("зарплата 3000").
+      final dist = pos < kStart
+          ? kStart - pos
+          : (pos > kEnd ? pos - kEnd : 0);
+      // Strongly prefer amounts after the pay word ("зарплата 3000").
+      final score = pos >= kStart ? dist : dist + 80;
+      if (score < bestScore && score <= 120) {
+        bestScore = score;
+        bestIdx = i;
+      }
+    }
+    if (bestIdx >= 0) incomeIndexes.add(bestIdx);
+  }
+
+  if (incomeIndexes.isEmpty) return cleaned;
+
+  return [
+    for (var i = 0; i < cleaned.length; i++)
+      if (cleaned[i].type != 'transfer' && incomeIndexes.contains(i))
+        cleaned[i].copyWith(type: 'income')
+      else
+        cleaned[i],
+  ];
+}
+
 bool _looksLikeIncome(String lower) {
   return RegExp(
     r'(зарплат|заработн|аванс|преми|salary|salaries|wage|wages|paycheck|'
     r'payroll|income|earned|sueldo|n[oó]mina|ingreso|доход|дохід|'
-    r'заработал|заробив|получил|cobr[eé]|gan[eé]|ganaste|выиграл)',
+    r'заработал|заробив|получ(?:ил|ила|или|аю|ает)|пришл[аои]|'
+    r'выплат|начислен|кешбек|кэшбек|cashback|возврат|refund|bono|bonus|'
+    r'cobr[eé]|gan[eé]|ganaste|выиграл)',
     caseSensitive: false,
   ).hasMatch(lower);
+}
+
+/// First unused occurrence of each draft amount in [lower] (draft order).
+List<int> _locateDraftAmounts(
+  List<TransactionDraftFromAi> drafts,
+  String lower,
+) {
+  final used = <int>{};
+  final positions = <int>[];
+  for (final d in drafts) {
+    final amount = d.amount;
+    if (amount == null || amount <= 0) {
+      positions.add(-1);
+      continue;
+    }
+    var found = -1;
+    for (final token in _amountSearchTokens(amount)) {
+      final re = RegExp(
+        '(?<![\\d.,])${RegExp.escape(token)}(?![\\d])',
+        caseSensitive: false,
+      );
+      for (final m in re.allMatches(lower)) {
+        if (used.contains(m.start)) continue;
+        found = m.start;
+        used.add(m.start);
+        break;
+      }
+      if (found >= 0) break;
+    }
+    positions.add(found);
+  }
+  return positions;
+}
+
+List<String> _amountSearchTokens(double amount) {
+  final tokens = <String>{};
+  if (amount == amount.roundToDouble()) {
+    final n = amount.round();
+    tokens.add('$n');
+    if (n >= 1000) {
+      final s = '$n';
+      final buf = StringBuffer();
+      for (var i = 0; i < s.length; i++) {
+        if (i > 0 && (s.length - i) % 3 == 0) buf.write('.');
+        buf.write(s[i]);
+      }
+      tokens.add(buf.toString());
+    }
+  } else {
+    tokens.add(amount.toStringAsFixed(2));
+    tokens.add(amount.toStringAsFixed(2).replaceAll('.', ','));
+  }
+  return tokens.toList();
 }
 
 class _AmountHit {
@@ -280,12 +389,17 @@ List<TransactionDraftFromAi>? _parseMulti(
     final nextStart = i + 1 < amounts.length ? amounts[i + 1].start : text.length;
 
     final before = text.substring(prevEnd, hit.start).trim();
-    final after = text.substring(hit.end, nextStart).trim();
+    final afterRaw = text.substring(hit.end, nextStart).trim();
+    // Don't pull the next clause into this item's note/type
+    // ("5€ на другое и также пришла зарплата 3000").
+    final after = _clipTrailingClause(afterRaw);
     final slice = '$before $after'.trim();
     if (slice.isEmpty && before.isEmpty && after.isEmpty) continue;
 
-    final lower = slice.toLowerCase();
-    final type = _detectType(lower);
+    // Type from nearby words only.
+    final afterForType =
+        after.length <= 18 ? after : after.substring(0, 18);
+    final type = _detectType('$before $afterForType'.toLowerCase());
     var note = _cleanNote(slice);
     // Drop leading connectors left from splitting.
     note = note
@@ -308,13 +422,25 @@ List<TransactionDraftFromAi>? _parseMulti(
         currency: hit.currency ?? globalCurrency,
         note: note,
         categoryHint: _matchCategory(note, categoryNames),
-        accountHint: _matchAccount(lower, accountNames),
+        accountHint: _matchAccount(slice.toLowerCase(), accountNames),
         type: type,
       ),
     );
   }
 
   return drafts.length >= 2 ? drafts : null;
+}
+
+/// Cut "и также / and also / …" so the next spoken clause stays separate.
+String _clipTrailingClause(String after) {
+  final cut = RegExp(
+    r'\s+(и\s+также|и\s+ещё|и\s+еще|and\s+also|y\s+tambi[eé]n|tambi[eé]n|'
+    r'также|потом|then|а\s+ещё|а\s+еще)(?=$|[^\p{L}\p{N}_])',
+    caseSensitive: false,
+    unicode: true,
+  ).firstMatch(after);
+  if (cut == null) return after;
+  return after.substring(0, cut.start).trim();
 }
 
 String _detectType(String lower) {

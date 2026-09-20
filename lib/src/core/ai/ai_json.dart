@@ -68,14 +68,36 @@ String _normalizeType(Object? v) {
 
 ReceiptParseResult parseReceiptJson(String raw) {
   final m = decodeAiJsonObject(raw);
+  final itemsRaw = m['items'] ?? m['lineItems'] ?? m['lines'];
+  final items = <ReceiptLineItem>[];
+  if (itemsRaw is List) {
+    for (final item in itemsRaw) {
+      if (item is! Map) continue;
+      final map = Map<String, dynamic>.from(item);
+      final amount = _asDouble(map['amount']);
+      if (amount == null || amount <= 0) continue;
+      items.add(
+        ReceiptLineItem(
+          amount: amount,
+          note: _asString(map['note'] ?? map['name'] ?? map['description']),
+          categoryHint: _asString(map['categoryHint'] ?? map['category']),
+        ),
+      );
+    }
+  }
+  var amount = _asDouble(m['amount']);
+  if ((amount == null || amount <= 0) && items.isNotEmpty) {
+    amount = items.fold<double>(0, (s, i) => s + (i.amount ?? 0));
+  }
   return ReceiptParseResult(
-    amount: _asDouble(m['amount']),
+    amount: amount,
     currency: _asString(m['currency']),
     dateIso: _asString(m['date']),
     merchant: _asString(m['merchant']),
     note: _asString(m['note']),
     categoryHint: _asString(m['categoryHint'] ?? m['category']),
     type: _normalizeType(m['type']),
+    items: items,
   );
 }
 

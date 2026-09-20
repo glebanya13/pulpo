@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
+import '../../core/ai/ai_category_rules.dart';
 import '../../core/ai/ai_models.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
@@ -13,6 +14,7 @@ import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
+import '../../data/repositories/settings_service.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/simple_picker_sheet.dart';
@@ -90,6 +92,26 @@ TransactionDraftFromAi receiptToDraft(ReceiptParseResult receipt) {
   );
 }
 
+/// One draft per priced line item when the receipt was split; else a single total.
+List<TransactionDraftFromAi> receiptToDrafts(ReceiptParseResult receipt) {
+  if (receipt.hasLineItems) {
+    return [
+      for (final item in receipt.items)
+        if (item.amount != null && item.amount! > 0)
+          TransactionDraftFromAi(
+            amount: item.amount,
+            currency: receipt.currency,
+            dateIso: receipt.dateIso,
+            note: item.note ?? receipt.note,
+            merchant: receipt.merchant,
+            categoryHint: item.categoryHint ?? receipt.categoryHint,
+            type: receipt.type,
+          ),
+    ];
+  }
+  return [receiptToDraft(receipt)];
+}
+
 class AssistantConfirmResult {
   const AssistantConfirmResult({
     required this.drafts,
@@ -137,10 +159,12 @@ Future<int> saveAssistantDrafts({
   required Tr tr,
   List<db.Account?> toAccounts = const [],
   String? receiptPath,
+  List<TransactionDraftFromAi>? originalDrafts,
 }) async {
   assert(drafts.length == accounts.length);
   final cats = ref.read(categoriesProvider).valueOrNull ?? [];
   final repo = ref.read(transactionRepositoryProvider);
+  final settings = ref.read(settingsServiceProvider);
   var saved = 0;
   for (var i = 0; i < drafts.length; i++) {
     final draft = drafts[i];
@@ -180,6 +204,27 @@ Future<int> saveAssistantDrafts({
         note: note,
         receiptPath: saved == 0 ? receiptPath : null,
       );
+      // Learn category rules when user kept/set a category on a short note.
+      final catLabel = draft.categoryHint?.trim();
+      final pattern = patternForCategoryLearn(draft.note, draft.merchant);
+      if (catLabel != null &&
+          catLabel.isNotEmpty &&
+          pattern != null &&
+          !draft.isTransfer) {
+        final originalHint = (originalDrafts != null &&
+                i < originalDrafts.length)
+            ? originalDrafts[i].categoryHint?.trim()
+            : null;
+        // Always reinforce when user confirmed a category; especially when they changed it.
+        if (originalHint == null ||
+            originalHint.toLowerCase() != catLabel.toLowerCase() ||
+            cat != null) {
+          await settings.learnAiCategoryRule(
+            pattern: pattern,
+            categoryName: catLabel,
+          );
+        }
+      }
     }
     saved++;
   }
@@ -635,6 +680,9 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
                               children: [
                                 _Chip(
                                   text: typeLabel,
+                                  emphasis: true,
+                                  foreground: color,
+                                  background: color.withValues(alpha: 0.14),
                                   onTap: () => _pickType(i),
                                 ),
                                 if (categoryLabel != null)
@@ -728,19 +776,33 @@ class _AssistantConfirmSheetState extends ConsumerState<AssistantConfirmSheet> {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.text, this.onTap});
+  const _Chip({
+    required this.text,
+    this.onTap,
+    this.emphasis = false,
+    this.foreground,
+    this.background,
+  });
   final String text;
   final VoidCallback? onTap;
+  final bool emphasis;
+  final Color? foreground;
+  final Color? background;
 
   @override
   Widget build(BuildContext context) {
+    final fg = foreground ?? context.mutedText;
+    final bg = background ?? context.surface;
     final child = Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: context.surface,
+        color: bg,
         borderRadius: BorderRadius.circular(8),
         border: onTap != null
-            ? Border.all(color: context.mutedText.withValues(alpha: 0.22))
+            ? Border.all(
+                color: (emphasis ? fg : context.mutedText)
+                    .withValues(alpha: emphasis ? 0.35 : 0.22),
+              )
             : null,
       ),
       child: Row(
@@ -752,9 +814,9 @@ class _Chip extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: context.mutedText,
+                fontSize: emphasis ? 12 : 11,
+                fontWeight: FontWeight.w700,
+                color: fg,
               ),
             ),
           ),
@@ -763,7 +825,7 @@ class _Chip extends StatelessWidget {
             Icon(
               LucideIcons.chevronDown,
               size: 12,
-              color: context.mutedText,
+              color: fg,
             ),
           ],
         ],

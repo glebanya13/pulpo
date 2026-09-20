@@ -248,14 +248,18 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             locale: locale,
             categoryNames: _localizedCategoryNames(tr, cats),
             currencyHint: currency,
+            categoryRules: ref.read(settingsServiceProvider).aiCategoryRules,
           );
       if (!mounted) return;
+      // Form is single-tx: use total; prefer first line note if split.
+      final firstItem =
+          result.hasLineItems ? result.items.first : null;
       _applyAiDraft(
         amount: result.amount,
         date: result.date,
-        note: result.note,
+        note: firstItem?.note ?? result.note,
         merchant: result.merchant,
-        categoryHint: result.categoryHint,
+        categoryHint: firstItem?.categoryHint ?? result.categoryHint,
         type: result.type,
       );
       _snack(tr.aiFilled);

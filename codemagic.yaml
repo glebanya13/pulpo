@@ -31,8 +31,15 @@ workflows:
         script: |
           set +e
           LOG=/tmp/flutter_build_ipa.log
+          # Use pubspec.yaml build number (after "+"), not Codemagic's PROJECT_BUILD_NUMBER.
+          BUILD_NUMBER="$(sed -n 's/^version:.*+\([0-9][0-9]*\).*/\1/p' pubspec.yaml | head -1)"
+          if [ -z "$BUILD_NUMBER" ]; then
+            echo "Missing build number in pubspec.yaml (expected version: x.y.z+N)"
+            exit 1
+          fi
+          echo "Building with CFBundleVersion=$BUILD_NUMBER from pubspec.yaml"
           flutter build ipa --release \
-            --build-number="${PROJECT_BUILD_NUMBER:-98}" \
+            --build-number="$BUILD_NUMBER" \
             --export-options-plist=/Users/builder/export_options.plist \
             2>&1 | tee "$LOG"
           STATUS=${PIPESTATUS[0]}
