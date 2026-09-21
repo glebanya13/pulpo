@@ -7,6 +7,7 @@ import 'package:pulpo/src/core/ai/ai_models.dart';
 import 'package:pulpo/src/core/ai/ai_record_hint.dart';
 import 'package:pulpo/src/core/ai/assistant_energy.dart';
 import 'package:pulpo/src/core/l10n/tr.dart';
+import 'package:pulpo/src/features/assistant/assistant_chat_format.dart';
 
 void main() {
   test('parses receipt JSON with fence and commas', () {
@@ -77,6 +78,24 @@ void main() {
     expect(turn.isRecord, isFalse);
     expect(turn.transactions, isEmpty);
     expect(turn.reply, contains('100'));
+    expect(turn.table, isNull);
+  });
+
+  test('parses assistant turn question with structured table', () {
+    final turn = parseAssistantTurnJson('''
+{"intent":"question","reply":"En enero gastaste en Transporte:","transactions":[],
+ "table":{"headers":["Categoría","Fecha","Gasto"],
+  "rows":[["Transporte","04 de Enero","\$41,789"],["Transporte","09 de Enero","\$27,156"]],
+  "total":"\$68,945"}}''');
+    expect(turn.intent, 'question');
+    expect(turn.table, isNotNull);
+    expect(turn.table!.headers, ['Categoría', 'Fecha', 'Gasto']);
+    expect(turn.table!.rows, hasLength(2));
+    expect(turn.table!.total, r'$68,945');
+    final body = composeReplyWithTable(turn.reply, turn.table);
+    expect(body, contains('| Categoría | Fecha | Gasto |'));
+    expect(body, contains('TOTAL'));
+    expect(parseChatBody(body).whereType<ChatTableBlock>(), hasLength(1));
   });
 
   test('energy units map full quota to 100', () {

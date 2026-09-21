@@ -543,6 +543,7 @@ $fewShot
   note/merchant = 1–3 words, never full transcript or greetings.
 intent "clarify": ONE short question if amount/account/transfer destination missing; transactions=[].
 intent "question": answer from APP DATA only; transactions=[]. Use month totals and top categories when relevant.
+  For multi-row spend/breakdown answers: keep reply as short intro/outro prose ONLY (no markdown pipes), and set "table":{"headers":["Category","Date","Amount"],"rows":[["…","…","…"]],"total":"…"}. Localize headers/cells. Omit table for simple one-line answers.
 
 Chat:
 $hist
@@ -552,7 +553,7 @@ $appContext
 
 User: """$trimmed"""
 
-{"intent":"record"|"clarify"|"question","reply":"...","transactions":[...]}
+{"intent":"record"|"clarify"|"question","reply":"...","transactions":[...],"table":null|{"headers":[...],"rows":[[...]],"total":"..."}}
 ''';
         return _generate(
           [Content.text(prompt)],
@@ -569,6 +570,7 @@ User: """$trimmed"""
           retypeDraftsFromSource(turn.transactions, trimmed),
           categoryRules,
         ),
+        table: turn.table,
       );
     } on PulpoAiException catch (e) {
       if (!e.allowsChatFallback) rethrow;
@@ -632,6 +634,8 @@ Hard rules:
 - You may restate, filter, compare, and explain what is already in APP DATA (balances, month totals, top categories, recent txs, budgets, goals, debts).
 - If the user asks for advice or anything outside APP DATA, politely refuse and say you can only talk about data already in the app.
 - If APP DATA does not contain the answer, say you don't have that information in the app.
+- When listing several transactions or a category breakdown with amounts, use a GitHub-flavored markdown table (header + separator + rows). Prefer columns like Category | Date | Amount (localized). Add a final TOTAL row when summing. Keep a short intro and outro sentence around the table. No ASCII art.
+- Prefer structured facts; do not invent rows not present in APP DATA.
 
 APP DATA:
 $appContext

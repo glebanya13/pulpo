@@ -141,6 +141,7 @@ class AssistantTurnResult {
     required this.intent,
     required this.reply,
     this.transactions = const [],
+    this.table,
   });
 
   /// `record` — save transactions; `clarify` — ask for missing fields;
@@ -149,9 +150,28 @@ class AssistantTurnResult {
   final String reply;
   final List<TransactionDraftFromAi> transactions;
 
+  /// Optional structured table for spend/breakdown answers (preferred over
+  /// markdown pipes inside [reply]).
+  final AiChatTable? table;
+
   bool get isRecord => intent == 'record' && transactions.isNotEmpty;
 
   bool get isClarify =>
       intent == 'clarify' ||
       (intent == 'record' && transactions.isEmpty && reply.trim().isNotEmpty);
+}
+
+/// Structured table for assistant Q&A replies (Category | Date | Amount, …).
+class AiChatTable {
+  const AiChatTable({
+    required this.headers,
+    required this.rows,
+    this.total,
+  });
+
+  final List<String> headers;
+  final List<List<String>> rows;
+
+  /// Optional total amount cell (shown as TOTAL pill).
+  final String? total;
 }

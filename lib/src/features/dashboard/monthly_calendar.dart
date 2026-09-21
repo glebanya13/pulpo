@@ -316,8 +316,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
       roundBottom: !listView || days.isEmpty || loading,
     );
 
-    final lazyDayCount =
-        listView && days.isNotEmpty ? days.length + 1 /* footer */ : 0;
+    final lazyDayCount = listView && days.isNotEmpty ? days.length : 0;
 
     return StickyScrollPage(
       useSafeArea: false,
@@ -331,28 +330,29 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
       itemBuilder: lazyDayCount == 0
           ? null
           : (context, index) {
-              if (index == days.length) {
-                return DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: context.surface,
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(18),
-                    ),
-                  ),
-                  child: const SizedBox(height: 6),
-                );
-              }
               final day = days[index];
-              return ColoredBox(
-                color: context.surface,
+              final isLast = index == days.length - 1;
+              // Bottom radius lives on the last day row (tall enough to show
+              // the full 18px curve). A 6px footer strip made corners look
+              // sharper than the chrome top.
+              return DecoratedBox(
+                decoration: BoxDecoration(
+                  color: context.surface,
+                  borderRadius: isLast
+                      ? const BorderRadius.vertical(
+                          bottom: Radius.circular(18),
+                        )
+                      : BorderRadius.zero,
+                ),
+                clipBehavior: isLast ? Clip.antiAlias : Clip.none,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  padding: EdgeInsets.fromLTRB(6, 0, 6, isLast ? 6 : 0),
                   child: _DayBlock(
                     day: day,
                     txs: grouped[day]!,
                     currency: currency,
                     locale: locale,
-                    isLast: index == days.length - 1,
+                    isLast: isLast,
                     onTapDay: () => _openDaySheet(context, day, monthTxs),
                     onTapTx: (tx) => context.push('/tx/${tx.id}'),
                     onDeleteTx: _deleteWithUndo,

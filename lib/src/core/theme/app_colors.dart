@@ -7,6 +7,12 @@ class AppColors {
   static const limeDark = Color(0xFFA8D82F);
   static const limeAccent = Color(0xFF7A9E1F);
 
+  /// Text selection fill — soft mint so it stays clean on dark surfaces
+  /// (high-alpha neon lime reads as muddy olive).
+  static const selectionDark = Color(0x5922E06A); // ~35% soft green
+  static const selectionLight = Color(0x4D7A9E1F); // ~30% limeAccent
+  static const selectionHandle = lime;
+
   /// Legacy brand purple (UI accents / wells — not the launcher plate).
   static const brandPurple = Color(0xFF8C52FF);
 

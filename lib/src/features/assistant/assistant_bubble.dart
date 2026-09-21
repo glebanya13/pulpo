@@ -6,12 +6,15 @@ class _AssistantBubble extends StatelessWidget {
     required this.child,
     this.time,
     this.imagePath,
+    this.wide = false,
   });
 
   final bool fromUser;
   final Widget child;
   final TimeOfDay? time;
   final String? imagePath;
+  /// Slightly wider bubble for table replies.
+  final bool wide;
 
   static const double _rL = 18;
   static const double _rS = 5;
@@ -25,12 +28,13 @@ class _AssistantBubble extends StatelessWidget {
         : '${time!.hour.toString().padLeft(2, '0')}:${time!.minute.toString().padLeft(2, '0')}';
     final hasImage =
         imagePath != null && File(imagePath!).existsSync();
+    final widthFactor = wide ? 0.94 : 0.86;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final maxBubbleWidth = (constraints.maxWidth * 0.86)
+          final maxBubbleWidth = (constraints.maxWidth * widthFactor)
               .clamp(0.0, constraints.maxWidth);
           final margin = (constraints.maxWidth - maxBubbleWidth)
               .clamp(0.0, constraints.maxWidth);
@@ -68,34 +72,12 @@ class _AssistantBubble extends StatelessWidget {
                     maxW: maxW,
                     timeLabel: timeLabel,
                   )
-                : IntrinsicWidth(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-                          child: child,
-                        ),
-                        if (timeLabel != null)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                timeLabel,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  height: 1.2,
-                                  color: fromUser
-                                      ? AppColors.ink.withValues(alpha: 0.5)
-                                      : context.faintText,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                : _textBody(
+                    context: context,
+                    maxW: maxW,
+                    timeLabel: timeLabel,
+                    // Only force full width for tables (Expanded cells).
+                    stretch: wide,
                   ),
           );
 
@@ -123,6 +105,45 @@ class _AssistantBubble extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Widget _textBody({
+    required BuildContext context,
+    required double maxW,
+    required String? timeLabel,
+    required bool stretch,
+  }) {
+    final column = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+          child: child,
+        ),
+        if (timeLabel != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                timeLabel,
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.2,
+                  color: fromUser
+                      ? AppColors.ink.withValues(alpha: 0.5)
+                      : context.faintText,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+    // Tables need a bounded width (Expanded cells). Stretch assistant bubbles
+    // to maxW; keep IntrinsicWidth only for short user pings.
+    if (stretch) return SizedBox(width: maxW, child: column);
+    return IntrinsicWidth(child: column);
   }
 
   Widget _mediaBody({
@@ -175,4 +196,3 @@ class _AssistantBubble extends StatelessWidget {
     );
   }
 }
-

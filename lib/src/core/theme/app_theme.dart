@@ -172,7 +172,7 @@ class AppTheme {
       ),
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: AppColors.limeAccent,
-        selectionColor: AppColors.lime.withValues(alpha: 0.45),
+        selectionColor: AppColors.selectionLight,
         selectionHandleColor: AppColors.limeAccent,
       ),
       snackBarTheme: const SnackBarThemeData(
@@ -394,9 +394,9 @@ class AppTheme {
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: AppColors.lime,
-        selectionColor: AppColors.lime.withValues(alpha: 0.45),
-        selectionHandleColor: AppColors.lime,
+        cursorColor: AppColors.selectionHandle,
+        selectionColor: AppColors.selectionDark,
+        selectionHandleColor: AppColors.selectionHandle,
       ),
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,

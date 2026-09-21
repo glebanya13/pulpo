@@ -192,6 +192,37 @@ AssistantTurnResult parseAssistantTurnJson(String raw) {
     intent: intent,
     reply: reply,
     transactions: transactions,
+    table: parseAiChatTable(m['table']),
   );
+}
+
+/// Parses optional `"table":{"headers":[...],"rows":[[...]],"total":"..."}`.
+AiChatTable? parseAiChatTable(Object? raw) {
+  if (raw is! Map) return null;
+  final m = Map<String, dynamic>.from(raw);
+  final headersRaw = m['headers'] ?? m['columns'];
+  final rowsRaw = m['rows'] ?? m['data'];
+  if (headersRaw is! List || rowsRaw is! List) return null;
+
+  final headers = headersRaw
+      .map((e) => e?.toString().trim() ?? '')
+      .where((s) => s.isNotEmpty)
+      .toList();
+  if (headers.length < 2) return null;
+
+  final rows = <List<String>>[];
+  for (final item in rowsRaw) {
+    if (item is! List) continue;
+    final cells = item.map((e) => e?.toString().trim() ?? '').toList();
+    if (cells.every((c) => c.isEmpty)) continue;
+    rows.add(List<String>.generate(
+      headers.length,
+      (i) => i < cells.length ? cells[i] : '',
+    ));
+  }
+  if (rows.isEmpty) return null;
+
+  final total = _asString(m['total'] ?? m['sum'] ?? m['totalAmount']);
+  return AiChatTable(headers: headers, rows: rows, total: total);
 }
 

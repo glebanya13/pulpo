@@ -68,6 +68,7 @@ class _CalendarChrome extends StatelessWidget {
           bottom: roundBottom ? const Radius.circular(18) : Radius.zero,
         ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: EdgeInsets.fromLTRB(6, 6, 6, roundBottom ? 6 : 0),
         child: Column(

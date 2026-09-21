@@ -61,6 +61,8 @@ class Tr {
   // ─────────────────────── COMMON ───────────────────────
   String get save => _get('save');
   String get cancel => _get('cancel');
+  /// Clear text selection (toolbar action).
+  String get dismissSelection => _get('dismiss_selection');
   String get delete => _get('delete');
   String get deleteTxTitle => _get('delete_tx_title');
   String get deleteTxBody => _get('delete_tx_body');
@@ -930,6 +932,7 @@ class Tr {
       // common
       'save': 'Guardar',
       'cancel': 'Cancelar',
+      'dismiss_selection': 'Cancelar',
       'delete': 'Eliminar',
       'delete_tx_title': '¿Eliminar transacción?',
       'delete_tx_body': 'Esta acción no se puede deshacer.',
@@ -1672,6 +1675,7 @@ class Tr {
       // common
       'save': 'Сохранить',
       'cancel': 'Отмена',
+      'dismiss_selection': 'Отменить',
       'delete': 'Удалить',
       'delete_tx_title': 'Удалить транзакцию?',
       'delete_tx_body': 'Это действие нельзя отменить.',
@@ -2413,6 +2417,7 @@ class Tr {
       // common
       'save': 'Save',
       'cancel': 'Cancel',
+      'dismiss_selection': 'Cancel',
       'delete': 'Delete',
       'delete_tx_title': 'Delete transaction?',
       'delete_tx_body': 'This action cannot be undone.',
@@ -3152,6 +3157,7 @@ class Tr {
         'uk': {
       'save': 'Зберегти',
       'cancel': 'Скасувати',
+      'dismiss_selection': 'Скасувати',
       'delete': 'Видалити',
       'delete_tx_title': 'Видалити транзакцію?',
       'delete_tx_body': 'Цю дію неможливо скасувати.',

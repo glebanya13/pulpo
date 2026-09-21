@@ -36,9 +36,11 @@ import '../../widgets/assistant_energy_chip.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/ai_assistant_mark.dart';
 import 'app_chat_context.dart';
+import 'assistant_chat_format.dart';
 import 'assistant_transactions.dart';
 
 part 'assistant_bubble.dart';
+part 'assistant_message_body.dart';
 
 class AssistantChatScreen extends ConsumerStatefulWidget {
   const AssistantChatScreen({super.key});
@@ -52,6 +54,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   final _input = TextEditingController();
   final _listCtrl = ScrollController();
   final _speech = stt.SpeechToText();
+  /// Bumped to remount per-bubble [SelectionArea] and clear highlights.
+  int _selectionEpoch = 0;
   db.Account? _account;
   bool _busy = false;
   String _busyLabel = '';
@@ -115,6 +119,12 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     _input.dispose();
     _listCtrl.dispose();
     super.dispose();
+  }
+
+  void _clearMessageSelection() {
+    ContextMenuController.removeAny();
+    if (!mounted) return;
+    setState(() => _selectionEpoch++);
   }
 
   bool get _shouldBurnEnergy {
@@ -587,6 +597,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           intent: 'record',
           reply: turn.reply.isNotEmpty ? turn.reply : tr.aiBusy,
           transactions: drafts,
+          table: turn.table,
         );
       } catch (e, st) {
         await _logError(e, st);
@@ -635,17 +646,24 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               formatMoney(total, currencyHint),
             );
 
-      await _append(isFromUser: false, body: reply);
+      await _append(
+        isFromUser: false,
+        body: composeReplyWithTable(reply, turn.table),
+      );
       return true;
     }
 
     final reply = turn.reply.trim();
-    if (reply.isEmpty) {
+    if (reply.isEmpty && turn.table == null) {
       throw const PulpoAiException(AiErrorCode.emptyResponse);
     }
 
     if (!mounted) return false;
-    await _append(isFromUser: false, body: reply);
+    final body = composeReplyWithTable(reply, turn.table);
+    if (body.isEmpty) {
+      throw const PulpoAiException(AiErrorCode.emptyResponse);
+    }
+    await _append(isFromUser: false, body: body);
     return true;
   }
 
@@ -913,6 +931,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final messages =
         ref.watch(assistantMessagesProvider).valueOrNull ?? const [];
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
+    final categories =
+        ref.watch(categoriesProvider).valueOrNull ?? const <db.Category>[];
     final openAccounts =
         accounts.where((a) => !a.isArchived).toList(growable: false);
     final account = _account ?? openAccounts.firstOrNull;
@@ -923,7 +943,11 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
+            // Taps on chrome (header / chips) dismiss text selection.
+            GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _clearMessageSelection,
+              child: Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
                 AppSpacing.xs,
@@ -1084,48 +1108,115 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                 ],
               ),
             ),
+            ),
             const SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
-                controller: _listCtrl,
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                itemCount: messages.length + (_busy ? 1 : 0),
-                itemBuilder: (context, i) {
-                  if (_busy && i == messages.length) {
-                    final preview = _streamPreview.trim();
-                    return _AssistantBubble(
-                      child: Text(
-                        preview.isNotEmpty
-                            ? preview
-                            : (_busyLabel.isNotEmpty ? _busyLabel : tr.aiBusy),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: context.mutedText,
-                          fontStyle: preview.isEmpty
-                              ? FontStyle.italic
-                              : FontStyle.normal,
+              child: DefaultSelectionStyle(
+                selectionColor: context.isDark
+                    ? AppColors.selectionDark
+                    : AppColors.selectionLight,
+                cursorColor: context.isDark
+                    ? AppColors.selectionHandle
+                    : AppColors.limeAccent,
+                child: CustomScrollView(
+                  controller: _listCtrl,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, i) {
+                            if (_busy && i == messages.length) {
+                              final preview = _streamPreview.trim();
+                              return _AssistantBubble(
+                                child: Text(
+                                  preview.isNotEmpty
+                                      ? preview
+                                      : (_busyLabel.isNotEmpty
+                                          ? _busyLabel
+                                          : tr.aiBusy),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: context.mutedText,
+                                    fontStyle: preview.isEmpty
+                                        ? FontStyle.italic
+                                        : FontStyle.normal,
+                                  ),
+                                ),
+                              );
+                            }
+                            final m = messages[i];
+                            final blocks = m.isFromUser
+                                ? const <ChatBodyBlock>[]
+                                : parseChatBody(m.body);
+                            final hasTable =
+                                blocks.any((b) => b is ChatTableBlock);
+                            return SelectionArea(
+                              key: ValueKey(
+                                'sel-$_selectionEpoch-${m.id}',
+                              ),
+                              contextMenuBuilder:
+                                  (context, selectableRegionState) {
+                                return AdaptiveTextSelectionToolbar
+                                    .buttonItems(
+                                  anchors: selectableRegionState
+                                      .contextMenuAnchors,
+                                  buttonItems: [
+                                    ContextMenuButtonItem(
+                                      label: tr.dismissSelection,
+                                      onPressed: () {
+                                        selectableRegionState.hideToolbar();
+                                        selectableRegionState
+                                            .clearSelection();
+                                        _clearMessageSelection();
+                                      },
+                                    ),
+                                    ...selectableRegionState
+                                        .contextMenuButtonItems,
+                                  ],
+                                );
+                              },
+                              child: _AssistantBubble(
+                                fromUser: m.isFromUser,
+                                time: TimeOfDay.fromDateTime(m.createdAt),
+                                imagePath: m.imagePath,
+                                wide: hasTable,
+                                child: _AssistantMessageBody(
+                                  text: m.body,
+                                  fromUser: m.isFromUser,
+                                  blocks: blocks,
+                                  categories: categories,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    height: 1.38,
+                                    color: m.isFromUser
+                                        ? AppColors.ink
+                                        : context.primaryText,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          childCount: messages.length + (_busy ? 1 : 0),
                         ),
                       ),
-                    );
-                  }
-                  final m = messages[i];
-                  return _AssistantBubble(
-                    fromUser: m.isFromUser,
-                    time: TimeOfDay.fromDateTime(m.createdAt),
-                    imagePath: m.imagePath,
-                    child: SelectableText(
-                      m.body,
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.38,
-                        color: m.isFromUser
-                            ? AppColors.ink
-                            : context.primaryText,
-                        fontWeight: FontWeight.w400,
+                    ),
+                    // Taps on empty space below messages clear selection.
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _clearMessageSelection,
+                        child: const SizedBox.expand(),
                       ),
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
             ),
             if (_pendingRetryText != null && !_busy)
@@ -1226,7 +1317,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               ),
             // Scaffold already shrinks for the keyboard — do not add
             // viewInsets again or the composer floats with a huge gap.
-            Padding(
+            GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _clearMessageSelection,
+              child: Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
                 8,
@@ -1252,14 +1346,21 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: DefaultSelectionStyle(
-                      selectionColor: AppColors.lime.withValues(alpha: 0.45),
-                      cursorColor: AppColors.lime,
+                      selectionColor: context.isDark
+                          ? AppColors.selectionDark
+                          : AppColors.selectionLight,
+                      cursorColor: context.isDark
+                          ? AppColors.selectionHandle
+                          : AppColors.limeAccent,
                       child: TextField(
                         controller: _input,
                         minLines: 1,
                         maxLines: 4,
                         enableInteractiveSelection: true,
-                        cursorColor: AppColors.lime,
+                        cursorColor: context.isDark
+                            ? AppColors.selectionHandle
+                            : AppColors.limeAccent,
+                        onTap: _clearMessageSelection,
                         style: TextStyle(
                           color: context.primaryText,
                           fontSize: 15,
@@ -1338,6 +1439,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   ),
                 ],
               ),
+            ),
             ),
           ],
         ),

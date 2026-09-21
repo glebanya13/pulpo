@@ -49,12 +49,14 @@ class _Header extends StatelessWidget {
         Pressable(
           onTap: onToggleCalendar,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            height: 28,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: calendarView
                   ? AppColors.lime.withValues(alpha: 0.2)
                   : context.scaffoldBg,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
