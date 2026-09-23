@@ -15,7 +15,7 @@ import '../core/utils/keyboard.dart';
 import '../features/auth/cloud_auth.dart';
 import 'pressable.dart';
 
-/// Brand mark — Monedero app icon (black plate + fox mascot).
+/// Brand mark — Monedero app icon (lime plate + geometric M).
 class BrandLogo extends StatelessWidget {
   const BrandLogo({
     super.key,
