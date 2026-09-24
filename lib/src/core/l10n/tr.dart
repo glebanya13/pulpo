@@ -728,6 +728,7 @@ class Tr {
         _get('pro_feature_ai_quality'),
         _get('pro_feature_ai_receipts'),
         _get('pro_feature_ai_voice'),
+        _get('pro_feature_no_ads'),
         _get('pro_feature_accounts'),
         _get('pro_feature_budgets'),
         _get('pro_feature_goals'),

@@ -11,7 +11,7 @@ import '../../data/repositories/settings_service.dart';
 import '../l10n/tr.dart';
 
 const _kReminderId = 2100;
-const _kChannelId = 'pulpo_daily_reminder_v4';
+const _kChannelId = 'pulpo_daily_reminder_v5';
 
 final _plugin = FlutterLocalNotificationsPlugin();
 var _initialized = false;

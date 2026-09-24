@@ -178,10 +178,10 @@ class _Slide extends StatelessWidget {
                       item.body,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.lime,
+                        color: context.isDark ? AppColors.lime : AppColors.ink,
                         height: 1.2,
                       ),
                     ),
@@ -194,10 +194,10 @@ class _Slide extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 6),
                 child: Text(
                   item.ctaLabel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.lime,
+                    color: context.isDark ? AppColors.lime : AppColors.ink,
                   ),
                 ),
               ),
