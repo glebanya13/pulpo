@@ -12,7 +12,7 @@ import '../../features/budgets/budget_period.dart';
 import '../l10n/tr.dart';
 import 'daily_reminder.dart';
 
-const _kSmartChannelId = 'pulpo_smart_reminders_v3';
+const _kSmartChannelId = 'pulpo_smart_reminders_v4';
 const _kSmartIdsKey = 'smart_reminder_ids';
 const _kDebtBase = 3100;
 const _kSubBase = 4100;
@@ -39,7 +39,7 @@ Future<void> syncSmartReminders({
     return;
   }
 
-  final allowed = await requestReminderPermission();
+  final allowed = await hasReminderPermission();
   if (!allowed) return;
 
   final tr = Tr.fromLang(settings.locale);
@@ -155,28 +155,33 @@ Future<void> _schedule({
   required String body,
   required tz.TZDateTime when,
 }) async {
-  if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid) {
-    const details = NotificationDetails(
-      android: AndroidNotificationDetails(
-        _kSmartChannelId,
-        'Monedero Pro',
-        channelDescription: 'Payment, subscription and goal reminders',
-        importance: Importance.high,
-        priority: Priority.high,
-        icon: 'ic_stat_pulpo',
-        largeIcon: DrawableResourceAndroidBitmap('ic_notification_pulpo'),
-      ),
-      iOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      ),
-      macOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      ),
-    );
+  if (!(Platform.isIOS || Platform.isMacOS || Platform.isAndroid)) return;
+  const details = NotificationDetails(
+    android: AndroidNotificationDetails(
+      _kSmartChannelId,
+      'Monedero Pro',
+      channelDescription: 'Payment, subscription and goal reminders',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: 'ic_stat_pulpo',
+      largeIcon: DrawableResourceAndroidBitmap('ic_notification_pulpo'),
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+    macOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+  );
+  for (final mode in [
+    AndroidScheduleMode.exactAllowWhileIdle,
+    AndroidScheduleMode.inexactAllowWhileIdle,
+    AndroidScheduleMode.inexact,
+  ]) {
     try {
       await _plugin.zonedSchedule(
         id: id,
@@ -184,21 +189,11 @@ Future<void> _schedule({
         body: body,
         scheduledDate: when,
         notificationDetails: details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: mode,
       );
-    } catch (_) {
-      try {
-        await _plugin.zonedSchedule(
-          id: id,
-          title: title,
-          body: body,
-          scheduledDate: when,
-          notificationDetails: details,
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        );
-      } catch (e, st) {
-        debugPrint('smart reminder: $e\n$st');
-      }
+      return;
+    } catch (e, st) {
+      debugPrint('smart reminder $mode: $e\n$st');
     }
   }
 }

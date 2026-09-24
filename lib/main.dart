@@ -129,16 +129,9 @@ Future<void> main() async {
       prefs: prefs,
       backup: container.read(backupServiceProvider),
     );
-    await syncDailyReminder(container.read(settingsControllerProvider)).then(
-      (result) async {
-        if (result != ReminderSyncResult.noPermission) return;
-        final s = container.read(settingsControllerProvider);
-        if (!s.dailyReminderEnabled) return;
-        await container
-            .read(settingsControllerProvider.notifier)
-            .setDailyReminderEnabled(false);
-      },
-    );
+    // Schedule only — never auto-disable the toggle on cold start.
+    // A flaky / denied permission check used to permanently kill reminders.
+    await syncDailyReminder(container.read(settingsControllerProvider));
   } catch (e, st) {
     dataInitError = e.toString();
     debugPrint('startup data init: $e\n$st');
@@ -186,13 +179,9 @@ class BudgetTrackerApp extends ConsumerWidget {
     final settings = ref.watch(settingsControllerProvider);
     ref.listen<SettingsState>(settingsControllerProvider, (prev, next) {
       if (prev == next) return;
-      syncDailyReminder(next).then((result) async {
-        if (result != ReminderSyncResult.noPermission) return;
-        if (!ref.read(settingsControllerProvider).dailyReminderEnabled) return;
-        await ref
-            .read(settingsControllerProvider.notifier)
-            .setDailyReminderEnabled(false);
-      });
+      // Permission denial is handled in the toggle UI — do not silently flip
+      // dailyReminderEnabled off here (wipes the setting after any sync miss).
+      syncDailyReminder(next);
       _syncSmart(ref);
     });
     ref.listen<ProState>(proControllerProvider, (prev, next) {

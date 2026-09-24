@@ -11,7 +11,7 @@ import '../../data/repositories/settings_service.dart';
 import '../l10n/tr.dart';
 
 const _kReminderId = 2100;
-const _kChannelId = 'pulpo_daily_reminder_v3';
+const _kChannelId = 'pulpo_daily_reminder_v4';
 
 final _plugin = FlutterLocalNotificationsPlugin();
 var _initialized = false;
@@ -20,7 +20,9 @@ enum ReminderSyncResult {
   /// Scheduled or intentionally cancelled (reminder off / onboarding).
   ok,
 
-  /// Reminder was on but OS permission is missing — UI should turn the toggle off.
+  /// Reminder was on but OS permission is missing — keep the setting; UI
+  /// can prompt when the user toggles. Do not silently turn the toggle off
+  /// on cold start (that permanently kills reminders after a flaky check).
   noPermission,
 }
 
@@ -89,7 +91,7 @@ void _setLocationFromDeviceOffset() {
   }
 }
 
-Future<bool> _iosNotificationsAllowed() async {
+Future<bool> _iosNotificationsAllowed({required bool request}) async {
   final ios = _plugin.resolvePlatformSpecificImplementation<
       IOSFlutterLocalNotificationsPlugin>();
   if (ios == null) return false;
@@ -102,6 +104,7 @@ Future<bool> _iosNotificationsAllowed() async {
   } catch (e, st) {
     debugPrint('daily reminder checkPermissions: $e\n$st');
   }
+  if (!request) return false;
   return await ios.requestPermissions(
         alert: true,
         badge: true,
@@ -110,7 +113,7 @@ Future<bool> _iosNotificationsAllowed() async {
       false;
 }
 
-Future<bool> _macNotificationsAllowed() async {
+Future<bool> _macNotificationsAllowed({required bool request}) async {
   final mac = _plugin.resolvePlatformSpecificImplementation<
       MacOSFlutterLocalNotificationsPlugin>();
   if (mac == null) return false;
@@ -123,6 +126,7 @@ Future<bool> _macNotificationsAllowed() async {
   } catch (e, st) {
     debugPrint('daily reminder checkPermissions: $e\n$st');
   }
+  if (!request) return false;
   return await mac.requestPermissions(
         alert: true,
         badge: true,
@@ -131,11 +135,26 @@ Future<bool> _macNotificationsAllowed() async {
       false;
 }
 
+/// Read-only permission check — never prompts. Used by background sync.
+Future<bool> hasReminderPermission() async {
+  if (kIsWeb) return false;
+  await initDailyReminder();
+  if (Platform.isIOS) return _iosNotificationsAllowed(request: false);
+  if (Platform.isMacOS) return _macNotificationsAllowed(request: false);
+  if (Platform.isAndroid) {
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    return await android?.areNotificationsEnabled() ?? true;
+  }
+  return true;
+}
+
+/// Prompts when needed. Call only from a user gesture (toggle / time pick).
 Future<bool> requestReminderPermission() async {
   if (kIsWeb) return false;
   await initDailyReminder();
-  if (Platform.isIOS) return _iosNotificationsAllowed();
-  if (Platform.isMacOS) return _macNotificationsAllowed();
+  if (Platform.isIOS) return _iosNotificationsAllowed(request: true);
+  if (Platform.isMacOS) return _macNotificationsAllowed(request: true);
   if (Platform.isAndroid) {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
@@ -151,24 +170,21 @@ Future<bool> requestReminderPermission() async {
   return true;
 }
 
-/// Schedules (or cancels) the daily reminder. Returns [ReminderSyncResult.noPermission]
-/// when the toggle is on but the OS blocked notifications.
-Future<ReminderSyncResult> syncDailyReminder(SettingsState settings) async {
-  if (kIsWeb) return ReminderSyncResult.ok;
-  await initDailyReminder();
-  if (!settings.onboardingDone || !settings.dailyReminderEnabled) {
-    await _plugin.cancel(id: _kReminderId);
-    return ReminderSyncResult.ok;
+Future<AndroidScheduleMode> _androidScheduleMode() async {
+  if (!Platform.isAndroid) return AndroidScheduleMode.exactAllowWhileIdle;
+  final android = _plugin.resolvePlatformSpecificImplementation<
+      AndroidFlutterLocalNotificationsPlugin>();
+  try {
+    final canExact = await android?.canScheduleExactNotifications();
+    if (canExact == true) return AndroidScheduleMode.exactAllowWhileIdle;
+  } catch (e, st) {
+    debugPrint('canScheduleExactNotifications: $e\n$st');
   }
-  final allowed = await requestReminderPermission();
-  if (!allowed) {
-    await _plugin.cancel(id: _kReminderId);
-    return ReminderSyncResult.noPermission;
-  }
+  return AndroidScheduleMode.inexactAllowWhileIdle;
+}
 
-  final tr = Tr.fromLang(settings.locale);
-  final when = _nextAt(settings.dailyReminderHour, settings.dailyReminderMinute);
-  const details = NotificationDetails(
+NotificationDetails _reminderDetails() {
+  return const NotificationDetails(
     android: AndroidNotificationDetails(
       _kChannelId,
       'Monedero',
@@ -176,6 +192,7 @@ Future<ReminderSyncResult> syncDailyReminder(SettingsState settings) async {
       importance: Importance.high,
       priority: Priority.high,
       icon: 'ic_stat_pulpo',
+      // Colorful launcher mark — status bar uses white-alpha [icon] above.
       largeIcon: DrawableResourceAndroidBitmap('ic_notification_pulpo'),
       color: Color(0xFFCDFF3A),
       colorized: false,
@@ -191,6 +208,28 @@ Future<ReminderSyncResult> syncDailyReminder(SettingsState settings) async {
       presentSound: true,
     ),
   );
+}
+
+/// Schedules (or cancels) the daily reminder. Returns [ReminderSyncResult.noPermission]
+/// when the toggle is on but the OS blocked notifications.
+Future<ReminderSyncResult> syncDailyReminder(SettingsState settings) async {
+  if (kIsWeb) return ReminderSyncResult.ok;
+  await initDailyReminder();
+  if (!settings.onboardingDone || !settings.dailyReminderEnabled) {
+    await _plugin.cancel(id: _kReminderId);
+    return ReminderSyncResult.ok;
+  }
+  // Check only — never prompt from cold start / settings listen.
+  final allowed = await hasReminderPermission();
+  if (!allowed) {
+    await _plugin.cancel(id: _kReminderId);
+    return ReminderSyncResult.noPermission;
+  }
+
+  final tr = Tr.fromLang(settings.locale);
+  final when = _nextAt(settings.dailyReminderHour, settings.dailyReminderMinute);
+  final details = _reminderDetails();
+  final preferred = await _androidScheduleMode();
 
   // Reschedule cleanly — avoids stale one-shots after OS/timezone changes.
   await _plugin.cancel(id: _kReminderId);
@@ -208,18 +247,20 @@ Future<ReminderSyncResult> syncDailyReminder(SettingsState settings) async {
   }
 
   try {
-    await schedule(AndroidScheduleMode.exactAllowWhileIdle);
+    await schedule(preferred);
   } catch (e, st) {
-    debugPrint('daily reminder exact: $e\n$st');
-    try {
-      await schedule(AndroidScheduleMode.inexactAllowWhileIdle);
-    } catch (e2, st2) {
-      debugPrint('daily reminder inexact: $e2\n$st2');
+    debugPrint('daily reminder $preferred: $e\n$st');
+    for (final mode in [
+      AndroidScheduleMode.exactAllowWhileIdle,
+      AndroidScheduleMode.inexactAllowWhileIdle,
+      AndroidScheduleMode.inexact,
+    ]) {
+      if (mode == preferred) continue;
       try {
-        await schedule(AndroidScheduleMode.inexact);
-      } catch (e3, st3) {
-        debugPrint('daily reminder fallback: $e3\n$st3');
+        await schedule(mode);
         return ReminderSyncResult.ok;
+      } catch (e2, st2) {
+        debugPrint('daily reminder $mode: $e2\n$st2');
       }
     }
   }
