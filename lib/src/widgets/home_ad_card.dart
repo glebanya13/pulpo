@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/open_link.dart';
 import '../core/promo/home_ad.dart';
+import '../core/promo/promo_image_cache.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
@@ -32,6 +34,7 @@ class _HomeAdCardState extends ConsumerState<HomeAdCard> {
     super.initState();
     _page = PageController();
     _restartTimer();
+    _warmImages();
   }
 
   @override
@@ -44,7 +47,14 @@ class _HomeAdCardState extends ConsumerState<HomeAdCard> {
         _page.jumpToPage(0);
       }
       _restartTimer();
+      _warmImages();
     }
+  }
+
+  void _warmImages() {
+    unawaited(
+      PromoImageCache.warmAll(_items.map((e) => e.imageUrl)),
+    );
   }
 
   void _restartTimer() {
@@ -113,7 +123,9 @@ class _HomeAdCardState extends ConsumerState<HomeAdCard> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: i == _index
-                            ? AppColors.ink
+                            ? (context.isDark
+                                ? AppColors.lime
+                                : AppColors.ink)
                             : context.faintText.withValues(alpha: 0.45),
                       ),
                     ),
@@ -142,7 +154,7 @@ class _Slide extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(12, 8, 4, 10),
         child: Row(
           children: [
-            _Thumb(item: item),
+            _Thumb(url: item.imageUrl),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -166,10 +178,10 @@ class _Slide extends StatelessWidget {
                       item.body,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: context.mutedText,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.lime,
                         height: 1.2,
                       ),
                     ),
@@ -185,7 +197,7 @@ class _Slide extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
+                    color: AppColors.lime,
                   ),
                 ),
               ),
@@ -204,25 +216,78 @@ class _Slide extends StatelessWidget {
   }
 }
 
-class _Thumb extends StatelessWidget {
-  const _Thumb({required this.item});
+class _Thumb extends StatefulWidget {
+  const _Thumb({required this.url});
 
-  final ResolvedHomeAd item;
+  final String? url;
+
+  @override
+  State<_Thumb> createState() => _ThumbState();
+}
+
+class _ThumbState extends State<_Thumb> {
+  File? _file;
+  var _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolve();
+  }
+
+  @override
+  void didUpdateWidget(covariant _Thumb oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      _file = null;
+      _resolve();
+    }
+  }
+
+  Future<void> _resolve() async {
+    final url = widget.url;
+    if (url == null || url.isEmpty) return;
+    setState(() => _loading = true);
+    final cached = await PromoImageCache.peek(url);
+    if (!mounted) return;
+    if (cached != null) {
+      setState(() {
+        _file = cached;
+        _loading = false;
+      });
+      return;
+    }
+    final warmed = await PromoImageCache.warm(url);
+    if (!mounted) return;
+    setState(() {
+      _file = warmed;
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final url = item.imageUrl;
-    if (url != null) {
+    final file = _file;
+    if (file != null) {
+      final dpr = MediaQuery.devicePixelRatioOf(context);
+      final px = (40 * dpr).round();
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          url,
+        child: Image.file(
+          file,
           width: 40,
           height: 40,
           fit: BoxFit.cover,
+          cacheWidth: px,
+          cacheHeight: px,
+          gaplessPlayback: true,
+          filterQuality: FilterQuality.medium,
           errorBuilder: (_, _, _) => const _AccentMark(),
         ),
       );
+    }
+    if (_loading || (widget.url != null && widget.url!.isNotEmpty)) {
+      return const _AccentMark();
     }
     return const _AccentMark();
   }
