@@ -60,7 +60,7 @@ class _CalendarChrome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bodyWidget = body;
-    return DecoratedBox(
+    return Container(
       decoration: BoxDecoration(
         color: context.surface,
         borderRadius: BorderRadius.vertical(

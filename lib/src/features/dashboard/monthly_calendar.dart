@@ -335,7 +335,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
               // Bottom radius lives on the last day row (tall enough to show
               // the full 18px curve). A 6px footer strip made corners look
               // sharper than the chrome top.
-              return DecoratedBox(
+              return Container(
                 decoration: BoxDecoration(
                   color: context.surface,
                   borderRadius: isLast
