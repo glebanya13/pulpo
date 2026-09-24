@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../core/l10n/tr.dart';
 import '../core/theme/app_colors.dart';
@@ -38,7 +39,7 @@ class TransactionTile extends ConsumerWidget {
       tx.currency,
       showSign: true,
     );
-    final icon = category != null ? lucideByKey(category.icon) : Icons.paid;
+    final icon = category != null ? lucideByKey(category.icon) : LucideIcons.euro;
     final wellColor = category != null
         ? Color(category.color)
         : (isIncome ? const Color(0xFF8BD44A) : const Color(0xFFFF5C5C));

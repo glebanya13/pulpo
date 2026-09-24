@@ -17,6 +17,9 @@ class SegmentedPill<T> extends StatelessWidget {
     /// When true, pills size to their label and scroll horizontally instead of
     /// sharing equal width (avoids ellipsis on long localized strings).
     this.scrollable = false,
+    /// When > 1, lay out options in a fixed column grid (e.g. 2 → 2×N).
+    /// Ignored when [scrollable] is true.
+    this.columns = 0,
   });
 
   final List<SegmentedPillOption<T>> options;
@@ -24,9 +27,32 @@ class SegmentedPill<T> extends StatelessWidget {
   final ValueChanged<T> onChanged;
   final double spacing;
   final bool scrollable;
+  final int columns;
 
   @override
   Widget build(BuildContext context) {
+    if (!scrollable && columns > 1) {
+      final rows = <Widget>[];
+      for (var i = 0; i < options.length; i += columns) {
+        if (rows.isNotEmpty) rows.add(SizedBox(height: spacing));
+        rows.add(
+          Row(
+            children: [
+              for (var c = 0; c < columns; c++) ...[
+                if (c > 0) SizedBox(width: spacing),
+                Expanded(
+                  child: i + c < options.length
+                      ? _option(context, options[i + c], expand: true)
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ],
+          ),
+        );
+      }
+      return Column(children: rows);
+    }
+
     final row = Row(
       children: [
         for (var i = 0; i < options.length; i++) ...[

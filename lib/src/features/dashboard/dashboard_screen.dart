@@ -6,9 +6,11 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
+import '../../core/promo/home_ad.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/async_value_view.dart';
+import '../../widgets/home_ad_card.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/common.dart';
 import '../../core/utils/money_format.dart';
@@ -36,6 +38,8 @@ class DashboardScreen extends ConsumerWidget {
 
     final pad = AppSpacing.tabPagePadding(context);
 
+    final ad = ref.watch(visibleHomeAdProvider);
+
     return ResetScrollWhenObscured(
       tabPath: '/',
       builder: (context, scroll) {
@@ -60,6 +64,10 @@ class DashboardScreen extends ConsumerWidget {
                 fxApproximate: fxApprox.isNotEmpty,
               ),
             ),
+            if (ad != null) ...[
+              const SizedBox(height: 10),
+              HomeAdCard(ad: ad),
+            ],
             const SizedBox(height: 12),
           ],
         );

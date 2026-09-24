@@ -185,7 +185,7 @@ class _RecurringEditorScreenState
           SegmentedPill<String>(
             value: _frequency,
             onChanged: (v) => setState(() => _frequency = v),
-            scrollable: true,
+            columns: 2,
             options: [
               SegmentedPillOption(value: 'daily', label: tr.freqDaily),
               SegmentedPillOption(value: 'weekly', label: tr.freqWeekly),

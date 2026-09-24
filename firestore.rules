@@ -107,5 +107,11 @@ service cloud.firestore {
     match /admin_logs/{logId} {
       allow read, write: if false;
     }
+
+    // Public remote config (home promo card). Clients read-only; writes via Admin SDK.
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }

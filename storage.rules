@@ -9,5 +9,11 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
+
+    // House ads / promo creatives — public read, write only via Admin SDK.
+    match /promo/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }
