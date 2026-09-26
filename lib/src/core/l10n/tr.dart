@@ -845,6 +845,23 @@ class Tr {
   String get aiNetworkError => _get('ai_network_error');
   String get aiNeedInternet => _get('ai_need_internet');
   String get aiBlocked => _get('ai_blocked');
+  String get aiPeriodLastTwoWeeks => _get('ai_period_last_two_weeks');
+  String get aiPeriodLastWeek => _get('ai_period_last_week');
+  String get aiPeriodThisMonth => _get('ai_period_this_month');
+  String get aiPeriodAllTime => _get('ai_period_all_time');
+  String aiPeriodLastDays(int n) =>
+      _get('ai_period_last_days').replaceAll('{}', '$n');
+  String aiExpensePeriodIntro(String period) =>
+      _get('ai_expense_period_intro').replaceAll('{}', period);
+  String aiExpensePeriodEmpty(String period) =>
+      _get('ai_expense_period_empty').replaceAll('{}', period);
+  String aiExpensePeriodPartial(String period, int shown, int total) =>
+      _get('ai_expense_period_partial')
+          .replaceAll('{period}', period)
+          .replaceAll('{shown}', '$shown')
+          .replaceAll('{total}', '$total');
+  String aiTransactionCount(int n) =>
+      _get('ai_transaction_count').replaceAll('{}', '$n');
   String get aiEmptyResponse => _get('ai_empty_response');
   String get aiInvalidResponse => _get('ai_invalid_response');
   String get aiSpeechUnavailable => _get('ai_speech_unavailable');
@@ -1663,6 +1680,16 @@ class Tr {
           'Sin conexión. Comprueba internet e inténtalo de nuevo.',
       'ai_need_internet':
           'Se necesita internet para el asistente. Reintenta cuando tengas red.',
+      'ai_period_last_two_weeks': 'las últimas 2 semanas',
+      'ai_period_last_week': 'la última semana',
+      'ai_period_this_month': 'este mes',
+      'ai_period_all_time': 'todo el historial',
+      'ai_period_last_days': 'los últimos {} días',
+      'ai_expense_period_intro': 'Aquí tienes tus gastos de {}:',
+      'ai_expense_period_empty': 'Sin gastos en {}.',
+      'ai_expense_period_partial':
+          'Gastos de {period} (mostrando {shown} de {total}):',
+      'ai_transaction_count': 'Has registrado {} transacciones en total.',
       'ai_blocked': 'La IA bloqueó la respuesta. Reformula el mensaje.',
       'ai_empty_response': 'La IA no devolvió texto. Inténtalo de nuevo.',
       'ai_invalid_response': 'La IA devolvió un formato inesperado. Inténtalo de nuevo.',
@@ -2410,6 +2437,16 @@ class Tr {
           'Нет сети. Проверьте интернет и попробуйте ещё раз.',
       'ai_need_internet':
           'Для ассистента нужен интернет. Повторите, когда появится сеть.',
+      'ai_period_last_two_weeks': 'последние 2 недели',
+      'ai_period_last_week': 'последнюю неделю',
+      'ai_period_this_month': 'этот месяц',
+      'ai_period_all_time': 'всё время',
+      'ai_period_last_days': 'последние {} дней',
+      'ai_expense_period_intro': 'Вот твои расходы за {}:',
+      'ai_expense_period_empty': 'Нет расходов за {}.',
+      'ai_expense_period_partial':
+          'Расходы за {period} (показано {shown} из {total}):',
+      'ai_transaction_count': 'Всего записано {} транзакций.',
       'ai_blocked': 'ИИ заблокировал ответ. Переформулируйте сообщение.',
       'ai_empty_response': 'ИИ вернул пустой ответ. Попробуйте ещё раз.',
       'ai_invalid_response': 'ИИ вернул неожиданный формат. Попробуйте ещё раз.',
@@ -3156,6 +3193,16 @@ class Tr {
           'No connection. Check your internet and try again.',
       'ai_need_internet':
           'Internet is required for the assistant. Retry when you are online.',
+      'ai_period_last_two_weeks': 'the last 2 weeks',
+      'ai_period_last_week': 'the last week',
+      'ai_period_this_month': 'this month',
+      'ai_period_all_time': 'all time',
+      'ai_period_last_days': 'the last {} days',
+      'ai_expense_period_intro': 'Here are your expenses for {}:',
+      'ai_expense_period_empty': 'No expenses in {}.',
+      'ai_expense_period_partial':
+          'Expenses for {period} (showing {shown} of {total}):',
+      'ai_transaction_count': 'You have recorded {} transactions in total.',
       'ai_blocked': 'The AI blocked that reply. Rephrase your message.',
       'ai_empty_response': 'The AI returned an empty reply. Try again.',
       'ai_invalid_response': 'The AI returned an unexpected format. Try again.',
@@ -3836,6 +3883,16 @@ class Tr {
           'Немає мережі. Перевірте інтернет і спробуйте ще раз.',
       'ai_need_internet':
           'Для асистента потрібен інтернет. Повторіть, коли з’явиться мережа.',
+      'ai_period_last_two_weeks': 'останні 2 тижні',
+      'ai_period_last_week': 'останній тиждень',
+      'ai_period_this_month': 'цей місяць',
+      'ai_period_all_time': 'весь час',
+      'ai_period_last_days': 'останні {} днів',
+      'ai_expense_period_intro': 'Ось твої витрати за {}:',
+      'ai_expense_period_empty': 'Немає витрат за {}.',
+      'ai_expense_period_partial':
+          'Витрати за {period} (показано {shown} з {total}):',
+      'ai_transaction_count': 'Усього записано {} транзакцій.',
       'ai_blocked': 'ШІ заблокував відповідь. Переформулюйте повідомлення.',
       'ai_empty_response': 'ШІ повернув порожню відповідь. Спробуйте ще раз.',
       'ai_invalid_response': 'ШІ повернув неочікуваний формат. Спробуйте ще раз.',

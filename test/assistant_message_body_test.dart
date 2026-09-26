@@ -65,11 +65,19 @@ Intro
     expect(composed.trim(), raw.trim());
   });
 
-  test('compactChatTableDate formats ISO to DD/MM/YY', () {
-    expect(compactChatTableDate('2026-09-24'), '24/09/26');
-    expect(compactChatTableDate('2026-09-24T12:00:00'), '24/09/26');
-    expect(compactChatTableDate('24/09/2026'), '24/09/26');
-    expect(compactChatTableDate('24/09/26'), '24/09/26');
+  test('compactChatTableDate formats ISO to DD/MM for current year', () {
+    final now = DateTime(2026, 9, 26);
+    expect(compactChatTableDate('2026-09-24', now: now), '24/09');
+    expect(compactChatTableDate('2026-09-24T12:00:00', now: now), '24/09');
+    expect(compactChatTableDate('24/09/2026', now: now), '24/09');
+    expect(compactChatTableDate('24/09/26', now: now), '24/09');
+    expect(compactChatTableDate('24/09', now: now), '24/09');
+  });
+
+  test('compactChatTableDate keeps year when not current', () {
+    final now = DateTime(2026, 9, 26);
+    expect(compactChatTableDate('2025-09-24', now: now), '24/09/25');
+    expect(compactChatTableDate('24/09/2025', now: now), '24/09/25');
   });
 
   test('chatTableToMarkdown compactifies date column', () {
@@ -81,7 +89,7 @@ Intro
         ],
       ),
     );
-    expect(md, contains('24/09/26'));
+    expect(md, contains('24/09'));
     expect(md, isNot(contains('2026-09-24')));
   });
 }

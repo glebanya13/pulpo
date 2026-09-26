@@ -146,27 +146,44 @@ bool isChatTableDateHeader(String header) {
       n.startsWith('fecha ');
 }
 
-/// Compact ISO / long dates to `DD/MM/YY` for chat tables.
-String compactChatTableDate(String raw) {
+/// Compact dates for chat tables.
+/// Current year → `DD/MM`; other years → `DD/MM/YY` (avoids 24/09 ambiguity).
+String compactChatTableDate(String raw, {DateTime? now}) {
   final s = raw.trim();
   if (s.isEmpty) return s;
+  final n = now ?? DateTime.now();
 
   final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})');
   final m = iso.firstMatch(s);
   if (m != null) {
-    final yy = m.group(1)!.substring(2);
-    return '${m.group(3)}/${m.group(2)}/$yy';
+    final year = int.parse(m.group(1)!);
+    final d = m.group(3)!;
+    final mo = m.group(2)!;
+    if (year == n.year) return '$d/$mo';
+    final yy = (year % 100).toString().padLeft(2, '0');
+    return '$d/$mo/$yy';
   }
 
-  // Already DD/MM/YY or DD/MM/YYYY
-  final slash = RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{2}|\d{4})$');
+  // DD/MM/YYYY or DD/MM/YY → keep year if not current
+  final slashY = RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{2}|\d{4})$');
+  final smy = slashY.firstMatch(s);
+  if (smy != null) {
+    final d = smy.group(1)!.padLeft(2, '0');
+    final mo = smy.group(2)!.padLeft(2, '0');
+    var y = smy.group(3)!;
+    final year = y.length == 2 ? 2000 + int.parse(y) : int.parse(y);
+    if (year == n.year) return '$d/$mo';
+    if (y.length == 4) y = y.substring(2);
+    return '$d/$mo/$y';
+  }
+
+  // Already DD/MM
+  final slash = RegExp(r'^(\d{1,2})/(\d{1,2})$');
   final sm = slash.firstMatch(s);
   if (sm != null) {
     final d = sm.group(1)!.padLeft(2, '0');
     final mo = sm.group(2)!.padLeft(2, '0');
-    var y = sm.group(3)!;
-    if (y.length == 4) y = y.substring(2);
-    return '$d/$mo/$y';
+    return '$d/$mo';
   }
 
   return s;

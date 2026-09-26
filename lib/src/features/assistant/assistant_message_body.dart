@@ -66,9 +66,9 @@ class _ChatDataTable extends StatelessWidget {
 
   int _flexForColumn(int index, int colCount) {
     if (colCount <= 1) return 1;
-    if (index == 0) return 5; // category
+    if (index == 0) return 4; // category
     if (index == colCount - 1) return 4; // amount
-    return 2; // date / middle — DD/MM/YY
+    return 3; // date — needs room for DD/MM (no ellipsis "24/09…")
   }
 
   /// Tighter gap before the amount column; small gap elsewhere.
@@ -179,8 +179,8 @@ class _ChatDataTable extends StatelessWidget {
                                   dataRows[r][c].toLowerCase().trim()],
                               style: cellStyle,
                             )
-                          : Text(
-                              cellText(dataRows[r], c),
+                          : _TableCellText(
+                              text: cellText(dataRows[r], c),
                               style: cellStyle.copyWith(
                                 fontWeight: c == colCount - 1
                                     ? FontWeight.w700
@@ -189,11 +189,15 @@ class _ChatDataTable extends StatelessWidget {
                                     ? const [FontFeature.tabularFigures()]
                                     : null,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: c == colCount - 1
+                              align: c == colCount - 1
                                   ? TextAlign.right
                                   : TextAlign.left,
+                              // Dates must never show as "24/09…"
+                              allowEllipsis: c == colCount - 1
+                                  ? true
+                                  : !isChatTableDateHeader(
+                                      c < headers.length ? headers[c] : '',
+                                    ),
                             ),
                     ),
                   ],
@@ -240,6 +244,46 @@ class _ChatDataTable extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _TableCellText extends StatelessWidget {
+  const _TableCellText({
+    required this.text,
+    required this.style,
+    required this.align,
+    this.allowEllipsis = true,
+  });
+
+  final String text;
+  final TextStyle style;
+  final TextAlign align;
+  final bool allowEllipsis;
+
+  @override
+  Widget build(BuildContext context) {
+    if (allowEllipsis) {
+      return Text(
+        text,
+        style: style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: align,
+      );
+    }
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: align == TextAlign.right
+          ? Alignment.centerRight
+          : Alignment.centerLeft,
+      child: Text(
+        text,
+        style: style,
+        maxLines: 1,
+        softWrap: false,
+        textAlign: align,
       ),
     );
   }

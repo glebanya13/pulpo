@@ -98,7 +98,8 @@ bool looksLikeDeepFinanceQuestion(String text) {
   return RegExp(
     r'(бюджет|budget|цел[ьи]|goal|долг|debt|подписк|subscription|'
     r'категор|category|потратил.*(месяц|month|еду|food|транспорт)|'
-    r'сколько.*(на|по)|топ\s+трат|overview|обзор)',
+    r'сколько.*(на|по)|топ\s+трат|overview|обзор|'
+    r'gastos?|expenses?|расход|трат|витрат)',
   ).hasMatch(t);
 }
 

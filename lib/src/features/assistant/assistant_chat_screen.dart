@@ -38,6 +38,7 @@ import '../../widgets/ai_assistant_mark.dart';
 import 'app_chat_context.dart';
 import 'assistant_chat_format.dart';
 import 'assistant_transactions.dart';
+import 'expense_period_query.dart';
 
 part 'assistant_bubble.dart';
 part 'assistant_message_body.dart';
@@ -492,6 +493,36 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final currencyHint = account?.currency ??
         ref.read(settingsControllerProvider).baseCurrency;
 
+    // Period expense lists — build from local DB (not Gemini “recent 8”).
+    final periodQuery = parseExpensePeriodQuery(text);
+    if (periodQuery != null) {
+      final built = buildLocalExpensePeriodAnswer(
+        allTransactions:
+            ref.read(allTransactionsProvider).valueOrNull ?? const [],
+        categories: cats,
+        query: periodQuery,
+        tr: tr,
+        baseCurrency: currencyHint,
+      );
+      if (!mounted) return false;
+      final body = composeReplyWithTable(built.reply, built.table);
+      await _append(isFromUser: false, body: body);
+      // Local facts — no Gemini call, don't burn energy.
+      return false;
+    }
+
+    if (looksLikeTransactionCountQuestion(text)) {
+      final txs = ref.read(allTransactionsProvider).valueOrNull ?? const [];
+      await _append(
+        isFromUser: false,
+        body: buildLocalTransactionCountReply(
+          allTransactions: txs,
+          tr: tr,
+        ),
+      );
+      return false;
+    }
+
     late AssistantTurnResult turn;
     var alreadyParsedBatch = false;
 
@@ -682,12 +713,24 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final prior = _chatHistory(stored, welcome);
     final scope = looksLikeBalanceQuestion(text)
         ? AppContextScope.balances
-        : (looksLikeDeepFinanceQuestion(text)
+        : (looksLikeDeepFinanceQuestion(text) ||
+                looksLikeExpenseListQuestion(text)
             ? AppContextScope.full
             : AppContextScope.compact);
+    var appContext = buildAppChatContext(ref, scope: scope);
+    final period = parseExpensePeriodQuery(text);
+    if (period != null) {
+      appContext = '$appContext\n${buildExpensePeriodContextBlock(
+        allTransactions:
+            ref.read(allTransactionsProvider).valueOrNull ?? const [],
+        categories: ref.read(categoriesProvider).valueOrNull ?? const [],
+        query: period,
+        baseCurrency: currencyHint,
+      )}';
+    }
     return ref.read(pulpoAiServiceProvider).assistantTurn(
           userMessage: text,
-          appContext: buildAppChatContext(ref, scope: scope),
+          appContext: appContext,
           locale: locale,
           categoryNames: names,
           accountNames: accountNames,

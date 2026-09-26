@@ -543,7 +543,7 @@ $fewShot
   note/merchant = 1–3 words, never full transcript or greetings.
 intent "clarify": ONE short question if amount/account/transfer destination missing; transactions=[].
 intent "question": answer from APP DATA only; transactions=[]. Use month totals and top categories when relevant.
-  For multi-row spend/breakdown answers: keep reply as short intro/outro prose ONLY (no markdown pipes), and set "table":{"headers":["Category","Date","Amount"],"rows":[["…","…","…"]],"total":"…"}. Localize headers/cells. Date cells MUST use DD/MM/YY (e.g. 24/09/26), never YYYY-MM-DD. Omit table for simple one-line answers.
+  For multi-row spend/breakdown answers: keep reply as short intro/outro prose ONLY (no markdown pipes), and set "table":{"headers":["Category","Date","Amount"],"rows":[["…","…","…"]],"total":"…"}. Localize headers/cells (never raw slugs like food). Date cells: DD/MM if current year, else DD/MM/YY (e.g. 24/09/25). When APP DATA includes an EXPENSES period block, list EVERY row — TOTAL must equal the sum of those rows. Omit table for simple one-line answers.
 
 Chat:
 $hist
