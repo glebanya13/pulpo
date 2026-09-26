@@ -389,6 +389,11 @@ class Tr {
   String get dailyReminderTitle => _get('daily_reminder_title');
   String get dailyReminderBody => _get('daily_reminder_body');
   String get reminderPermissionDenied => _get('reminder_permission_denied');
+  String get reminderTest => _get('reminder_test');
+  String get reminderTestTitle => _get('reminder_test_title');
+  String get reminderTestBody => _get('reminder_test_body');
+  String get reminderTestSent => _get('reminder_test_sent');
+  String get reminderRescheduled => _get('reminder_rescheduled');
   String get themeLight => _get('theme_light');
   String get themeDark => _get('theme_dark');
   String get themeSystem => _get('theme_system');
@@ -1063,6 +1068,11 @@ class Tr {
           'Mantén tus finanzas bajo control registrando tus transacciones del día.',
       'reminder_permission_denied':
           'Activa las notificaciones en Ajustes para recibir el recordatorio.',
+      'reminder_test': 'Probar notificación',
+      'reminder_test_title': 'Monedero · prueba',
+      'reminder_test_body': 'Si ves esto, las notificaciones funcionan.',
+      'reminder_test_sent': 'Notificación de prueba enviada',
+      'reminder_rescheduled': 'Recordatorio actualizado',
       'theme_light': 'Claro',
       'theme_dark': 'Oscuro',
       'theme_system': 'Como el sistema',
@@ -1806,6 +1816,11 @@ class Tr {
           'Запиши доходы и расходы за сегодня — так проще держать финансы под контролем.',
       'reminder_permission_denied':
           'Разреши уведомления в настройках системы, чтобы получать напоминание.',
+      'reminder_test': 'Проверить уведомление',
+      'reminder_test_title': 'Monedero · тест',
+      'reminder_test_body': 'Если видишь это — уведомления работают.',
+      'reminder_test_sent': 'Тестовое уведомление отправлено',
+      'reminder_rescheduled': 'Напоминание обновлено',
       'theme_light': 'Светлая',
       'theme_dark': 'Тёмная',
       'theme_system': 'Как в системе',
@@ -2547,6 +2562,11 @@ class Tr {
           "Keep your finances in check by logging today's transactions.",
       'reminder_permission_denied':
           'Allow notifications in system settings to receive the reminder.',
+      'reminder_test': 'Test notification',
+      'reminder_test_title': 'Monedero · test',
+      'reminder_test_body': 'If you see this, notifications work.',
+      'reminder_test_sent': 'Test notification sent',
+      'reminder_rescheduled': 'Reminder updated',
       'theme_light': 'Light',
       'theme_dark': 'Dark',
       'theme_system': 'Match system',
@@ -3281,6 +3301,11 @@ class Tr {
       'daily_reminder_title': 'Щоденне нагадування',
       'daily_reminder_body': 'Запишіть доходи та витрати на сьогодні — легше тримати фінанси під контролем.',
       'reminder_permission_denied': 'Дозволити отримувати сповіщення в налаштуваннях системи.',
+      'reminder_test': 'Перевірити сповіщення',
+      'reminder_test_title': 'Monedero · тест',
+      'reminder_test_body': 'Якщо бачите це — сповіщення працюють.',
+      'reminder_test_sent': 'Тестове сповіщення надіслано',
+      'reminder_rescheduled': 'Нагадування оновлено',
       'theme_light': 'Світло',
       'theme_dark': 'Темний',
       'theme_system': 'Як у системі',

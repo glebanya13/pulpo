@@ -222,7 +222,9 @@ Future<ReminderSyncResult> syncDailyReminder(SettingsState settings) async {
   // Check only — never prompt from cold start / settings listen.
   final allowed = await hasReminderPermission();
   if (!allowed) {
-    await _plugin.cancel(id: _kReminderId);
+    // Do NOT cancel here — iOS checkPermissions can flake on cold sync /
+    // time changes and would wipe a valid schedule while the toggle stays on.
+    debugPrint('daily reminder: no permission — keeping existing schedule');
     return ReminderSyncResult.noPermission;
   }
 
@@ -258,18 +260,47 @@ Future<ReminderSyncResult> syncDailyReminder(SettingsState settings) async {
       if (mode == preferred) continue;
       try {
         await schedule(mode);
-        return ReminderSyncResult.ok;
+        break;
       } catch (e2, st2) {
         debugPrint('daily reminder $mode: $e2\n$st2');
       }
     }
   }
+
+  try {
+    final pending = await _plugin.pendingNotificationRequests();
+    final ours = pending.where((p) => p.id == _kReminderId).toList();
+    debugPrint(
+      'daily reminder scheduled for $when '
+      '(tz=${tz.local.name}, pending=${ours.length})',
+    );
+  } catch (e, st) {
+    debugPrint('daily reminder pending check: $e\n$st');
+  }
   return ReminderSyncResult.ok;
+}
+
+const _kTestReminderId = 2101;
+
+/// Immediate banner so the user can verify OS permission + icon.
+Future<bool> showTestReminder(Tr tr) async {
+  if (kIsWeb) return false;
+  await initDailyReminder();
+  final allowed = await requestReminderPermission();
+  if (!allowed) return false;
+  await _plugin.show(
+    id: _kTestReminderId,
+    title: tr.reminderTestTitle,
+    body: tr.reminderTestBody,
+    notificationDetails: _reminderDetails(),
+  );
+  return true;
 }
 
 tz.TZDateTime _nextAt(int hour, int minute) {
   final now = tz.TZDateTime.now(tz.local);
   var at = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+  // Minute-resolution picker: if we're already in/past that minute, tomorrow.
   if (!at.isAfter(now)) {
     at = at.add(const Duration(days: 1));
   }

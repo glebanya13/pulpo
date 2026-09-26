@@ -155,6 +155,45 @@ class RemindersScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  Pressable(
+                    onTap: () => sendTestReminder(context, ref, tr),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.scaffoldBg,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            LucideIcons.bellRing,
+                            size: 18,
+                            color: context.primaryText,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              tr.reminderTest,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: context.primaryText,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            LucideIcons.chevronRight,
+                            size: 16,
+                            color: context.faintText,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

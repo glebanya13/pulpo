@@ -212,10 +212,44 @@ Future<void> pickReminderTime(
         picked.hour,
         picked.minute,
       );
-  if (!settings.dailyReminderEnabled) {
-    if (!context.mounted) return;
-    await toggleDailyReminder(context, ref, tr, true);
+  // Always re-ask permission + reschedule from this user gesture. Relying only
+  // on the settings listener can miss a schedule when permission checks flake.
+  await initDailyReminder();
+  final allowed = await requestReminderPermission();
+  if (!allowed) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr.reminderPermissionDenied)),
+      );
+    }
+    return;
   }
+  if (!settings.dailyReminderEnabled) {
+    await ref
+        .read(settingsControllerProvider.notifier)
+        .setDailyReminderEnabled(true);
+  }
+  final result = await syncDailyReminder(ref.read(settingsControllerProvider));
+  if (!context.mounted) return;
+  if (result == ReminderSyncResult.ok) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(tr.reminderRescheduled)),
+    );
+  }
+}
+
+Future<void> sendTestReminder(
+  BuildContext context,
+  WidgetRef ref,
+  Tr tr,
+) async {
+  final ok = await showTestReminder(tr);
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(ok ? tr.reminderTestSent : tr.reminderPermissionDenied),
+    ),
+  );
 }
 
 class ReminderCtaButton extends StatelessWidget {
