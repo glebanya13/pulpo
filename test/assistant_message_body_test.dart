@@ -64,4 +64,24 @@ Intro
     );
     expect(composed.trim(), raw.trim());
   });
+
+  test('compactChatTableDate formats ISO to DD/MM/YY', () {
+    expect(compactChatTableDate('2026-09-24'), '24/09/26');
+    expect(compactChatTableDate('2026-09-24T12:00:00'), '24/09/26');
+    expect(compactChatTableDate('24/09/2026'), '24/09/26');
+    expect(compactChatTableDate('24/09/26'), '24/09/26');
+  });
+
+  test('chatTableToMarkdown compactifies date column', () {
+    final md = chatTableToMarkdown(
+      const AiChatTable(
+        headers: ['Categoría', 'Fecha', 'Importe'],
+        rows: [
+          ['Comida', '2026-09-24', '60'],
+        ],
+      ),
+    );
+    expect(md, contains('24/09/26'));
+    expect(md, isNot(contains('2026-09-24')));
+  });
 }

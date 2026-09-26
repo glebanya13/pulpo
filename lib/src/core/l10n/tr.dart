@@ -728,7 +728,6 @@ class Tr {
         _get('pro_feature_ai_quality'),
         _get('pro_feature_ai_receipts'),
         _get('pro_feature_ai_voice'),
-        _get('pro_feature_no_ads'),
         _get('pro_feature_accounts'),
         _get('pro_feature_budgets'),
         _get('pro_feature_goals'),
@@ -745,6 +744,7 @@ class Tr {
         _get('pro_feature_export_excel'),
         _get('pro_feature_export_pdf'),
         _get('pro_feature_import_csv'),
+        _get('pro_feature_no_ads'),
       ];
   String get proCtaSubtitle => _get('pro_cta_subtitle');
   String get proGo => _get('pro_go');

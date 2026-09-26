@@ -54,6 +54,7 @@ class _AssistantMessageBody extends StatelessWidget {
 }
 
 /// Kebo-style spend table: tinted header, category icons, TOTAL pill.
+/// Always fits bubble width (no horizontal scroll).
 class _ChatDataTable extends StatelessWidget {
   const _ChatDataTable({
     required this.table,
@@ -62,6 +63,20 @@ class _ChatDataTable extends StatelessWidget {
 
   final ChatMarkdownTable table;
   final Map<String, db.Category> categoriesByName;
+
+  int _flexForColumn(int index, int colCount) {
+    if (colCount <= 1) return 1;
+    if (index == 0) return 5; // category
+    if (index == colCount - 1) return 4; // amount
+    return 2; // date / middle — DD/MM/YY
+  }
+
+  /// Tighter gap before the amount column; small gap elsewhere.
+  double _gapBefore(int index, int colCount) {
+    if (index == 0) return 0;
+    if (index == colCount - 1) return 2;
+    return 4;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,110 +112,14 @@ class _ChatDataTable extends StatelessWidget {
     );
 
     final colCount = headers.length;
-    final tableMinWidth = (colCount * 108.0).clamp(240.0, 520.0);
 
-    Widget tableColumn({required double width}) {
-      return SizedBox(
-        width: width,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              color: headerBg,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Row(
-                children: [
-                  for (var c = 0; c < colCount; c++)
-                    Expanded(
-                      flex: c == colCount - 1 ? 3 : 4,
-                      child: Text(
-                        headers[c],
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: c == colCount - 1
-                            ? TextAlign.right
-                            : TextAlign.left,
-                        style: headerStyle,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            for (var r = 0; r < dataRows.length; r++) ...[
-              if (r > 0)
-                Divider(height: 1, thickness: 1, color: rowDivider),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    for (var c = 0; c < colCount; c++)
-                      Expanded(
-                        flex: c == colCount - 1 ? 3 : 4,
-                        child: c == 0
-                            ? _CategoryCell(
-                                label: dataRows[r][c],
-                                category: categoriesByName[
-                                    dataRows[r][c].toLowerCase().trim()],
-                                style: cellStyle,
-                              )
-                            : Text(
-                                c < dataRows[r].length ? dataRows[r][c] : '',
-                                style: cellStyle.copyWith(
-                                  fontWeight: c == colCount - 1
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                ),
-                                textAlign: c == colCount - 1
-                                    ? TextAlign.right
-                                    : TextAlign.left,
-                              ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-            if (totalRow != null) ...[
-              Divider(height: 1, thickness: 1, color: rowDivider),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        tr.totalWord.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: context.primaryText,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.lime,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        totalRow.length > 1 ? totalRow.last : totalRow.first,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
+    String cellText(List<String> row, int c) {
+      final raw = c < row.length ? row[c] : '';
+      final header = c < headers.length ? headers[c] : '';
+      return formatChatTableCell(
+        header: header,
+        cell: raw,
+        isLastColumn: c == colCount - 1,
       );
     }
 
@@ -215,19 +134,112 @@ class _ChatDataTable extends StatelessWidget {
         ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final w = constraints.maxWidth;
-          final needScroll = w < tableMinWidth - 0.5;
-          final child = tableColumn(
-            width: needScroll ? tableMinWidth : w,
-          );
-          if (!needScroll) return child;
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: child,
-          );
-        },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            color: headerBg,
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+            child: Row(
+              children: [
+                for (var c = 0; c < colCount; c++) ...[
+                  if (c > 0) SizedBox(width: _gapBefore(c, colCount)),
+                  Expanded(
+                    flex: _flexForColumn(c, colCount),
+                    child: Text(
+                      headers[c],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: c == colCount - 1
+                          ? TextAlign.right
+                          : TextAlign.left,
+                      style: headerStyle,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          for (var r = 0; r < dataRows.length; r++) ...[
+            if (r > 0)
+              Divider(height: 1, thickness: 1, color: rowDivider),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 7, 8, 7),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  for (var c = 0; c < colCount; c++) ...[
+                    if (c > 0) SizedBox(width: _gapBefore(c, colCount)),
+                    Expanded(
+                      flex: _flexForColumn(c, colCount),
+                      child: c == 0
+                          ? _CategoryCell(
+                              label: cellText(dataRows[r], c),
+                              category: categoriesByName[
+                                  dataRows[r][c].toLowerCase().trim()],
+                              style: cellStyle,
+                            )
+                          : Text(
+                              cellText(dataRows[r], c),
+                              style: cellStyle.copyWith(
+                                fontWeight: c == colCount - 1
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                fontFeatures: c == colCount - 1
+                                    ? const [FontFeature.tabularFigures()]
+                                    : null,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: c == colCount - 1
+                                  ? TextAlign.right
+                                  : TextAlign.left,
+                            ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+          if (totalRow != null) ...[
+            Divider(height: 1, thickness: 1, color: rowDivider),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      tr.totalWord.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: context.primaryText,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.lime,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      totalRow.length > 1 ? totalRow.last : totalRow.first,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

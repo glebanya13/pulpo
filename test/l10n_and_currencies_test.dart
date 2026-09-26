@@ -78,9 +78,9 @@ void main() {
     expect(Tr.fromLang('es').importCsv.toLowerCase(), contains('csv'));
     expect(Tr.fromLang('en').proFeatureBullets, hasLength(21));
     expect(Tr.fromLang('es').proFeatureBullets.first, isNotEmpty);
-    expect(
-      Tr.fromLang('ru').proFeatureBullets,
-      contains('Без рекламы'),
-    );
+    expect(Tr.fromLang('ru').proFeatureBullets.last, 'Без рекламы');
+    expect(Tr.fromLang('en').proFeatureBullets.last, 'No ads');
+    expect(Tr.fromLang('es').proFeatureBullets.last, 'Sin anuncios');
+    expect(Tr.fromLang('uk').proFeatureBullets.last, 'Без реклами');
   });
 }

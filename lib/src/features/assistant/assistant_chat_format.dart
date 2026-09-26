@@ -52,7 +52,14 @@ String chatTableToMarkdown(AiChatTable table) {
   for (final row in table.rows) {
     final cells = List<String>.generate(
       headers.length,
-      (i) => i < row.length ? row[i] : '',
+      (i) {
+        final raw = i < row.length ? row[i] : '';
+        return formatChatTableCell(
+          header: headers[i],
+          cell: raw,
+          isLastColumn: i == headers.length - 1,
+        );
+      },
     );
     buf.writeln('| ${cells.join(' | ')} |');
   }
@@ -127,6 +134,58 @@ bool isChatTableTotalLabel(String cell) {
       n == 'suma' ||
       n.startsWith('total ');
 }
+
+/// True for localized Date / Fecha / Дата column headers.
+bool isChatTableDateHeader(String header) {
+  final n = header.trim().toLowerCase();
+  return n == 'date' ||
+      n == 'fecha' ||
+      n == 'дата' ||
+      n == 'день' ||
+      n.startsWith('date ') ||
+      n.startsWith('fecha ');
+}
+
+/// Compact ISO / long dates to `DD/MM/YY` for chat tables.
+String compactChatTableDate(String raw) {
+  final s = raw.trim();
+  if (s.isEmpty) return s;
+
+  final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})');
+  final m = iso.firstMatch(s);
+  if (m != null) {
+    final yy = m.group(1)!.substring(2);
+    return '${m.group(3)}/${m.group(2)}/$yy';
+  }
+
+  // Already DD/MM/YY or DD/MM/YYYY
+  final slash = RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{2}|\d{4})$');
+  final sm = slash.firstMatch(s);
+  if (sm != null) {
+    final d = sm.group(1)!.padLeft(2, '0');
+    final mo = sm.group(2)!.padLeft(2, '0');
+    var y = sm.group(3)!;
+    if (y.length == 4) y = y.substring(2);
+    return '$d/$mo/$y';
+  }
+
+  return s;
+}
+
+/// Format a table cell for display (compact dates in date columns).
+String formatChatTableCell({
+  required String header,
+  required String cell,
+  required bool isLastColumn,
+}) {
+  if (isChatTableDateHeader(header) || (!isLastColumn && _looksLikeIsoDate(cell))) {
+    return compactChatTableDate(cell);
+  }
+  return cell;
+}
+
+bool _looksLikeIsoDate(String cell) =>
+    RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(cell.trim());
 
 class ChatMarkdownTable {
   const ChatMarkdownTable({required this.headers, required this.rows});
