@@ -320,6 +320,48 @@ class PulpoAiService {
     return categoryNames.take(limit).join(', ');
   }
 
+  /// Tiny JSON call: how many days/weeks the user wants for an expense list.
+  /// AI understands the period; the chat screen fills the table from local DB.
+  Future<Map<String, dynamic>?> resolveExpensePeriodJson({
+    required String userMessage,
+    required String locale,
+  }) async {
+    final trimmed = userMessage.trim();
+    if (trimmed.isEmpty) return null;
+    try {
+      return await _withRetryParse(() async {
+        final today = DateTime.now().toIso8601String().substring(0, 10);
+        final prompt = '''
+You extract the time window for a personal-finance expense list.
+Today is $today. Language hint: ${_langName(locale)}.
+User: """$trimmed"""
+
+Reply JSON only, one of:
+{"kind":"all"}
+{"kind":"month"}
+{"weeks":4}
+{"days":30}
+
+Rules:
+- "четыре недели" / "cuatro semanas" / "4 weeks" → {"weeks":4}
+- "две недели" / "2 semanas" → {"weeks":2}
+- "última semana" / "last week" → {"weeks":1}
+- "este mes" / "this month" → {"kind":"month"}
+- "todas las transacciones" / "все транзакции" → {"kind":"all"}
+- If unclear, prefer {"weeks":2}
+''';
+        return _generate(
+          [Content.text(prompt)],
+          label: 'expense_period',
+          preferStrong: false,
+        );
+      }, decodeAiJsonObject);
+    } catch (e) {
+      debugPrint('MonederoAI resolveExpensePeriod: $e');
+      return null;
+    }
+  }
+
   Future<ReceiptParseResult> analyzeReceipt(
     File image, {
     required String locale,

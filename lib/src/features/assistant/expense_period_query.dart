@@ -12,6 +12,7 @@ class ExpensePeriodQuery {
     required this.to,
     required this.daySpan,
     required this.labelKey,
+    this.confident = true,
   });
 
   /// Inclusive calendar-day start (local).
@@ -23,8 +24,11 @@ class ExpensePeriodQuery {
   /// Approximate day count for labels (7, 14, …).
   final int daySpan;
 
-  /// Stable key: `two_weeks` | `week` | `month` | `days` | `all`.
+  /// Stable key: `two_weeks` | `week` | `weeks` | `month` | `days` | `all`.
   final String labelKey;
+
+  /// False when we only guessed the default 14-day window — prefer AI refine.
+  final bool confident;
 
   bool get isAllTime => labelKey == 'all';
 }
@@ -55,7 +59,7 @@ bool looksLikeExpenseListQuestion(String text) {
 
   final mentionsExpenses = RegExp(
     r'(gastos?|expenses?|расход|трат|витрат|потрат|'
-    r'movimientos?|операц|транзакц|transactions?)',
+    r'movimientos?|операц|транзакц|transactions?|данн|дані|datos?)',
   ).hasMatch(t);
 
   final asksList = RegExp(
@@ -119,15 +123,18 @@ ExpensePeriodQuery? parseExpensePeriodQuery(String text) {
     );
   }
 
-  if (RegExp(
-    r'(dos\s+semanas|2\s+semanas|two\s+weeks|2\s+weeks|'
-    r'две\s+недел|2\s+недел|два\s+тижн)',
-  ).hasMatch(t)) {
+  // N weeks: "четыре недели", "4 semanas", "three weeks"…
+  // Must run before bare "última semana" / default 14d.
+  final weeks = _parseWeekCount(t);
+  if (weeks != null) {
+    final days = (weeks * 7).clamp(7, 366);
     return ExpensePeriodQuery(
-      from: startDaysAgo(14),
+      from: startDaysAgo(days),
       to: today,
-      daySpan: 14,
-      labelKey: 'two_weeks',
+      daySpan: days,
+      labelKey: weeks == 1
+          ? 'week'
+          : (weeks == 2 ? 'two_weeks' : 'weeks'),
     );
   }
 
@@ -171,13 +178,91 @@ ExpensePeriodQuery? parseExpensePeriodQuery(String text) {
     );
   }
 
-  // Generic “mis gastos / recent expenses” → last 14 days.
+  // Generic “mis gastos / recent expenses” → last 14 days (weak guess).
   return ExpensePeriodQuery(
     from: startDaysAgo(14),
     to: today,
     daySpan: 14,
     labelKey: 'two_weeks',
+    confident: false,
   );
+}
+
+/// Build [ExpensePeriodQuery] from a tiny AI JSON period resolution.
+ExpensePeriodQuery? expensePeriodFromAiJson(
+  Map<String, dynamic> m, {
+  DateTime? now,
+}) {
+  final n = now ?? DateTime.now();
+  final today = DateTime(n.year, n.month, n.day);
+
+  DateTime startDaysAgo(int daysInclusive) {
+    final d = daysInclusive.clamp(1, 3660);
+    return today.subtract(Duration(days: d - 1));
+  }
+
+  final kind = (m['kind'] ?? m['labelKey'] ?? '').toString().toLowerCase().trim();
+  final weeksRaw = m['weeks'];
+  final daysRaw = m['days'] ?? m['daySpan'];
+
+  if (kind == 'all' || kind == 'all_time') {
+    return ExpensePeriodQuery(
+      from: DateTime(2000, 1, 1),
+      to: today,
+      daySpan: 9999,
+      labelKey: 'all',
+    );
+  }
+  if (kind == 'month' || kind == 'this_month') {
+    final monthStart = DateTime(today.year, today.month, 1);
+    return ExpensePeriodQuery(
+      from: monthStart,
+      to: today,
+      daySpan: today.difference(monthStart).inDays + 1,
+      labelKey: 'month',
+    );
+  }
+
+  int? weeks;
+  if (weeksRaw is num) {
+    weeks = weeksRaw.round();
+  } else if (weeksRaw is String) {
+    weeks = int.tryParse(weeksRaw);
+  }
+  if (weeks == null && kind.startsWith('week')) {
+    weeks = kind.contains('two') || kind.contains('2') ? 2 : 1;
+  }
+  if (weeks != null && weeks >= 1 && weeks <= 52) {
+    final days = weeks * 7;
+    return ExpensePeriodQuery(
+      from: startDaysAgo(days),
+      to: today,
+      daySpan: days,
+      labelKey: weeks == 1
+          ? 'week'
+          : (weeks == 2 ? 'two_weeks' : 'weeks'),
+    );
+  }
+
+  int? days;
+  if (daysRaw is num) {
+    days = daysRaw.round();
+  } else if (daysRaw is String) {
+    days = int.tryParse(daysRaw);
+  }
+  if (days != null && days >= 1 && days <= 3660) {
+    return ExpensePeriodQuery(
+      from: startDaysAgo(days),
+      to: today,
+      daySpan: days,
+      labelKey: days % 7 == 0 && days >= 7
+          ? (days == 7
+              ? 'week'
+              : (days == 14 ? 'two_weeks' : 'weeks'))
+          : 'days',
+    );
+  }
+  return null;
 }
 
 /// Local deterministic expense table for [query] (no Gemini).
@@ -259,12 +344,72 @@ String _periodLabel(Tr tr, ExpensePeriodQuery query) {
       return tr.aiPeriodThisMonth;
     case 'days':
       return tr.aiPeriodLastDays(query.daySpan);
+    case 'weeks':
+      return tr.aiPeriodLastWeeks((query.daySpan / 7).round().clamp(1, 52));
     case 'all':
       return tr.aiPeriodAllTime;
     case 'two_weeks':
+      return tr.aiPeriodLastTwoWeeks;
     default:
       return tr.aiPeriodLastTwoWeeks;
   }
+}
+
+/// "4 weeks" / "cuatro semanas" / "четыре недели" → week count, or null.
+int? _parseWeekCount(String t) {
+  // Digits: "4 недели", "últimas 3 semanas", "last 4 weeks"
+  final digit = RegExp(
+    r'(\d{1,2})\s*(semanas?|weeks?|недел|тижн)',
+  ).firstMatch(t);
+  if (digit != null) {
+    final n = int.tryParse(digit.group(1)!);
+    if (n != null && n >= 1 && n <= 52) return n;
+  }
+
+  const words = <String, int>{
+    'una': 1,
+    'one': 1,
+    'одна': 1,
+    'одну': 1,
+    'один': 1,
+    'одн': 1,
+    'dos': 2,
+    'two': 2,
+    'две': 2,
+    'два': 2,
+    'tres': 3,
+    'three': 3,
+    'три': 3,
+    'cuatro': 4,
+    'four': 4,
+    'четыре': 4,
+    'чотири': 4,
+    'cinco': 5,
+    'five': 5,
+    'пять': 5,
+    'пʼять': 5,
+    'seis': 6,
+    'six': 6,
+    'шесть': 6,
+    'шість': 6,
+    'siete': 7,
+    'seven': 7,
+    'семь': 7,
+    'сім': 7,
+    'ocho': 8,
+    'eight': 8,
+    'восемь': 8,
+    'вісім': 8,
+  };
+
+  for (final e in words.entries) {
+    if (RegExp(
+      '${RegExp.escape(e.key)}\\s*(semanas?|weeks?|недел|тижн)',
+    ).hasMatch(t)) {
+      return e.value;
+    }
+  }
+  return null;
 }
 
 /// Extra APP DATA block so Gemini can answer period questions without inventing.

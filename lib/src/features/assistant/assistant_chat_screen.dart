@@ -493,22 +493,47 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final currencyHint = account?.currency ??
         ref.read(settingsControllerProvider).baseCurrency;
 
-    // Period expense lists — build from local DB (not Gemini “recent 8”).
-    final periodQuery = parseExpensePeriodQuery(text);
-    if (periodQuery != null) {
-      final built = buildLocalExpensePeriodAnswer(
-        allTransactions:
-            ref.read(allTransactionsProvider).valueOrNull ?? const [],
-        categories: cats,
-        query: periodQuery,
-        tr: tr,
-        baseCurrency: currencyHint,
-      );
-      if (!mounted) return false;
-      final body = composeReplyWithTable(built.reply, built.table);
-      await _append(isFromUser: false, body: body);
-      // Local facts — no Gemini call, don't burn energy.
-      return false;
+    // Expense lists: AI (or local rules) picks the period; table always from DB
+    // so totals stay honest (Gemini used to truncate rows).
+    if (looksLikeExpenseListQuestion(text)) {
+      var periodQuery = parseExpensePeriodQuery(text);
+      if (periodQuery == null || !periodQuery.confident) {
+        if (mounted) {
+          setState(() {
+            _busyLabel = tr.aiBusy;
+            _streamPreview = '';
+          });
+        }
+        try {
+          final aiPeriod = await ref
+              .read(pulpoAiServiceProvider)
+              .resolveExpensePeriodJson(
+                userMessage: text,
+                locale: locale,
+              );
+          final resolved =
+              aiPeriod == null ? null : expensePeriodFromAiJson(aiPeriod);
+          if (resolved != null) periodQuery = resolved;
+        } catch (e, st) {
+          await _logError(e, st);
+        }
+      }
+      periodQuery ??= parseExpensePeriodQuery(text);
+      if (periodQuery != null) {
+        final built = buildLocalExpensePeriodAnswer(
+          allTransactions:
+              ref.read(allTransactionsProvider).valueOrNull ?? const [],
+          categories: cats,
+          query: periodQuery,
+          tr: tr,
+          baseCurrency: currencyHint,
+        );
+        if (!mounted) return false;
+        final body = composeReplyWithTable(built.reply, built.table);
+        await _append(isFromUser: false, body: body);
+        // Period may use a tiny AI call; table itself is local facts.
+        return periodQuery.confident == false;
+      }
     }
 
     if (looksLikeTransactionCountQuestion(text)) {

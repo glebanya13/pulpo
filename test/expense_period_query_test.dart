@@ -43,9 +43,31 @@ void main() {
     expect(parseExpensePeriodQuery('gasté 15€ en comida'), isNull);
   });
 
-  test('detects this month', () {
-    final p = parseExpensePeriodQuery('muéstrame los gastos de este mes')!;
-    expect(p.labelKey, 'month');
-    expect(p.from.day, 1);
+  test('detects four weeks in Russian', () {
+    const q = 'Отправь мне данные за последние четыре недели';
+    expect(looksLikeExpenseListQuestion(q), isTrue);
+    final p = parseExpensePeriodQuery(q)!;
+    expect(p.labelKey, 'weeks');
+    expect(p.daySpan, 28);
+  });
+
+  test('detects 3 semanas in Spanish', () {
+    final p = parseExpensePeriodQuery('gastos de las últimas 3 semanas')!;
+    expect(p.daySpan, 21);
+    expect(p.labelKey, 'weeks');
+  });
+
+  test('expensePeriodFromAiJson maps weeks', () {
+    final now = DateTime(2026, 9, 27);
+    final p = expensePeriodFromAiJson({'weeks': 4}, now: now)!;
+    expect(p.daySpan, 28);
+    expect(p.labelKey, 'weeks');
+    expect(p.confident, isTrue);
+  });
+
+  test('default recent expenses is not confident', () {
+    final p = parseExpensePeriodQuery('muéstrame mis gastos')!;
+    expect(p.confident, isFalse);
+    expect(p.daySpan, 14);
   });
 }

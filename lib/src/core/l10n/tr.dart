@@ -851,6 +851,8 @@ class Tr {
   String get aiPeriodAllTime => _get('ai_period_all_time');
   String aiPeriodLastDays(int n) =>
       _get('ai_period_last_days').replaceAll('{}', '$n');
+  String aiPeriodLastWeeks(int n) =>
+      _get('ai_period_last_weeks').replaceAll('{}', '$n');
   String aiExpensePeriodIntro(String period) =>
       _get('ai_expense_period_intro').replaceAll('{}', period);
   String aiExpensePeriodEmpty(String period) =>
@@ -1685,6 +1687,7 @@ class Tr {
       'ai_period_this_month': 'este mes',
       'ai_period_all_time': 'todo el historial',
       'ai_period_last_days': 'los últimos {} días',
+      'ai_period_last_weeks': 'las últimas {} semanas',
       'ai_expense_period_intro': 'Aquí tienes tus gastos de {}:',
       'ai_expense_period_empty': 'Sin gastos en {}.',
       'ai_expense_period_partial':
@@ -2442,6 +2445,7 @@ class Tr {
       'ai_period_this_month': 'этот месяц',
       'ai_period_all_time': 'всё время',
       'ai_period_last_days': 'последние {} дней',
+      'ai_period_last_weeks': 'последние {} недель',
       'ai_expense_period_intro': 'Вот твои расходы за {}:',
       'ai_expense_period_empty': 'Нет расходов за {}.',
       'ai_expense_period_partial':
@@ -3198,6 +3202,7 @@ class Tr {
       'ai_period_this_month': 'this month',
       'ai_period_all_time': 'all time',
       'ai_period_last_days': 'the last {} days',
+      'ai_period_last_weeks': 'the last {} weeks',
       'ai_expense_period_intro': 'Here are your expenses for {}:',
       'ai_expense_period_empty': 'No expenses in {}.',
       'ai_expense_period_partial':
@@ -3888,6 +3893,7 @@ class Tr {
       'ai_period_this_month': 'цей місяць',
       'ai_period_all_time': 'весь час',
       'ai_period_last_days': 'останні {} днів',
+      'ai_period_last_weeks': 'останні {} тижнів',
       'ai_expense_period_intro': 'Ось твої витрати за {}:',
       'ai_expense_period_empty': 'Немає витрат за {}.',
       'ai_expense_period_partial':
