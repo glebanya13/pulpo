@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
@@ -156,96 +157,121 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
         : _expenseCats;
 
     return Scaffold(
-      body: StickyScrollPage(
-        header: PageHeader(
-          first: widget.isEdit ? tr.editBudget : tr.newBudget,
-          onBack: () => context.pop(),
-        ),
-        children: [
-          TextField(
-            controller: _nameCtrl,
-            autofocus: !widget.isEdit,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(labelText: tr.budgetName),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            12,
+            AppSpacing.lg,
+            AppSpacing.md,
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _amountCtrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(labelText: tr.amount),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            tr.periodicity,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: context.faintText,
-            ),
-          ),
-          const SizedBox(height: 8),
-          SegmentedPill<int>(
-            value: _period,
-            onChanged: (v) => setState(() => _period = v),
-            scrollable: true,
-            options: [
-              SegmentedPillOption(value: 0, label: tr.freqWeekly),
-              SegmentedPillOption(value: 1, label: tr.monthlyLabel),
-              SegmentedPillOption(value: 3, label: tr.yearlyLabel),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PageHeader(
+                first: widget.isEdit ? tr.editBudget : tr.newBudget,
+                onBack: () => context.pop(),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: _nameCtrl,
+                        autofocus: !widget.isEdit,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(labelText: tr.budgetName),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _amountCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                        decoration: InputDecoration(labelText: tr.amount),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        tr.periodicity,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: context.faintText,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SegmentedPill<int>(
+                        value: _period,
+                        onChanged: (v) => setState(() => _period = v),
+                        scrollable: true,
+                        options: [
+                          SegmentedPillOption(value: 0, label: tr.freqWeekly),
+                          SegmentedPillOption(value: 1, label: tr.monthlyLabel),
+                          SegmentedPillOption(value: 3, label: tr.yearlyLabel),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Pressable(
+                        onTap: _pickCategories,
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: tr.budgetCategories,
+                            suffixIcon: Icon(
+                              LucideIcons.chevronDown,
+                              size: 18,
+                              color: context.faintText,
+                            ),
+                          ),
+                          child: Text(
+                            _categoryLabel(expenseCats),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: context.primaryText,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _rollover,
+                        onChanged: (v) => setState(() => _rollover = v),
+                        title: Text(tr.budgetRollover),
+                        subtitle: Text(tr.budgetRolloverDesc),
+                      ),
+                      const SizedBox(height: 12),
+                      ScaledElevatedButton(
+                        expand: true,
+                        onPressed: _saving ? null : _save,
+                        child: Text(_saving ? '...' : tr.save),
+                      ),
+                      if (widget.isEdit) ...[
+                        const SizedBox(height: 12),
+                        Center(
+                          child: TextButton(
+                            onPressed: _delete,
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFFE53E3E),
+                            ),
+                            child: Text(tr.delete),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-          Pressable(
-            onTap: _pickCategories,
-            child: InputDecorator(
-              decoration: InputDecoration(
-                labelText: tr.budgetCategories,
-                suffixIcon: Icon(
-                  LucideIcons.chevronDown,
-                  size: 18,
-                  color: context.faintText,
-                ),
-              ),
-              child: Text(
-                _categoryLabel(expenseCats),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: context.primaryText,
-                ),
-              ),
-            ),
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _rollover,
-            onChanged: (v) => setState(() => _rollover = v),
-            title: Text(tr.budgetRollover),
-            subtitle: Text(tr.budgetRolloverDesc),
-          ),
-          const SizedBox(height: 12),
-          ScaledElevatedButton(
-            expand: true,
-            onPressed: _saving ? null : _save,
-            child: Text(_saving ? '...' : tr.save),
-          ),
-          if (widget.isEdit) ...[
-            const SizedBox(height: 12),
-            Center(
-              child: TextButton(
-                onPressed: _delete,
-                style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFE53E3E)),
-                child: Text(tr.delete),
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-        ],
+        ),
       ),
     );
   }

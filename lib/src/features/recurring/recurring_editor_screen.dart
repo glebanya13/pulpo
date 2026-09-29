@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/keyboard.dart';
 import '../../data/db/enums.dart';
@@ -143,82 +144,120 @@ class _RecurringEditorScreenState
     final locale = Localizations.localeOf(context).languageCode;
 
     return Scaffold(
-      body: StickyScrollPage(
-        header: PageHeader(
-          first: widget.isEdit ? tr.editRule : tr.newRule,
-          onBack: () => context.pop(),
-        ),
-        children: [
-          TabsPill(
-            tabs: [tr.expense, tr.income],
-            index: _type == TxType.expense ? 0 : 1,
-            onChanged: (i) =>
-                setState(() => _type = i == 0 ? TxType.expense : TxType.income),
-            limeActive: true,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            12,
+            AppSpacing.lg,
+            AppSpacing.md,
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _nameCtrl,
-            autofocus: !widget.isEdit,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(labelText: tr.titleLabel),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _amountCtrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(labelText: tr.amount),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            tr.frequencyLabel,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: context.faintText,
-            ),
-          ),
-          const SizedBox(height: 8),
-          SegmentedPill<String>(
-            value: _frequency,
-            onChanged: (v) => setState(() => _frequency = v),
-            columns: 2,
-            options: [
-              SegmentedPillOption(value: 'daily', label: tr.freqDaily),
-              SegmentedPillOption(value: 'weekly', label: tr.freqWeekly),
-              SegmentedPillOption(value: 'monthly', label: tr.monthlyLabel),
-              SegmentedPillOption(value: 'yearly', label: tr.yearlyLabel),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PageHeader(
+                first: widget.isEdit ? tr.editRule : tr.newRule,
+                onBack: () => context.pop(),
+              ),
+              const SizedBox(height: 12),
+              TabsPill(
+                tabs: [tr.expense, tr.income],
+                index: _type == TxType.expense ? 0 : 1,
+                onChanged: (i) => setState(
+                  () => _type = i == 0 ? TxType.expense : TxType.income,
+                ),
+                limeActive: true,
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: _nameCtrl,
+                        autofocus: !widget.isEdit,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(labelText: tr.titleLabel),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _amountCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                        decoration: InputDecoration(labelText: tr.amount),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        tr.frequencyLabel,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: context.faintText,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SegmentedPill<String>(
+                        value: _frequency,
+                        onChanged: (v) => setState(() => _frequency = v),
+                        columns: 2,
+                        options: [
+                          SegmentedPillOption(
+                            value: 'daily',
+                            label: tr.freqDaily,
+                          ),
+                          SegmentedPillOption(
+                            value: 'weekly',
+                            label: tr.freqWeekly,
+                          ),
+                          SegmentedPillOption(
+                            value: 'monthly',
+                            label: tr.monthlyLabel,
+                          ),
+                          SegmentedPillOption(
+                            value: 'yearly',
+                            label: tr.yearlyLabel,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _DateRow(
+                        date: _next,
+                        prefix: tr.nextRunPrefix,
+                        locale: locale,
+                        onPick: (d) => setState(() => _next = d),
+                      ),
+                      const SizedBox(height: 28),
+                      ScaledElevatedButton(
+                        expand: true,
+                        onPressed: _saving ? null : _save,
+                        child: Text(_saving ? '...' : tr.save),
+                      ),
+                      if (widget.isEdit) ...[
+                        const SizedBox(height: 12),
+                        Center(
+                          child: TextButton(
+                            onPressed: _delete,
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFFE53E3E),
+                            ),
+                            child: Text(tr.delete),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-          _DateRow(
-            date: _next,
-            prefix: tr.nextRunPrefix,
-            locale: locale,
-            onPick: (d) => setState(() => _next = d),
-          ),
-          const SizedBox(height: 28),
-          ScaledElevatedButton(
-            expand: true,
-            onPressed: _saving ? null : _save,
-            child: Text(_saving ? '...' : tr.save),
-          ),
-          if (widget.isEdit) ...[
-            const SizedBox(height: 12),
-            Center(
-              child: TextButton(
-                onPressed: _delete,
-                style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFE53E3E)),
-                child: Text(tr.delete),
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-        ],
+        ),
       ),
     );
   }

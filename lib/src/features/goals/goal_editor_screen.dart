@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../data/repositories/goal_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
@@ -99,47 +100,72 @@ class _GoalEditorScreenState extends ConsumerState<GoalEditorScreen> {
     final tr = Tr.of(context);
 
     return Scaffold(
-      body: StickyScrollPage(
-        header: PageHeader(
-          first: widget.isEdit ? tr.editGoal : tr.newGoal,
-          onBack: () => context.pop(),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            12,
+            AppSpacing.lg,
+            AppSpacing.md,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PageHeader(
+                first: widget.isEdit ? tr.editGoal : tr.newGoal,
+                onBack: () => context.pop(),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: _nameCtrl,
+                        autofocus: !widget.isEdit,
+                        textInputAction: TextInputAction.next,
+                        onSubmitted: (_) => _targetFocus.requestFocus(),
+                        decoration: InputDecoration(labelText: tr.goalName),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _targetCtrl,
+                        focusNode: _targetFocus,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        textInputAction: TextInputAction.next,
+                        onSubmitted: (_) => _currentFocus.requestFocus(),
+                        decoration: InputDecoration(labelText: tr.goalTarget),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _currentCtrl,
+                        focusNode: _currentFocus,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                        decoration: InputDecoration(labelText: tr.goalSaved),
+                      ),
+                      const SizedBox(height: 28),
+                      ScaledElevatedButton(
+                        expand: true,
+                        onPressed: _saving ? null : _save,
+                        child: Text(_saving ? '...' : tr.save),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        children: [
-          TextField(
-            controller: _nameCtrl,
-            autofocus: !widget.isEdit,
-            textInputAction: TextInputAction.next,
-            onSubmitted: (_) => _targetFocus.requestFocus(),
-            decoration: InputDecoration(labelText: tr.goalName),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _targetCtrl,
-            focusNode: _targetFocus,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            textInputAction: TextInputAction.next,
-            onSubmitted: (_) => _currentFocus.requestFocus(),
-            decoration: InputDecoration(labelText: tr.goalTarget),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _currentCtrl,
-            focusNode: _currentFocus,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(labelText: tr.goalSaved),
-          ),
-          const SizedBox(height: 28),
-          ScaledElevatedButton(
-            expand: true,
-            onPressed: _saving ? null : _save,
-            child: Text(_saving ? '...' : tr.save),
-          ),
-          const SizedBox(height: 16),
-        ],
       ),
     );
   }

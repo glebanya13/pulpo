@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
@@ -129,126 +130,161 @@ class _CategoryEditorScreenState extends ConsumerState<CategoryEditorScreen> {
     final tr = Tr.of(context);
 
     return Scaffold(
-      body: StickyScrollPage(
-        header: PageHeader(
-          first: widget.isEdit ? tr.editCategory : tr.newCategory,
-          onBack: () => context.pop(),
-        ),
-        children: [
-          // Live preview
-          Center(
-            child: ColorWellIcon(
-              color: Color(_color),
-              icon: lucideByKey(_icon),
-              size: 72,
-              iconSize: 32,
-              radius: 22,
-            ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            12,
+            AppSpacing.lg,
+            AppSpacing.md,
           ),
-          const SizedBox(height: 24),
-
-          // Name
-          TextField(
-            controller: _nameCtrl,
-            autofocus: !widget.isEdit,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(labelText: tr.titleLabel),
-          ),
-          const SizedBox(height: 28),
-
-          // Color
-          Text(
-            tr.colorLabel,
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: context.mutedText),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: _palette
-                .map((c) => Pressable(
-                      onTap: () => setState(() => _color = c),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Color(c),
-                          shape: BoxShape.circle,
-                          border: _color == c
-                              ? Border.all(
-                                  color: context.isDark
-                                      ? Colors.white
-                                      : AppColors.ink,
-                                  width: 2.5)
-                              : null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PageHeader(
+                first: widget.isEdit ? tr.editCategory : tr.newCategory,
+                onBack: () => context.pop(),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Live preview
+                      Center(
+                        child: ColorWellIcon(
+                          color: Color(_color),
+                          icon: lucideByKey(_icon),
+                          size: 72,
+                          iconSize: 32,
+                          radius: 22,
                         ),
                       ),
-                    ))
-                .toList(),
-          ),
-          const SizedBox(height: 28),
+                      const SizedBox(height: 24),
 
-          // Icon
-          Text(
-            tr.iconLabel,
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: context.mutedText),
-          ),
-          const SizedBox(height: 12),
-          GridView.count(
-            shrinkWrap: true,
-            crossAxisCount: 6,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 1,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              for (final key in _iconKeys)
-                Pressable(
-                  onTap: () => setState(() => _icon = key),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: _icon == key
-                          ? AppColors.lime.withValues(alpha: 0.3)
-                          : context.scaffoldBg,
-                      borderRadius: BorderRadius.circular(14),
-                      border: _icon == key
-                          ? Border.all(color: AppColors.lime, width: 2)
-                          : null,
-                    ),
-                    child: Icon(lucideByKey(key), color: context.primaryText),
+                      // Name
+                      TextField(
+                        controller: _nameCtrl,
+                        autofocus: !widget.isEdit,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                        decoration: InputDecoration(labelText: tr.titleLabel),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Color
+                      Text(
+                        tr.colorLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: context.mutedText,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: _palette
+                            .map(
+                              (c) => Pressable(
+                                onTap: () => setState(() => _color = c),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Color(c),
+                                    shape: BoxShape.circle,
+                                    border: _color == c
+                                        ? Border.all(
+                                            color: context.isDark
+                                                ? Colors.white
+                                                : AppColors.ink,
+                                            width: 2.5,
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Icon
+                      Text(
+                        tr.iconLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: context.mutedText,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        shrinkWrap: true,
+                        crossAxisCount: 6,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 1,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          for (final key in _iconKeys)
+                            Pressable(
+                              onTap: () => setState(() => _icon = key),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: _icon == key
+                                      ? AppColors.lime.withValues(alpha: 0.3)
+                                      : context.scaffoldBg,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: _icon == key
+                                      ? Border.all(
+                                          color: AppColors.lime,
+                                          width: 2,
+                                        )
+                                      : null,
+                                ),
+                                child: Icon(
+                                  lucideByKey(key),
+                                  color: context.primaryText,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+
+                      ScaledElevatedButton(
+                        expand: true,
+                        onPressed: _saving ? null : _save,
+                        child: Text(_saving ? '...' : tr.save),
+                      ),
+
+                      if (widget.isEdit) ...[
+                        const SizedBox(height: 12),
+                        Center(
+                          child: TextButton(
+                            onPressed: _delete,
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFFE53E3E),
+                            ),
+                            child: Text(tr.delete),
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 16),
+                    ],
                   ),
                 ),
+              ),
             ],
           ),
-          const SizedBox(height: 32),
-
-          ScaledElevatedButton(
-            expand: true,
-            onPressed: _saving ? null : _save,
-            child: Text(_saving ? '...' : tr.save),
-          ),
-
-          if (widget.isEdit) ...[
-            const SizedBox(height: 12),
-            Center(
-              child: TextButton(
-                onPressed: _delete,
-                style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFE53E3E)),
-                child: Text(tr.delete),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 16),
-        ],
+        ),
       ),
     );
   }

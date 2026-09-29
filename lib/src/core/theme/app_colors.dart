@@ -13,6 +13,9 @@ class AppColors {
   static const selectionLight = Color(0x4D7A9E1F); // ~30% limeAccent
   static const selectionHandle = lime;
 
+  /// Selection on lime (user) chat bubbles — ink wash so it doesn't melt into the fill.
+  static const selectionOnLime = Color(0x590F0F0F); // ~35% ink
+
   /// Legacy brand purple (UI accents / wells — not the launcher plate).
   static const brandPurple = Color(0xFF8C52FF);
 

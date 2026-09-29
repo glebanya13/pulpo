@@ -16,6 +16,7 @@ import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/seed/seed_demo.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/common.dart';
 import '../auth/auth_messages.dart';
 import '../auth/cloud_auth.dart';
 
@@ -186,11 +187,20 @@ class _OnboardingSetupScreenState extends ConsumerState<OnboardingSetupScreen> {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: RoundIconButton.chromeFill(
+                            context,
+                            onDarkMedia: true,
+                          ),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(LucideIcons.arrowLeft,
-                            size: 18, color: Colors.white),
+                        child: Icon(
+                          LucideIcons.arrowLeft,
+                          size: 18,
+                          color: RoundIconButton.chromeIcon(
+                            context,
+                            onDarkMedia: true,
+                          ),
+                        ),
                       ),
                     ),
                     const Spacer(),

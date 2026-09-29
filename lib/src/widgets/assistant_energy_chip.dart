@@ -8,17 +8,22 @@ import '../core/pro/pro_controller.dart';
 import '../core/pro/pro_guard.dart';
 import '../core/pro/pro_limits.dart';
 import '../core/theme/app_theme.dart';
+import '../core/theme/liquid_glass.dart';
 import 'pressable.dart';
 
 /// Compact ⚡N capsule for free users; hidden for Pro.
 class AssistantEnergyChip extends ConsumerWidget {
-  const AssistantEnergyChip({super.key, this.onEmpty, this.onHasEnergy});
+  const AssistantEnergyChip({
+    super.key,
+    this.onEmpty,
+    this.onHasEnergy,
+    /// Narrow headers: zap only (count still in tooltip / snackbar).
+    this.iconOnly = false,
+  });
 
-  /// Called when the user taps with 0 energy (defaults to paywall).
   final VoidCallback? onEmpty;
-
-  /// Called when the user taps with energy left (defaults to quota hint).
   final VoidCallback? onHasEnergy;
+  final bool iconOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -54,26 +59,29 @@ class AssistantEnergyChip extends ConsumerWidget {
           SnackBar(content: Text(tr.aiEnergyHint(units))),
         );
       },
-      child: Container(
-        height: 34,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: context.surface,
-          borderRadius: BorderRadius.circular(999),
+      child: LiquidGlass(
+        compact: true,
+        light: true,
+        borderRadius: BorderRadius.circular(999),
+        padding: EdgeInsets.symmetric(
+          horizontal: iconOnly ? 10 : 10,
+          vertical: 8,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(LucideIcons.zap, size: 14, color: bolt),
-            const SizedBox(width: 4),
-            Text(
-              '$units',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: empty ? context.mutedText : context.primaryText,
+            if (!iconOnly) ...[
+              const SizedBox(width: 4),
+              Text(
+                '$units',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: empty ? context.mutedText : context.primaryText,
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

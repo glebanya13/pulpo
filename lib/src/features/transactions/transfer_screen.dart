@@ -8,6 +8,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
+import '../../core/theme/liquid_glass.dart';
 import '../../widgets/pressable.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
@@ -407,15 +408,18 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                 children: [
                   Pressable(
                     onTap: () => context.pop(),
-                    child: Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: context.surface,
-                        shape: BoxShape.circle,
+                    child: LiquidGlass(
+                      compact: true,
+                      borderRadius: BorderRadius.circular(21),
+                      child: SizedBox(
+                        width: 42,
+                        height: 42,
+                        child: Icon(
+                          LucideIcons.x,
+                          size: 18,
+                          color: context.primaryText,
+                        ),
                       ),
-                      child: Icon(LucideIcons.x,
-                          size: 18, color: context.primaryText),
                     ),
                   ),
                   Flexible(

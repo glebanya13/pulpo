@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_theme.dart';
+import '../core/theme/liquid_glass.dart';
 import 'app_bottom_sheet.dart';
 
 /// Opens [child] in a consistent rounded picker sheet with handle bar + X button.
@@ -135,16 +136,20 @@ class _CloseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = context.isDark
-        ? Colors.white.withValues(alpha: 0.10)
-        : Colors.black.withValues(alpha: 0.07);
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-        child: Icon(Icons.close_rounded, size: 17, color: context.mutedText),
+      child: LiquidGlass(
+        compact: true,
+        borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: Icon(
+            Icons.close_rounded,
+            size: 17,
+            color: context.primaryText,
+          ),
+        ),
       ),
     );
   }

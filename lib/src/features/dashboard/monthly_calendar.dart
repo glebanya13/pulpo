@@ -376,6 +376,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     await showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _DaySheet(
         day: day,

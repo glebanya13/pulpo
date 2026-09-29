@@ -331,10 +331,14 @@ class _CircleBtn extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: RoundIconButton.chromeFill(context, onDarkMedia: true),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 18, color: Colors.white),
+        child: Icon(
+          icon,
+          size: 18,
+          color: RoundIconButton.chromeIcon(context, onDarkMedia: true),
+        ),
       ),
     );
   }

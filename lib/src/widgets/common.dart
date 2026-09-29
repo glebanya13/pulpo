@@ -325,15 +325,16 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
   Widget build(BuildContext context) {
     final pad = _resolvePadding(context);
     final estimatedHeader = pad.top +
-        (widget.headerContentHeight ?? 56) +
+        (widget.headerContentHeight ?? 64) +
         widget.headerBottomPadding;
     final topInset =
         (_headerHeight > 0 ? _headerHeight : estimatedHeader) + widget.headerGap;
 
-    // Header stays pinned. Content scrolls underneath — never translate the
-    // glass pill with overscroll (that rebuilt / jumped every frame).
+    // Header stays pinned. Opaque scrim so list/form content never shows
+    // through the glass title (blocked taps / "invisible" chrome).
+    final scrim = Theme.of(context).scaffoldBackgroundColor;
     final content = Stack(
-      clipBehavior: Clip.none,
+      clipBehavior: Clip.hardEdge,
       children: [
         Positioned.fill(
           child: CustomScrollView(
@@ -376,14 +377,17 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
           child: RepaintBoundary(
             child: KeyedSubtree(
               key: _headerKey,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  pad.left,
-                  pad.top,
-                  pad.right,
-                  widget.headerBottomPadding,
+              child: ColoredBox(
+                color: scrim,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    pad.left,
+                    pad.top,
+                    pad.right,
+                    widget.headerBottomPadding,
+                  ),
+                  child: widget.header,
                 ),
-                child: widget.header,
               ),
             ),
           ),
@@ -676,17 +680,40 @@ class RoundIconButton extends StatelessWidget {
     super.key,
     required this.icon,
     required this.onTap,
-    this.dark = false,
+    /// Overlay on dark hero / photo — frosted disc (readable, not ghost).
+    this.onDarkMedia = false,
+    this.size = PageHeader.controlSize,
+    this.iconSize = 18,
   });
   final IconData icon;
   final VoidCallback onTap;
-  final bool dark;
+  final bool onDarkMedia;
+  final double size;
+  final double iconSize;
+
+  /// Fallback fill when a raw [Container] must match chrome (rare).
+  static Color chromeFill(BuildContext context, {bool onDarkMedia = false}) {
+    if (onDarkMedia) {
+      return Colors.white.withValues(alpha: 0.22);
+    }
+    // Approximate liquid-glass mid tone for non-glass call sites.
+    return context.isDark
+        ? Colors.white.withValues(alpha: 0.14)
+        : Colors.white.withValues(alpha: 0.82);
+  }
+
+  static Color chromeIcon(BuildContext context, {bool onDarkMedia = false}) {
+    if (onDarkMedia) return Colors.white;
+    return context.primaryText;
+  }
 
   @override
   Widget build(BuildContext context) => _RoundIconBtn(
         icon: icon,
         onTap: onTap,
-        dark: dark,
+        onDarkMedia: onDarkMedia,
+        size: size,
+        iconSize: iconSize,
       );
 }
 
@@ -694,26 +721,57 @@ class _RoundIconBtn extends StatelessWidget {
   const _RoundIconBtn({
     required this.icon,
     required this.onTap,
-    this.dark = false,
+    this.onDarkMedia = false,
+    this.size = PageHeader.controlSize,
+    this.iconSize = 18,
   });
   final IconData icon;
   final VoidCallback onTap;
-  final bool dark;
+  final bool onDarkMedia;
+  final double size;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = dark || context.isDark;
+    final iconWidget = Icon(
+      icon,
+      size: iconSize,
+      color: RoundIconButton.chromeIcon(context, onDarkMedia: onDarkMedia),
+    );
+
+    if (onDarkMedia) {
+      return Pressable(
+        onTap: onTap,
+        child: Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: RoundIconButton.chromeFill(context, onDarkMedia: true),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.28),
+              width: 0.6,
+            ),
+          ),
+          child: iconWidget,
+        ),
+      );
+    }
+
     return Pressable(
       onTap: onTap,
-      child: Container(
-        width: PageHeader.controlSize,
-        height: PageHeader.controlSize,
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white,
-          shape: BoxShape.circle,
+      child: RepaintBoundary(
+        child: LiquidGlass(
+          compact: true,
+          light: true,
+          borderRadius: BorderRadius.circular(size / 2),
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: Center(child: iconWidget),
+          ),
         ),
-        child: Icon(icon,
-            size: 18, color: isDark ? Colors.white : AppColors.ink),
       ),
     );
   }

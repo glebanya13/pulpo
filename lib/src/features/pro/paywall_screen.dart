@@ -80,25 +80,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       required IconData icon,
       required VoidCallback onTap,
     }) {
-      return Pressable(
-        onTap: onTap,
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: context.surface,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: context.isDark ? 0.35 : 0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Icon(icon, size: 18, color: context.primaryText),
-        ),
-      );
+      return RoundIconButton(icon: icon, onTap: onTap);
     }
 
     return Scaffold(

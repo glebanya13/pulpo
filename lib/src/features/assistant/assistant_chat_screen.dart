@@ -24,6 +24,7 @@ import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/liquid_glass.dart';
 import '../../core/utils/lucide_icon_map.dart';
 import '../../core/utils/money_format.dart';
 import '../../core/utils/speech_locale.dart';
@@ -33,6 +34,7 @@ import '../../data/repositories/error_log_repository.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../widgets/assistant_energy_chip.dart';
+import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/ai_assistant_mark.dart';
 import 'app_chat_context.dart';
@@ -65,6 +67,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   bool _resumingListen = false;
   bool _needsRestart = false;
   bool _stopAndSendPending = false;
+  /// When false, ignore late STT partials after the user stopped.
+  bool _acceptSpeechResults = true;
   String _listenBase = '';
   int _listenSeconds = 0;
   int _speechRestartCount = 0;
@@ -74,6 +78,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   String _streamPreview = '';
   String? _pendingRetryText;
   bool _pendingRetryFromSpeech = false;
+  /// First scroll after open uses jumpTo — animateTo makes the welcome "jump".
+  bool _didInitialScroll = false;
 
   /// Cap STT auto-restarts so a flaky mic can't drain battery / free energy.
   static const _maxSpeechRestarts = 40;
@@ -257,6 +263,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
     setState(() {
       _listening = true;
+      _acceptSpeechResults = true;
       _listenBase = _input.text.trim();
       _listenSeconds = 0;
       _speechRestartCount = 0;
@@ -310,12 +317,17 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
     await _speech.listen(
       onResult: (result) {
-        if (!mounted || !_listening) return;
+        if (!mounted || !_listening || !_acceptSpeechResults) return;
         final chunk = result.recognizedWords.trim();
         final combined = _listenBase.isEmpty
             ? chunk
             : (chunk.isEmpty ? _listenBase : '$_listenBase $chunk');
-        setState(() => _input.text = combined);
+        // Keep caret at end so the TextField scrolls with long dictation.
+        _input.value = TextEditingValue(
+          text: combined,
+          selection: TextSelection.collapsed(offset: combined.length),
+        );
+        setState(() {});
         // Lock committed words so the next listen segment appends cleanly.
         if (result.finalResult && combined.isNotEmpty) {
           _listenBase = combined;
@@ -336,6 +348,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     _listenTimer?.cancel();
     _listenTimer = null;
     _resumingListen = false;
+    _acceptSpeechResults = false;
     if (mounted) {
       setState(() {
         _listening = false;
@@ -361,12 +374,37 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     }
     _stopAndSendPending = true;
     try {
-      final text = _input.text.trim();
-      await _stopListening();
-      if (!mounted || text.isEmpty) return;
+      _listenTimer?.cancel();
+      _listenTimer = null;
+      _resumingListen = false;
+      // Keep accepting STT until stop settles so the last finalResult lands.
+      await _speech.stop();
+      await Future<void>.delayed(const Duration(milliseconds: 180));
+      if (!mounted) return;
+      _acceptSpeechResults = false;
+      // Prefer committed finals — drops an unfinished partial tail.
+      final text =
+          (_listenBase.trim().isNotEmpty ? _listenBase : _input.text).trim();
+      if (_input.text != text) {
+        _input.value = TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+      }
+      if (mounted) {
+        setState(() {
+          _listening = false;
+          _listenBase = '';
+          _listenSeconds = 0;
+          _speechRestartCount = 0;
+        });
+        _syncEnergyBurn();
+      }
+      if (text.isEmpty) return;
       await _send(overrideText: text, fromSpeech: true);
     } finally {
       _stopAndSendPending = false;
+      _acceptSpeechResults = true;
     }
   }
 
@@ -943,11 +981,17 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     );
   }
 
-  void _scrollToEnd() {
+  void _scrollToEnd({bool animate = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_listCtrl.hasClients) return;
+      final max = _listCtrl.position.maxScrollExtent;
+      if (!_didInitialScroll || !animate) {
+        _didInitialScroll = true;
+        _listCtrl.jumpTo(max);
+        return;
+      }
       _listCtrl.animateTo(
-        _listCtrl.position.maxScrollExtent,
+        max,
         duration: const Duration(milliseconds: 240),
         curve: Curves.easeOutCubic,
       );
@@ -1027,89 +1071,101 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                 children: [
                   Row(
                     children: [
-                      if (context.canPop())
-                        Pressable(
-                          onTap: () => context.pop(),
-                          child: Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: context.surface,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(LucideIcons.arrowLeft,
-                                size: 18, color: context.primaryText),
-                          ),
-                        )
-                      else
-                        const SizedBox(width: 42),
                       Expanded(
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: context.surface,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              tr.aiChatTitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.3,
-                                height: 1.15,
-                                color: context.primaryText,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final narrow = constraints.maxWidth < 360;
+                            final sideReserve = narrow ? 96.0 : 120.0;
+                            final titleMax = (constraints.maxWidth -
+                                    sideReserve * 2)
+                                .clamp(72.0, 200.0);
+                            return SizedBox(
+                              height: PageHeader.controlSize,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  IgnorePointer(
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: titleMax,
+                                      ),
+                                      child: LiquidGlass(
+                                        compact: true,
+                                        light: true,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 10,
+                                        ),
+                                        child: Text(
+                                          tr.aiChatTitle,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: -0.3,
+                                            height: 1.15,
+                                            color: context.primaryText,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (context.canPop())
+                                          RoundIconButton(
+                                            icon: LucideIcons.arrowLeft,
+                                            onTap: () => context.pop(),
+                                            size: 42,
+                                          )
+                                        else
+                                          const SizedBox(width: 42),
+                                        if (!isPro) ...[
+                                          const SizedBox(width: 6),
+                                          AssistantEnergyChip(
+                                            iconOnly: narrow,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Opacity(
+                                          opacity: messages.isEmpty || _busy
+                                              ? 0.35
+                                              : 1,
+                                          child: IgnorePointer(
+                                            ignoring:
+                                                messages.isEmpty || _busy,
+                                            child: RoundIconButton(
+                                              icon: LucideIcons.trash2,
+                                              onTap: _confirmClearChat,
+                                              size: 42,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        RoundIconButton(
+                                          icon: LucideIcons.x,
+                                          onTap: _closeChat,
+                                          size: 42,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (!isPro) ...[
-                        const SizedBox(width: 6),
-                        const AssistantEnergyChip(),
-                      ],
-                      const SizedBox(width: 6),
-                      Pressable(
-                        onTap: messages.isEmpty || _busy
-                            ? null
-                            : _confirmClearChat,
-                        child: Opacity(
-                          opacity: messages.isEmpty || _busy ? 0.35 : 1,
-                          child: Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: context.surface,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              LucideIcons.trash2,
-                              size: 18,
-                              color: context.primaryText,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Pressable(
-                        onTap: _closeChat,
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: context.surface,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            LucideIcons.x,
-                            size: 18,
-                            color: context.primaryText,
-                          ),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -1274,13 +1330,13 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                         ),
                       ),
                     ),
-                    // Taps on empty space below messages clear selection.
-                    SliverFillRemaining(
-                      hasScrollBody: false,
+                    // Bottom spacer + tap-to-clear (no SliverFillRemaining —
+                    // that recalculates leftover height and jumps on open).
+                    SliverToBoxAdapter(
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: _clearMessageSelection,
-                        child: const SizedBox.expand(),
+                        child: const SizedBox(height: 24),
                       ),
                     ),
                   ],
@@ -1400,15 +1456,19 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                 children: [
                   Pressable(
                     onTap: _busy ? null : _showPhotoOptions,
-                    child: Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: context.surface,
-                        shape: BoxShape.circle,
+                    child: LiquidGlass(
+                      compact: true,
+                      light: true,
+                      borderRadius: BorderRadius.circular(21),
+                      child: SizedBox(
+                        width: 42,
+                        height: 42,
+                        child: Icon(
+                          LucideIcons.camera,
+                          size: 18,
+                          color: context.primaryText,
+                        ),
                       ),
-                      child: Icon(LucideIcons.camera,
-                          size: 18, color: context.primaryText),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1469,39 +1529,49 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                   unawaited(_toggleListening());
                                 }
                               },
-                        child: Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: _listening
-                                ? AppColors.danger.withValues(alpha: 0.85)
-                                : (hasText
-                                    ? AppColors.lime
-                                    : context.surface),
-                            shape: BoxShape.circle,
-                            boxShadow: hasText && !_listening
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.lime
-                                          .withValues(alpha: 0.35),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Icon(
-                            _listening
-                                ? LucideIcons.square
-                                : (hasText
-                                    ? LucideIcons.send
-                                    : LucideIcons.mic),
-                            size: 18,
-                            color: hasText || _listening
-                                ? AppColors.ink
-                                : context.primaryText,
-                          ),
-                        ),
+                        child: _listening || hasText
+                            ? Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  color: _listening
+                                      ? AppColors.danger
+                                          .withValues(alpha: 0.85)
+                                      : AppColors.lime,
+                                  shape: BoxShape.circle,
+                                  boxShadow: hasText && !_listening
+                                      ? [
+                                          BoxShadow(
+                                            color: AppColors.lime
+                                                .withValues(alpha: 0.35),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Icon(
+                                  _listening
+                                      ? LucideIcons.square
+                                      : LucideIcons.send,
+                                  size: 18,
+                                  color: AppColors.ink,
+                                ),
+                              )
+                            : LiquidGlass(
+                                compact: true,
+                                light: true,
+                                borderRadius: BorderRadius.circular(23),
+                                child: SizedBox(
+                                  width: 46,
+                                  height: 46,
+                                  child: Icon(
+                                    LucideIcons.mic,
+                                    size: 18,
+                                    color: context.primaryText,
+                                  ),
+                                ),
+                              ),
                       );
                     },
                   ),

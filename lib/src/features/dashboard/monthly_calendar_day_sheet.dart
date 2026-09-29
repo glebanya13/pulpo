@@ -76,84 +76,98 @@ class _DaySheet extends ConsumerWidget {
               t.date.day == day.day,
         )
         .toList();
-    return Container(
-      decoration: BoxDecoration(
-        color: context.scaffoldBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: AppSpacing.sheetOnTabScreen(context),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: 14),
-            decoration: BoxDecoration(
-              color: context.handleBar,
-              borderRadius: BorderRadius.circular(2),
-            ),
+
+    // Cap sheet height so the quick-add row stays on-screen; the tx list
+    // scrolls inside the leftover space (many txs used to clip the buttons).
+    final maxSheet = MediaQuery.sizeOf(context).height * 0.78;
+
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxSheet),
+        child: Container(
+          decoration: BoxDecoration(
+            color: context.scaffoldBg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          Center(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: context.primaryText,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (txs.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(24),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: context.surface,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Center(
-                child: Text(
-                  tr.noTxThisDay,
-                  style: TextStyle(color: context.mutedText),
+          padding: AppSpacing.sheetOnTabScreen(context),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: context.handleBar,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            )
-          else
-            _DaySheetTxList(
-              txs: txs,
-              onDeleteTx: onDeleteTx,
-            ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _DaySheetQuickChip(
-                icon: LucideIcons.plus,
-                label: tr.income,
-                onTap: () => _openAdd(context, type: 'income'),
+              Center(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: context.primaryText,
+                  ),
+                ),
               ),
-              const SizedBox(width: 6),
-              _DaySheetQuickChip(
-                icon: LucideIcons.minus,
-                label: tr.expense,
-                onTap: () => _openAdd(context, type: 'expense'),
-              ),
-              const SizedBox(width: 6),
-              _DaySheetQuickChip(
-                icon: LucideIcons.arrowLeftRight,
-                label: tr.transferBetweenShort,
-                onTap: () => _openAdd(context, type: 'transfer'),
-              ),
-              const SizedBox(width: 6),
-              _DaySheetQuickChip(
-                icon: LucideIcons.send,
-                label: tr.transferExternal,
-                onTap: () => _openAdd(context, type: 'expense', mode: 'external'),
+              const SizedBox(height: 12),
+              if (txs.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: context.surface,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Center(
+                    child: Text(
+                      tr.noTxThisDay,
+                      style: TextStyle(color: context.mutedText),
+                    ),
+                  ),
+                )
+              else
+                Flexible(
+                  child: _DaySheetTxList(
+                    txs: txs,
+                    onDeleteTx: onDeleteTx,
+                  ),
+                ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  _DaySheetQuickChip(
+                    icon: LucideIcons.plus,
+                    label: tr.income,
+                    onTap: () => _openAdd(context, type: 'income'),
+                  ),
+                  const SizedBox(width: 6),
+                  _DaySheetQuickChip(
+                    icon: LucideIcons.minus,
+                    label: tr.expense,
+                    onTap: () => _openAdd(context, type: 'expense'),
+                  ),
+                  const SizedBox(width: 6),
+                  _DaySheetQuickChip(
+                    icon: LucideIcons.arrowLeftRight,
+                    label: tr.transferBetweenShort,
+                    onTap: () => _openAdd(context, type: 'transfer'),
+                  ),
+                  const SizedBox(width: 6),
+                  _DaySheetQuickChip(
+                    icon: LucideIcons.send,
+                    label: tr.transferExternal,
+                    onTap: () =>
+                        _openAdd(context, type: 'expense', mode: 'external'),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -170,55 +184,42 @@ class _DaySheetTxList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxHeight = MediaQuery.sizeOf(context).height * 0.45;
     const rowGap = 8.0;
-    const estRowHeight = 68.0;
-    final contentHeight =
-        txs.length * estRowHeight + (txs.length - 1) * rowGap;
 
-    Widget tile(int i) {
-      final t = txs[i];
-      return Dismissible(
-        key: ValueKey(t.id),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
-          margin: EdgeInsets.only(bottom: i < txs.length - 1 ? rowGap : 0),
-          decoration: BoxDecoration(
-            color: AppColors.danger,
-            borderRadius: BorderRadius.circular(12),
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: txs.length,
+      itemBuilder: (ctx, i) {
+        final t = txs[i];
+        return Padding(
+          padding: EdgeInsets.only(bottom: i < txs.length - 1 ? rowGap : 0),
+          child: Dismissible(
+            key: ValueKey(t.id),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              decoration: BoxDecoration(
+                color: AppColors.danger,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.delete,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            onDismissed: (_) => onDeleteTx(t),
+            child: Pressable(
+              onTap: () {
+                Navigator.of(context).pop();
+                context.push('/tx/${t.id}');
+              },
+              child: TransactionTile(tx: t),
+            ),
           ),
-          child: const Icon(
-            Icons.delete,
-            color: Colors.white,
-            size: 20,
-          ),
-        ),
-        onDismissed: (_) => onDeleteTx(t),
-        child: Pressable(
-          onTap: () {
-            Navigator.of(context).pop();
-            context.push('/tx/${t.id}');
-          },
-          child: TransactionTile(tx: t),
-        ),
-      );
-    }
-
-    if (contentHeight <= maxHeight) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [for (var i = 0; i < txs.length; i++) tile(i)],
-      );
-    }
-
-    return SizedBox(
-      height: maxHeight,
-      child: ListView.builder(
-        itemCount: txs.length,
-        itemBuilder: (ctx, i) => tile(i),
-      ),
+        );
+      },
     );
   }
 }

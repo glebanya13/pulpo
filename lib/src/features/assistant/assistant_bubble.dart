@@ -16,8 +16,9 @@ class _AssistantBubble extends StatelessWidget {
   /// Slightly wider bubble for table replies.
   final bool wide;
 
-  static const double _rL = 18;
-  static const double _rS = 5;
+  // SoftCard-like chat discs — separate floats on scaffold, not a panel.
+  static const double _rL = 20;
+  static const double _rS = 6;
   static const double _minMetaWidth = 76;
 
   @override
@@ -28,21 +29,27 @@ class _AssistantBubble extends StatelessWidget {
         : '${time!.hour.toString().padLeft(2, '0')}:${time!.minute.toString().padLeft(2, '0')}';
     final hasImage =
         imagePath != null && File(imagePath!).existsSync();
-    final widthFactor = wide ? 0.94 : 0.86;
+    // Text stays snug; tables keep a wider disc without filling the row.
+    final widthFactor = wide ? 0.88 : 0.72;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final maxBubbleWidth = (constraints.maxWidth * widthFactor)
               .clamp(0.0, constraints.maxWidth);
           final margin = (constraints.maxWidth - maxBubbleWidth)
               .clamp(0.0, constraints.maxWidth);
-          // Avatar sits beside inbound bubbles.
           const avatarGap = 34.0;
           final maxW = inbound
               ? (maxBubbleWidth - avatarGap).clamp(0.0, maxBubbleWidth)
               : maxBubbleWidth;
+
+          final bubbleColor = fromUser
+              ? AppColors.lime
+              : (context.isDark
+                  ? const Color(0xFF333333)
+                  : context.surface);
 
           final bubble = Container(
             clipBehavior: Clip.antiAlias,
@@ -53,18 +60,13 @@ class _AssistantBubble extends StatelessWidget {
                   : 0,
             ),
             decoration: BoxDecoration(
-              color: fromUser ? AppColors.lime : context.surface,
+              color: bubbleColor,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(_rL),
                 topRight: const Radius.circular(_rL),
                 bottomLeft: Radius.circular(fromUser ? _rL : _rS),
                 bottomRight: Radius.circular(fromUser ? _rS : _rL),
               ),
-              border: fromUser
-                  ? null
-                  : Border.all(
-                      color: context.primaryText.withValues(alpha: 0.06),
-                    ),
             ),
             child: hasImage
                 ? _mediaBody(
@@ -76,9 +78,20 @@ class _AssistantBubble extends StatelessWidget {
                     context: context,
                     maxW: maxW,
                     timeLabel: timeLabel,
-                    // Only force full width for tables (Expanded cells).
                     stretch: wide,
                   ),
+          );
+
+          final bubbleWithSelection = DefaultSelectionStyle(
+            selectionColor: fromUser
+                ? AppColors.selectionOnLime
+                : (context.isDark
+                    ? AppColors.selectionDark
+                    : AppColors.selectionLight),
+            cursorColor: context.isDark
+                ? AppColors.selectionHandle
+                : AppColors.limeAccent,
+            child: bubble,
           );
 
           return Row(
@@ -96,7 +109,7 @@ class _AssistantBubble extends StatelessWidget {
                 crossAxisAlignment: inbound
                     ? CrossAxisAlignment.start
                     : CrossAxisAlignment.end,
-                children: [bubble],
+                children: [bubbleWithSelection],
               ),
               if (inbound) SizedBox(width: margin),
               if (inbound) const Spacer(),
@@ -140,8 +153,6 @@ class _AssistantBubble extends StatelessWidget {
           ),
       ],
     );
-    // Tables need a bounded width (Expanded cells). Stretch assistant bubbles
-    // to maxW; keep IntrinsicWidth only for short user pings.
     if (stretch) return SizedBox(width: maxW, child: column);
     return IntrinsicWidth(child: column);
   }

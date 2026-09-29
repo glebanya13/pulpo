@@ -6,6 +6,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/repositories/subscription_repository.dart';
@@ -145,94 +146,125 @@ class _SubscriptionEditorScreenState
     final locale = Localizations.localeOf(context).languageCode;
 
     return Scaffold(
-      body: StickyScrollPage(
-        header: PageHeader(
-          first: widget.isEdit ? tr.editSubscription : tr.newSubscription,
-          onBack: () => context.pop(),
-        ),
-        children: [
-          TextField(
-            controller: _nameCtrl,
-            autofocus: !widget.isEdit,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(labelText: tr.serviceName),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            12,
+            AppSpacing.lg,
+            AppSpacing.md,
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _amountCtrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(labelText: tr.amount),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            tr.periodicity,
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: context.mutedText),
-          ),
-          const SizedBox(height: 8),
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _cycleChip('monthly', tr.monthlyLabel),
-              const SizedBox(width: 8),
-              _cycleChip('yearly', tr.yearlyLabel),
+              PageHeader(
+                first: widget.isEdit ? tr.editSubscription : tr.newSubscription,
+                onBack: () => context.pop(),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: _nameCtrl,
+                        autofocus: !widget.isEdit,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(labelText: tr.serviceName),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _amountCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                        decoration: InputDecoration(labelText: tr.amount),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        tr.periodicity,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: context.mutedText,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _cycleChip('monthly', tr.monthlyLabel),
+                          const SizedBox(width: 8),
+                          _cycleChip('yearly', tr.yearlyLabel),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Pressable(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _next,
+                            firstDate: DateTime.now()
+                                .subtract(const Duration(days: 365)),
+                            lastDate: DateTime.now()
+                                .add(const Duration(days: 365 * 3)),
+                          );
+                          if (picked != null) setState(() => _next = picked);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.scaffoldBg,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                LucideIcons.calendar,
+                                size: 18,
+                                color: context.primaryText,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                '${tr.nextPaymentPrefix}${DateFormat('d MMM y', locale).format(_next)}',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      ScaledElevatedButton(
+                        expand: true,
+                        onPressed: _saving ? null : _save,
+                        child: Text(_saving ? '...' : tr.save),
+                      ),
+                      if (widget.isEdit) ...[
+                        const SizedBox(height: 12),
+                        Center(
+                          child: TextButton(
+                            onPressed: _delete,
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFFE53E3E),
+                            ),
+                            child: Text(tr.delete),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-          Pressable(
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: _next,
-                firstDate:
-                    DateTime.now().subtract(const Duration(days: 365)),
-                lastDate:
-                    DateTime.now().add(const Duration(days: 365 * 3)),
-              );
-              if (picked != null) setState(() => _next = picked);
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: context.scaffoldBg,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Icon(LucideIcons.calendar,
-                      size: 18, color: context.primaryText),
-                  const SizedBox(width: 10),
-                  Text(
-                    '${tr.nextPaymentPrefix}${DateFormat('d MMM y', locale).format(_next)}',
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          ScaledElevatedButton(
-            expand: true,
-            onPressed: _saving ? null : _save,
-            child: Text(_saving ? '...' : tr.save),
-          ),
-          if (widget.isEdit) ...[
-            const SizedBox(height: 12),
-            Center(
-              child: TextButton(
-                onPressed: _delete,
-                style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFE53E3E)),
-                child: Text(tr.delete),
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-        ],
+        ),
       ),
     );
   }

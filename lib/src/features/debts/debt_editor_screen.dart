@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/debt_repository.dart';
@@ -119,96 +120,131 @@ class _DebtEditorScreenState extends ConsumerState<DebtEditorScreen> {
     final locale = Localizations.localeOf(context).languageCode;
 
     return Scaffold(
-      body: StickyScrollPage(
-        header: PageHeader(
-          first: widget.isEdit ? tr.editDebt : tr.newDebt,
-          onBack: () => context.pop(),
-        ),
-        children: [
-          TabsPill(
-            tabs: [tr.iOwe, tr.owedToMe],
-            index: _direction.index,
-            onChanged: (i) =>
-                setState(() => _direction = DebtDirection.values[i]),
-            limeActive: true,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            12,
+            AppSpacing.lg,
+            AppSpacing.md,
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _nameCtrl,
-            autofocus: !widget.isEdit,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(labelText: tr.toFromWhom),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _amountCtrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(labelText: tr.amount),
-          ),
-          const SizedBox(height: 12),
-          Pressable(
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: _dueDate ??
-                    DateTime.now().add(const Duration(days: 30)),
-                firstDate:
-                    DateTime.now().subtract(const Duration(days: 365)),
-                lastDate:
-                    DateTime.now().add(const Duration(days: 365 * 5)),
-              );
-              if (picked != null) setState(() => _dueDate = picked);
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: context.scaffoldBg,
-                borderRadius: BorderRadius.circular(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PageHeader(
+                first: widget.isEdit ? tr.editDebt : tr.newDebt,
+                onBack: () => context.pop(),
               ),
-              child: Row(
-                children: [
-                  Icon(LucideIcons.calendar,
-                      size: 18, color: context.primaryText),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(_dueDate == null
-                        ? tr.dueDateLabel
-                        : DateFormat('d MMMM y', locale)
-                            .format(_dueDate!)),
+              const SizedBox(height: 12),
+              TabsPill(
+                tabs: [tr.iOwe, tr.owedToMe],
+                index: _direction.index,
+                onChanged: (i) =>
+                    setState(() => _direction = DebtDirection.values[i]),
+                limeActive: true,
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: _nameCtrl,
+                        autofocus: !widget.isEdit,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(labelText: tr.toFromWhom),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _amountCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                        decoration: InputDecoration(labelText: tr.amount),
+                      ),
+                      const SizedBox(height: 12),
+                      Pressable(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _dueDate ??
+                                DateTime.now().add(const Duration(days: 30)),
+                            firstDate: DateTime.now()
+                                .subtract(const Duration(days: 365)),
+                            lastDate: DateTime.now()
+                                .add(const Duration(days: 365 * 5)),
+                          );
+                          if (picked != null) setState(() => _dueDate = picked);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.scaffoldBg,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                LucideIcons.calendar,
+                                size: 18,
+                                color: context.primaryText,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _dueDate == null
+                                      ? tr.dueDateLabel
+                                      : DateFormat('d MMMM y', locale)
+                                          .format(_dueDate!),
+                                ),
+                              ),
+                              if (_dueDate != null)
+                                Pressable(
+                                  onTap: () => setState(() => _dueDate = null),
+                                  child: Icon(
+                                    LucideIcons.x,
+                                    size: 16,
+                                    color: context.faintText,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      ScaledElevatedButton(
+                        expand: true,
+                        onPressed: _saving ? null : _save,
+                        child: Text(_saving ? '...' : tr.save),
+                      ),
+                      if (widget.isEdit) ...[
+                        const SizedBox(height: 12),
+                        Center(
+                          child: TextButton(
+                            onPressed: _delete,
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFFE53E3E),
+                            ),
+                            child: Text(tr.delete),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                    ],
                   ),
-                  if (_dueDate != null)
-                    Pressable(
-                      onTap: () => setState(() => _dueDate = null),
-                      child: Icon(LucideIcons.x,
-                          size: 16, color: context.faintText),
-                    ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 28),
-          ScaledElevatedButton(
-            expand: true,
-            onPressed: _saving ? null : _save,
-            child: Text(_saving ? '...' : tr.save),
-          ),
-          if (widget.isEdit) ...[
-            const SizedBox(height: 12),
-            Center(
-              child: TextButton(
-                onPressed: _delete,
-                style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFE53E3E)),
-                child: Text(tr.delete),
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-        ],
+        ),
       ),
     );
   }
