@@ -12,11 +12,13 @@ class LiquidGlass extends StatelessWidget {
     required this.child,
     this.borderRadius = const BorderRadius.all(Radius.circular(100)),
     this.padding,
-    /// Lower while content scrolls under the chrome (cheaper compositing).
+    /// Cheaper path while content scrolls underneath — must NOT change fill
+    /// colors (that caused bottom-nav flash dark↔light on scroll).
     this.light = false,
-    /// Icon-sized chrome — denser dark fill so ← / ✕ / + stay readable
-    /// over lists (no full-width header scrim).
+    /// Icon / title-pill chrome — denser so ← / title / + stay readable.
     this.compact = false,
+    /// Brand / home header — lighter frosted bar (not a darkened slab).
+    this.airy = false,
   });
 
   final Widget child;
@@ -24,32 +26,35 @@ class LiquidGlass extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final bool light;
   final bool compact;
+  final bool airy;
 
   @override
   Widget build(BuildContext context) {
     final dark = context.isDark;
-    final sigma = compact ? 8.0 : (light ? 10.0 : 14.0);
-    final shadowBlur = compact ? 8.0 : (light ? 12.0 : 20.0);
+    // `light` only cheapens blur — fill stays identical to avoid flicker.
+    final sigma = light ? 6.0 : (compact ? 8.0 : 14.0);
+    final shadowBlur = compact ? 8.0 : (light ? 10.0 : 20.0);
     final shadowY = compact ? 3.0 : 10.0;
 
-    // Dark compact = darkened control discs. Large headers stay airier so the
-    // home brand bar doesn't read as a solid black slab.
+    // Dark compact = control discs (← / Categorías / +) everywhere.
+    // Dark default = floating bars (bottom nav).
+    // Dark airy = home/brand ScreenTitlePill — lighter on purpose.
     final List<Color> fill;
     if (dark) {
       if (compact) {
-        fill = [
-          const Color(0xE6282828),
-          const Color(0xD61E1E1E),
+        fill = const [
+          Color(0xE6282828),
+          Color(0xD61E1E1E),
         ];
-      } else if (light) {
-        fill = [
-          Colors.white.withValues(alpha: 0.16),
-          Colors.white.withValues(alpha: 0.07),
-        ];
-      } else {
+      } else if (airy) {
         fill = [
           Colors.white.withValues(alpha: 0.14),
           Colors.white.withValues(alpha: 0.05),
+        ];
+      } else {
+        fill = const [
+          Color(0xD92E2E2E),
+          Color(0xC8242424),
         ];
       }
     } else {
@@ -58,18 +63,52 @@ class LiquidGlass extends StatelessWidget {
           Colors.white.withValues(alpha: 0.94),
           Colors.white.withValues(alpha: 0.78),
         ];
-      } else if (light) {
-        fill = [
-          Colors.white.withValues(alpha: 0.88),
-          Colors.white.withValues(alpha: 0.62),
-        ];
-      } else {
+      } else if (airy) {
         fill = [
           Colors.white.withValues(alpha: 0.78),
           Colors.white.withValues(alpha: 0.48),
         ];
+      } else {
+        fill = [
+          Colors.white.withValues(alpha: 0.82),
+          Colors.white.withValues(alpha: 0.58),
+        ];
       }
     }
+
+    final border = Border.all(
+      color: Colors.white.withValues(
+        alpha: dark ? (compact ? 0.22 : 0.20) : 0.72,
+      ),
+      width: 0.6,
+    );
+
+    final painted = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: fill,
+        ),
+        border: border,
+      ),
+      child: padding == null
+          ? child
+          : Padding(padding: padding!, child: child),
+    );
+
+    // While scrolling (`light`), skip live BackdropFilter — sampling the
+    // moving list is what made the bar pulse light/dark every frame.
+    final body = light
+        ? painted
+        : ClipRRect(
+            borderRadius: borderRadius,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+              child: painted,
+            ),
+          );
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -78,7 +117,7 @@ class LiquidGlass extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withValues(
               alpha: dark
-                  ? (compact ? 0.32 : 0.28)
+                  ? (compact ? 0.32 : 0.30)
                   : (compact ? 0.08 : 0.12),
             ),
             blurRadius: shadowBlur,
@@ -86,31 +125,7 @@ class LiquidGlass extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: borderRadius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: borderRadius,
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: fill,
-              ),
-              border: Border.all(
-                color: Colors.white.withValues(
-                  alpha: dark ? (compact ? 0.22 : 0.26) : 0.72,
-                ),
-                width: 0.6,
-              ),
-            ),
-            child: padding == null
-                ? child
-                : Padding(padding: padding!, child: child),
-          ),
-        ),
-      ),
+      child: light ? ClipRRect(borderRadius: borderRadius, child: body) : body,
     );
   }
 }
