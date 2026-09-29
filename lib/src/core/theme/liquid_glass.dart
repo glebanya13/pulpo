@@ -14,7 +14,8 @@ class LiquidGlass extends StatelessWidget {
     this.padding,
     /// Lower while content scrolls under the chrome (cheaper compositing).
     this.light = false,
-    /// Icon-sized chrome — softer shadow so ← / ✕ / + don't cast huge blobs.
+    /// Icon-sized chrome — denser dark fill so ← / ✕ / + stay readable
+    /// over lists (no full-width header scrim).
     this.compact = false,
   });
 
@@ -30,6 +31,46 @@ class LiquidGlass extends StatelessWidget {
     final sigma = compact ? 8.0 : (light ? 10.0 : 14.0);
     final shadowBlur = compact ? 8.0 : (light ? 12.0 : 20.0);
     final shadowY = compact ? 3.0 : 10.0;
+
+    // Dark compact = darkened control discs. Large headers stay airier so the
+    // home brand bar doesn't read as a solid black slab.
+    final List<Color> fill;
+    if (dark) {
+      if (compact) {
+        fill = [
+          const Color(0xE6282828),
+          const Color(0xD61E1E1E),
+        ];
+      } else if (light) {
+        fill = [
+          Colors.white.withValues(alpha: 0.16),
+          Colors.white.withValues(alpha: 0.07),
+        ];
+      } else {
+        fill = [
+          Colors.white.withValues(alpha: 0.14),
+          Colors.white.withValues(alpha: 0.05),
+        ];
+      }
+    } else {
+      if (compact) {
+        fill = [
+          Colors.white.withValues(alpha: 0.94),
+          Colors.white.withValues(alpha: 0.78),
+        ];
+      } else if (light) {
+        fill = [
+          Colors.white.withValues(alpha: 0.88),
+          Colors.white.withValues(alpha: 0.62),
+        ];
+      } else {
+        fill = [
+          Colors.white.withValues(alpha: 0.78),
+          Colors.white.withValues(alpha: 0.48),
+        ];
+      }
+    }
+
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: borderRadius,
@@ -37,7 +78,7 @@ class LiquidGlass extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withValues(
               alpha: dark
-                  ? (compact ? 0.28 : 0.38)
+                  ? (compact ? 0.32 : 0.28)
                   : (compact ? 0.08 : 0.12),
             ),
             blurRadius: shadowBlur,
@@ -55,26 +96,12 @@ class LiquidGlass extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: dark
-                    ? [
-                        Colors.white.withValues(
-                          alpha: compact ? 0.20 : (light ? 0.22 : 0.18),
-                        ),
-                        Colors.white.withValues(
-                          alpha: compact ? 0.10 : (light ? 0.10 : 0.06),
-                        ),
-                      ]
-                    : [
-                        Colors.white.withValues(
-                          alpha: compact ? 0.92 : (light ? 0.88 : 0.78),
-                        ),
-                        Colors.white.withValues(
-                          alpha: compact ? 0.72 : (light ? 0.62 : 0.48),
-                        ),
-                      ],
+                colors: fill,
               ),
               border: Border.all(
-                color: Colors.white.withValues(alpha: dark ? 0.28 : 0.72),
+                color: Colors.white.withValues(
+                  alpha: dark ? (compact ? 0.22 : 0.26) : 0.72,
+                ),
                 width: 0.6,
               ),
             ),

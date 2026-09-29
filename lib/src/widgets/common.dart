@@ -330,11 +330,10 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
     final topInset =
         (_headerHeight > 0 ? _headerHeight : estimatedHeader) + widget.headerGap;
 
-    // Header stays pinned. Opaque scrim so list/form content never shows
-    // through the glass title (blocked taps / "invisible" chrome).
-    final scrim = Theme.of(context).scaffoldBackgroundColor;
+    // Header floats over content — no full-width scrim. Individual glass
+    // pills/buttons carry their own contrast.
     final content = Stack(
-      clipBehavior: Clip.hardEdge,
+      clipBehavior: Clip.none,
       children: [
         Positioned.fill(
           child: CustomScrollView(
@@ -377,17 +376,14 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
           child: RepaintBoundary(
             child: KeyedSubtree(
               key: _headerKey,
-              child: ColoredBox(
-                color: scrim,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    pad.left,
-                    pad.top,
-                    pad.right,
-                    widget.headerBottomPadding,
-                  ),
-                  child: widget.header,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  pad.left,
+                  pad.top,
+                  pad.right,
+                  widget.headerBottomPadding,
                 ),
+                child: widget.header,
               ),
             ),
           ),
@@ -589,6 +585,8 @@ class PageHeader extends StatelessWidget {
     );
 
     final pill = LiquidGlass(
+      compact: true,
+      light: true,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -696,10 +694,9 @@ class RoundIconButton extends StatelessWidget {
     if (onDarkMedia) {
       return Colors.white.withValues(alpha: 0.22);
     }
-    // Approximate liquid-glass mid tone for non-glass call sites.
     return context.isDark
-        ? Colors.white.withValues(alpha: 0.14)
-        : Colors.white.withValues(alpha: 0.82);
+        ? const Color(0xE6282828)
+        : Colors.white.withValues(alpha: 0.90);
   }
 
   static Color chromeIcon(BuildContext context, {bool onDarkMedia = false}) {
