@@ -213,7 +213,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       return;
     }
     await _chat.ensureWelcome(Tr.of(context).aiChatWelcome);
-    _scrollToEnd();
+    // reverse: true list opens at the newest message — no scroll jump.
     if (!mounted) return;
     final scanReceipt =
         GoRouterState.of(context).uri.queryParameters['scanReceipt'] == '1';
@@ -981,17 +981,21 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     );
   }
 
+  /// reverse:true → visual bottom is offset 0 (newest). Prefer jump on open /
+  /// first pin so the list never animates from the top.
   void _scrollToEnd({bool animate = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_listCtrl.hasClients) return;
-      final max = _listCtrl.position.maxScrollExtent;
+      const bottom = 0.0;
       if (!_didInitialScroll || !animate) {
         _didInitialScroll = true;
-        _listCtrl.jumpTo(max);
+        if (_listCtrl.offset != bottom) {
+          _listCtrl.jumpTo(bottom);
+        }
         return;
       }
       _listCtrl.animateTo(
-        max,
+        bottom,
         duration: const Duration(milliseconds: 240),
         curve: Curves.easeOutCubic,
       );
@@ -1042,13 +1046,17 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final tr = Tr.of(context);
     final messages =
         ref.watch(assistantMessagesProvider).valueOrNull ?? const [];
-    final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
+    final accountsAsync = ref.watch(accountsProvider);
+    final accounts = accountsAsync.valueOrNull ?? [];
     final categories =
         ref.watch(categoriesProvider).valueOrNull ?? const <db.Category>[];
     final openAccounts =
         accounts.where((a) => !a.isArchived).toList(growable: false);
     final account = _account ?? openAccounts.firstOrNull;
     final isPro = ref.watch(proControllerProvider).isPro;
+    // Reserve chip row while accounts load so the list height doesn't jump.
+    final showAccountChips =
+        openAccounts.isNotEmpty || accountsAsync.isLoading;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -1170,11 +1178,13 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                       ),
                     ],
                   ),
-                  if (openAccounts.isNotEmpty) ...[
+                  if (showAccountChips) ...[
                     const SizedBox(height: 8),
                     SizedBox(
                       height: 34,
-                      child: ListView.separated(
+                      child: openAccounts.isEmpty
+                          ? const SizedBox.expand()
+                          : ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: openAccounts.length,
                         separatorBuilder: (_, _) => const SizedBox(width: 8),
@@ -1243,10 +1253,20 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                     ? AppColors.selectionHandle
                     : AppColors.limeAccent,
                 child: CustomScrollView(
+                  // Newest at offset 0 — opens without scrolling from the top.
+                  reverse: true,
                   controller: _listCtrl,
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   slivers: [
+                    // First sliver sits next to the composer when reverse:true.
+                    SliverToBoxAdapter(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _clearMessageSelection,
+                        child: const SizedBox(height: 24),
+                      ),
+                    ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.lg,
@@ -1254,7 +1274,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, i) {
-                            if (_busy && i == messages.length) {
+                            // i=0 is visual bottom (newest / busy).
+                            if (_busy && i == 0) {
                               final preview = _streamPreview.trim();
                               return _AssistantBubble(
                                 child: Text(
@@ -1273,7 +1294,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                 ),
                               );
                             }
-                            final m = messages[i];
+                            final msgIndex = messages.length -
+                                1 -
+                                (_busy ? i - 1 : i);
+                            final m = messages[msgIndex];
                             final blocks = m.isFromUser
                                 ? const <ChatBodyBlock>[]
                                 : parseChatBody(m.body);
@@ -1328,15 +1352,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                           },
                           childCount: messages.length + (_busy ? 1 : 0),
                         ),
-                      ),
-                    ),
-                    // Bottom spacer + tap-to-clear (no SliverFillRemaining —
-                    // that recalculates leftover height and jumps on open).
-                    SliverToBoxAdapter(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _clearMessageSelection,
-                        child: const SizedBox(height: 24),
                       ),
                     ),
                   ],
