@@ -70,6 +70,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   /// When false, ignore late STT partials after the user stopped.
   bool _acceptSpeechResults = true;
   String _listenBase = '';
+  /// Input text when mic was first tapped — restored on trash/cancel.
+  String _listenDraftBefore = '';
   int _listenSeconds = 0;
   int _speechRestartCount = 0;
   Timer? _listenTimer;
@@ -264,6 +266,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     setState(() {
       _listening = true;
       _acceptSpeechResults = true;
+      _listenDraftBefore = _input.text;
       _listenBase = _input.text.trim();
       _listenSeconds = 0;
       _speechRestartCount = 0;
@@ -353,6 +356,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       setState(() {
         _listening = false;
         _listenBase = '';
+        _listenDraftBefore = '';
         _listenSeconds = 0;
         _speechRestartCount = 0;
       });
@@ -360,9 +364,23 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     } else {
       _listening = false;
       _listenBase = '';
+      _listenDraftBefore = '';
       _speechRestartCount = 0;
     }
     await _speech.stop();
+  }
+
+  /// Discard the current dictation (WhatsApp-style trash) without sending.
+  Future<void> _cancelListening() async {
+    if (!_listening) return;
+    final restore = _listenDraftBefore;
+    await _stopListening();
+    if (!mounted) return;
+    _input.value = TextEditingValue(
+      text: restore,
+      selection: TextSelection.collapsed(offset: restore.length),
+    );
+    setState(() {});
   }
 
   Future<void> _stopListeningAndSend() async {
@@ -1411,51 +1429,71 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               ),
             if (_listening)
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                child: Pressable(
-                  onTap: () => unawaited(_stopListening()),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  8,
+                ),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(6, 6, 14, 6),
+                  decoration: BoxDecoration(
+                    color: context.surface,
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: context.primaryText.withValues(alpha: 0.08),
                     ),
-                    decoration: BoxDecoration(
-                      color: context.surface,
-                      borderRadius: BorderRadius.circular(100),
-                      border: Border.all(
-                        color: AppColors.danger.withValues(alpha: 0.45),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.danger,
+                  ),
+                  child: Row(
+                    children: [
+                      Pressable(
+                        onTap: () => unawaited(_cancelListening()),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: AppColors.danger.withValues(alpha: 0.14),
                             shape: BoxShape.circle,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatListenTime(),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: context.primaryText,
+                          child: const Icon(
+                            LucideIcons.trash2,
+                            size: 18,
+                            color: AppColors.danger,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.danger,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatListenTime(),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: context.primaryText,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
                           tr.aiRecording,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 13,
                             color: context.mutedText,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
