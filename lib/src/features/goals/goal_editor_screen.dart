@@ -100,14 +100,8 @@ class _GoalEditorScreenState extends ConsumerState<GoalEditorScreen> {
     final tr = Tr.of(context);
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            12,
-            AppSpacing.lg,
-            AppSpacing.md,
-          ),
+      body: Padding(
+          padding: AppSpacing.pushedPagePadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -166,7 +160,6 @@ class _GoalEditorScreenState extends ConsumerState<GoalEditorScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 }

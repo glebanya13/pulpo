@@ -84,7 +84,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     }
 
     return Scaffold(
-      body: SafeArea(
+      body: Padding(
+        padding: EdgeInsets.only(
+          top: MediaQuery.viewPaddingOf(context).top,
+          bottom: MediaQuery.viewPaddingOf(context).bottom,
+        ),
         child: Stack(
           children: [
             ListView(

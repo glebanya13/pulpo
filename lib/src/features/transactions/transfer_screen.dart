@@ -396,10 +396,16 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     }
 
     return Scaffold(
-      body: SafeArea(
+      body: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          MediaQuery.viewPaddingOf(context).top + 12,
+          20,
+          40 + MediaQuery.viewPaddingOf(context).bottom,
+        ),
         child: SingleChildScrollView(
           keyboardDismissBehavior:
-              ScrollViewKeyboardDismissBehavior.onDrag,padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+              ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

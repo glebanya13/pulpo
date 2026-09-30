@@ -80,8 +80,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   String _streamPreview = '';
   String? _pendingRetryText;
   bool _pendingRetryFromSpeech = false;
-  /// First scroll after open uses jumpTo — animateTo makes the welcome "jump".
+  /// First open: paint at top, then ease down to the newest message.
   bool _didInitialScroll = false;
+  bool _introScrollRunning = false;
+  Timer? _streamPinTimer;
 
   /// Cap STT auto-restarts so a flaky mic can't drain battery / free energy.
   static const _maxSpeechRestarts = 40;
@@ -125,6 +127,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     unawaited(_speech.cancel());
     _listenTimer?.cancel();
     _burnTimer?.cancel();
+    _streamPinTimer?.cancel();
     _input.dispose();
     _listCtrl.dispose();
     super.dispose();
@@ -215,8 +218,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       return;
     }
     await _chat.ensureWelcome(Tr.of(context).aiChatWelcome);
-    // reverse: true list opens at the newest message — no scroll jump.
     if (!mounted) return;
+    _scheduleInitialScroll();
     final scanReceipt =
         GoRouterState.of(context).uri.queryParameters['scanReceipt'] == '1';
     if (scanReceipt) {
@@ -455,6 +458,15 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     setState(() {
       _streamPreview = partial.trim();
       _busyLabel = '';
+    });
+    // Throttle pin-to-end while the bubble grows — jump every frame feels harsh.
+    _streamPinTimer?.cancel();
+    _streamPinTimer = Timer(const Duration(milliseconds: 48), () {
+      if (!mounted || !_listCtrl.hasClients || !_didInitialScroll) return;
+      final pos = _listCtrl.position;
+      if (pos.maxScrollExtent - pos.pixels < 140) {
+        _listCtrl.jumpTo(pos.maxScrollExtent);
+      }
     });
   }
 
@@ -999,23 +1011,131 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     );
   }
 
-  /// reverse:true → visual bottom is offset 0 (newest). Prefer jump on open /
-  /// first pin so the list never animates from the top.
-  void _scrollToEnd({bool animate = true}) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_listCtrl.hasClients) return;
-      const bottom = 0.0;
-      if (!_didInitialScroll || !animate) {
-        _didInitialScroll = true;
-        if (_listCtrl.offset != bottom) {
-          _listCtrl.jumpTo(bottom);
+  /// Oldest → newest (top → bottom). On first open wait for the route
+  /// transition, then ease to the end; later pins animate without fighting.
+  void _scheduleInitialScroll() {
+    if (_didInitialScroll || _introScrollRunning) return;
+    _introScrollRunning = true;
+    unawaited(_runInitialScroll());
+  }
+
+  Future<void> _runInitialScroll() async {
+    try {
+      // Let the Cupertino push settle so the glide isn't clipped mid-transition.
+      await Future<void>.delayed(const Duration(milliseconds: 280));
+      if (!mounted || _didInitialScroll) return;
+
+      for (var attempt = 0; attempt < 12; attempt++) {
+        if (!mounted) return;
+        await WidgetsBinding.instance.endOfFrame;
+        if (!_listCtrl.hasClients) {
+          await Future<void>.delayed(const Duration(milliseconds: 40));
+          continue;
         }
+
+        final position = _listCtrl.position;
+        final target = position.maxScrollExtent;
+        if (target <= 4) {
+          // Content still fitting / not measured — keep waiting for messages.
+          await Future<void>.delayed(const Duration(milliseconds: 40));
+          continue;
+        }
+
+        // Always begin the intro from the top of the thread.
+        if (position.pixels > 0.5) {
+          _listCtrl.jumpTo(0);
+          await WidgetsBinding.instance.endOfFrame;
+          if (!mounted || !_listCtrl.hasClients) return;
+        }
+
+        final end = _listCtrl.position.maxScrollExtent;
+        if (end <= 4) continue;
+
+        _didInitialScroll = true;
+        final distance = end;
+        final ms = (360 + distance * 0.55).clamp(560.0, 1100.0).round();
+        await _animateTrackingEnd(
+          duration: Duration(milliseconds: ms),
+          curve: Curves.easeInOutCubic,
+        );
         return;
       }
-      _listCtrl.animateTo(
-        bottom,
-        duration: const Duration(milliseconds: 240),
-        curve: Curves.easeOutCubic,
+
+      // Short thread that never overflows — treat as settled.
+      _didInitialScroll = true;
+    } finally {
+      _introScrollRunning = false;
+    }
+  }
+
+  /// Animate toward the bottom while re-reading [maxScrollExtent] each tick.
+  /// Lazy list items grow the extent as they build — a fixed [animateTo]
+  /// target stops short of the real end.
+  Future<void> _animateTrackingEnd({
+    required Duration duration,
+    Curve curve = Curves.easeOutCubic,
+  }) async {
+    if (!_listCtrl.hasClients) return;
+    final start = _listCtrl.offset;
+    final sw = Stopwatch()..start();
+
+    while (mounted && _listCtrl.hasClients) {
+      final t =
+          (sw.elapsedMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0);
+      final eased = curve.transform(t);
+      final max = _listCtrl.position.maxScrollExtent;
+      final next = (start + (max - start) * eased).clamp(0.0, max);
+      if ((next - _listCtrl.offset).abs() > 0.5) {
+        _listCtrl.jumpTo(next);
+      }
+      if (t >= 1) break;
+      await Future<void>.delayed(const Duration(milliseconds: 16));
+    }
+
+    await _settleAtEnd();
+  }
+
+  Future<void> _settleAtEnd() async {
+    for (var i = 0; i < 12; i++) {
+      if (!mounted || !_listCtrl.hasClients) return;
+      await WidgetsBinding.instance.endOfFrame;
+      final max = _listCtrl.position.maxScrollExtent;
+      if ((max - _listCtrl.offset).abs() < 1.5) {
+        await WidgetsBinding.instance.endOfFrame;
+        if (!mounted || !_listCtrl.hasClients) return;
+        final max2 = _listCtrl.position.maxScrollExtent;
+        if ((max2 - _listCtrl.offset).abs() < 1.5) return;
+        _listCtrl.jumpTo(max2);
+        continue;
+      }
+      _listCtrl.jumpTo(max);
+    }
+  }
+
+  void _scrollToEnd({bool animate = true}) {
+    // Don't yank during the opening glide.
+    if (!_didInitialScroll || _introScrollRunning) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_listCtrl.hasClients) return;
+      final target = _listCtrl.position.maxScrollExtent;
+      if (target <= 0) return;
+      final delta = (target - _listCtrl.offset).abs();
+      if (delta < 1) {
+        unawaited(_settleAtEnd());
+        return;
+      }
+
+      if (!animate || delta < 24) {
+        _listCtrl.jumpTo(target);
+        unawaited(_settleAtEnd());
+        return;
+      }
+      unawaited(
+        _animateTrackingEnd(
+          duration: Duration(
+            milliseconds: (220 + delta * 0.35).clamp(260.0, 520.0).round(),
+          ),
+        ),
       );
     });
   }
@@ -1062,6 +1182,12 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
+    ref.listen(assistantMessagesProvider, (prev, next) {
+      final list = next.valueOrNull;
+      if (list != null && list.isNotEmpty && !_didInitialScroll) {
+        _scheduleInitialScroll();
+      }
+    });
     final messages =
         ref.watch(assistantMessagesProvider).valueOrNull ?? const [];
     final accountsAsync = ref.watch(accountsProvider);
@@ -1078,7 +1204,11 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: SafeArea(
+      body: Padding(
+        padding: EdgeInsets.only(
+          top: MediaQuery.viewPaddingOf(context).top,
+          bottom: MediaQuery.paddingOf(context).bottom,
+        ),
         child: Column(
           children: [
             // Taps on chrome (header / chips) dismiss text selection.
@@ -1117,6 +1247,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                       ),
                                       child: LiquidGlass(
                                         compact: true,
+                                        light: true,
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 12,
                                           vertical: 10,
@@ -1270,20 +1401,14 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                     ? AppColors.selectionHandle
                     : AppColors.limeAccent,
                 child: CustomScrollView(
-                  // Newest at offset 0 — opens without scrolling from the top.
-                  reverse: true,
                   controller: _listCtrl,
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  cacheExtent: 480,
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   slivers: [
-                    // First sliver sits next to the composer when reverse:true.
-                    SliverToBoxAdapter(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _clearMessageSelection,
-                        child: const SizedBox(height: 24),
-                      ),
-                    ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.lg,
@@ -1291,8 +1416,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, i) {
-                            // i=0 is visual bottom (newest / busy).
-                            if (_busy && i == 0) {
+                            // Chronological: oldest at top, busy preview at end.
+                            if (_busy && i == messages.length) {
                               final preview = _streamPreview.trim();
                               return _AssistantBubble(
                                 child: Text(
@@ -1311,10 +1436,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                 ),
                               );
                             }
-                            final msgIndex = messages.length -
-                                1 -
-                                (_busy ? i - 1 : i);
-                            final m = messages[msgIndex];
+                            final m = messages[i];
                             final blocks = m.isFromUser
                                 ? const <ChatBodyBlock>[]
                                 : parseChatBody(m.body);
@@ -1368,7 +1490,16 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                             );
                           },
                           childCount: messages.length + (_busy ? 1 : 0),
+                          addAutomaticKeepAlives: false,
                         ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _clearMessageSelection,
+                        // Extra room so the last bubble sits clearly above the composer.
+                        child: const SizedBox(height: 36),
                       ),
                     ),
                   ],
@@ -1515,6 +1646,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                     onTap: _busy ? null : _showPhotoOptions,
                     child: LiquidGlass(
                       compact: true,
+                      light: true,
                       borderRadius: BorderRadius.circular(21),
                       child: SizedBox(
                         width: 42,
@@ -1609,6 +1741,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                               )
                             : LiquidGlass(
                                 compact: true,
+                                light: true,
                                 borderRadius: BorderRadius.circular(23),
                                 child: SizedBox(
                                   width: 46,

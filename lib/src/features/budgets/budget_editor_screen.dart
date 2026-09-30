@@ -157,14 +157,8 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
         : _expenseCats;
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            12,
-            AppSpacing.lg,
-            AppSpacing.md,
-          ),
+      body: Padding(
+          padding: AppSpacing.pushedPagePadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -272,7 +266,6 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 }

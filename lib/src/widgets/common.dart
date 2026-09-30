@@ -251,13 +251,16 @@ class StickyScrollPage extends StatefulWidget {
   final NullableIndexedWidgetBuilder? itemBuilder;
   final int itemCount;
   final ScrollController? controller;
-  /// When null: safe-area pages get a modest bottom gap; tab pages
+  /// When null: pushed pages use [AppSpacing.pushedPagePadding]; tab pages
   /// (`useSafeArea: false`) should pass [AppSpacing.tabPagePadding].
   final EdgeInsets? padding;
   /// Space between sticky header and first list child.
   final double headerGap;
   /// Extra padding under the header inside the sticky bar (dashboard uses 10).
   final double headerBottomPadding;
+  /// When true (pushed routes), top/bottom clear the status bar / home
+  /// indicator via [MediaQuery.viewPadding] — same rhythm as tab screens.
+  /// When false, [padding] must already include system insets.
   final bool useSafeArea;
   final ScrollPhysics? physics;
   /// Prefer bounce; only set true if a screen must hard-pin without rubber-band.
@@ -299,16 +302,23 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
   }
 
   EdgeInsets _resolvePadding(BuildContext context) {
-    if (widget.padding != null) return widget.padding!;
-    if (widget.useSafeArea) {
-      return const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        12,
-        AppSpacing.lg,
-        AppSpacing.md,
-      );
+    if (!widget.useSafeArea) {
+      return widget.padding ?? AppSpacing.tabPagePadding(context);
     }
-    return AppSpacing.tabPagePadding(context);
+    // Prefer viewPadding over SafeArea: under some Scaffold/navigator
+    // setups MediaQuery.padding.top is already 0, and SafeArea would leave
+    // the back button / first rows clipped under the status bar.
+    if (widget.padding == null) {
+      return AppSpacing.pushedPagePadding(context);
+    }
+    final p = widget.padding!;
+    final view = MediaQuery.viewPaddingOf(context);
+    return EdgeInsets.fromLTRB(
+      p.left,
+      p.top + view.top,
+      p.right,
+      p.bottom + view.bottom,
+    );
   }
 
   ScrollPhysics _resolvePhysics() {
@@ -391,8 +401,8 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
         ),
       ],
     );
-    if (!widget.useSafeArea) return content;
-    return SafeArea(child: content);
+    // Insets come from [_resolvePadding] (viewPadding) — no SafeArea wrap.
+    return content;
   }
 }
 
@@ -586,6 +596,7 @@ class PageHeader extends StatelessWidget {
 
     final pill = LiquidGlass(
       compact: true,
+      light: true,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -760,6 +771,7 @@ class _RoundIconBtn extends StatelessWidget {
       child: RepaintBoundary(
         child: LiquidGlass(
           compact: true,
+          light: true,
           borderRadius: BorderRadius.circular(size / 2),
           child: SizedBox(
             width: size,
