@@ -1412,45 +1412,50 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             if (_listening)
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: context.surface,
-                    borderRadius: BorderRadius.circular(100),
-                    border: Border.all(
-                      color: AppColors.danger.withValues(alpha: 0.45),
+                child: Pressable(
+                  onTap: () => unawaited(_stopListening()),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppColors.danger,
-                          shape: BoxShape.circle,
-                        ),
+                    decoration: BoxDecoration(
+                      color: context.surface,
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(
+                        color: AppColors.danger.withValues(alpha: 0.45),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _formatListenTime(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: context.primaryText,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppColors.danger,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        tr.aiRecording,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: context.mutedText,
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatListenTime(),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: context.primaryText,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Text(
+                          tr.aiRecording,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: context.mutedText,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1549,26 +1554,19 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                 width: 46,
                                 height: 46,
                                 decoration: BoxDecoration(
-                                  color: _listening
-                                      ? AppColors.danger
-                                          .withValues(alpha: 0.85)
-                                      : AppColors.lime,
+                                  color: AppColors.lime,
                                   shape: BoxShape.circle,
-                                  boxShadow: hasText && !_listening
-                                      ? [
-                                          BoxShadow(
-                                            color: AppColors.lime
-                                                .withValues(alpha: 0.35),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ]
-                                      : null,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.lime
+                                          .withValues(alpha: 0.35),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                                child: Icon(
-                                  _listening
-                                      ? LucideIcons.square
-                                      : LucideIcons.send,
+                                child: const Icon(
+                                  LucideIcons.send,
                                   size: 18,
                                   color: AppColors.ink,
                                 ),
