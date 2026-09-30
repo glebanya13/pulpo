@@ -62,8 +62,8 @@ class AboutScreen extends ConsumerWidget {
                 ),
                 _LinkRow(
                   icon: LucideIcons.messageCircle,
-                  title: 'Crisp',
-                  onTap: () => openCrispSupport(context, ref),
+                  title: 'WhatsApp',
+                  onTap: () => openWhatsAppSupport(context),
                 ),
                 _LinkRow(
                   icon: LucideIcons.mail,
