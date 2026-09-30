@@ -202,14 +202,14 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     );
     if (picked == null || !mounted) return;
     final monthStart = DateTime(picked.year, picked.month, 1);
-    final monthEnd = DateTime(picked.year, picked.month + 1, 1);
     setState(() => _month = monthStart);
-    final monthTxs = ref
-            .read(
-              transactionsInRangeProvider((start: monthStart, end: monthEnd)),
-            )
-            .valueOrNull ??
-        const <db.Transaction>[];
+    final allTxs =
+        ref.read(allTransactionsProvider).valueOrNull ?? const <db.Transaction>[];
+    final monthEnd = DateTime(picked.year, picked.month + 1, 1);
+    final monthTxs = [
+      for (final t in allTxs)
+        if (!t.date.isBefore(monthStart) && t.date.isBefore(monthEnd)) t,
+    ];
     if (!context.mounted) return;
     await _openDaySheet(context, picked, monthTxs);
   }
@@ -220,12 +220,19 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     final tr = Tr.of(context);
     final monthStart = _month;
     final monthEnd = DateTime(_month.year, _month.month + 1, 1);
-    final range = (start: monthStart, end: monthEnd);
-    final monthTxsAsync = ref.watch(transactionsInRangeProvider(range));
+    // Filter the already-watched full list — switching months must not flash a
+    // loading spinner while a new range StreamProvider starts from empty.
+    final allTxsAsync = ref.watch(allTransactionsProvider);
     final cats = ref.watch(categoriesProvider).valueOrNull ?? const [];
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
-    final monthRaw = monthTxsAsync.valueOrNull;
-    final loading = monthRaw == null && monthTxsAsync.isLoading;
+    final allRaw = allTxsAsync.valueOrNull;
+    final loading = allRaw == null && allTxsAsync.isLoading;
+    final monthRaw = allRaw == null
+        ? null
+        : [
+            for (final t in allRaw)
+              if (!t.date.isBefore(monthStart) && t.date.isBefore(monthEnd)) t,
+          ];
 
     final monthTxs = monthRaw == null
         ? const <db.Transaction>[]
@@ -292,10 +299,10 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
       onCategoryChanged: (id) => setState(() => _categoryId = id),
       showFilters: listView,
       loading: loading,
-      errorMessage: monthTxsAsync.hasError && monthRaw == null
-          ? dataLoadErrorMessage(tr, monthTxsAsync.error!)
+      errorMessage: allTxsAsync.hasError && allRaw == null
+          ? dataLoadErrorMessage(tr, allTxsAsync.error!)
           : null,
-      onRetry: () => ref.invalidate(transactionsInRangeProvider(range)),
+      onRetry: () => ref.invalidate(allTransactionsProvider),
       // Table / empty states live inside chrome; lazy days are scroll items.
       body: !listView
           ? _MonthTable(

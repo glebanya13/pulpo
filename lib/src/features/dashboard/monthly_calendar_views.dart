@@ -110,6 +110,9 @@ class _CalendarChrome extends StatelessWidget {
               (final msg?, _, _) => [
                   ErrorView(message: msg, onRetry: onRetry),
                 ],
+              // Prefer real body over a spinner — month switches must not
+              // tear down the calendar grid for a loading flash.
+              (_, _, final b?) => [b],
               (_, true, _) => const [
                   Padding(
                     padding: EdgeInsets.symmetric(vertical: 28),
@@ -118,7 +121,6 @@ class _CalendarChrome extends StatelessWidget {
                     ),
                   ),
                 ],
-              (_, _, final b?) => [b],
               _ => const <Widget>[],
             },
           ],
