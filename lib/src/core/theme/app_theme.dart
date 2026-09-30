@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart'; // ignore: unnecessary_import — not re-exported by material.dart in all Flutter SDK versions
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
+import 'app_snack_bar.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
 
@@ -41,7 +42,10 @@ class AppTheme {
         builders: {
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          // Cupertino slide feels smoother than FadeUpwards on Android.
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
         },
       ),
       colorScheme: scheme,
@@ -175,9 +179,7 @@ class AppTheme {
         selectionColor: AppColors.selectionLight,
         selectionHandleColor: AppColors.limeAccent,
       ),
-      snackBarTheme: const SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-      ),
+      snackBarTheme: AppSnackBarStyle.theme(dark: false),
     );
   }
 
@@ -220,7 +222,10 @@ class AppTheme {
         builders: {
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          // Cupertino slide feels smoother than FadeUpwards on Android.
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
         },
       ),
       colorScheme: scheme,
@@ -398,9 +403,7 @@ class AppTheme {
         selectionColor: AppColors.selectionDark,
         selectionHandleColor: AppColors.selectionHandle,
       ),
-      snackBarTheme: const SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-      ),
+      snackBarTheme: AppSnackBarStyle.theme(dark: true),
     );
   }
 }

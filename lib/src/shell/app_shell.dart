@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,9 +29,6 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  bool _scrolling = false;
-  Timer? _scrollIdle;
-
   Future<void> _openAssistant(BuildContext context) async {
     if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
     if (context.mounted) context.push('/assistant');
@@ -48,54 +43,33 @@ class _AppShellState extends ConsumerState<AppShell> {
     );
   }
 
-  bool _onScroll(ScrollNotification notification) {
-    if (notification.metrics.axis != Axis.vertical) return false;
-    if (notification is ScrollStartNotification ||
-        notification is ScrollUpdateNotification) {
-      if (!_scrolling) setState(() => _scrolling = true);
-      _scrollIdle?.cancel();
-      _scrollIdle = Timer(const Duration(milliseconds: 140), () {
-        if (mounted) setState(() => _scrolling = false);
-      });
-    }
-    return false;
-  }
-
-  @override
-  void dispose() {
-    _scrollIdle?.cancel();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: _useFloatingNav,
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _onScroll,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth < 700) {
-              return widget.navigationShell;
-            }
-            return Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 700),
-                child: widget.navigationShell,
-              ),
-            );
-          },
-        ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 700) {
+            return widget.navigationShell;
+          }
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 700),
+              child: widget.navigationShell,
+            ),
+          );
+        },
       ),
-      bottomNavigationBar: BudgetBottomNav(
-        // 0 home · 1 reports · 2 management
-        currentIndex: widget.navigationShell.currentIndex,
-        lightGlass: _scrolling,
-        onTap: _goTab,
-        onAddTap: () => showQuickActionsSheet(context, ref),
-        onManagementTap: () => _goTab(2),
-        onChatTap: () => _openAssistant(context),
+      bottomNavigationBar: RepaintBoundary(
+        child: BudgetBottomNav(
+          // 0 home · 1 reports · 2 management
+          currentIndex: widget.navigationShell.currentIndex,
+          onTap: _goTab,
+          onAddTap: () => showQuickActionsSheet(context, ref),
+          onManagementTap: () => _goTab(2),
+          onChatTap: () => _openAssistant(context),
+        ),
       ),
     );
   }

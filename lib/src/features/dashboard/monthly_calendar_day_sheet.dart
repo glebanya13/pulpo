@@ -103,15 +103,32 @@ class _DaySheet extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              Center(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: context.primaryText,
+              Row(
+                children: [
+                  RoundIconButton(
+                    icon: LucideIcons.arrowLeft,
+                    onTap: () => Navigator.of(context).pop(),
+                    size: 40,
                   ),
-                ),
+                  Expanded(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: context.primaryText,
+                      ),
+                    ),
+                  ),
+                  RoundIconButton(
+                    icon: LucideIcons.x,
+                    onTap: () => Navigator.of(context).pop(),
+                    size: 40,
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               if (txs.isEmpty)

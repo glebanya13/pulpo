@@ -34,7 +34,6 @@ class ManagementScreen extends ConsumerWidget {
 
     return ResetScrollWhenObscured(
       tabPath: '/management',
-      preserveScrollOnPush: true,
       builder: (context, scroll) {
         return StickyScrollPage(
           useSafeArea: false,

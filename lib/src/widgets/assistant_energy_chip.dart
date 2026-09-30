@@ -7,6 +7,7 @@ import '../core/l10n/tr.dart';
 import '../core/pro/pro_controller.dart';
 import '../core/pro/pro_guard.dart';
 import '../core/pro/pro_limits.dart';
+import '../core/theme/app_snack_bar.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/liquid_glass.dart';
 import 'pressable.dart';
@@ -55,9 +56,7 @@ class AssistantEnergyChip extends ConsumerWidget {
           return;
         }
         final tr = Tr.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr.aiEnergyHint(units))),
-        );
+        showAppSnackBar(context, tr.aiEnergyHint(units));
       },
       child: LiquidGlass(
         compact: true,

@@ -11,6 +11,9 @@ import 'ai_assistant_mark.dart';
 import 'pressable.dart';
 
 /// Pill bottom nav: home · reports · plus · management · chat.
+///
+/// Uses frosted fill **without** live [BackdropFilter] — blur under a
+/// scrolling list janks taps and makes the pill pulse/glow.
 class BudgetBottomNav extends StatelessWidget {
   const BudgetBottomNav({
     super.key,
@@ -19,7 +22,6 @@ class BudgetBottomNav extends StatelessWidget {
     required this.onAddTap,
     required this.onManagementTap,
     required this.onChatTap,
-    this.lightGlass = false,
   });
 
   /// Shell tab index: 0 home, 1 reports, 2 management.
@@ -28,8 +30,6 @@ class BudgetBottomNav extends StatelessWidget {
   final VoidCallback onAddTap;
   final VoidCallback onManagementTap;
   final VoidCallback onChatTap;
-  /// Cheaper blur while the body is scrolling underneath.
-  final bool lightGlass;
 
   @override
   Widget build(BuildContext context) {
@@ -37,10 +37,10 @@ class BudgetBottomNav extends StatelessWidget {
       top: false,
       minimum: const EdgeInsets.symmetric(horizontal: 20),
       child: LiquidGlass(
-        light: lightGlass,
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+        // Solid frosted pill — no live blur while content scrolls behind.
+        light: true,
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _NavItem(
               icon: LucideIcons.house,
@@ -90,31 +90,31 @@ class _NavItem extends StatelessWidget {
     // Lime is reserved for the + FAB — selected tabs use high-contrast fill.
     final activeBg = context.isDark ? Colors.white : AppColors.ink;
     final activeFg = context.isDark ? AppColors.ink : Colors.white;
-    return Pressable(
-      onTap: onTap,
-      child: Semantics(
-        button: true,
-        selected: active,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: active ? activeBg : Colors.transparent,
-            shape: BoxShape.circle,
-          ),
-          child: TweenAnimationBuilder<Color?>(
-            tween: ColorTween(
-              begin: active ? idle : activeFg,
-              end: active ? activeFg : idle,
-            ),
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutCubic,
-            builder: (context, color, _) => Icon(
-              icon,
-              size: 21,
-              color: color ?? (active ? activeFg : idle),
+    // Expanded hit target so taps between icons still register.
+    return Expanded(
+      child: Pressable(
+        onTap: onTap,
+        child: Semantics(
+          button: true,
+          selected: active,
+          child: SizedBox(
+            height: 48,
+            child: Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: active ? activeBg : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 21,
+                  color: active ? activeFg : idle,
+                ),
+              ),
             ),
           ),
         ),
@@ -135,12 +135,19 @@ class _AiNavItem extends ConsumerWidget {
       assistantEnergyProvider.select((e) => e.hasEnergy),
     );
     final needsUpgrade = !isPro && !hasEnergy;
-    return Pressable(
-      onTap: onTap,
-      child: AiAssistantMark(
-        size: 44,
-        iconSize: 18,
-        needsUpgrade: needsUpgrade,
+    return Expanded(
+      child: Pressable(
+        onTap: onTap,
+        child: SizedBox(
+          height: 48,
+          child: Center(
+            child: AiAssistantMark(
+              size: 44,
+              iconSize: 18,
+              needsUpgrade: needsUpgrade,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -161,24 +168,31 @@ class _Fab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      scale: 0.9,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: AppColors.lime,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.lime.withValues(alpha: 0.45),
-              blurRadius: 14,
-              offset: const Offset(0, 3),
+    return Expanded(
+      child: Pressable(
+        onTap: onTap,
+        scale: 0.92,
+        child: SizedBox(
+          height: 48,
+          child: Center(
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: AppColors.lime,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.lime.withValues(alpha: 0.28),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: AppColors.ink, size: iconSize),
             ),
-          ],
+          ),
         ),
-        child: Icon(icon, color: AppColors.ink, size: iconSize),
       ),
     );
   }

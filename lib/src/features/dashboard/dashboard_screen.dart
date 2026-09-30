@@ -42,6 +42,8 @@ class DashboardScreen extends ConsumerWidget {
 
     return ResetScrollWhenObscured(
       tabPath: '/',
+      // Keep scroll when opening a tx / sheet and coming back.
+      preserveScrollOnPush: true,
       builder: (context, scroll) {
         return MonthlyCalendar(
           scrollController: scroll,
