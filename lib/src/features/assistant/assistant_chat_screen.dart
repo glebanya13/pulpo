@@ -83,6 +83,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   /// First open: paint at top, then ease down to the newest message.
   bool _didInitialScroll = false;
   bool _introScrollRunning = false;
+  /// Clamping while we drive the list — bouncing + jumpTo fights on device.
+  bool _clampListPhysics = false;
+  int _scrollGen = 0;
   Timer? _streamPinTimer;
 
   /// Cap STT auto-restarts so a flaky mic can't drain battery / free energy.
@@ -124,6 +127,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
   @override
   void dispose() {
+    _scrollGen++;
     unawaited(_speech.cancel());
     _listenTimer?.cancel();
     _burnTimer?.cancel();
@@ -1011,8 +1015,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     );
   }
 
-  /// Oldest → newest (top → bottom). On first open wait for the route
-  /// transition, then ease to the end; later pins animate without fighting.
+  /// Oldest → newest (top → bottom). One clamped glide after the route
+  /// settles — no per-frame jumpTo loops (those swing like a carousel on device
+  /// when maxScrollExtent keeps changing under lazy layout).
   void _scheduleInitialScroll() {
     if (_didInitialScroll || _introScrollRunning) return;
     _introScrollRunning = true;
@@ -1020,123 +1025,109 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   }
 
   Future<void> _runInitialScroll() async {
+    final gen = ++_scrollGen;
     try {
-      // Let the Cupertino push settle so the glide isn't clipped mid-transition.
-      await Future<void>.delayed(const Duration(milliseconds: 280));
-      if (!mounted || _didInitialScroll) return;
+      await Future<void>.delayed(const Duration(milliseconds: 320));
+      if (!mounted || _didInitialScroll || gen != _scrollGen) return;
 
-      for (var attempt = 0; attempt < 12; attempt++) {
-        if (!mounted) return;
+      for (var attempt = 0; attempt < 16; attempt++) {
+        if (!mounted || gen != _scrollGen) return;
         await WidgetsBinding.instance.endOfFrame;
         if (!_listCtrl.hasClients) {
           await Future<void>.delayed(const Duration(milliseconds: 40));
           continue;
         }
-
-        final position = _listCtrl.position;
-        final target = position.maxScrollExtent;
-        if (target <= 4) {
-          // Content still fitting / not measured — keep waiting for messages.
-          await Future<void>.delayed(const Duration(milliseconds: 40));
-          continue;
-        }
-
-        // Always begin the intro from the top of the thread.
-        if (position.pixels > 0.5) {
-          _listCtrl.jumpTo(0);
-          await WidgetsBinding.instance.endOfFrame;
-          if (!mounted || !_listCtrl.hasClients) return;
-        }
-
-        final end = _listCtrl.position.maxScrollExtent;
-        if (end <= 4) continue;
-
-        _didInitialScroll = true;
-        final distance = end;
-        final ms = (360 + distance * 0.55).clamp(560.0, 1100.0).round();
-        await _animateTrackingEnd(
-          duration: Duration(milliseconds: ms),
-          curve: Curves.easeInOutCubic,
-        );
-        return;
+        if (_listCtrl.position.maxScrollExtent > 4) break;
+        await Future<void>.delayed(const Duration(milliseconds: 40));
       }
 
-      // Short thread that never overflows — treat as settled.
+      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
+
+      if (mounted) {
+        setState(() => _clampListPhysics = true);
+        await WidgetsBinding.instance.endOfFrame;
+      }
+      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
+
+      if (_listCtrl.offset > 0.5) {
+        _listCtrl.jumpTo(0);
+        await WidgetsBinding.instance.endOfFrame;
+      }
+      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
+
+      final end = _listCtrl.position.maxScrollExtent;
       _didInitialScroll = true;
+      if (end <= 4) return;
+
+      final ms = (400 + end * 0.45).clamp(600.0, 1200.0).round();
+      await _listCtrl.animateTo(
+        end,
+        duration: Duration(milliseconds: ms),
+        curve: Curves.easeInOutCubic,
+      );
+      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
+
+      // One quiet correction if lazy children grew the extent mid-flight.
+      await _pinToEnd(frames: 3);
     } finally {
-      _introScrollRunning = false;
-    }
-  }
-
-  /// Animate toward the bottom while re-reading [maxScrollExtent] each tick.
-  /// Lazy list items grow the extent as they build — a fixed [animateTo]
-  /// target stops short of the real end.
-  Future<void> _animateTrackingEnd({
-    required Duration duration,
-    Curve curve = Curves.easeOutCubic,
-  }) async {
-    if (!_listCtrl.hasClients) return;
-    final start = _listCtrl.offset;
-    final sw = Stopwatch()..start();
-
-    while (mounted && _listCtrl.hasClients) {
-      final t =
-          (sw.elapsedMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0);
-      final eased = curve.transform(t);
-      final max = _listCtrl.position.maxScrollExtent;
-      final next = (start + (max - start) * eased).clamp(0.0, max);
-      if ((next - _listCtrl.offset).abs() > 0.5) {
-        _listCtrl.jumpTo(next);
+      if (gen == _scrollGen) {
+        _introScrollRunning = false;
+        if (mounted && _clampListPhysics) {
+          setState(() => _clampListPhysics = false);
+        }
       }
-      if (t >= 1) break;
-      await Future<void>.delayed(const Duration(milliseconds: 16));
     }
-
-    await _settleAtEnd();
   }
 
-  Future<void> _settleAtEnd() async {
-    for (var i = 0; i < 12; i++) {
+  Future<void> _pinToEnd({int frames = 2}) async {
+    for (var i = 0; i < frames; i++) {
       if (!mounted || !_listCtrl.hasClients) return;
       await WidgetsBinding.instance.endOfFrame;
       final max = _listCtrl.position.maxScrollExtent;
-      if ((max - _listCtrl.offset).abs() < 1.5) {
-        await WidgetsBinding.instance.endOfFrame;
-        if (!mounted || !_listCtrl.hasClients) return;
-        final max2 = _listCtrl.position.maxScrollExtent;
-        if ((max2 - _listCtrl.offset).abs() < 1.5) return;
-        _listCtrl.jumpTo(max2);
-        continue;
+      // Only move forward — never pull back (avoids carousel).
+      if (max > _listCtrl.offset + 1.5) {
+        _listCtrl.jumpTo(max);
       }
-      _listCtrl.jumpTo(max);
     }
   }
 
   void _scrollToEnd({bool animate = true}) {
-    // Don't yank during the opening glide.
     if (!_didInitialScroll || _introScrollRunning) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_listCtrl.hasClients) return;
+    final gen = ++_scrollGen;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
       final target = _listCtrl.position.maxScrollExtent;
       if (target <= 0) return;
-      final delta = (target - _listCtrl.offset).abs();
-      if (delta < 1) {
-        unawaited(_settleAtEnd());
+      final delta = target - _listCtrl.offset;
+      if (delta < 1.5) return;
+
+      if (!animate || delta < 28) {
+        _listCtrl.jumpTo(target);
+        await _pinToEnd(frames: 2);
         return;
       }
 
-      if (!animate || delta < 24) {
-        _listCtrl.jumpTo(target);
-        unawaited(_settleAtEnd());
-        return;
+      if (mounted && !_clampListPhysics) {
+        setState(() => _clampListPhysics = true);
+        await WidgetsBinding.instance.endOfFrame;
       }
-      unawaited(
-        _animateTrackingEnd(
+      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
+
+      try {
+        await _listCtrl.animateTo(
+          _listCtrl.position.maxScrollExtent,
           duration: Duration(
-            milliseconds: (220 + delta * 0.35).clamp(260.0, 520.0).round(),
+            milliseconds: (240 + delta * 0.3).clamp(280.0, 520.0).round(),
           ),
-        ),
-      );
+          curve: Curves.easeOutCubic,
+        );
+        if (!mounted || gen != _scrollGen) return;
+        await _pinToEnd(frames: 2);
+      } finally {
+        if (mounted && gen == _scrollGen && _clampListPhysics && !_introScrollRunning) {
+          setState(() => _clampListPhysics = false);
+        }
+      }
     });
   }
 
@@ -1402,10 +1393,16 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                     : AppColors.limeAccent,
                 child: CustomScrollView(
                   controller: _listCtrl,
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  cacheExtent: 480,
+                  physics: _clampListPhysics
+                      ? const ClampingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics(),
+                        )
+                      : const BouncingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics(),
+                        ),
+                  // Large cache so opening extent is closer to the real end
+                  // (avoids stopping short without a jumpTo feedback loop).
+                  cacheExtent: 2400,
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   slivers: [

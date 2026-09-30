@@ -19,6 +19,29 @@ class AppSpacing {
   static const double rXxl = 28;
   static const double rPill = 100;
 
+  /// Status-bar / notch inset — prefers MediaQuery, falls back to the raw
+  /// Flutter [View] when a route has already zeroed padding (modals).
+  static double systemTop(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final fromMq =
+        mq.viewPadding.top > 0 ? mq.viewPadding.top : mq.padding.top;
+    if (fromMq > 0) return fromMq;
+    final view = View.maybeOf(context);
+    if (view == null) return 0;
+    return view.viewPadding.top / view.devicePixelRatio;
+  }
+
+  static double systemBottom(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final fromMq = mq.viewPadding.bottom > 0
+        ? mq.viewPadding.bottom
+        : mq.padding.bottom;
+    if (fromMq > 0) return fromMq;
+    final view = View.maybeOf(context);
+    if (view == null) return 0;
+    return view.viewPadding.bottom / view.devicePixelRatio;
+  }
+
   /// Clearance for scroll content above the floating tab bar.
   ///
   /// With [Scaffold.extendBody], Flutter already puts the bottom-nav height

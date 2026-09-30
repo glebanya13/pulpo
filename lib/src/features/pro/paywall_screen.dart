@@ -12,6 +12,7 @@ import '../../core/pro/pro_guard.dart';
 import '../../core/pro/pro_limits.dart';
 import '../../core/pro/product_offer_info.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/auth/cloud_auth.dart';
 import '../../data/repositories/settings_service.dart';
@@ -83,22 +84,20 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       return RoundIconButton(icon: icon, onTap: onTap);
     }
 
+    final topInset = AppSpacing.systemTop(context);
+    final bottomInset = AppSpacing.systemBottom(context);
+
     return Scaffold(
-      body: Padding(
-        padding: EdgeInsets.only(
-          top: MediaQuery.viewPaddingOf(context).top,
-          bottom: MediaQuery.viewPaddingOf(context).bottom,
-        ),
-        child: Stack(
-          children: [
-            ListView(
-              padding: EdgeInsets.fromLTRB(
-                24,
-                56,
-                24,
-                showPinnedCta ? 100 : 32,
-              ),
-              children: [
+      body: Stack(
+        children: [
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              topInset + 56,
+              24,
+              bottomInset + (showPinnedCta ? 100 : 32),
+            ),
+            children: [
             const Center(child: _PaywallProHero()),
             const SizedBox(height: 18),
             Text(
@@ -380,7 +379,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               ],
             ),
             Positioned(
-              top: 8,
+              top: topInset + 8,
               left: 16,
               right: 16,
               child: Row(
@@ -401,7 +400,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               Positioned(
                 left: 24,
                 right: 24,
-                bottom: 8,
+                bottom: bottomInset + 8,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -423,7 +422,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               ),
           ],
         ),
-      ),
     );
   }
 
