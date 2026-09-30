@@ -123,8 +123,10 @@ class _MonthTotals extends StatelessWidget {
           Container(width: 1, height: 28, color: context.divider),
           _Mini(
               label: tr.monthNet,
-              value: formatMoney(net, currency),
-              color: context.primaryText),
+              value: formatMoney(net, currency, showSign: true),
+              color: net < 0
+                  ? AppColors.danger
+                  : (net > 0 ? context.accent : context.primaryText)),
         ],
       ),
     );

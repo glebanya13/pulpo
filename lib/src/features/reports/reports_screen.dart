@@ -1069,7 +1069,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           letterSpacing: 1)),
                   const Spacer(),
                   Text(
-                    (net >= 0 ? '+' : '−') + formatMoney(net, currency),
+                    formatMoney(net, currency, showSign: true),
                     style: TextStyle(
                       color: net >= 0
                           ? context.accent

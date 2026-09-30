@@ -16,9 +16,14 @@ String formatMoney(
     symbol: _symbolFor(currency),
     decimalDigits: 2,
   );
-  final str = formatter.format(amount.abs());
-  if (!showSign) return str;
-  return amount < 0 ? '−$str' : '+$str';
+  if (showSign) {
+    final str = formatter.format(amount.abs());
+    if (amount < 0) return '−$str';
+    if (amount > 0) return '+$str';
+    return str;
+  }
+  // Keep the real sign — balances / nets must not look positive when negative.
+  return formatter.format(amount);
 }
 
 /// NumberFormat locale for a currency (display only).
