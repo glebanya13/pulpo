@@ -25,13 +25,11 @@ class AppInfo {
   static const supportUrl = '$site/support';
   static const supportEmail = 'hola@monedero.mobi';
 
-  /// WhatsApp username without @ — opens via wa.me (no phone number in the link).
-  static const whatsAppUsername = 'monedero.mobi';
-  static const whatsAppUrl = 'https://wa.me/$whatsAppUsername';
+  /// Crisp website ID (crisp.chat dashboard → Settings → Setup instructions).
+  static const crispWebsiteId = 'e3276d21-7c53-4cbc-aa43-5e9e3029bacb';
 
   static final privacyUri = Uri.parse(privacyUrl);
   static final termsUri = Uri.parse(termsUrl);
   static final supportUri = Uri.parse(supportUrl);
   static final mailtoUri = Uri.parse('mailto:$supportEmail');
-  static final whatsAppUri = Uri.parse(whatsAppUrl);
 }

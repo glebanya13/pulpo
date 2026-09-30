@@ -1,4 +1,6 @@
+import 'package:crisp_chat/crisp_chat.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -10,6 +12,7 @@ import '../core/theme/app_spacing.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/liquid_glass.dart';
 import '../core/utils/keyboard.dart';
+import '../features/auth/cloud_auth.dart';
 import 'pressable.dart';
 
 /// Brand mark — Monedero app icon (lime plate + geometric M).
@@ -468,34 +471,51 @@ class MyAccountChip extends StatelessWidget {
   }
 }
 
-/// Opens WhatsApp support chat (same link as the website support page).
-Future<void> openWhatsAppSupport(BuildContext context) {
-  return openAppLink(context, AppInfo.whatsAppUri);
+/// Opens native Crisp chat; falls back to the Crisp web embed if the SDK fails.
+Future<void> openCrispSupport(BuildContext context, WidgetRef ref) async {
+  final email = ref.read(authUserProvider).valueOrNull?.email?.trim();
+  try {
+    await FlutterCrispChat.openCrispChat(
+      config: CrispConfig(
+        websiteID: AppInfo.crispWebsiteId,
+        user: (email == null || email.isEmpty) ? null : User(email: email),
+      ),
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    await openAppLink(
+      context,
+      Uri.parse(
+        'https://go.crisp.chat/chat/embed/?website_id='
+        '${AppInfo.crispWebsiteId}',
+      ),
+    );
+  }
 }
 
-/// Support chip — opens WhatsApp (wa.me), matching monedero.mobi/support.
-class WhatsAppSupportChip extends StatelessWidget {
+/// Support chip — opens Crisp (native SDK, web embed fallback).
+class WhatsAppSupportChip extends ConsumerWidget {
   const WhatsAppSupportChip({super.key, this.dense = false});
 
   final bool dense;
 
-  /// WhatsApp brand green.
-  static const _green = Color(0xFF25D366);
+  /// Crisp brand blue.
+  static const _blue = Color(0xFF1972F5);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final size = dense ? 34.0 : 40.0;
     return Pressable(
-      onTap: () => openWhatsAppSupport(context),
+      onTap: () => openCrispSupport(context, ref),
       child: Semantics(
         button: true,
-        label: 'WhatsApp',
+        label: 'Soporte',
         child: Container(
           width: size,
           height: size,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _green,
+            color: _blue,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
@@ -509,7 +529,7 @@ class WhatsAppSupportChip extends StatelessWidget {
   }
 }
 
-/// WhatsApp + account chip pair for main tab headers.
+/// Crisp + account chip pair for main tab headers.
 class HeaderSupportActions extends StatelessWidget {
   const HeaderSupportActions({
     super.key,
