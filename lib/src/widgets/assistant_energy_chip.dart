@@ -60,7 +60,6 @@ class AssistantEnergyChip extends ConsumerWidget {
       },
       child: LiquidGlass(
         compact: true,
-        light: true,
         borderRadius: BorderRadius.circular(999),
         padding: EdgeInsets.symmetric(
           horizontal: iconOnly ? 10 : 10,

@@ -10,10 +10,7 @@ import '../core/theme/liquid_glass.dart';
 import 'ai_assistant_mark.dart';
 import 'pressable.dart';
 
-/// Pill bottom nav: home · reports · plus · management · chat.
-///
-/// Uses frosted fill **without** live [BackdropFilter] — blur under a
-/// scrolling list janks taps and makes the pill pulse/glow.
+/// Pill bottom nav + external + FAB (home · reports · management · chat | +).
 class BudgetBottomNav extends StatelessWidget {
   const BudgetBottomNav({
     super.key,
@@ -31,41 +28,49 @@ class BudgetBottomNav extends StatelessWidget {
   final VoidCallback onManagementTap;
   final VoidCallback onChatTap;
 
+  static const double _fabSize = 56;
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
-      minimum: const EdgeInsets.symmetric(horizontal: 20),
-      child: LiquidGlass(
-        // Solid frosted pill — no live blur while content scrolls behind.
-        light: true,
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-        child: Row(
-          children: [
-            _NavItem(
-              icon: LucideIcons.house,
-              active: currentIndex == 0,
-              onTap: () => onTap(0),
+      minimum: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: LiquidGlass(
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+              child: Row(
+                children: [
+                  _NavItem(
+                    icon: LucideIcons.house,
+                    active: currentIndex == 0,
+                    onTap: () => onTap(0),
+                  ),
+                  _NavItem(
+                    icon: LucideIcons.pieChart,
+                    active: currentIndex == 1,
+                    onTap: () => onTap(1),
+                  ),
+                  _NavItem(
+                    icon: LucideIcons.layoutGrid,
+                    active: currentIndex == 2,
+                    onTap: onManagementTap,
+                  ),
+                  _AiNavItem(onTap: onChatTap),
+                ],
+              ),
             ),
-            _NavItem(
-              icon: LucideIcons.pieChart,
-              active: currentIndex == 1,
-              onTap: () => onTap(1),
-            ),
-            _Fab(
-              icon: LucideIcons.plus,
-              size: 54,
-              iconSize: 25,
-              onTap: onAddTap,
-            ),
-            _NavItem(
-              icon: LucideIcons.layoutGrid,
-              active: currentIndex == 2,
-              onTap: onManagementTap,
-            ),
-            _AiNavItem(onTap: onChatTap),
-          ],
-        ),
+          ),
+          const SizedBox(width: 10),
+          _Fab(
+            icon: LucideIcons.plus,
+            size: _fabSize,
+            iconSize: 26,
+            onTap: onAddTap,
+          ),
+        ],
       ),
     );
   }
@@ -87,10 +92,8 @@ class _NavItem extends StatelessWidget {
     final idle = context.isDark
         ? Colors.white.withValues(alpha: 0.55)
         : AppColors.ink.withValues(alpha: 0.42);
-    // Lime is reserved for the + FAB — selected tabs use high-contrast fill.
     final activeBg = context.isDark ? Colors.white : AppColors.ink;
     final activeFg = context.isDark ? AppColors.ink : Colors.white;
-    // Expanded hit target so taps between icons still register.
     return Expanded(
       child: Pressable(
         onTap: onTap,
@@ -157,8 +160,8 @@ class _Fab extends StatelessWidget {
   const _Fab({
     required this.icon,
     required this.onTap,
-    this.size = 46,
-    this.iconSize = 20,
+    this.size = 56,
+    this.iconSize = 26,
   });
 
   final IconData icon;
@@ -168,31 +171,38 @@ class _Fab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Pressable(
-        onTap: onTap,
-        scale: 0.92,
-        child: SizedBox(
-          height: 48,
-          child: Center(
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                color: AppColors.lime,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.lime.withValues(alpha: 0.28),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: AppColors.ink, size: iconSize),
-            ),
+    return Pressable(
+      onTap: onTap,
+      scale: 0.92,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFE8FF6A),
+              AppColors.lime,
+              AppColors.limeDark,
+            ],
+            stops: [0.0, 0.45, 1.0],
           ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.lime.withValues(alpha: 0.35),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
+        child: Icon(icon, color: AppColors.ink, size: iconSize),
       ),
     );
   }

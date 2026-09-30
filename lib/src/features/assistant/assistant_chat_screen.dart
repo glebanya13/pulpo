@@ -1117,7 +1117,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                       ),
                                       child: LiquidGlass(
                                         compact: true,
-                                        light: true,
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 12,
                                           vertical: 10,
@@ -1516,7 +1515,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                     onTap: _busy ? null : _showPhotoOptions,
                     child: LiquidGlass(
                       compact: true,
-                      light: true,
                       borderRadius: BorderRadius.circular(21),
                       child: SizedBox(
                         width: 42,
@@ -1611,7 +1609,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                               )
                             : LiquidGlass(
                                 compact: true,
-                                light: true,
                                 borderRadius: BorderRadius.circular(23),
                                 child: SizedBox(
                                   width: 46,

@@ -586,7 +586,6 @@ class PageHeader extends StatelessWidget {
 
     final pill = LiquidGlass(
       compact: true,
-      light: true,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -761,7 +760,6 @@ class _RoundIconBtn extends StatelessWidget {
       child: RepaintBoundary(
         child: LiquidGlass(
           compact: true,
-          light: true,
           borderRadius: BorderRadius.circular(size / 2),
           child: SizedBox(
             width: size,
