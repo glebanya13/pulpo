@@ -136,6 +136,12 @@ void main() {
       AiErrorCode.missingModel,
     );
     expect(
+      classifyAiRawError(
+        'This model `models/gemini-2.5-flash` is no longer available to new users',
+      ),
+      AiErrorCode.missingModel,
+    );
+    expect(
       classifyAiRawError('Server Error [500]: boom'),
       AiErrorCode.network,
     );
