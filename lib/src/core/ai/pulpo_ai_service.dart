@@ -54,10 +54,10 @@ class PulpoAiService {
   final FirebaseAuth _auth;
   final AiErrorLogger? _onError;
 
-  /// Primary: Flash-Lite (minimal thinking by default). One fast fallback.
+  /// Primary: Flash-Lite for fast parse. Strong chat uses 3.8 Flash.
   static const _primaryModel = 'gemini-3.5-flash-lite';
   static const _fallbackModels = <String>[
-    'gemini-2.5-flash',
+    'gemini-3.8-flash',
   ];
 
   static const _attemptTimeout = Duration(seconds: 12);
@@ -111,8 +111,7 @@ class PulpoAiService {
     final cached = _modelCache[key];
     if (cached != null) return cached;
 
-    // Gemini 2.5 Flash*: thinkingBudget 0 disables thinking.
-    // Gemini 3.5 Flash-Lite already defaults to minimal thinking.
+    // Older 2.5 Flash* needed thinkingBudget 0; 3.x defaults are fine.
     final disableThinking = name.contains('2.5-flash');
     final created = _ai.generativeModel(
       model: name,

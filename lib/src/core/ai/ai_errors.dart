@@ -82,7 +82,9 @@ AiErrorCode classifyAiRawError(String msg) {
   if (m.contains('not_found') ||
       m.contains('not found') ||
       m.contains('not supported') ||
-      m.contains('model_not_found')) {
+      m.contains('model_not_found') ||
+      m.contains('no longer available') ||
+      m.contains('is not available')) {
     return AiErrorCode.missingModel;
   }
   if (m.contains('unavailable') ||
