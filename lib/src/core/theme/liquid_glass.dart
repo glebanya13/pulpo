@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
 import 'app_theme.dart';
 
 /// Translucent "liquid glass" chrome: blur + specular edge, like iOS 26.
@@ -17,8 +18,6 @@ class LiquidGlass extends StatelessWidget {
     this.light = false,
     /// Icon / title-pill chrome — denser so ← / title / + stay readable.
     this.compact = false,
-    /// Brand / home header — lighter frosted bar (not a darkened slab).
-    this.airy = false,
   });
 
   final Widget child;
@@ -26,7 +25,6 @@ class LiquidGlass extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final bool light;
   final bool compact;
-  final bool airy;
 
   @override
   Widget build(BuildContext context) {
@@ -36,20 +34,15 @@ class LiquidGlass extends StatelessWidget {
     final shadowBlur = compact ? 8.0 : (light ? 10.0 : 20.0);
     final shadowY = compact ? 3.0 : 10.0;
 
-    // Dark compact = control discs (← / Categorías / +) everywhere.
-    // Dark default = floating bars (bottom nav).
-    // Dark airy = home/brand ScreenTitlePill — lighter on purpose.
+    // Dark compact = control discs (← / Categorías / +).
+    // Dark default (+ airy) = floating chrome (title pills + bottom nav) —
+    // same density so headers and footer match.
     final List<Color> fill;
     if (dark) {
       if (compact) {
         fill = const [
           Color(0xE6282828),
           Color(0xD61E1E1E),
-        ];
-      } else if (airy) {
-        fill = [
-          Colors.white.withValues(alpha: 0.14),
-          Colors.white.withValues(alpha: 0.05),
         ];
       } else {
         fill = const [
@@ -63,11 +56,6 @@ class LiquidGlass extends StatelessWidget {
           Colors.white.withValues(alpha: 0.94),
           Colors.white.withValues(alpha: 0.78),
         ];
-      } else if (airy) {
-        fill = [
-          Colors.white.withValues(alpha: 0.78),
-          Colors.white.withValues(alpha: 0.48),
-        ];
       } else {
         fill = [
           Colors.white.withValues(alpha: 0.82),
@@ -76,10 +64,11 @@ class LiquidGlass extends StatelessWidget {
       }
     }
 
+    // Dark: soft white rim. Light: ink rim (white stroke vanishes on white UI).
     final border = Border.all(
-      color: Colors.white.withValues(
-        alpha: dark ? (compact ? 0.22 : 0.20) : 0.72,
-      ),
+      color: dark
+          ? Colors.white.withValues(alpha: compact ? 0.22 : 0.20)
+          : AppColors.ink.withValues(alpha: compact ? 0.14 : 0.12),
       width: 0.6,
     );
 

@@ -38,6 +38,7 @@ import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/ai_assistant_mark.dart';
 import 'app_chat_context.dart';
+import 'assistant_ai_history.dart';
 import 'assistant_chat_format.dart';
 import 'assistant_transactions.dart';
 import 'expense_period_query.dart';
@@ -565,8 +566,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final currencyHint = account?.currency ??
         ref.read(settingsControllerProvider).baseCurrency;
 
-    // Expense lists: AI (or local rules) picks the period; table always from DB
-    // so totals stay honest (Gemini used to truncate rows).
+    // Expense / income lists: AI (or local rules) picks the period; table from DB.
     if (looksLikeExpenseListQuestion(text)) {
       var periodQuery = parseExpensePeriodQuery(text);
       if (periodQuery == null || !periodQuery.confident) {
@@ -583,8 +583,13 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                 userMessage: text,
                 locale: locale,
               );
-          final resolved =
-              aiPeriod == null ? null : expensePeriodFromAiJson(aiPeriod);
+          final resolved = aiPeriod == null
+              ? null
+              : expensePeriodFromAiJson(
+                  aiPeriod,
+                  fallbackKind:
+                      periodQuery?.kind ?? PeriodListKind.expense,
+                );
           if (resolved != null) periodQuery = resolved;
         } catch (e, st) {
           await _logError(e, st);
@@ -599,12 +604,37 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           query: periodQuery,
           tr: tr,
           baseCurrency: currencyHint,
+          accountId: account?.id,
         );
         if (!mounted) return false;
-        final body = composeReplyWithTable(built.reply, built.table);
+        var prose = built.reply;
+        // Gemini narrates intro (or empty state); table stays local facts.
+        try {
+          if (mounted) {
+            setState(() {
+              _busyLabel = tr.aiBusy;
+              _streamPreview = '';
+            });
+          }
+          final table = built.table;
+          prose = await ref.read(pulpoAiServiceProvider).narratePeriodIntro(
+                userMessage: text,
+                locale: locale,
+                income: periodQuery.isIncome,
+                periodLabel: periodLabelFor(tr, periodQuery),
+                count: table?.rows.length ?? 0,
+                totalLabel: table?.total ?? '',
+                empty: table == null,
+                offerFollowUp: table != null && table.rows.length >= 3,
+              );
+        } catch (e, st) {
+          await _logError(e, st);
+          prose = built.reply;
+        }
+        if (!mounted) return false;
+        final body = composeReplyWithTable(prose, built.table);
         await _append(isFromUser: false, body: body);
-        // Period may use a tiny AI call; table itself is local facts.
-        return periodQuery.confident == false;
+        return true;
       }
     }
 
@@ -618,6 +648,12 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         ),
       );
       return false;
+    }
+
+    // Affordability: never open the record sheet — natural chat with APP DATA.
+    if (looksLikeAffordabilityQuestion(text)) {
+      await _appendChatAnswer(text: text, locale: locale, welcome: welcome);
+      return true;
     }
 
     late AssistantTurnResult turn;
@@ -685,17 +721,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         );
       }
     } else {
-      turn = await _fullAssistantTurn(
-        text: text,
-        locale: locale,
-        welcome: welcome,
-        names: names,
-        accountNames: accountNames,
-        accountContext: accountContext,
-        currencyHint: currencyHint,
-        fromSpeech: fromSpeech,
-        categoryRules: categoryRules,
-      );
+      // Pure questions → conversational chat (not JSON assistant_turn).
+      await _appendChatAnswer(text: text, locale: locale, welcome: welcome);
+      return true;
     }
 
     // Retry batch only for bare "record" with no txs — not for clarify.
@@ -749,7 +777,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         tr: tr,
       );
       if (!mounted || confirmed == null) {
-        await _append(isFromUser: false, body: tr.cancel);
+        // User dismissed the sheet — don't post a literal "Cancelar" bubble.
         return false;
       }
 
@@ -795,6 +823,60 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     return true;
   }
 
+  Future<void> _appendChatAnswer({
+    required String text,
+    required String locale,
+    required String welcome,
+  }) async {
+    final tr = Tr.of(context);
+    if (mounted) {
+      setState(() {
+        _busyLabel = tr.aiBusy;
+        _streamPreview = '';
+      });
+    }
+    final stored = await _chat.all();
+    final prior = buildCompressedChatHistory(stored, welcome);
+    final account = await _resolveAccount();
+    final currency = account?.currency ??
+        ref.read(settingsControllerProvider).baseCurrency;
+    final memory = buildSessionMemory(
+      history: prior,
+      accountName: account?.name,
+      currency: currency,
+    );
+    final scope = looksLikeBalanceQuestion(text)
+        ? AppContextScope.balances
+        : (looksLikeDeepFinanceQuestion(text)
+            ? AppContextScope.full
+            : AppContextScope.compact);
+    var appContext = buildAppChatContext(ref, scope: scope);
+    final period = parseExpensePeriodQuery(text);
+    if (period != null) {
+      appContext = '$appContext\n${buildExpensePeriodContextBlock(
+        allTransactions:
+            ref.read(allTransactionsProvider).valueOrNull ?? const [],
+        categories: ref.read(categoriesProvider).valueOrNull ?? const [],
+        query: period,
+        baseCurrency: currency,
+      )}';
+    }
+    final reply = await ref.read(pulpoAiServiceProvider).chatAboutApp(
+          userMessage: text,
+          appContext: appContext,
+          locale: locale,
+          history: prior,
+          sessionMemory: memory,
+          onPartial: _onAiPartial,
+        );
+    if (!mounted) return;
+    final body = reply.trim();
+    if (body.isEmpty) {
+      throw const PulpoAiException(AiErrorCode.emptyResponse);
+    }
+    await _append(isFromUser: false, body: body);
+  }
+
   Future<AssistantTurnResult> _fullAssistantTurn({
     required String text,
     required String locale,
@@ -807,7 +889,13 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     List<AiCategoryRule> categoryRules = const [],
   }) async {
     final stored = await _chat.all();
-    final prior = _chatHistory(stored, welcome);
+    final prior = buildCompressedChatHistory(stored, welcome);
+    final account = await _resolveAccount();
+    final memory = buildSessionMemory(
+      history: prior,
+      accountName: account?.name,
+      currency: currencyHint,
+    );
     final scope = looksLikeBalanceQuestion(text)
         ? AppContextScope.balances
         : (looksLikeDeepFinanceQuestion(text) ||
@@ -815,6 +903,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             ? AppContextScope.full
             : AppContextScope.compact);
     var appContext = buildAppChatContext(ref, scope: scope);
+    if (memory.isNotEmpty) {
+      appContext = 'SESSION:\n$memory\n\n$appContext';
+    }
     final period = parseExpensePeriodQuery(text);
     if (period != null) {
       appContext = '$appContext\n${buildExpensePeriodContextBlock(
@@ -838,22 +929,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           categoryRules: categoryRules,
           onPartial: _onAiPartial,
         );
-  }
-
-  List<({String role, String text})> _chatHistory(
-    List<db.AssistantMessage> messages,
-    String welcome,
-  ) {
-    final prior = <({String role, String text})>[];
-    for (var i = 0; i < messages.length - 1; i++) {
-      final m = messages[i];
-      if (!m.isFromUser && m.body == welcome) continue;
-      // Skip long error dumps — they pollute the model context.
-      if (!m.isFromUser && m.body.length > 280) continue;
-      prior.add((role: m.isFromUser ? 'user' : 'model', text: m.body));
-    }
-    if (prior.length <= 8) return prior;
-    return prior.sublist(prior.length - 8);
   }
 
   Future<void> _pickReceipt(ImageSource source) async {
@@ -926,7 +1001,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
         tr: tr,
       );
       if (!mounted || confirmed == null) {
-        await _append(isFromUser: false, body: tr.cancel);
+        // User dismissed the sheet — don't post a literal "Cancelar" bubble.
         return;
       }
 

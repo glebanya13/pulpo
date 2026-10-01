@@ -212,8 +212,16 @@ void main() {
     expect(isCasualGreeting('кофе 60'), isFalse);
     expect(isCasualGreeting('hi coffee 60'), isFalse);
     expect(isCasualGreeting('сколько я потратил'), isFalse);
-    expect(greetingReplyForLocale('ru'), contains('Привет'));
-    expect(greetingReplyForLocale('uk'), contains('Привіт'));
+    final ru = greetingReplyForLocale('ru');
+    expect(
+      ru.contains('Привет') || ru.contains('Здравствуй'),
+      isTrue,
+    );
+    final uk = greetingReplyForLocale('uk');
+    expect(
+      uk.contains('Привіт') || uk.contains('Йо'),
+      isTrue,
+    );
   });
 
   test('looksLikeTransactionRecord and balance hints', () {

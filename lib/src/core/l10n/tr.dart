@@ -862,6 +862,23 @@ class Tr {
           .replaceAll('{period}', period)
           .replaceAll('{shown}', '$shown')
           .replaceAll('{total}', '$total');
+  String aiIncomePeriodIntro(String period) =>
+      _get('ai_income_period_intro').replaceAll('{}', period);
+  String aiIncomePeriodEmpty(String period) =>
+      _get('ai_income_period_empty').replaceAll('{}', period);
+  String aiIncomePeriodPartial(String period, int shown, int total) =>
+      _get('ai_income_period_partial')
+          .replaceAll('{period}', period)
+          .replaceAll('{shown}', '$shown')
+          .replaceAll('{total}', '$total');
+  String aiAffordYes(String amount, String balance) =>
+      _get('ai_afford_yes')
+          .replaceAll('{amount}', amount)
+          .replaceAll('{balance}', balance);
+  String aiAffordNo(String amount, String balance) =>
+      _get('ai_afford_no')
+          .replaceAll('{amount}', amount)
+          .replaceAll('{balance}', balance);
   String aiTransactionCount(int n) =>
       _get('ai_transaction_count').replaceAll('{}', '$n');
   String get aiEmptyResponse => _get('ai_empty_response');
@@ -1692,6 +1709,14 @@ class Tr {
       'ai_expense_period_empty': 'Sin gastos en {}.',
       'ai_expense_period_partial':
           'Gastos de {period} (mostrando {shown} de {total}):',
+      'ai_income_period_intro': 'Aquí tienes tus ingresos de {}:',
+      'ai_income_period_empty': 'Sin ingresos en {}.',
+      'ai_income_period_partial':
+          'Ingresos de {period} (mostrando {shown} de {total}):',
+      'ai_afford_yes':
+          'Sí: {amount} cabe en tu saldo actual de {balance}.',
+      'ai_afford_no':
+          'Con el saldo actual ({balance}) no alcanza para {amount}.',
       'ai_transaction_count': 'Has registrado {} transacciones en total.',
       'ai_blocked': 'La IA bloqueó la respuesta. Reformula el mensaje.',
       'ai_empty_response': 'La IA no devolvió texto. Inténtalo de nuevo.',
@@ -2450,6 +2475,14 @@ class Tr {
       'ai_expense_period_empty': 'Нет расходов за {}.',
       'ai_expense_period_partial':
           'Расходы за {period} (показано {shown} из {total}):',
+      'ai_income_period_intro': 'Вот твои доходы за {}:',
+      'ai_income_period_empty': 'Нет доходов за {}.',
+      'ai_income_period_partial':
+          'Доходы за {period} (показано {shown} из {total}):',
+      'ai_afford_yes':
+          'Да: {amount} укладывается в текущий баланс {balance}.',
+      'ai_afford_no':
+          'При балансе {balance} на {amount} не хватает.',
       'ai_transaction_count': 'Всего записано {} транзакций.',
       'ai_blocked': 'ИИ заблокировал ответ. Переформулируйте сообщение.',
       'ai_empty_response': 'ИИ вернул пустой ответ. Попробуйте ещё раз.',
@@ -3207,6 +3240,14 @@ class Tr {
       'ai_expense_period_empty': 'No expenses in {}.',
       'ai_expense_period_partial':
           'Expenses for {period} (showing {shown} of {total}):',
+      'ai_income_period_intro': 'Here is your income for {}:',
+      'ai_income_period_empty': 'No income in {}.',
+      'ai_income_period_partial':
+          'Income for {period} (showing {shown} of {total}):',
+      'ai_afford_yes':
+          'Yes: {amount} fits your current balance of {balance}.',
+      'ai_afford_no':
+          'With your current balance ({balance}) you cannot cover {amount}.',
       'ai_transaction_count': 'You have recorded {} transactions in total.',
       'ai_blocked': 'The AI blocked that reply. Rephrase your message.',
       'ai_empty_response': 'The AI returned an empty reply. Try again.',
@@ -3898,6 +3939,14 @@ class Tr {
       'ai_expense_period_empty': 'Немає витрат за {}.',
       'ai_expense_period_partial':
           'Витрати за {period} (показано {shown} з {total}):',
+      'ai_income_period_intro': 'Ось твої доходи за {}:',
+      'ai_income_period_empty': 'Немає доходів за {}.',
+      'ai_income_period_partial':
+          'Доходи за {period} (показано {shown} з {total}):',
+      'ai_afford_yes':
+          'Так: {amount} вміщується в поточний баланс {balance}.',
+      'ai_afford_no':
+          'За балансу {balance} на {amount} не вистачає.',
       'ai_transaction_count': 'Усього записано {} транзакцій.',
       'ai_blocked': 'ШІ заблокував відповідь. Переформулюйте повідомлення.',
       'ai_empty_response': 'ШІ повернув порожню відповідь. Спробуйте ще раз.',

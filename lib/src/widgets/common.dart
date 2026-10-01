@@ -148,7 +148,6 @@ class ScreenTitlePill extends StatelessWidget {
     final child = SizedBox(
       width: expand ? double.infinity : null,
       child: LiquidGlass(
-        airy: true,
         borderRadius: BorderRadius.circular(large ? 22 : 999),
         padding: EdgeInsets.fromLTRB(
           16,

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 /// Local fast-path: casual greetings should not hit Gemini.
 bool isCasualGreeting(String text) {
   var t = text.trim().toLowerCase();
@@ -56,18 +58,31 @@ bool isCasualGreeting(String text) {
 }
 
 String greetingReplyForLocale(String locale) {
-  switch (locale) {
-    case 'uk':
-      return 'Привіт! Можу записати витрату чи дохід — наприклад «Кава 60». '
-          'Також можу відповісти про дані в додатку.';
-    case 'ru':
-      return 'Привет! Могу записать расход или доход — например «Кофе 60». '
-          'Также могу ответить про данные в приложении.';
-    case 'en':
-      return 'Hi! I can log an expense or income — try “Coffee 60”. '
-          'I can also answer questions about your data in the app.';
-    default:
-      return '¡Hola! Puedo registrar un gasto o ingreso — prueba “Café 60”. '
-          'También puedo responder sobre tus datos en la app.';
-  }
+  final variants = switch (locale) {
+    'uk' => const [
+        'Привіт! Можу записати витрату чи дохід — наприклад «Кава 60». '
+            'Також підкажу по балансу чи витратах за період.',
+        'Йо! Пиши витрату текстом або питай про дані в додатку — я на місці.',
+        'Привіт. Що перевіримо: витрати, доходи чи баланс?',
+      ],
+    'ru' => const [
+        'Привет! Могу записать расход или доход — например «Кофе 60». '
+            'Также отвечу по балансу или тратам за период.',
+        'Привет. Пиши трату текстом или спрашивай по данным в приложении.',
+        'Здравствуй! Чем помочь — запись, баланс или расходы за период?',
+      ],
+    'en' => const [
+        'Hi! I can log an expense or income — try “Coffee 60”. '
+            'I can also answer about your balances and spending.',
+        'Hey — send a spend in plain text, or ask about your numbers in the app.',
+        'Hi. Want to log something, or check balances / period spend?',
+      ],
+    _ => const [
+        '¡Hola! Puedo registrar un gasto o ingreso — prueba “Café 60”. '
+            'También te respondo sobre saldo o gastos del periodo.',
+        'Hola. Escribe un gasto en texto o pregunta por tus datos en la app.',
+        '¡Hey! ¿Registramos algo o miramos saldo / gastos del periodo?',
+      ],
+  };
+  return variants[Random().nextInt(variants.length)];
 }

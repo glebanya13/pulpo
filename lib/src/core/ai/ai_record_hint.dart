@@ -6,6 +6,20 @@ bool looksLikeTransactionRecord(String text) {
 
   // Questions about existing data — not recording.
   if (t.contains('?') || t.contains('¿')) return false;
+  if (looksLikeAffordabilityQuestion(t)) return false;
+  // "ingresos de los últimos 3 días" / "gastos last 2 weeks" — list, not record.
+  // (Digit + "ingreso"/"gast" substring otherwise looks like a log.)
+  if (RegExp(
+    r'(últim|ultim|last|посл|recient|recent|esta\s+semana|este\s+mes|'
+    r'this\s+(week|month)|эту\s+недел|этот\s+месяц|цей\s+(тижд|місяц))',
+  ).hasMatch(t) &&
+      RegExp(
+        r'(gastos?|ingresos?|ganancias?|expenses?|income|earnings?|'
+        r'расход|доход|трат|витрат|транзакц|операц|movimientos?|'
+        r'transactions?|данн|дані|datos?)',
+      ).hasMatch(t)) {
+    return false;
+  }
   if (RegExp(
     r'^(сколько|скільки|how\s+much|what|cuál|cual|cuánto|cuanto|donde|где|де)\b',
   ).hasMatch(t)) {
@@ -75,6 +89,19 @@ bool looksLikeTransactionRecord(String text) {
     'traspaso',
   ];
   return markers.any(t.contains);
+}
+
+/// “Can I afford X?” — answer from balance, never open the record sheet.
+bool looksLikeAffordabilityQuestion(String text) {
+  final t = text.trim().toLowerCase();
+  if (t.length < 8 || t.length > 400) return false;
+  return RegExp(
+    r'(puedo\s+permit|me\s+puedo\s+permit|permit[ií]rme|'
+    r'can\s+i\s+afford|could\s+i\s+afford|afford\s+(this|it|buying)|'
+    r'me\s+alcanza|me\s+llega\s+el\s+dinero|'
+    r'могу\s+ли.{0,40}позвол|хватит\s+ли|позволить\s+себе|'
+    r'чи\s+можу.{0,40}дозвол|дозволити\s+собі|вистачить)',
+  ).hasMatch(t);
 }
 
 /// Balance / accounts questions — only need a slim APP DATA snapshot.

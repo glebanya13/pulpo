@@ -102,8 +102,12 @@ class PulpoAiService {
   GenerativeModel _model({
     required String name,
     required bool json,
+    bool conversational = false,
+    String? systemKey,
+    Content? systemInstruction,
   }) {
-    final key = '$name|json=$json';
+    final key =
+        '$name|json=$json|chat=$conversational|sys=${systemKey ?? '-'}';
     final cached = _modelCache[key];
     if (cached != null) return cached;
 
@@ -112,10 +116,14 @@ class PulpoAiService {
     final disableThinking = name.contains('2.5-flash');
     final created = _ai.generativeModel(
       model: name,
+      systemInstruction: systemInstruction,
       generationConfig: GenerationConfig(
-        temperature: json ? 0.1 : 0.3,
+        temperature: json
+            ? (conversational ? 0.4 : 0.1)
+            : (conversational ? 0.75 : 0.35),
         responseMimeType: json ? 'application/json' : null,
-        maxOutputTokens: json ? 2048 : 768,
+        maxOutputTokens:
+            json ? (conversational ? 3072 : 2048) : (conversational ? 1536 : 768),
         thinkingConfig:
             disableThinking ? ThinkingConfig(thinkingBudget: 0) : null,
       ),
@@ -123,6 +131,15 @@ class PulpoAiService {
     _modelCache[key] = created;
     return created;
   }
+
+  /// Stable Pulpo persona for conversational (non-JSON) calls.
+  Content _chatSystemInstruction(String locale) => Content.system('''
+You are Pulpo (Monedero), a personal-finance assistant inside a budget app.
+Reply in ${_langName(locale)}.
+Tone: natural, clear, concise — like a smart friend who knows the user's numbers.
+Never invent balances, accounts, or transactions. Stay with facts from APP DATA / SESSION.
+Do not pitch investments, loans, tax tricks, or products. No corporate filler or identical stock openers every turn.
+''');
 
   void _requireSignedIn() {
     if (_auth.currentUser == null) {
@@ -145,6 +162,9 @@ class PulpoAiService {
     required String label,
     bool json = true,
     bool preferStrong = false,
+    bool conversational = false,
+    String? systemKey,
+    Content? systemInstruction,
     AiPartialCallback? onPartial,
   }) async {
     _requireSignedIn();
@@ -177,6 +197,10 @@ class PulpoAiService {
         final model = _model(
           name: attempt.model,
           json: attempt.json,
+          conversational: conversational && !attempt.json,
+          systemKey: systemInstruction == null ? null : systemKey,
+          systemInstruction:
+              attempt.json ? null : systemInstruction,
         );
         final text = onPartial != null
             ? await _streamText(
@@ -332,23 +356,27 @@ class PulpoAiService {
       return await _withRetryParse(() async {
         final today = DateTime.now().toIso8601String().substring(0, 10);
         final prompt = '''
-You extract the time window for a personal-finance expense list.
+You extract the time window AND list type for a personal-finance history ask.
 Today is $today. Language hint: ${_langName(locale)}.
 User: """$trimmed"""
 
 Reply JSON only, one of:
-{"kind":"all"}
-{"kind":"month"}
-{"weeks":4}
-{"days":30}
+{"type":"expense","kind":"all"}
+{"type":"income","kind":"month"}
+{"type":"expense","weeks":4}
+{"type":"income","days":3}
 
 Rules:
-- "четыре недели" / "cuatro semanas" / "4 weeks" → {"weeks":4}
-- "две недели" / "2 semanas" → {"weeks":2}
+- "ganancias" / "ingresos" / "income" / "earnings" / "доход" → "type":"income"
+- "gastos" / "expenses" / "расход" → "type":"expense"
+- "cuatro semanas" / "4 weeks" → {"weeks":4}
+- "dos semanas" / "2 semanas" → {"weeks":2}
+- "últimos tres días" / "last 3 days" / "tres días" → {"days":3}
 - "última semana" / "last week" → {"weeks":1}
 - "este mes" / "this month" → {"kind":"month"}
-- "todas las transacciones" / "все транзакции" → {"kind":"all"}
-- If unclear, prefer {"weeks":2}
+- "todas las transacciones" → {"kind":"all"}
+- If the user said days, use {"days":N} — never substitute weeks
+- If unclear period only, prefer {"days":14} (not weeks) when they said "días"/"days"; else {"weeks":2}
 ''';
         return _generate(
           [Content.text(prompt)],
@@ -551,7 +579,7 @@ Top categories: $tops
     if (isCasualGreeting(trimmed)) {
       return AssistantTurnResult(
         intent: 'question',
-        reply: greetingReplyForLocale(locale),
+        reply: await _greetingReply(locale: locale, onPartial: onPartial),
       );
     }
 
@@ -576,16 +604,23 @@ Top categories: $tops
         final rules = categoryRulesPromptBlock(categoryRules);
         final fewShot = fewShotBlockForLocale(locale);
         final prompt = '''
-Pulpo budget assistant (natural speech, like Budget AI). Reply in $lang, JSON only.
-intent "record": extract ALL txs from casual speech; short confirm reply.$accountRule
+You are Pulpo, a helpful personal-finance assistant inside a budget app.
+Reply in $lang. Output JSON only.
+
+Decide intent:
+- "record": user is logging spend/income/transfer right now → extract ALL txs; short natural confirm in "reply".$accountRule
   Each tx: {amount,currency,date,note,merchant,categoryHint from [$cats],accountHint,toAccountHint,type expense|income|transfer}
 $rules
+Record-style examples (for intent=record only):
 $fewShot
   Salary/wage/cashback/refund = income. NEVER mark those as expense after a spend list.
   note/merchant = 1–3 words, never full transcript or greetings.
-intent "clarify": ONE short question if amount/account/transfer destination missing; transactions=[].
-intent "question": answer from APP DATA only; transactions=[]. Use month totals and top categories when relevant.
-  For multi-row spend/breakdown answers: keep reply as short intro/outro prose ONLY (no markdown pipes), and set "table":{"headers":["Category","Date","Amount"],"rows":[["…","…","…"]],"total":"…"}. Localize headers/cells (never raw slugs like food). Date cells: DD/MM if current year, else DD/MM/YY (e.g. 24/09/25). When APP DATA includes an EXPENSES period block, list EVERY row — TOTAL must equal the sum of those rows. Omit table for simple one-line answers.
+- "clarify": ONE short friendly question if amount / account / transfer destination is missing; transactions=[].
+- "question": answer helpfully from APP DATA. Sound like a real assistant (2–5 natural sentences), not a template.
+  You MAY compare a purchase amount to balances / month totals from APP DATA (e.g. can they afford X).
+  Do NOT invent numbers. Do NOT give investment/tax/credit product pitches.
+  For multi-row spend/breakdown: short intro/outro prose ONLY (no markdown pipes) + "table":{"headers":["Category","Date","Amount"],"rows":[["…","…","…"]],"total":"…"}.
+  Localize headers/cells. Date cells: DD/MM if current year, else DD/MM/YY. When APP DATA has an EXPENSES/INCOME period block, list EVERY row — TOTAL = sum of those rows. Omit table for simple answers.
 
 Chat:
 $hist
@@ -653,43 +688,40 @@ User: """$trimmed"""
     }
   }
 
-  /// Answers questions using only the provided app snapshot. No financial advice.
+  /// Answers questions using the app snapshot — natural tone, fact-bound.
   Future<String> chatAboutApp({
     required String userMessage,
     required String appContext,
     required String locale,
     required List<({String role, String text})> history,
+    String sessionMemory = '',
     AiPartialCallback? onPartial,
   }) async {
     final trimmed = userMessage.trim();
     if (isCasualGreeting(trimmed)) {
-      return greetingReplyForLocale(locale);
+      return _greetingReply(locale: locale, onPartial: onPartial);
     }
 
-    final system = '''
-You are Pulpo Assistant inside a personal budget app.
-Reply in ${_langName(locale)}. Be concise and clear.
-
-Hard rules:
-- Use ONLY facts from APP DATA below. Do not invent numbers, accounts, or transactions.
-- Do NOT give financial, investment, tax, credit, or budgeting advice. Do not recommend what to buy, cut, save, invest, or borrow.
-- You may restate, filter, compare, and explain what is already in APP DATA (balances, month totals, top categories, recent txs, budgets, goals, debts).
-- If the user asks for advice or anything outside APP DATA, politely refuse and say you can only talk about data already in the app.
-- If APP DATA does not contain the answer, say you don't have that information in the app.
-- When listing several transactions or a category breakdown with amounts, use a GitHub-flavored markdown table (header + separator + rows). Prefer columns like Category | Date | Amount (localized). Date cells MUST be DD/MM/YY (e.g. 24/09/26). Add a final TOTAL row when summing. Keep a short intro and outro sentence around the table. No ASCII art.
-- Prefer structured facts; do not invent rows not present in APP DATA.
-
-APP DATA:
-$appContext
-''';
-    final recent = history.length <= 8
+    final recent = history.length <= 10
         ? history
-        : history.sublist(history.length - 8);
+        : history.sublist(history.length - 10);
     final hist = recent
         .map((h) => '${h.role == 'user' ? 'User' : 'Assistant'}: ${h.text}')
         .join('\n');
+    final memoryBlock = sessionMemory.trim().isEmpty
+        ? ''
+        : '\nSESSION:\n${sessionMemory.trim()}\n';
     final prompt = '''
-$system
+Rules for this turn:
+- Use ONLY facts from APP DATA / SESSION. Never invent numbers.
+- You MAY compare, filter, and explain balances, month totals, categories, recent txs, budgets, goals, debts.
+- "Can I afford X?" → compare amount to balances / month net; say leftover or shortfall.
+- If data is missing, say so briefly and offer what you can show.
+- For several transactions / category breakdowns: GitHub-flavored markdown table (Category | Date | Amount, localized). Dates DD/MM or DD/MM/YY. TOTAL row when summing. 1–2 sentence intro; optional one short follow-up if useful. No ASCII art.
+- Keep replies to 2–6 natural sentences unless a table is needed.
+$memoryBlock
+APP DATA:
+$appContext
 
 Recent chat:
 $hist
@@ -700,7 +732,78 @@ User message: """$trimmed"""
       [Content.text(prompt)],
       label: 'chat',
       json: false,
+      conversational: true,
+      preferStrong: true,
+      systemKey: 'chat|$locale',
+      systemInstruction: _chatSystemInstruction(locale),
       onPartial: onPartial,
+    );
+  }
+
+  /// Natural greeting via Gemini; local variants as fallback.
+  Future<String> _greetingReply({
+    required String locale,
+    AiPartialCallback? onPartial,
+  }) async {
+    try {
+      final prompt = '''
+The user just said a casual hello.
+Reply in ${_langName(locale)} with ONE short friendly greeting (1–2 sentences).
+Mention you can log spends (e.g. "Coffee 60") or answer about balances / period spending.
+Vary wording — do not always open the same way.
+''';
+      final text = await _generate(
+        [Content.text(prompt)],
+        label: 'greeting',
+        json: false,
+        conversational: true,
+        systemKey: 'chat|$locale',
+        systemInstruction: _chatSystemInstruction(locale),
+        onPartial: onPartial,
+      );
+      final cleaned = text.trim();
+      if (cleaned.isNotEmpty) return cleaned;
+    } catch (e) {
+      debugPrint('MonederoAI greeting fallback: $e');
+    }
+    return greetingReplyForLocale(locale);
+  }
+
+  /// 1–2 natural sentences introducing a local period table (or empty state).
+  Future<String> narratePeriodIntro({
+    required String userMessage,
+    required String locale,
+    required bool income,
+    required String periodLabel,
+    required int count,
+    required String totalLabel,
+    bool empty = false,
+    bool offerFollowUp = true,
+  }) async {
+    final kind = income ? 'income' : 'expenses';
+    final follow = empty || !offerFollowUp || count < 3
+        ? 'Do not ask a follow-up question.'
+        : 'You MAY end with ONE short optional follow-up '
+            '(e.g. category breakdown) — not every time, and never salesy.';
+    final facts = empty
+        ? 'Facts: period=$periodLabel; rows=0 (empty). Say there were no $kind in that period. Do not invent amounts.'
+        : 'Facts: period=$periodLabel; rows=$count; total=$totalLabel. Do not list individual rows.';
+    final prompt = '''
+Write 1–2 natural sentences about the user's $kind for the period.
+$facts
+Do not sound like a robot template (avoid the same stock opener every reply).
+$follow
+
+User asked: """${userMessage.trim()}"""
+''';
+    return _generate(
+      [Content.text(prompt)],
+      label: empty ? 'period_empty' : 'period_intro',
+      json: false,
+      conversational: true,
+      preferStrong: true,
+      systemKey: 'chat|$locale',
+      systemInstruction: _chatSystemInstruction(locale),
     );
   }
 }

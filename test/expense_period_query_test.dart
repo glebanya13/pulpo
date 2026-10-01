@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pulpo/src/core/ai/ai_record_hint.dart';
 import 'package:pulpo/src/features/assistant/expense_period_query.dart';
 
 void main() {
@@ -8,7 +9,31 @@ void main() {
     final p = parseExpensePeriodQuery(q)!;
     expect(p.labelKey, 'two_weeks');
     expect(p.daySpan, 14);
+    expect(p.kind, PeriodListKind.expense);
     expect(p.to.difference(p.from).inDays, 13);
+  });
+
+  test('income last three days (word) is income + 3 days', () {
+    const q = 'Quiero ver las ganancias de los últimos tres días';
+    expect(looksLikeExpenseListQuestion(q), isTrue);
+    final p = parseExpensePeriodQuery(q)!;
+    expect(p.kind, PeriodListKind.income);
+    expect(p.labelKey, 'days');
+    expect(p.daySpan, 3);
+    expect(p.confident, isTrue);
+  });
+
+  test('income last 3 days with digit', () {
+    final p = parseExpensePeriodQuery('ingresos de los últimos 3 días')!;
+    expect(p.kind, PeriodListKind.income);
+    expect(p.daySpan, 3);
+  });
+
+  test('bare period without type is not a list question', () {
+    expect(
+      looksLikeExpenseListQuestion('últimos tres días'),
+      isFalse,
+    );
   });
 
   test('detects Russian two weeks data ask', () {
@@ -43,6 +68,25 @@ void main() {
     expect(parseExpensePeriodQuery('gasté 15€ en comida'), isNull);
   });
 
+  test('affordability is not a transaction record', () {
+    expect(
+      looksLikeAffordabilityQuestion(
+        'Puedo permitirme 500€ de neumáticos',
+      ),
+      isTrue,
+    );
+    expect(
+      looksLikeTransactionRecord('Puedo permitirme 500€ de neumáticos'),
+      isFalse,
+    );
+    expect(
+      looksLikeTransactionRecord(
+        'Quiero comprar unos neumáticos valorados en €500 puedo permitírmelo',
+      ),
+      isFalse,
+    );
+  });
+
   test('detects four weeks in Russian', () {
     const q = 'Отправь мне данные за последние четыре недели';
     expect(looksLikeExpenseListQuestion(q), isTrue);
@@ -57,11 +101,15 @@ void main() {
     expect(p.labelKey, 'weeks');
   });
 
-  test('expensePeriodFromAiJson maps weeks', () {
+  test('expensePeriodFromAiJson maps weeks and income type', () {
     final now = DateTime(2026, 9, 27);
-    final p = expensePeriodFromAiJson({'weeks': 4}, now: now)!;
+    final p = expensePeriodFromAiJson(
+      {'weeks': 4, 'type': 'income'},
+      now: now,
+    )!;
     expect(p.daySpan, 28);
     expect(p.labelKey, 'weeks');
+    expect(p.kind, PeriodListKind.income);
     expect(p.confident, isTrue);
   });
 

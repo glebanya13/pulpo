@@ -5,13 +5,17 @@ import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 
-/// Parsed “show my expenses for …” request.
+/// Expense vs income list for a period query.
+enum PeriodListKind { expense, income }
+
+/// Parsed “show my expenses/income for …” request.
 class ExpensePeriodQuery {
   const ExpensePeriodQuery({
     required this.from,
     required this.to,
     required this.daySpan,
     required this.labelKey,
+    this.kind = PeriodListKind.expense,
     this.confident = true,
   });
 
@@ -27,10 +31,14 @@ class ExpensePeriodQuery {
   /// Stable key: `two_weeks` | `week` | `weeks` | `month` | `days` | `all`.
   final String labelKey;
 
+  /// Whether the user asked for expenses or income.
+  final PeriodListKind kind;
+
   /// False when we only guessed the default 14-day window — prefer AI refine.
   final bool confident;
 
   bool get isAllTime => labelKey == 'all';
+  bool get isIncome => kind == PeriodListKind.income;
 }
 
 /// Format a date for chat expense tables.
@@ -44,7 +52,38 @@ String formatExpenseTableDate(DateTime date, {DateTime? now}) {
   return '$d/$m/$yy';
 }
 
-/// True when the user asks to list / show expenses or all transactions.
+bool _mentionsIncome(String t) => RegExp(
+      r'(ganancias?|ingresos?|income|earnings?|revenue|'
+      r'доход|доходи|приход|зарплат|заробіт|заработ)',
+    ).hasMatch(t);
+
+bool _mentionsExpenses(String t) => RegExp(
+      r'(gastos?|expenses?|расход|трат|витрат|потрат|'
+      r'movimientos?|операц|транзакц|transactions?|данн|дані|datos?)',
+    ).hasMatch(t);
+
+bool _asksList(String t) => RegExp(
+      r'(dame|escr[ií]b|mu[eé]stra|lista|list|show|write|d[aá]j|дай|'
+      r'покаж|напиш|какие|що\s+я|что\s+я|cu[aá]les|tabla|таблиц|'
+      r'ver|see|look|посмотр|'
+      r'todas?|all|все|усі|'
+      r'últim|ultim|last|посл|recient|recent|'
+      r'dos\s+semanas|two\s+weeks|две\s+недел|'
+      r'esta\s+semana|this\s+week|эту\s+недел|цей\s+тижд|'
+      r'este\s+mes|this\s+month|этот\s+месяц|цей\s+місяц)',
+    ).hasMatch(t);
+
+PeriodListKind? _detectListKind(String t) {
+  final income = _mentionsIncome(t);
+  final expense = _mentionsExpenses(t);
+  if (income && !expense) return PeriodListKind.income;
+  if (expense && !income) return PeriodListKind.expense;
+  if (income) return PeriodListKind.income;
+  if (expense) return PeriodListKind.expense;
+  return null;
+}
+
+/// True when the user asks to list / show expenses, income, or transactions.
 bool looksLikeExpenseListQuestion(String text) {
   final t = text.trim().toLowerCase();
   if (t.length < 4 || t.length > 240) return false;
@@ -56,27 +95,13 @@ bool looksLikeExpenseListQuestion(String text) {
       return false;
     }
   }
+  if (looksLikeAffordabilityQuestion(t)) return false;
 
-  final mentionsExpenses = RegExp(
-    r'(gastos?|expenses?|расход|трат|витрат|потрат|'
-    r'movimientos?|операц|транзакц|transactions?|данн|дані|datos?)',
-  ).hasMatch(t);
-
-  final asksList = RegExp(
-    r'(dame|escr[ií]b|mu[eé]stra|lista|list|show|write|d[aá]j|дай|'
-    r'покаж|напиш|какие|що\s+я|что\s+я|cu[aá]les|tabla|таблиц|'
-    r'todas?|all|все|усі|'
-    r'últim|ultim|last|посл|recient|recent|'
-    r'dos\s+semanas|two\s+weeks|две\s+недел|'
-    r'esta\s+semana|this\s+week|эту\s+недел|цей\s+тижд|'
-    r'este\s+mes|this\s+month|этот\s+месяц|цей\s+місяц)',
-  ).hasMatch(t);
-
-  if (mentionsExpenses && asksList) return true;
-
-  return RegExp(
-    r'(últim|ultim|last|посл).{0,20}(semanas?|weeks?|недел|тижн|d[ií]as|days)',
-  ).hasMatch(t);
+  final kind = _detectListKind(t);
+  // Require an explicit type word — bare “últimos N días” used to hijack
+  // income asks into expense tables with a default 2-week window.
+  if (kind != null && _asksList(t)) return true;
+  return false;
 }
 
 /// “How many transactions have I made?” — count, not a table.
@@ -93,11 +118,12 @@ bool looksLikeTransactionCountQuestion(String text) {
   return asksCount && mentionsTx;
 }
 
-/// Parse a relative expense period from natural language.
+/// Parse a relative expense/income period from natural language.
 ExpensePeriodQuery? parseExpensePeriodQuery(String text) {
   if (!looksLikeExpenseListQuestion(text)) return null;
 
   final t = text.trim().toLowerCase();
+  final kind = _detectListKind(t) ?? PeriodListKind.expense;
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
 
@@ -106,16 +132,31 @@ ExpensePeriodQuery? parseExpensePeriodQuery(String text) {
     return today.subtract(Duration(days: n - 1));
   }
 
-  // All transactions / complete history.
+  ExpensePeriodQuery make({
+    required DateTime from,
+    required DateTime to,
+    required int daySpan,
+    required String labelKey,
+    bool confident = true,
+  }) {
+    return ExpensePeriodQuery(
+      from: from,
+      to: to,
+      daySpan: daySpan,
+      labelKey: labelKey,
+      kind: kind,
+      confident: confident,
+    );
+  }
+
   if (RegExp(
-    r'(todas?\s+(las\s+)?(transacciones|operaciones|gastos)|'
-    r'all\s+(my\s+)?(transactions|expenses)|'
-    r'(все|всем[а-яёії]*)\s+(мои\s+)?(транзакц|операц|расход)|'
-    r'усі\s+(мої\s+)?(транзакц|операц|витрат)|'
+    r'(todas?\s+(las\s+)?(transacciones|operaciones|gastos|ganancias|ingresos)|'
+    r'all\s+(my\s+)?(transactions|expenses|income|earnings)|'
+    r'(все|всем[а-яёії]*)\s+(мои\s+)?(транзакц|операц|расход|доход)|'
+    r'усі\s+(мої\s+)?(транзакц|операц|витрат|доход)|'
     r'sin\s+l[ií]mite|за\s+вс[её]\s+время|за\s+весь\s+период)',
   ).hasMatch(t)) {
-    // Far past → today; builder treats labelKey all specially.
-    return ExpensePeriodQuery(
+    return make(
       from: DateTime(2000, 1, 1),
       to: today,
       daySpan: 9999,
@@ -123,15 +164,24 @@ ExpensePeriodQuery? parseExpensePeriodQuery(String text) {
     );
   }
 
-  // N weeks: "четыре недели", "4 semanas", "three weeks"…
-  // Must run before bare "última semana" / default 14d.
-  final weeks = _parseWeekCount(t);
-  if (weeks != null) {
-    final days = (weeks * 7).clamp(7, 366);
-    return ExpensePeriodQuery(
+  // N days (digits or words) — before weeks so "tres días" ≠ weeks.
+  final days = _parseDayCount(t);
+  if (days != null) {
+    return make(
       from: startDaysAgo(days),
       to: today,
-      daySpan: days,
+      daySpan: days.clamp(1, 366),
+      labelKey: 'days',
+    );
+  }
+
+  final weeks = _parseWeekCount(t);
+  if (weeks != null) {
+    final weekDays = (weeks * 7).clamp(7, 366);
+    return make(
+      from: startDaysAgo(weekDays),
+      to: today,
+      daySpan: weekDays,
       labelKey: weeks == 1
           ? 'week'
           : (weeks == 2 ? 'two_weeks' : 'weeks'),
@@ -143,7 +193,7 @@ ExpensePeriodQuery? parseExpensePeriodQuery(String text) {
     r'última\s+semana|ultima\s+semana|last\s+week|прошл\w*\s+недел|'
     r'минул\w*\s+тижд)',
   ).hasMatch(t)) {
-    return ExpensePeriodQuery(
+    return make(
       from: startDaysAgo(7),
       to: today,
       daySpan: 7,
@@ -157,7 +207,7 @@ ExpensePeriodQuery? parseExpensePeriodQuery(String text) {
   ).hasMatch(t)) {
     final monthStart = DateTime(today.year, today.month, 1);
     final span = today.difference(monthStart).inDays + 1;
-    return ExpensePeriodQuery(
+    return make(
       from: monthStart,
       to: today,
       daySpan: span,
@@ -165,21 +215,7 @@ ExpensePeriodQuery? parseExpensePeriodQuery(String text) {
     );
   }
 
-  final daysMatch = RegExp(
-    r'(últim|ultim|last|посл)\w*\s+(\d{1,3})\s*(d[ií]as?|days?|дн)',
-  ).firstMatch(t);
-  if (daysMatch != null) {
-    final n = int.tryParse(daysMatch.group(2)!) ?? 14;
-    return ExpensePeriodQuery(
-      from: startDaysAgo(n),
-      to: today,
-      daySpan: n.clamp(1, 366),
-      labelKey: 'days',
-    );
-  }
-
-  // Generic “mis gastos / recent expenses” → last 14 days (weak guess).
-  return ExpensePeriodQuery(
+  return make(
     from: startDaysAgo(14),
     to: today,
     daySpan: 14,
@@ -192,6 +228,7 @@ ExpensePeriodQuery? parseExpensePeriodQuery(String text) {
 ExpensePeriodQuery? expensePeriodFromAiJson(
   Map<String, dynamic> m, {
   DateTime? now,
+  PeriodListKind fallbackKind = PeriodListKind.expense,
 }) {
   final n = now ?? DateTime.now();
   final today = DateTime(n.year, n.month, n.day);
@@ -201,21 +238,47 @@ ExpensePeriodQuery? expensePeriodFromAiJson(
     return today.subtract(Duration(days: d - 1));
   }
 
-  final kind = (m['kind'] ?? m['labelKey'] ?? '').toString().toLowerCase().trim();
+  final typeRaw = (m['type'] ?? '').toString().toLowerCase();
+  final kind = typeRaw.contains('income') ||
+          typeRaw.contains('earning') ||
+          typeRaw.contains('ganancia') ||
+          typeRaw.contains('ingreso')
+      ? PeriodListKind.income
+      : (typeRaw.contains('expense') || typeRaw.contains('gasto')
+          ? PeriodListKind.expense
+          : fallbackKind);
+
+  final kindKey =
+      (m['kind'] ?? m['labelKey'] ?? '').toString().toLowerCase().trim();
   final weeksRaw = m['weeks'];
   final daysRaw = m['days'] ?? m['daySpan'];
 
-  if (kind == 'all' || kind == 'all_time') {
+  ExpensePeriodQuery make({
+    required DateTime from,
+    required DateTime to,
+    required int daySpan,
+    required String labelKey,
+  }) {
     return ExpensePeriodQuery(
+      from: from,
+      to: to,
+      daySpan: daySpan,
+      labelKey: labelKey,
+      kind: kind,
+    );
+  }
+
+  if (kindKey == 'all' || kindKey == 'all_time') {
+    return make(
       from: DateTime(2000, 1, 1),
       to: today,
       daySpan: 9999,
       labelKey: 'all',
     );
   }
-  if (kind == 'month' || kind == 'this_month') {
+  if (kindKey == 'month' || kindKey == 'this_month') {
     final monthStart = DateTime(today.year, today.month, 1);
-    return ExpensePeriodQuery(
+    return make(
       from: monthStart,
       to: today,
       daySpan: today.difference(monthStart).inDays + 1,
@@ -229,15 +292,15 @@ ExpensePeriodQuery? expensePeriodFromAiJson(
   } else if (weeksRaw is String) {
     weeks = int.tryParse(weeksRaw);
   }
-  if (weeks == null && kind.startsWith('week')) {
-    weeks = kind.contains('two') || kind.contains('2') ? 2 : 1;
+  if (weeks == null && kindKey.startsWith('week')) {
+    weeks = kindKey.contains('two') || kindKey.contains('2') ? 2 : 1;
   }
   if (weeks != null && weeks >= 1 && weeks <= 52) {
-    final days = weeks * 7;
-    return ExpensePeriodQuery(
-      from: startDaysAgo(days),
+    final d = weeks * 7;
+    return make(
+      from: startDaysAgo(d),
       to: today,
-      daySpan: days,
+      daySpan: d,
       labelKey: weeks == 1
           ? 'week'
           : (weeks == 2 ? 'two_weeks' : 'weeks'),
@@ -251,7 +314,7 @@ ExpensePeriodQuery? expensePeriodFromAiJson(
     days = int.tryParse(daysRaw);
   }
   if (days != null && days >= 1 && days <= 3660) {
-    return ExpensePeriodQuery(
+    return make(
       from: startDaysAgo(days),
       to: today,
       daySpan: days,
@@ -265,7 +328,7 @@ ExpensePeriodQuery? expensePeriodFromAiJson(
   return null;
 }
 
-/// Local deterministic expense table for [query] (no Gemini).
+/// Local deterministic expense/income table for [query] (no Gemini).
 ({String reply, AiChatTable? table}) buildLocalExpensePeriodAnswer({
   required List<db.Transaction> allTransactions,
   required List<db.Category> categories,
@@ -279,9 +342,10 @@ ExpensePeriodQuery? expensePeriodFromAiJson(
   final from = query.from;
   final toEnd =
       DateTime(query.to.year, query.to.month, query.to.day, 23, 59, 59);
+  final wantType = query.isIncome ? TxType.income : TxType.expense;
 
-  final expenses = allTransactions.where((t) {
-    if (TxType.values[t.type] != TxType.expense) return false;
+  final rowsTx = allTransactions.where((t) {
+    if (TxType.values[t.type] != wantType) return false;
     if (accountId != null && t.accountId != accountId) return false;
     if (!query.isAllTime &&
         (t.date.isBefore(from) || t.date.isAfter(toEnd))) {
@@ -293,14 +357,16 @@ ExpensePeriodQuery? expensePeriodFromAiJson(
     ..sort((a, b) => b.date.compareTo(a.date));
 
   final label = _periodLabel(tr, query);
-  if (expenses.isEmpty) {
+  if (rowsTx.isEmpty) {
     return (
-      reply: tr.aiExpensePeriodEmpty(label),
+      reply: query.isIncome
+          ? tr.aiIncomePeriodEmpty(label)
+          : tr.aiExpensePeriodEmpty(label),
       table: null,
     );
   }
 
-  final shown = expenses.take(maxRows).toList();
+  final shown = rowsTx.take(maxRows).toList();
   final rows = <List<String>>[];
   for (final t in shown) {
     final cat = t.categoryId == null ? null : catById[t.categoryId];
@@ -310,13 +376,17 @@ ExpensePeriodQuery? expensePeriodFromAiJson(
     rows.add([catName, date, formatMoney(t.amount, currency)]);
   }
 
-  final fullTotal = expenses.fold<double>(0, (s, t) => s + t.amount);
+  final fullTotal = rowsTx.fold<double>(0, (s, t) => s + t.amount);
   final totalCurrency =
       shown.first.currency.isNotEmpty ? shown.first.currency : baseCurrency;
 
-  final reply = expenses.length > shown.length
-      ? tr.aiExpensePeriodPartial(label, shown.length, expenses.length)
-      : tr.aiExpensePeriodIntro(label);
+  final reply = rowsTx.length > shown.length
+      ? (query.isIncome
+          ? tr.aiIncomePeriodPartial(label, shown.length, rowsTx.length)
+          : tr.aiExpensePeriodPartial(label, shown.length, rowsTx.length))
+      : (query.isIncome
+          ? tr.aiIncomePeriodIntro(label)
+          : tr.aiExpensePeriodIntro(label));
 
   return (
     reply: reply,
@@ -335,6 +405,35 @@ String buildLocalTransactionCountReply({
   final n = allTransactions.length;
   return tr.aiTransactionCount(n);
 }
+
+/// Factual “can I afford X?” from balance — never records a transaction.
+String? buildLocalAffordabilityReply({
+  required String text,
+  required double balance,
+  required String currency,
+  required Tr tr,
+}) {
+  final amount = _extractMoneyAmount(text);
+  if (amount == null || amount <= 0) return null;
+  final balLabel = formatMoney(balance, currency);
+  final amtLabel = formatMoney(amount, currency);
+  if (balance + 1e-9 >= amount) {
+    return tr.aiAffordYes(amtLabel, balLabel);
+  }
+  return tr.aiAffordNo(amtLabel, balLabel);
+}
+
+double? _extractMoneyAmount(String text) {
+  final m = RegExp(
+    r'(\d+(?:[.,]\d{1,2})?)\s*(€|\$|£|uah|eur|usd|euro|euros)?',
+    caseSensitive: false,
+  ).firstMatch(text.replaceAll('\u00a0', ' '));
+  if (m == null) return null;
+  final raw = m.group(1)!.replaceAll(',', '.');
+  return double.tryParse(raw);
+}
+
+String periodLabelFor(Tr tr, ExpensePeriodQuery query) => _periodLabel(tr, query);
 
 String _periodLabel(Tr tr, ExpensePeriodQuery query) {
   switch (query.labelKey) {
@@ -355,9 +454,88 @@ String _periodLabel(Tr tr, ExpensePeriodQuery query) {
   }
 }
 
+const _numberWords = <String, int>{
+  'una': 1,
+  'one': 1,
+  'одна': 1,
+  'одну': 1,
+  'один': 1,
+  'dos': 2,
+  'two': 2,
+  'две': 2,
+  'два': 2,
+  'tres': 3,
+  'three': 3,
+  'три': 3,
+  'cuatro': 4,
+  'four': 4,
+  'четыре': 4,
+  'чотири': 4,
+  'cinco': 5,
+  'five': 5,
+  'пять': 5,
+  'пʼять': 5,
+  'seis': 6,
+  'six': 6,
+  'шесть': 6,
+  'шість': 6,
+  'siete': 7,
+  'seven': 7,
+  'семь': 7,
+  'сім': 7,
+  'ocho': 8,
+  'eight': 8,
+  'восемь': 8,
+  'вісім': 8,
+  'nueve': 9,
+  'nine': 9,
+  'девять': 9,
+  'девʼять': 9,
+  'diez': 10,
+  'ten': 10,
+  'десять': 10,
+};
+
+/// "3 días" / "tres días" / "three days" → day count, or null.
+int? _parseDayCount(String t) {
+  final digit = RegExp(
+    r'(últim|ultim|last|посл)\w*\s+(\d{1,3})\s*(d[ií]as?|days?|дн[яейів]*)',
+  ).firstMatch(t);
+  if (digit != null) {
+    final n = int.tryParse(digit.group(2)!);
+    if (n != null && n >= 1 && n <= 366) return n;
+  }
+  final digitLoose = RegExp(
+    r'(\d{1,3})\s*(d[ií]as?|days?|дн[яейів]*)',
+  ).firstMatch(t);
+  if (digitLoose != null &&
+      RegExp(r'(últim|ultim|last|посл|pasad|recent)').hasMatch(t)) {
+    final n = int.tryParse(digitLoose.group(1)!);
+    if (n != null && n >= 1 && n <= 366) return n;
+  }
+
+  for (final e in _numberWords.entries) {
+    if (RegExp(
+      '(últim|ultim|last|посл)\\w*\\s+${RegExp.escape(e.key)}\\s*'
+      '(d[ií]as?|days?|дн[яейів]*)',
+    ).hasMatch(t)) {
+      return e.value;
+    }
+    if (RegExp(
+          '${RegExp.escape(e.key)}\\s*(d[ií]as?|days?|дн[яейів]*)',
+        ).hasMatch(t) &&
+        RegExp(
+          r'(últim|ultim|last|посл|pasad|recent|gananc|ingreso|gasto|'
+          r'income|expense|доход|расход)',
+        ).hasMatch(t)) {
+      return e.value;
+    }
+  }
+  return null;
+}
+
 /// "4 weeks" / "cuatro semanas" / "четыре недели" → week count, or null.
 int? _parseWeekCount(String t) {
-  // Digits: "4 недели", "últimas 3 semanas", "last 4 weeks"
   final digit = RegExp(
     r'(\d{1,2})\s*(semanas?|weeks?|недел|тижн)',
   ).firstMatch(t);
@@ -366,43 +544,7 @@ int? _parseWeekCount(String t) {
     if (n != null && n >= 1 && n <= 52) return n;
   }
 
-  const words = <String, int>{
-    'una': 1,
-    'one': 1,
-    'одна': 1,
-    'одну': 1,
-    'один': 1,
-    'одн': 1,
-    'dos': 2,
-    'two': 2,
-    'две': 2,
-    'два': 2,
-    'tres': 3,
-    'three': 3,
-    'три': 3,
-    'cuatro': 4,
-    'four': 4,
-    'четыре': 4,
-    'чотири': 4,
-    'cinco': 5,
-    'five': 5,
-    'пять': 5,
-    'пʼять': 5,
-    'seis': 6,
-    'six': 6,
-    'шесть': 6,
-    'шість': 6,
-    'siete': 7,
-    'seven': 7,
-    'семь': 7,
-    'сім': 7,
-    'ocho': 8,
-    'eight': 8,
-    'восемь': 8,
-    'вісім': 8,
-  };
-
-  for (final e in words.entries) {
+  for (final e in _numberWords.entries) {
     if (RegExp(
       '${RegExp.escape(e.key)}\\s*(semanas?|weeks?|недел|тижн)',
     ).hasMatch(t)) {
@@ -424,8 +566,9 @@ String buildExpensePeriodContextBlock({
   final from = query.from;
   final toEnd =
       DateTime(query.to.year, query.to.month, query.to.day, 23, 59, 59);
-  final expenses = allTransactions.where((t) {
-    if (TxType.values[t.type] != TxType.expense) return false;
+  final wantType = query.isIncome ? TxType.income : TxType.expense;
+  final rows = allTransactions.where((t) {
+    if (TxType.values[t.type] != wantType) return false;
     if (!query.isAllTime &&
         (t.date.isBefore(from) || t.date.isAfter(toEnd))) {
       return false;
@@ -434,20 +577,21 @@ String buildExpensePeriodContextBlock({
   }).toList()
     ..sort((a, b) => b.date.compareTo(a.date));
 
+  final label = query.isIncome ? 'INCOME' : 'EXPENSES';
   final buf = StringBuffer()
     ..writeln(
-      'EXPENSES in requested period '
+      '$label in requested period '
       '(${from.toIso8601String().substring(0, 10)} … '
       '${query.to.toIso8601String().substring(0, 10)}), '
-      '${expenses.length} rows — list EVERY row in the table; '
+      '${rows.length} rows — list EVERY row in the table; '
       'TOTAL must equal the sum of listed amounts; do not invent or drop days. '
       'Date cells: DD/MM if year=${DateTime.now().year}, else DD/MM/YY:',
     );
-  if (expenses.isEmpty) {
+  if (rows.isEmpty) {
     buf.writeln('- (none)');
     return buf.toString();
   }
-  for (final t in expenses.take(maxRows)) {
+  for (final t in rows.take(maxRows)) {
     final cat = t.categoryId == null ? 'Other' : (catById[t.categoryId] ?? '?');
     final note = (t.note ?? '').trim();
     buf.writeln(
@@ -456,12 +600,13 @@ String buildExpensePeriodContextBlock({
       '${note.isEmpty ? '' : ' | $note'}',
     );
   }
-  if (expenses.length > maxRows) {
-    buf.writeln('- … +${expenses.length - maxRows} more');
+  if (rows.length > maxRows) {
+    buf.writeln('- … +${rows.length - maxRows} more');
   }
-  final fullTotal = expenses.fold<double>(0, (s, t) => s + t.amount);
+  final fullTotal = rows.fold<double>(0, (s, t) => s + t.amount);
   buf.writeln(
-    'Period expense TOTAL: ${fullTotal.toStringAsFixed(2)} $baseCurrency',
+    'Period ${query.isIncome ? 'income' : 'expense'} TOTAL: '
+    '${fullTotal.toStringAsFixed(2)} $baseCurrency',
   );
   return buf.toString();
 }
