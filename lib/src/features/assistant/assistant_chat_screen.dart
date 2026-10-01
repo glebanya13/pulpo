@@ -84,10 +84,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   /// First open: paint at top, then ease down to the newest message.
   bool _didInitialScroll = false;
   bool _introScrollRunning = false;
-  /// Clamping while we drive the list — bouncing + jumpTo fights on device.
-  bool _clampListPhysics = false;
   int _scrollGen = 0;
   Timer? _streamPinTimer;
+  /// True while the user is dragging the list — don't fight their gesture.
+  bool _userDragging = false;
 
   /// Cap STT auto-restarts so a flaky mic can't drain battery / free energy.
   static const _maxSpeechRestarts = 40;
@@ -464,12 +464,18 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       _streamPreview = partial.trim();
       _busyLabel = '';
     });
-    // Throttle pin-to-end while the bubble grows — jump every frame feels harsh.
+    // Soft stick while the bubble grows — never fight a user drag.
     _streamPinTimer?.cancel();
-    _streamPinTimer = Timer(const Duration(milliseconds: 48), () {
-      if (!mounted || !_listCtrl.hasClients || !_didInitialScroll) return;
+    _streamPinTimer = Timer(const Duration(milliseconds: 120), () {
+      if (!mounted ||
+          !_listCtrl.hasClients ||
+          !_didInitialScroll ||
+          _userDragging ||
+          _introScrollRunning) {
+        return;
+      }
       final pos = _listCtrl.position;
-      if (pos.maxScrollExtent - pos.pixels < 140) {
+      if (pos.maxScrollExtent - pos.pixels < 100) {
         _listCtrl.jumpTo(pos.maxScrollExtent);
       }
     });
@@ -1091,8 +1097,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   }
 
   /// Oldest → newest (top → bottom). One clamped glide after the route
-  /// settles — no per-frame jumpTo loops (those swing like a carousel on device
-  /// when maxScrollExtent keeps changing under lazy layout).
+  /// settles — no physics toggling / jumpTo loops (those jerk on device).
   void _scheduleInitialScroll() {
     if (_didInitialScroll || _introScrollRunning) return;
     _introScrollRunning = true;
@@ -1102,7 +1107,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   Future<void> _runInitialScroll() async {
     final gen = ++_scrollGen;
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 320));
+      await Future<void>.delayed(const Duration(milliseconds: 280));
       if (!mounted || _didInitialScroll || gen != _scrollGen) return;
 
       for (var attempt = 0; attempt < 16; attempt++) {
@@ -1118,12 +1123,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
 
       if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
 
-      if (mounted) {
-        setState(() => _clampListPhysics = true);
-        await WidgetsBinding.instance.endOfFrame;
-      }
-      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
-
       if (_listCtrl.offset > 0.5) {
         _listCtrl.jumpTo(0);
         await WidgetsBinding.instance.endOfFrame;
@@ -1134,7 +1133,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       _didInitialScroll = true;
       if (end <= 4) return;
 
-      final ms = (400 + end * 0.45).clamp(600.0, 1200.0).round();
+      final ms = (380 + end * 0.4).clamp(560.0, 1100.0).round();
       await _listCtrl.animateTo(
         end,
         duration: Duration(milliseconds: ms),
@@ -1142,68 +1141,81 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       );
       if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
 
-      // One quiet correction if lazy children grew the extent mid-flight.
-      await _pinToEnd(frames: 3);
+      // One soft correction if lazy children grew the extent mid-flight.
+      await _settleToEnd(animate: true);
     } finally {
       if (gen == _scrollGen) {
         _introScrollRunning = false;
-        if (mounted && _clampListPhysics) {
-          setState(() => _clampListPhysics = false);
-        }
       }
     }
   }
 
-  Future<void> _pinToEnd({int frames = 2}) async {
-    for (var i = 0; i < frames; i++) {
-      if (!mounted || !_listCtrl.hasClients) return;
-      await WidgetsBinding.instance.endOfFrame;
-      final max = _listCtrl.position.maxScrollExtent;
-      // Only move forward — never pull back (avoids carousel).
-      if (max > _listCtrl.offset + 1.5) {
-        _listCtrl.jumpTo(max);
-      }
+  Future<void> _settleToEnd({bool animate = false}) async {
+    if (!mounted || !_listCtrl.hasClients || _userDragging) return;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || !_listCtrl.hasClients || _userDragging) return;
+    final max = _listCtrl.position.maxScrollExtent;
+    final delta = max - _listCtrl.offset;
+    if (delta <= 2) return;
+    if (!animate || delta < 36) {
+      _listCtrl.jumpTo(max);
+      return;
     }
+    await _listCtrl.animateTo(
+      max,
+      duration: Duration(
+        milliseconds: (160 + delta * 0.25).clamp(160.0, 320.0).round(),
+      ),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void _scrollToEnd({bool animate = true}) {
-    if (!_didInitialScroll || _introScrollRunning) return;
+    if (!_didInitialScroll || _introScrollRunning || _userDragging) return;
     final gen = ++_scrollGen;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
+      if (!mounted ||
+          !_listCtrl.hasClients ||
+          gen != _scrollGen ||
+          _userDragging) {
+        return;
+      }
       final target = _listCtrl.position.maxScrollExtent;
       if (target <= 0) return;
       final delta = target - _listCtrl.offset;
       if (delta < 1.5) return;
 
-      if (!animate || delta < 28) {
+      if (!animate || delta < 40) {
         _listCtrl.jumpTo(target);
-        await _pinToEnd(frames: 2);
         return;
       }
-
-      if (mounted && !_clampListPhysics) {
-        setState(() => _clampListPhysics = true);
-        await WidgetsBinding.instance.endOfFrame;
-      }
-      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
 
       try {
         await _listCtrl.animateTo(
           _listCtrl.position.maxScrollExtent,
           duration: Duration(
-            milliseconds: (240 + delta * 0.3).clamp(280.0, 520.0).round(),
+            milliseconds: (220 + delta * 0.28).clamp(260.0, 480.0).round(),
           ),
           curve: Curves.easeOutCubic,
         );
-        if (!mounted || gen != _scrollGen) return;
-        await _pinToEnd(frames: 2);
-      } finally {
-        if (mounted && gen == _scrollGen && _clampListPhysics && !_introScrollRunning) {
-          setState(() => _clampListPhysics = false);
-        }
+        if (!mounted || gen != _scrollGen || _userDragging) return;
+        await _settleToEnd(animate: false);
+      } catch (_) {
+        // Scrollable may dispose mid-animation (route pop).
       }
     });
+  }
+
+  bool _onChatScrollNotification(ScrollNotification n) {
+    if (n is ScrollStartNotification && n.dragDetails != null) {
+      _userDragging = true;
+      _streamPinTimer?.cancel();
+      // Cancel in-flight programmatic scroll so it doesn't yank after the finger.
+      _scrollGen++;
+    } else if (n is ScrollEndNotification) {
+      _userDragging = false;
+    }
+    return false;
   }
 
   String _formatListenTime() => formatListenMmSs(_listenSeconds);
@@ -1466,17 +1478,15 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                 cursorColor: context.isDark
                     ? AppColors.selectionHandle
                     : AppColors.limeAccent,
-                child: CustomScrollView(
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: _onChatScrollNotification,
+                  child: CustomScrollView(
                   controller: _listCtrl,
-                  physics: _clampListPhysics
-                      ? const ClampingScrollPhysics(
-                          parent: AlwaysScrollableScrollPhysics(),
-                        )
-                      : const BouncingScrollPhysics(
-                          parent: AlwaysScrollableScrollPhysics(),
-                        ),
-                  // Large cache so opening extent is closer to the real end
-                  // (avoids stopping short without a jumpTo feedback loop).
+                  // Stable physics — toggling bounce↔clamp mid-flight jerks on device.
+                  physics: const ClampingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  // Large cache so opening extent is closer to the real end.
                   cacheExtent: 2400,
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
@@ -1575,6 +1585,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                       ),
                     ),
                   ],
+                ),
                 ),
               ),
             ),
