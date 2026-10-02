@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/pro/pro_guard.dart';
+import '../data/repositories/assistant_chat_repository.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/quick_actions_sheet.dart';
 
@@ -29,7 +30,19 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  @override
+  void initState() {
+    super.initState();
+    // Prefetch local chat so /assistant opens without a cold stream hitch.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(assistantMessagesProvider);
+      // ignore: discarded_futures
+      ref.read(assistantChatSyncProvider.future);
+    });
+  }
+
   Future<void> _openAssistant(BuildContext context) async {
+    ref.read(assistantMessagesProvider);
     if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
     if (context.mounted) context.push('/assistant');
   }

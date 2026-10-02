@@ -84,6 +84,7 @@ class AssistantChatRepository {
 
   /// Pull signed-in user's Firestore history into local SQLite.
   /// Prefer cloud when it has messages; otherwise upload local.
+  /// Skips a full wipe when local already matches remote (avoids open flicker).
   Future<void> syncWithCloud() async {
     if (!AppInfo.firebaseConfigured) return;
     final uid = _ref.read(authUserProvider).valueOrNull?.uid;
@@ -113,6 +114,9 @@ class AssistantChatRepository {
       return;
     }
 
+    final local = await all();
+    if (_sameConversation(local, remote)) return;
+
     await clear(syncCloud: false);
     for (final m in remote) {
       await add(
@@ -124,6 +128,21 @@ class AssistantChatRepository {
         syncCloud: false,
       );
     }
+  }
+
+  /// Fast equality: same length + same last message fingerprint.
+  bool _sameConversation(
+    List<AssistantMessage> local,
+    List<CloudChatMessage> remote,
+  ) {
+    if (local.length != remote.length) return false;
+    if (local.isEmpty) return true;
+    final a = local.last;
+    final b = remote.last;
+    return a.isFromUser == b.isFromUser &&
+        a.body == b.body &&
+        a.createdAt.millisecondsSinceEpoch ==
+            b.createdAt.millisecondsSinceEpoch;
   }
 
   Future<void> _prune() async {
@@ -148,13 +167,16 @@ final assistantChatRepositoryProvider =
   );
 });
 
+/// Local SQLite stream — kept alive so returning to chat is instant.
 final assistantMessagesProvider =
     StreamProvider<List<AssistantMessage>>((ref) {
+  ref.keepAlive();
   return ref.watch(assistantChatRepositoryProvider).watchMessages();
 });
 
-/// Sync chat from Firestore once per signed-in session.
+/// Sync chat from Firestore once per signed-in session (never blocks UI).
 final assistantChatSyncProvider = FutureProvider<void>((ref) async {
+  ref.keepAlive();
   final user = ref.watch(authUserProvider).valueOrNull;
   if (user == null) return;
   await ref.read(assistantChatRepositoryProvider).syncWithCloud();

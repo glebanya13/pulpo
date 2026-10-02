@@ -81,13 +81,13 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   String _streamPreview = '';
   String? _pendingRetryText;
   bool _pendingRetryFromSpeech = false;
-  /// First open: paint at top, then ease down to the newest message.
-  bool _didInitialScroll = false;
-  bool _introScrollRunning = false;
+  /// reverse:true list — newest sits at offset 0 (no open animation).
   int _scrollGen = 0;
   Timer? _streamPinTimer;
   /// True while the user is dragging the list — don't fight their gesture.
   bool _userDragging = false;
+  /// Parsed markdown/tables by message id (body fingerprint).
+  final Map<int, ({String body, List<ChatBodyBlock> blocks})> _bodyCache = {};
 
   /// Cap STT auto-restarts so a flaky mic can't drain battery / free energy.
   static const _maxSpeechRestarts = 40;
@@ -118,8 +118,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   @override
   void initState() {
     super.initState();
+    // Warm local stream immediately; cloud sync stays in the background.
+    ref.read(assistantMessagesProvider);
+    unawaited(ref.read(assistantChatSyncProvider.future));
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await ref.read(assistantChatSyncProvider.future);
       if (!mounted) return;
       unawaited(ref.read(pulpoAiServiceProvider).prefetch());
       await _ensureAccess();
@@ -224,7 +226,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     }
     await _chat.ensureWelcome(Tr.of(context).aiChatWelcome);
     if (!mounted) return;
-    _scheduleInitialScroll();
     final scanReceipt =
         GoRouterState.of(context).uri.queryParameters['scanReceipt'] == '1';
     if (scanReceipt) {
@@ -464,19 +465,16 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       _streamPreview = partial.trim();
       _busyLabel = '';
     });
-    // Soft stick while the bubble grows — never fight a user drag.
+    // reverse list: latest is near offset 0.
     _streamPinTimer?.cancel();
     _streamPinTimer = Timer(const Duration(milliseconds: 120), () {
       if (!mounted ||
           !_listCtrl.hasClients ||
-          !_didInitialScroll ||
-          _userDragging ||
-          _introScrollRunning) {
+          _userDragging) {
         return;
       }
-      final pos = _listCtrl.position;
-      if (pos.maxScrollExtent - pos.pixels < 100) {
-        _listCtrl.jumpTo(pos.maxScrollExtent);
+      if (_listCtrl.position.pixels < 100) {
+        _listCtrl.jumpTo(0);
       }
     });
   }
@@ -1096,82 +1094,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     );
   }
 
-  /// Oldest → newest (top → bottom). One clamped glide after the route
-  /// settles — no physics toggling / jumpTo loops (those jerk on device).
-  void _scheduleInitialScroll() {
-    if (_didInitialScroll || _introScrollRunning) return;
-    _introScrollRunning = true;
-    unawaited(_runInitialScroll());
-  }
-
-  Future<void> _runInitialScroll() async {
-    final gen = ++_scrollGen;
-    try {
-      await Future<void>.delayed(const Duration(milliseconds: 280));
-      if (!mounted || _didInitialScroll || gen != _scrollGen) return;
-
-      for (var attempt = 0; attempt < 16; attempt++) {
-        if (!mounted || gen != _scrollGen) return;
-        await WidgetsBinding.instance.endOfFrame;
-        if (!_listCtrl.hasClients) {
-          await Future<void>.delayed(const Duration(milliseconds: 40));
-          continue;
-        }
-        if (_listCtrl.position.maxScrollExtent > 4) break;
-        await Future<void>.delayed(const Duration(milliseconds: 40));
-      }
-
-      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
-
-      if (_listCtrl.offset > 0.5) {
-        _listCtrl.jumpTo(0);
-        await WidgetsBinding.instance.endOfFrame;
-      }
-      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
-
-      final end = _listCtrl.position.maxScrollExtent;
-      _didInitialScroll = true;
-      if (end <= 4) return;
-
-      final ms = (380 + end * 0.4).clamp(560.0, 1100.0).round();
-      await _listCtrl.animateTo(
-        end,
-        duration: Duration(milliseconds: ms),
-        curve: Curves.easeInOutCubic,
-      );
-      if (!mounted || !_listCtrl.hasClients || gen != _scrollGen) return;
-
-      // One soft correction if lazy children grew the extent mid-flight.
-      await _settleToEnd(animate: true);
-    } finally {
-      if (gen == _scrollGen) {
-        _introScrollRunning = false;
-      }
-    }
-  }
-
-  Future<void> _settleToEnd({bool animate = false}) async {
-    if (!mounted || !_listCtrl.hasClients || _userDragging) return;
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted || !_listCtrl.hasClients || _userDragging) return;
-    final max = _listCtrl.position.maxScrollExtent;
-    final delta = max - _listCtrl.offset;
-    if (delta <= 2) return;
-    if (!animate || delta < 36) {
-      _listCtrl.jumpTo(max);
-      return;
-    }
-    await _listCtrl.animateTo(
-      max,
-      duration: Duration(
-        milliseconds: (160 + delta * 0.25).clamp(160.0, 320.0).round(),
-      ),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
+  /// reverse:true → newest at offset 0. Stick there after sends / replies.
   void _scrollToEnd({bool animate = true}) {
-    if (!_didInitialScroll || _introScrollRunning || _userDragging) return;
+    if (_userDragging) return;
     final gen = ++_scrollGen;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted ||
@@ -1180,26 +1105,22 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           _userDragging) {
         return;
       }
-      final target = _listCtrl.position.maxScrollExtent;
-      if (target <= 0) return;
-      final delta = target - _listCtrl.offset;
-      if (delta < 1.5) return;
+      final offset = _listCtrl.offset;
+      if (offset < 1.5) return;
 
-      if (!animate || delta < 40) {
-        _listCtrl.jumpTo(target);
+      if (!animate || offset < 40) {
+        _listCtrl.jumpTo(0);
         return;
       }
 
       try {
         await _listCtrl.animateTo(
-          _listCtrl.position.maxScrollExtent,
+          0,
           duration: Duration(
-            milliseconds: (220 + delta * 0.28).clamp(260.0, 480.0).round(),
+            milliseconds: (220 + offset * 0.28).clamp(260.0, 480.0).round(),
           ),
           curve: Curves.easeOutCubic,
         );
-        if (!mounted || gen != _scrollGen || _userDragging) return;
-        await _settleToEnd(animate: false);
       } catch (_) {
         // Scrollable may dispose mid-animation (route pop).
       }
@@ -1210,12 +1131,26 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     if (n is ScrollStartNotification && n.dragDetails != null) {
       _userDragging = true;
       _streamPinTimer?.cancel();
-      // Cancel in-flight programmatic scroll so it doesn't yank after the finger.
       _scrollGen++;
     } else if (n is ScrollEndNotification) {
       _userDragging = false;
     }
     return false;
+  }
+
+  List<ChatBodyBlock> _blocksFor(db.AssistantMessage m) {
+    if (m.isFromUser) return const [];
+    final hit = _bodyCache[m.id];
+    if (hit != null && hit.body == m.body) return hit.blocks;
+    final blocks = parseChatBody(m.body);
+    _bodyCache[m.id] = (body: m.body, blocks: blocks);
+    return blocks;
+  }
+
+  void _pruneBodyCache(List<db.AssistantMessage> messages) {
+    if (_bodyCache.isEmpty) return;
+    final alive = messages.map((m) => m.id).toSet();
+    _bodyCache.removeWhere((id, _) => !alive.contains(id));
   }
 
   String _formatListenTime() => formatListenMmSs(_listenSeconds);
@@ -1260,14 +1195,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    ref.listen(assistantMessagesProvider, (prev, next) {
-      final list = next.valueOrNull;
-      if (list != null && list.isNotEmpty && !_didInitialScroll) {
-        _scheduleInitialScroll();
-      }
-    });
     final messages =
         ref.watch(assistantMessagesProvider).valueOrNull ?? const [];
+    _pruneBodyCache(messages);
     final accountsAsync = ref.watch(accountsProvider);
     final accounts = accountsAsync.valueOrNull ?? [];
     final categories =
@@ -1482,15 +1412,23 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   onNotification: _onChatScrollNotification,
                   child: CustomScrollView(
                   controller: _listCtrl,
-                  // Stable physics — toggling bounce↔clamp mid-flight jerks on device.
+                  // Newest at the bottom from frame 1 — no jump/animate on open.
+                  reverse: true,
                   physics: const ClampingScrollPhysics(
                     parent: AlwaysScrollableScrollPhysics(),
                   ),
-                  // Large cache so opening extent is closer to the real end.
-                  cacheExtent: 2400,
+                  cacheExtent: 1200,
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   slivers: [
+                    // With reverse:true, first sliver is above the composer.
+                    SliverToBoxAdapter(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _clearMessageSelection,
+                        child: const SizedBox(height: 36),
+                      ),
+                    ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.lg,
@@ -1498,8 +1436,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, i) {
-                            // Chronological: oldest at top, busy preview at end.
-                            if (_busy && i == messages.length) {
+                            // i=0 is newest (visual bottom).
+                            if (_busy && i == 0) {
                               final preview = _streamPreview.trim();
                               return _AssistantBubble(
                                 child: Text(
@@ -1518,10 +1456,11 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                 ),
                               );
                             }
-                            final m = messages[i];
-                            final blocks = m.isFromUser
-                                ? const <ChatBodyBlock>[]
-                                : parseChatBody(m.body);
+                            final msgIndex = messages.length -
+                                1 -
+                                (_busy ? i - 1 : i);
+                            final m = messages[msgIndex];
+                            final blocks = _blocksFor(m);
                             final hasTable =
                                 blocks.any((b) => b is ChatTableBlock);
                             return SelectionArea(
@@ -1574,14 +1513,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                           childCount: messages.length + (_busy ? 1 : 0),
                           addAutomaticKeepAlives: false,
                         ),
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _clearMessageSelection,
-                        // Extra room so the last bubble sits clearly above the composer.
-                        child: const SizedBox(height: 36),
                       ),
                     ),
                   ],
