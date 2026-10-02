@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -473,7 +474,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           _userDragging) {
         return;
       }
-      if (_listCtrl.position.pixels < 100) {
+      // Don't cancel rubber-band overscroll (pixels can be < 0 with bounce).
+      final px = _listCtrl.position.pixels;
+      if (px > 2 && px < 100) {
         _listCtrl.jumpTo(0);
       }
     });
@@ -1132,6 +1135,11 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       _userDragging = true;
       _streamPinTimer?.cancel();
       _scrollGen++;
+    } else if (n is UserScrollNotification) {
+      // Finger still on the list (including overscroll pull).
+      if (n.direction != ScrollDirection.idle) {
+        _userDragging = true;
+      }
     } else if (n is ScrollEndNotification) {
       _userDragging = false;
     }
@@ -1414,7 +1422,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   controller: _listCtrl,
                   // Newest at the bottom from frame 1 — no jump/animate on open.
                   reverse: true,
-                  physics: const ClampingScrollPhysics(
+                  // Same bounce/overscroll as the rest of the app (WhatsApp-like rubber band).
+                  physics: const BouncingScrollPhysics(
                     parent: AlwaysScrollableScrollPhysics(),
                   ),
                   cacheExtent: 1200,
