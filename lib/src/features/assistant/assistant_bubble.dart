@@ -88,9 +88,11 @@ class _AssistantBubble extends StatelessWidget {
                 : (context.isDark
                     ? AppColors.selectionDark
                     : AppColors.selectionLight),
-            cursorColor: context.isDark
-                ? AppColors.selectionHandle
-                : AppColors.limeAccent,
+            cursorColor: fromUser
+                ? AppColors.selectionHandleOnLime
+                : (context.isDark
+                    ? AppColors.selectionHandle
+                    : AppColors.limeAccent),
             child: bubble,
           );
 

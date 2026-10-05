@@ -89,6 +89,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   bool _userDragging = false;
   /// Parsed markdown/tables by message id (body fingerprint).
   final Map<int, ({String body, List<ChatBodyBlock> blocks})> _bodyCache = {};
+  /// Gate + welcome finished — hide opening loader.
+  bool _bootReady = false;
 
   /// Cap STT auto-restarts so a flaky mic can't drain battery / free energy.
   static const _maxSpeechRestarts = 40;
@@ -227,6 +229,17 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     }
     await _chat.ensureWelcome(Tr.of(context).aiChatWelcome);
     if (!mounted) return;
+    // Wait for the stream to catch the welcome / cached history so reveal
+    // lands on a real last message instead of an empty flash.
+    for (var i = 0; i < 30; i++) {
+      final list = ref.read(assistantMessagesProvider).valueOrNull;
+      if (list != null && list.isNotEmpty) break;
+      await Future<void>.delayed(const Duration(milliseconds: 16));
+      if (!mounted) return;
+    }
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    setState(() => _bootReady = true);
     final scanReceipt =
         GoRouterState.of(context).uri.queryParameters['scanReceipt'] == '1';
     if (scanReceipt) {
@@ -1203,9 +1216,13 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-    final messages =
-        ref.watch(assistantMessagesProvider).valueOrNull ?? const [];
+    final messagesAsync = ref.watch(assistantMessagesProvider);
+    final messages = messagesAsync.valueOrNull ?? const <db.AssistantMessage>[];
     _pruneBodyCache(messages);
+    // Keep a stable loader until stream has data AND welcome/gate finished —
+    // avoids empty→populated jerk on open.
+    final showOpeningLoader =
+        !_bootReady || !messagesAsync.hasValue;
     final accountsAsync = ref.watch(accountsProvider);
     final accounts = accountsAsync.valueOrNull ?? [];
     final categories =
@@ -1312,12 +1329,15 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Opacity(
-                                          opacity: messages.isEmpty || _busy
+                                          opacity: showOpeningLoader ||
+                                                  messages.isEmpty ||
+                                                  _busy
                                               ? 0.35
                                               : 1,
                                           child: IgnorePointer(
-                                            ignoring:
-                                                messages.isEmpty || _busy,
+                                            ignoring: showOpeningLoader ||
+                                                messages.isEmpty ||
+                                                _busy,
                                             child: RoundIconButton(
                                               icon: LucideIcons.trash2,
                                               onTap: _confirmClearChat,
@@ -1409,7 +1429,18 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: DefaultSelectionStyle(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                child: showOpeningLoader
+                    ? const KeyedSubtree(
+                        key: ValueKey('assistant-boot'),
+                        child: _AssistantOpeningLoader(),
+                      )
+                    : KeyedSubtree(
+                        key: const ValueKey('assistant-chat'),
+                        child: DefaultSelectionStyle(
                 selectionColor: context.isDark
                     ? AppColors.selectionDark
                     : AppColors.selectionLight,
@@ -1472,7 +1503,38 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                             final blocks = _blocksFor(m);
                             final hasTable =
                                 blocks.any((b) => b is ChatTableBlock);
-                            return SelectionArea(
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                textSelectionTheme: TextSelectionThemeData(
+                                  selectionColor: m.isFromUser
+                                      ? AppColors.selectionOnLime
+                                      : (context.isDark
+                                          ? AppColors.selectionDark
+                                          : AppColors.selectionLight),
+                                  selectionHandleColor: m.isFromUser
+                                      ? AppColors.selectionHandleOnLime
+                                      : (context.isDark
+                                          ? AppColors.selectionHandle
+                                          : AppColors.limeAccent),
+                                  cursorColor: m.isFromUser
+                                      ? AppColors.selectionHandleOnLime
+                                      : (context.isDark
+                                          ? AppColors.selectionHandle
+                                          : AppColors.limeAccent),
+                                ),
+                              ),
+                              child: DefaultSelectionStyle(
+                                selectionColor: m.isFromUser
+                                    ? AppColors.selectionOnLime
+                                    : (context.isDark
+                                        ? AppColors.selectionDark
+                                        : AppColors.selectionLight),
+                                cursorColor: m.isFromUser
+                                    ? AppColors.selectionHandleOnLime
+                                    : (context.isDark
+                                        ? AppColors.selectionHandle
+                                        : AppColors.limeAccent),
+                                child: SelectionArea(
                               key: ValueKey(
                                 'sel-$_selectionEpoch-${m.id}',
                               ),
@@ -1517,6 +1579,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                   ),
                                 ),
                               ),
+                            ),
+                              ),
                             );
                           },
                           childCount: messages.length + (_busy ? 1 : 0),
@@ -1527,6 +1591,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                   ],
                 ),
                 ),
+              ),
+                      ),
               ),
             ),
             if (_pendingRetryText != null && !_busy)
@@ -1652,7 +1718,11 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               ),
             // Scaffold already shrinks for the keyboard — do not add
             // viewInsets again or the composer floats with a huge gap.
-            GestureDetector(
+            Opacity(
+              opacity: showOpeningLoader ? 0.45 : 1,
+              child: IgnorePointer(
+                ignoring: showOpeningLoader,
+                child: GestureDetector(
               behavior: HitTestBehavior.translucent,
               onTap: _clearMessageSelection,
               child: Padding(
@@ -1783,8 +1853,44 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               ),
             ),
             ),
+            ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Calm bootstrap placeholder — no empty list flash while SQLite warms.
+class _AssistantOpeningLoader extends StatelessWidget {
+  const _AssistantOpeningLoader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 56,
+            height: 56,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.violet.withValues(alpha: 0.45),
+                  ),
+                ),
+                const AiAssistantMark(size: 40),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
