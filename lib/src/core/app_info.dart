@@ -1,5 +1,5 @@
 class AppInfo {
-  static const version = '1.1.3';
+  static const version = '1.1.4';
   /// Shown under the icon on the home screen (iOS/Android).
   static const displayName = 'Monedero';
   /// Set in App Store Connect — not read from the binary.

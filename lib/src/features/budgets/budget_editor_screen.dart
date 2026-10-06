@@ -169,6 +169,9 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
               const SizedBox(height: 12),
               Expanded(
                 child: SingleChildScrollView(
+                  // Room above the first field so the floating label isn't
+                  // clipped by the scroll view when focused/autofocus.
+                  padding: const EdgeInsets.only(top: 16),
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Column(

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -121,9 +122,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Warm local stream immediately; cloud sync stays in the background.
+    // Warm local stream only. Cloud sync stays on AppShell — syncing here
+    // used to wipe+rewrite mid-open and jerk the list after a cold start.
     ref.read(assistantMessagesProvider);
-    unawaited(ref.read(assistantChatSyncProvider.future));
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       unawaited(ref.read(pulpoAiServiceProvider).prefetch());
@@ -237,8 +238,20 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
       await Future<void>.delayed(const Duration(milliseconds: 16));
       if (!mounted) return;
     }
+    // School_21-style: list is already mounted under the loader — pin to
+    // newest (reverse offset 0) for a couple frames, then drop the overlay.
+    // No AnimatedSwitcher remount → no open jump.
+    setState(() {}); // mount reverse list under the loader this frame
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
+    if (_listCtrl.hasClients) {
+      _listCtrl.jumpTo(0);
+    }
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    if (_listCtrl.hasClients) {
+      _listCtrl.jumpTo(0);
+    }
     setState(() => _bootReady = true);
     final scanReceipt =
         GoRouterState.of(context).uri.queryParameters['scanReceipt'] == '1';
@@ -1429,170 +1442,192 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                child: showOpeningLoader
-                    ? const KeyedSubtree(
-                        key: ValueKey('assistant-boot'),
-                        child: _AssistantOpeningLoader(),
-                      )
-                    : KeyedSubtree(
-                        key: const ValueKey('assistant-chat'),
+              // School_21 pattern: keep reverse list mounted under a full
+              // loader overlay, then drop the overlay once pinned to newest.
+              // Avoids AnimatedSwitcher remount / empty→list jump on open.
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (messagesAsync.hasValue && messages.isNotEmpty)
+                    Opacity(
+                      opacity: _bootReady ? 1 : 0,
+                      child: IgnorePointer(
+                        ignoring: !_bootReady,
                         child: DefaultSelectionStyle(
-                selectionColor: context.isDark
-                    ? AppColors.selectionDark
-                    : AppColors.selectionLight,
-                cursorColor: context.isDark
-                    ? AppColors.selectionHandle
-                    : AppColors.limeAccent,
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: _onChatScrollNotification,
-                  child: CustomScrollView(
-                  controller: _listCtrl,
-                  // Newest at the bottom from frame 1 — no jump/animate on open.
-                  reverse: true,
-                  // Same bounce/overscroll as the rest of the app (WhatsApp-like rubber band).
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  cacheExtent: 1200,
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  slivers: [
-                    // With reverse:true, first sliver is above the composer.
-                    SliverToBoxAdapter(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _clearMessageSelection,
-                        child: const SizedBox(height: 36),
-                      ),
-                    ),
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                      ),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, i) {
-                            // i=0 is newest (visual bottom).
-                            if (_busy && i == 0) {
-                              final preview = _streamPreview.trim();
-                              return _AssistantBubble(
-                                child: Text(
-                                  preview.isNotEmpty
-                                      ? preview
-                                      : (_busyLabel.isNotEmpty
-                                          ? _busyLabel
-                                          : tr.aiBusy),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: context.mutedText,
-                                    fontStyle: preview.isEmpty
-                                        ? FontStyle.italic
-                                        : FontStyle.normal,
+                          selectionColor: context.isDark
+                              ? AppColors.selectionDark
+                              : AppColors.selectionLight,
+                          cursorColor: context.isDark
+                              ? AppColors.selectionHandle
+                              : AppColors.limeAccent,
+                          child: NotificationListener<ScrollNotification>(
+                            onNotification: _onChatScrollNotification,
+                            child: CustomScrollView(
+                              controller: _listCtrl,
+                              reverse: true,
+                              physics: const BouncingScrollPhysics(
+                                parent: AlwaysScrollableScrollPhysics(),
+                              ),
+                              cacheExtent: 1200,
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                              slivers: [
+                                SliverToBoxAdapter(
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: _clearMessageSelection,
+                                    child: const SizedBox(height: 36),
                                   ),
                                 ),
-                              );
-                            }
-                            final msgIndex = messages.length -
-                                1 -
-                                (_busy ? i - 1 : i);
-                            final m = messages[msgIndex];
-                            final blocks = _blocksFor(m);
-                            final hasTable =
-                                blocks.any((b) => b is ChatTableBlock);
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                textSelectionTheme: TextSelectionThemeData(
-                                  selectionColor: m.isFromUser
-                                      ? AppColors.selectionOnLime
-                                      : (context.isDark
-                                          ? AppColors.selectionDark
-                                          : AppColors.selectionLight),
-                                  selectionHandleColor: m.isFromUser
-                                      ? AppColors.selectionHandleOnLime
-                                      : (context.isDark
-                                          ? AppColors.selectionHandle
-                                          : AppColors.limeAccent),
-                                  cursorColor: m.isFromUser
-                                      ? AppColors.selectionHandleOnLime
-                                      : (context.isDark
-                                          ? AppColors.selectionHandle
-                                          : AppColors.limeAccent),
-                                ),
-                              ),
-                              child: DefaultSelectionStyle(
-                                selectionColor: m.isFromUser
-                                    ? AppColors.selectionOnLime
-                                    : (context.isDark
-                                        ? AppColors.selectionDark
-                                        : AppColors.selectionLight),
-                                cursorColor: m.isFromUser
-                                    ? AppColors.selectionHandleOnLime
-                                    : (context.isDark
-                                        ? AppColors.selectionHandle
-                                        : AppColors.limeAccent),
-                                child: SelectionArea(
-                              key: ValueKey(
-                                'sel-$_selectionEpoch-${m.id}',
-                              ),
-                              contextMenuBuilder:
-                                  (context, selectableRegionState) {
-                                return AdaptiveTextSelectionToolbar
-                                    .buttonItems(
-                                  anchors: selectableRegionState
-                                      .contextMenuAnchors,
-                                  buttonItems: [
-                                    ContextMenuButtonItem(
-                                      label: tr.dismissSelection,
-                                      onPressed: () {
-                                        selectableRegionState.hideToolbar();
-                                        selectableRegionState
-                                            .clearSelection();
-                                        _clearMessageSelection();
+                                SliverPadding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.lg,
+                                  ),
+                                  sliver: SliverList(
+                                    delegate: SliverChildBuilderDelegate(
+                                      (context, i) {
+                                        if (_busy && i == 0) {
+                                          final preview =
+                                              _streamPreview.trim();
+                                          return _AssistantBubble(
+                                            child: Text(
+                                              preview.isNotEmpty
+                                                  ? preview
+                                                  : (_busyLabel.isNotEmpty
+                                                      ? _busyLabel
+                                                      : tr.aiBusy),
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: context.mutedText,
+                                                fontStyle: preview.isEmpty
+                                                    ? FontStyle.italic
+                                                    : FontStyle.normal,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        final msgIndex = messages.length -
+                                            1 -
+                                            (_busy ? i - 1 : i);
+                                        final m = messages[msgIndex];
+                                        final blocks = _blocksFor(m);
+                                        final hasTable = blocks
+                                            .any((b) => b is ChatTableBlock);
+                                        final userSel =
+                                            AppColors.selectionOnLime;
+                                        final userHandle =
+                                            AppColors.selectionHandleOnLime;
+                                        final botSel = context.isDark
+                                            ? AppColors.selectionDark
+                                            : AppColors.selectionLight;
+                                        final botHandle = context.isDark
+                                            ? AppColors.selectionHandle
+                                            : AppColors.limeAccent;
+                                        return CupertinoTheme(
+                                          data: CupertinoTheme.of(context)
+                                              .copyWith(
+                                            primaryColor: m.isFromUser
+                                                ? userHandle
+                                                : botHandle,
+                                          ),
+                                          child: Theme(
+                                            data: Theme.of(context).copyWith(
+                                              textSelectionTheme:
+                                                  TextSelectionThemeData(
+                                                selectionColor: m.isFromUser
+                                                    ? userSel
+                                                    : botSel,
+                                                selectionHandleColor:
+                                                    m.isFromUser
+                                                        ? userHandle
+                                                        : botHandle,
+                                                cursorColor: m.isFromUser
+                                                    ? userHandle
+                                                    : botHandle,
+                                              ),
+                                            ),
+                                            child: DefaultSelectionStyle(
+                                              selectionColor: m.isFromUser
+                                                  ? userSel
+                                                  : botSel,
+                                              cursorColor: m.isFromUser
+                                                  ? userHandle
+                                                  : botHandle,
+                                              child: SelectionArea(
+                                                key: ValueKey(
+                                                  'sel-$_selectionEpoch-${m.id}',
+                                                ),
+                                                contextMenuBuilder: (context,
+                                                    selectableRegionState) {
+                                                  return AdaptiveTextSelectionToolbar
+                                                      .buttonItems(
+                                                    anchors:
+                                                        selectableRegionState
+                                                            .contextMenuAnchors,
+                                                    buttonItems: [
+                                                      ContextMenuButtonItem(
+                                                        label: tr
+                                                            .dismissSelection,
+                                                        onPressed: () {
+                                                          selectableRegionState
+                                                              .hideToolbar();
+                                                          selectableRegionState
+                                                              .clearSelection();
+                                                          _clearMessageSelection();
+                                                        },
+                                                      ),
+                                                      ...selectableRegionState
+                                                          .contextMenuButtonItems,
+                                                    ],
+                                                  );
+                                                },
+                                                child: _AssistantBubble(
+                                                  fromUser: m.isFromUser,
+                                                  time: TimeOfDay.fromDateTime(
+                                                    m.createdAt,
+                                                  ),
+                                                  imagePath: m.imagePath,
+                                                  wide: hasTable,
+                                                  child: _AssistantMessageBody(
+                                                    text: m.body,
+                                                    fromUser: m.isFromUser,
+                                                    blocks: blocks,
+                                                    categories: categories,
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      height: 1.38,
+                                                      color: m.isFromUser
+                                                          ? AppColors.ink
+                                                          : context
+                                                              .primaryText,
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        );
                                       },
+                                      childCount: messages.length +
+                                          (_busy ? 1 : 0),
+                                      addAutomaticKeepAlives: false,
                                     ),
-                                    ...selectableRegionState
-                                        .contextMenuButtonItems,
-                                  ],
-                                );
-                              },
-                              child: _AssistantBubble(
-                                fromUser: m.isFromUser,
-                                time: TimeOfDay.fromDateTime(m.createdAt),
-                                imagePath: m.imagePath,
-                                wide: hasTable,
-                                child: _AssistantMessageBody(
-                                  text: m.body,
-                                  fromUser: m.isFromUser,
-                                  blocks: blocks,
-                                  categories: categories,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    height: 1.38,
-                                    color: m.isFromUser
-                                        ? AppColors.ink
-                                        : context.primaryText,
-                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
-                              ),
-                            );
-                          },
-                          childCount: messages.length + (_busy ? 1 : 0),
-                          addAutomaticKeepAlives: false,
+                          ),
                         ),
                       ),
                     ),
-                  ],
-                ),
-                ),
-              ),
-                      ),
+                  if (showOpeningLoader)
+                    const ColoredBox(
+                      color: Colors.transparent,
+                      child: _AssistantOpeningLoader(),
+                    ),
+                ],
               ),
             ),
             if (_pendingRetryText != null && !_busy)
@@ -1862,35 +1897,31 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   }
 }
 
-/// Calm bootstrap placeholder — no empty list flash while SQLite warms.
+/// Full-area bootstrap placeholder — same idea as School_21 chat open:
+/// hold a calm loader until the reverse list is pinned on the latest message.
 class _AssistantOpeningLoader extends StatelessWidget {
   const _AssistantOpeningLoader();
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 56,
-            height: 56,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 56,
-                  height: 56,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.violet.withValues(alpha: 0.45),
-                  ),
-                ),
-                const AiAssistantMark(size: 40),
-              ],
+      child: SizedBox(
+        width: 56,
+        height: 56,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              width: 56,
+              height: 56,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.violet.withValues(alpha: 0.45),
+              ),
             ),
-          ),
-        ],
+            const AiAssistantMark(size: 40),
+          ],
+        ),
       ),
     );
   }

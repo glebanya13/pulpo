@@ -5,13 +5,13 @@ import 'package:intl/intl.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/l10n/tr.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/settings_service.dart';
 import '../../data/repositories/subscription_repository.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/segmented_pill.dart';
 
 class SubscriptionEditorScreen extends ConsumerStatefulWidget {
   const SubscriptionEditorScreen({super.key, this.existingId});
@@ -115,31 +115,6 @@ class _SubscriptionEditorScreenState
     if (mounted) context.pop();
   }
 
-  Widget _cycleChip(String value, String label) {
-    final active = _cycle == value;
-    return Expanded(
-      child: Pressable(
-        onTap: () => setState(() => _cycle = value),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: active ? AppColors.lime : context.scaffoldBg,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: active ? AppColors.ink : context.primaryText,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
@@ -158,6 +133,9 @@ class _SubscriptionEditorScreenState
               const SizedBox(height: 12),
               Expanded(
                 child: SingleChildScrollView(
+                  // Room above the first field so the floating label isn't
+                  // clipped by the scroll view when focused/autofocus.
+                  padding: const EdgeInsets.only(top: 16),
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Column(
@@ -179,21 +157,29 @@ class _SubscriptionEditorScreenState
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
                         decoration: InputDecoration(labelText: tr.amount),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Text(
                         tr.periodicity,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: context.mutedText,
+                          color: context.faintText,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _cycleChip('monthly', tr.monthlyLabel),
-                          const SizedBox(width: 8),
-                          _cycleChip('yearly', tr.yearlyLabel),
+                      SegmentedPill<String>(
+                        value: _cycle,
+                        onChanged: (v) => setState(() => _cycle = v),
+                        scrollable: true,
+                        options: [
+                          SegmentedPillOption(
+                            value: 'monthly',
+                            label: tr.monthlyLabel,
+                          ),
+                          SegmentedPillOption(
+                            value: 'yearly',
+                            label: tr.yearlyLabel,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),

@@ -117,17 +117,22 @@ class AssistantChatRepository {
     final local = await all();
     if (_sameConversation(local, remote)) return;
 
-    await clear(syncCloud: false);
-    for (final m in remote) {
-      await add(
-        isFromUser: m.isFromUser,
-        body: m.body,
-        imagePath: m.imagePath,
-        createdAt: m.createdAt,
-        cloudId: m.id,
-        syncCloud: false,
-      );
-    }
+    // One transaction → one stream tick. A clear-then-loop-add used to
+    // flash empty→full and jerk the chat on cold open after sync.
+    await _db.transaction(() async {
+      await _db.delete(_db.assistantMessages).go();
+      for (final m in remote) {
+        await _db.into(_db.assistantMessages).insert(
+              AssistantMessagesCompanion.insert(
+                isFromUser: m.isFromUser,
+                body: m.body,
+                imagePath: Value(m.imagePath),
+                createdAt: m.createdAt,
+              ),
+            );
+      }
+    });
+    await _prune();
   }
 
   /// Fast equality: same length + same last message fingerprint.
@@ -168,10 +173,13 @@ final assistantChatRepositoryProvider =
 });
 
 /// Local SQLite stream — kept alive so returning to chat is instant.
+/// Cold start: emit a one-shot snapshot first so /assistant isn't empty→filled.
 final assistantMessagesProvider =
-    StreamProvider<List<AssistantMessage>>((ref) {
+    StreamProvider<List<AssistantMessage>>((ref) async* {
   ref.keepAlive();
-  return ref.watch(assistantChatRepositoryProvider).watchMessages();
+  final repo = ref.watch(assistantChatRepositoryProvider);
+  yield await repo.all();
+  yield* repo.watchMessages();
 });
 
 /// Sync chat from Firestore once per signed-in session (never blocks UI).

@@ -42,8 +42,15 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   Future<void> _openAssistant(BuildContext context) async {
-    ref.read(assistantMessagesProvider);
+    // Warm SQLite history BEFORE push so the first open after a cold start
+    // doesn't paint empty→filled (session keepAlive dies when the app is killed).
+    final warm = ref.read(assistantMessagesProvider.future);
     if (!await requireAi(context, ref, allowFreeEnergy: true)) return;
+    try {
+      await warm.timeout(const Duration(milliseconds: 900));
+    } catch (_) {
+      // Still open — chat screen keeps its own boot loader.
+    }
     if (context.mounted) context.push('/assistant');
   }
 
