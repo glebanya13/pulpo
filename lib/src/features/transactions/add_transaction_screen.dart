@@ -476,7 +476,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     )
                   : null,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             if (widget.editId == null)
               _TypeTabs(
                 type: _type,
@@ -532,7 +532,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   }) {
     return SingleChildScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.only(top: 16, bottom: 16),
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
       child: Column(
         children: [
           _AmountInput(
@@ -541,13 +541,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             currency: currency,
             autofocus: false,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _AiQuickActions(
             busy: _aiBusy,
             onVoice: _voiceEntry,
           ),
           if (_aiCategorySuggestion != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             _AiCategoryChip(
               label: tr.aiCategorySuggest(_aiCategorySuggestion!.categoryName),
               applyLabel: tr.aiApplyCategory,
@@ -555,7 +555,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               onDismiss: () => setState(() => _aiCategorySuggestion = null),
             ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _FormBlock(
             rows: [
               _FormRow(
@@ -598,7 +598,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           _ReceiptSection(
             receiptPath: _receiptPath,
             aiBusy: _aiBusy,
@@ -733,7 +733,7 @@ class _TypeTabs extends StatelessWidget {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      vertical: 10,
+                      vertical: 8,
                       horizontal: 8,
                     ),
                     decoration: BoxDecoration(
@@ -791,14 +791,14 @@ class _AmountInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final amountStyle = TextStyle(
-      fontSize: 48,
+      fontSize: 40,
       fontWeight: FontWeight.w800,
       color: context.isDark ? AppColors.lime : AppColors.limeAccent,
       letterSpacing: -2,
       height: 1,
     );
     final signStyle = TextStyle(
-      fontSize: 48,
+      fontSize: 40,
       fontWeight: FontWeight.w800,
       color: context.primaryText,
       letterSpacing: -2,
@@ -808,8 +808,8 @@ class _AmountInput extends StatelessWidget {
     return Column(
       children: [
         Text(currency,
-            style: TextStyle(fontSize: 14, color: context.faintText)),
-        const SizedBox(height: 8),
+            style: TextStyle(fontSize: 12, color: context.faintText)),
+        const SizedBox(height: 4),
         // Sign sits outside the field; field is intrinsically sized and
         // end-aligned so the caret opens at the end of "0.00", not mid-hint.
         Row(
@@ -889,23 +889,23 @@ class _FormRow extends StatelessWidget {
       onTap: onTap,
       scale: 0.98,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         child: Row(
           children: [
             if (well != null)
               ColorWellIcon(
                 color: well!,
                 icon: icon,
-                size: 32,
-                iconSize: 14,
-                radius: 10,
+                size: 28,
+                iconSize: 13,
+                radius: 9,
               )
             else
-              NeutralWellIcon(icon: icon),
-            const SizedBox(width: 12),
+              NeutralWellIcon(icon: icon, size: 28, iconSize: 13, radius: 9),
+            const SizedBox(width: 10),
             Text(label,
                 style: TextStyle(fontSize: 13, color: context.mutedText)),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 value,
@@ -913,14 +913,14 @@ class _FormRow extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: context.primaryText,
                 ),
               ),
             ),
             const SizedBox(width: 4),
-            Icon(LucideIcons.chevronRight, size: 16, color: context.faintText),
+            Icon(LucideIcons.chevronRight, size: 15, color: context.faintText),
           ],
         ),
       ),
@@ -949,9 +949,9 @@ class _AiQuickActions extends ConsumerWidget {
       onTap: busy ? null : onVoice,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           gradient: const LinearGradient(
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
@@ -963,21 +963,21 @@ class _AiQuickActions extends ConsumerWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.violet.withValues(alpha: 0.45),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: AppColors.violet.withValues(alpha: 0.35),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Row(
           children: [
-            const AiAssistantMark(size: 28),
-            const SizedBox(width: 10),
+            const AiAssistantMark(size: 24),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.2,
                   color: Colors.white,
@@ -987,8 +987,8 @@ class _AiQuickActions extends ConsumerWidget {
             if (showEnergy)
               energy.hasEnergy
                   ? Container(
-                      height: 28,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      height: 24,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.22),
                         borderRadius: BorderRadius.circular(999),
@@ -998,14 +998,14 @@ class _AiQuickActions extends ConsumerWidget {
                         children: [
                           const Icon(
                             LucideIcons.zap,
-                            size: 13,
+                            size: 12,
                             color: AppColors.lime,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 3),
                           Text(
                             '${energy.units}',
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
                             ),
@@ -1017,7 +1017,7 @@ class _AiQuickActions extends ConsumerWidget {
             else
               Icon(
                 LucideIcons.chevronRight,
-                size: 18,
+                size: 16,
                 color: Colors.white.withValues(alpha: 0.9),
               ),
           ],
@@ -1197,15 +1197,15 @@ class _ReceiptBtn extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: context.isDark ? AppColors.ink3 : const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           children: [
-            Icon(icon, size: 22, color: context.mutedText),
-            const SizedBox(height: 4),
+            Icon(icon, size: 18, color: context.mutedText),
+            const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(

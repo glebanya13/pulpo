@@ -303,13 +303,13 @@ Widget _row(
 }) {
   assert(value != null || valueWidget != null);
   final valueStyle = TextStyle(
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: FontWeight.w600,
     height: 1.25,
     color: context.primaryText,
   );
   return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -317,13 +317,13 @@ Widget _row(
           ColorWellIcon(
             color: well,
             icon: icon,
-            size: 32,
+            size: 30,
             iconSize: 14,
-            radius: 10,
+            radius: 9,
           )
         else
-          NeutralWellIcon(icon: icon),
-        const SizedBox(width: 12),
+          NeutralWellIcon(icon: icon, size: 30, iconSize: 14, radius: 9),
+        const SizedBox(width: 10),
         Expanded(
           flex: 2,
           child: Text(
@@ -331,7 +331,7 @@ Widget _row(
             style: TextStyle(fontSize: 13, color: context.mutedText),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           flex: 3,
           child: valueWidget ??
@@ -362,7 +362,7 @@ class _DateValue extends StatelessWidget {
           day,
           textAlign: TextAlign.right,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
             height: 1.25,
             color: context.primaryText,
@@ -373,7 +373,7 @@ class _DateValue extends StatelessWidget {
           time,
           textAlign: TextAlign.right,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: FontWeight.w500,
             height: 1.2,
             color: context.mutedText,
@@ -391,10 +391,10 @@ class _FormBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(6),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
         color: context.surface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         children: [
@@ -424,7 +424,9 @@ class _ActionBtn extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        width: double.infinity,
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           color: danger ? AppColors.danger : Colors.transparent,
           border: danger
@@ -439,9 +441,12 @@ class _ActionBtn extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: danger ? Colors.white : context.primaryText,
           ),
         ),

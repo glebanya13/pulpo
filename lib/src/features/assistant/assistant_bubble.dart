@@ -17,7 +17,7 @@ class _AssistantBubble extends StatelessWidget {
   final bool wide;
 
   // SoftCard-like chat discs — separate floats on scaffold, not a panel.
-  static const double _rL = 20;
+  static const double _rL = 16;
   static const double _rS = 6;
   static const double _minMetaWidth = 76;
 
@@ -29,8 +29,8 @@ class _AssistantBubble extends StatelessWidget {
         : '${time!.hour.toString().padLeft(2, '0')}:${time!.minute.toString().padLeft(2, '0')}';
     final hasImage =
         imagePath != null && File(imagePath!).existsSync();
-    // Text stays snug; tables keep a wider disc without filling the row.
-    final widthFactor = wide ? 0.88 : 0.72;
+    // Wider bubbles — match denser home chrome side insets.
+    final widthFactor = wide ? 0.96 : 0.88;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -40,7 +40,8 @@ class _AssistantBubble extends StatelessWidget {
               .clamp(0.0, constraints.maxWidth);
           final margin = (constraints.maxWidth - maxBubbleWidth)
               .clamp(0.0, constraints.maxWidth);
-          const avatarGap = 34.0;
+          // Must match AiAssistantMark + right padding below (26 + 6).
+          const avatarGap = 32.0;
           final maxW = inbound
               ? (maxBubbleWidth - avatarGap).clamp(0.0, maxBubbleWidth)
               : maxBubbleWidth;
@@ -104,17 +105,23 @@ class _AssistantBubble extends StatelessWidget {
               if (inbound)
                 const Padding(
                   padding: EdgeInsets.only(right: 6, bottom: 2),
-                  child: AiAssistantMark(size: 28, iconSize: 13),
+                  child: AiAssistantMark(size: 26, iconSize: 12),
                 ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: inbound
-                    ? CrossAxisAlignment.start
-                    : CrossAxisAlignment.end,
-                children: [bubbleWithSelection],
+              Flexible(
+                child: Align(
+                  alignment: inbound
+                      ? Alignment.centerLeft
+                      : Alignment.centerRight,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: inbound
+                        ? CrossAxisAlignment.start
+                        : CrossAxisAlignment.end,
+                    children: [bubbleWithSelection],
+                  ),
+                ),
               ),
               if (inbound) SizedBox(width: margin),
-              if (inbound) const Spacer(),
             ],
           );
         },

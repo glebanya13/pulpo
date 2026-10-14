@@ -22,6 +22,9 @@ class SettingsService {
   static const _kDailyReminderMinute = 'daily_reminder_minute';
   static const _kSmartReminders = 'smart_reminders';
   static const _kHideBalances = 'hide_balances';
+  static const _kHideSummaryIncome = 'hide_summary_income';
+  static const _kHideSummaryExpense = 'hide_summary_expense';
+  static const _kHideSummaryNet = 'hide_summary_net';
   static const _kDemoData = 'is_demo_data';
   static const _kProfileAvatarPath = 'profile_avatar_path';
   static const _kLastName = 'last_name';
@@ -105,6 +108,9 @@ class SettingsService {
         'dailyReminderMinute': dailyReminderMinute,
         'smartRemindersEnabled': smartRemindersEnabled,
         'hideBalances': hideBalances,
+        'hideSummaryIncome': hideSummaryIncome,
+        'hideSummaryExpense': hideSummaryExpense,
+        'hideSummaryNet': hideSummaryNet,
       };
 
   Future<void> importAppPrefs(Map<String, dynamic> raw) async {
@@ -132,6 +138,12 @@ class SettingsService {
     if (smart is bool) await setSmartRemindersEnabled(smart);
     final hide = raw['hideBalances'];
     if (hide is bool) await setHideBalances(hide);
+    final hideIncome = raw['hideSummaryIncome'];
+    if (hideIncome is bool) await setHideSummaryIncome(hideIncome);
+    final hideExpense = raw['hideSummaryExpense'];
+    if (hideExpense is bool) await setHideSummaryExpense(hideExpense);
+    final hideNet = raw['hideSummaryNet'];
+    if (hideNet is bool) await setHideSummaryNet(hideNet);
   }
 
   bool get dailyReminderEnabled => _prefs.getBool(_kDailyReminder) ?? true;
@@ -152,6 +164,18 @@ class SettingsService {
 
   bool get hideBalances => _prefs.getBool(_kHideBalances) ?? false;
   Future<void> setHideBalances(bool v) => _prefs.setBool(_kHideBalances, v);
+
+  bool get hideSummaryIncome => _prefs.getBool(_kHideSummaryIncome) ?? false;
+  Future<void> setHideSummaryIncome(bool v) =>
+      _prefs.setBool(_kHideSummaryIncome, v);
+
+  bool get hideSummaryExpense => _prefs.getBool(_kHideSummaryExpense) ?? false;
+  Future<void> setHideSummaryExpense(bool v) =>
+      _prefs.setBool(_kHideSummaryExpense, v);
+
+  bool get hideSummaryNet => _prefs.getBool(_kHideSummaryNet) ?? false;
+  Future<void> setHideSummaryNet(bool v) =>
+      _prefs.setBool(_kHideSummaryNet, v);
 
   /// Sample / App Review seed — must never be uploaded as the user's cloud data.
   bool get isDemoData => _prefs.getBool(_kDemoData) ?? false;
@@ -199,6 +223,9 @@ class SettingsState {
     required this.dailyReminderMinute,
     required this.smartRemindersEnabled,
     required this.hideBalances,
+    required this.hideSummaryIncome,
+    required this.hideSummaryExpense,
+    required this.hideSummaryNet,
     this.profileAvatarPath,
     this.lastName,
     this.birthday,
@@ -216,6 +243,9 @@ class SettingsState {
   final int dailyReminderMinute;
   final bool smartRemindersEnabled;
   final bool hideBalances;
+  final bool hideSummaryIncome;
+  final bool hideSummaryExpense;
+  final bool hideSummaryNet;
   final String? profileAvatarPath;
   final String? lastName;
   final String? birthday;
@@ -244,6 +274,9 @@ class SettingsState {
     int? dailyReminderMinute,
     bool? smartRemindersEnabled,
     bool? hideBalances,
+    bool? hideSummaryIncome,
+    bool? hideSummaryExpense,
+    bool? hideSummaryNet,
     String? profileAvatarPath,
     bool clearProfileAvatarPath = false,
     String? lastName,
@@ -266,6 +299,9 @@ class SettingsState {
       smartRemindersEnabled:
           smartRemindersEnabled ?? this.smartRemindersEnabled,
       hideBalances: hideBalances ?? this.hideBalances,
+      hideSummaryIncome: hideSummaryIncome ?? this.hideSummaryIncome,
+      hideSummaryExpense: hideSummaryExpense ?? this.hideSummaryExpense,
+      hideSummaryNet: hideSummaryNet ?? this.hideSummaryNet,
       profileAvatarPath: clearProfileAvatarPath
           ? null
           : (profileAvatarPath ?? this.profileAvatarPath),
@@ -292,6 +328,9 @@ class SettingsController extends Notifier<SettingsState> {
       dailyReminderMinute: s.dailyReminderMinute,
       smartRemindersEnabled: s.smartRemindersEnabled,
       hideBalances: s.hideBalances,
+      hideSummaryIncome: s.hideSummaryIncome,
+      hideSummaryExpense: s.hideSummaryExpense,
+      hideSummaryNet: s.hideSummaryNet,
       profileAvatarPath: s.profileAvatarPath,
       lastName: s.lastName,
       birthday: s.birthday,
@@ -400,6 +439,9 @@ class SettingsController extends Notifier<SettingsState> {
       dailyReminderMinute: s.dailyReminderMinute,
       smartRemindersEnabled: s.smartRemindersEnabled,
       hideBalances: s.hideBalances,
+      hideSummaryIncome: s.hideSummaryIncome,
+      hideSummaryExpense: s.hideSummaryExpense,
+      hideSummaryNet: s.hideSummaryNet,
       profileAvatarPath: s.profileAvatarPath,
       lastName: s.lastName,
       birthday: s.birthday,
@@ -430,6 +472,21 @@ class SettingsController extends Notifier<SettingsState> {
   Future<void> setHideBalances(bool hide) async {
     await ref.read(settingsServiceProvider).setHideBalances(hide);
     state = state.copyWith(hideBalances: hide);
+  }
+
+  Future<void> setHideSummaryIncome(bool hide) async {
+    await ref.read(settingsServiceProvider).setHideSummaryIncome(hide);
+    state = state.copyWith(hideSummaryIncome: hide);
+  }
+
+  Future<void> setHideSummaryExpense(bool hide) async {
+    await ref.read(settingsServiceProvider).setHideSummaryExpense(hide);
+    state = state.copyWith(hideSummaryExpense: hide);
+  }
+
+  Future<void> setHideSummaryNet(bool hide) async {
+    await ref.read(settingsServiceProvider).setHideSummaryNet(hide);
+    state = state.copyWith(hideSummaryNet: hide);
   }
 }
 

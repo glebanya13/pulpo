@@ -81,6 +81,10 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
       widget.accountId != null ||
       widget.categoryId != null;
 
+  /// Keep type / account / category controls visible while a filter is on,
+  /// so empty results (e.g. no Gastos) don't force tapping Filter again.
+  bool get _showPanel => _expanded || _hasActiveFilters;
+
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
@@ -130,7 +134,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                 height: 34,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
-                  color: _expanded || _hasActiveFilters
+                  color: _showPanel
                       ? AppColors.lime.withValues(alpha: 0.2)
                       : context.surface,
                   borderRadius: BorderRadius.circular(10),
@@ -146,7 +150,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                     Icon(
                       LucideIcons.slidersHorizontal,
                       size: 15,
-                      color: _expanded || _hasActiveFilters
+                      color: _showPanel
                           ? context.accent
                           : context.mutedText,
                     ),
@@ -156,7 +160,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: _expanded || _hasActiveFilters
+                        color: _showPanel
                             ? context.accent
                             : context.mutedText,
                       ),
@@ -167,7 +171,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
             ),
           ],
         ),
-        if (_expanded) ...[
+        if (_showPanel) ...[
           const SizedBox(height: 8),
           TabsPill(
             tabs: [tr.all, tr.income, tr.expense, tr.transfer],

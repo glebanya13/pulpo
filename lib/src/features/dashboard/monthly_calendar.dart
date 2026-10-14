@@ -195,7 +195,8 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     });
   }
 
-  void _openMonthFromYear(DateTime month) {
+  /// Open Diario for [month] after picking a week in Mensual.
+  void _openWeekFromYear({required DateTime month}) {
     setState(() {
       _month = DateTime(month.year, month.month, 1);
       _viewIndex = _kViewDay;
@@ -268,7 +269,8 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
           );
     var income = 0.0;
     var expense = 0.0;
-    final byDay = <int, ({double income, double expense})>{};
+    final byDay =
+        <int, ({double income, double expense, int count})>{};
     final byMonth = <int, ({double income, double expense})>{};
     for (final t in rangeTxs) {
       final type = TxType.values[t.type];
@@ -285,13 +287,22 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
         }
       } else {
         final key = t.date.day;
-        final prev = byDay[key] ?? (income: 0.0, expense: 0.0);
+        final prev =
+            byDay[key] ?? (income: 0.0, expense: 0.0, count: 0);
         if (type == TxType.income) {
           income += t.amount;
-          byDay[key] = (income: prev.income + t.amount, expense: prev.expense);
+          byDay[key] = (
+            income: prev.income + t.amount,
+            expense: prev.expense,
+            count: prev.count + 1,
+          );
         } else {
           expense += t.amount;
-          byDay[key] = (income: prev.income, expense: prev.expense + t.amount);
+          byDay[key] = (
+            income: prev.income,
+            expense: prev.expense + t.amount,
+            count: prev.count + 1,
+          );
         }
       }
     }
@@ -324,8 +335,9 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
       chromeBody = _YearMonthsList(
         year: _month.year,
         byMonth: byMonth,
+        yearTxs: rangeTxs,
         currency: currency,
-        onTapMonth: _openMonthFromYear,
+        onTapWeek: (month) => _openWeekFromYear(month: month),
       );
     } else if (days.isEmpty && !loading) {
       chromeBody = _DailyEmptyState(
@@ -421,6 +433,8 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _DaySheet(
         day: day,

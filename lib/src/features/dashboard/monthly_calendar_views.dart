@@ -225,122 +225,142 @@ class _DayBlock extends StatelessWidget {
     }
     final net = income - expense;
 
+    // One surface card per day — ops stay grouped so days don’t glue together.
     return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Pressable(
-            onTap: onTapDay,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(2, 4, 2, 2),
-              child: Row(
-                children: [
-                  Text(
-                    '${day.day}',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: context.primaryText,
-                      height: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: context.surface,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      weekday,
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.surface,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Pressable(
+              onTap: onTapDay,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                child: Row(
+                  children: [
+                    Text(
+                      day.day.toString().padLeft(2, '0'),
                       style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: context.mutedText,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: context.primaryText,
                         height: 1,
                       ),
                     ),
-                  ),
-                  if (multi) ...[
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerRight,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (income > 0)
-                              Text(
-                                formatMoney(income, currency, showSign: true),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: context.accent,
-                                ),
-                              ),
-                            if (income > 0 && expense > 0)
-                              const SizedBox(width: 8),
-                            if (expense > 0)
-                              Text(
-                                formatMoney(-expense, currency, showSign: true),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.danger,
-                                ),
-                              ),
-                            if (income > 0 || expense > 0)
-                              const SizedBox(width: 8),
-                            Text(
-                              formatMoney(net, currency, showSign: true),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.totalBlue,
-                              ),
-                            ),
-                          ],
+                    const SizedBox(width: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.scaffoldBg,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        weekday,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: context.mutedText,
+                          height: 1,
                         ),
                       ),
                     ),
-                  ] else
-                    const Spacer(),
-                ],
-              ),
-            ),
-          ),
-          for (var i = 0; i < txs.length; i++)
-            Dismissible(
-              key: ValueKey(txs[i].id),
-              direction: DismissDirection.endToStart,
-              background: Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 12),
-                color: AppColors.danger,
-                child: const Icon(
-                  Icons.delete,
-                  color: Colors.white,
-                  size: 16,
+                    if (multi) ...[
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (income > 0)
+                                Text(
+                                  formatMoney(
+                                    income,
+                                    currency,
+                                    showSign: true,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.accent,
+                                  ),
+                                ),
+                              if (income > 0 && expense > 0)
+                                const SizedBox(width: 8),
+                              if (expense > 0)
+                                Text(
+                                  formatMoney(
+                                    -expense,
+                                    currency,
+                                    showSign: true,
+                                  ),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.danger,
+                                  ),
+                                ),
+                              if (income > 0 || expense > 0)
+                                const SizedBox(width: 8),
+                              Text(
+                                formatMoney(net, currency, showSign: true),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.totalBlue,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ] else
+                      const Spacer(),
+                  ],
                 ),
               ),
-              onDismissed: (_) => onDeleteTx(txs[i]),
-              child: Pressable(
-                onTap: () => onTapTx(txs[i]),
-                onLongPress: onLongPressTx != null
-                    ? () => onLongPressTx!(txs[i])
-                    : null,
-                child: TransactionTile(
-                  tx: txs[i],
-                  embedded: true,
-                  embeddedInDayBlock: true,
+            ),
+            Divider(height: 1, thickness: 1, color: context.divider),
+            for (var i = 0; i < txs.length; i++)
+              Dismissible(
+                key: ValueKey(txs[i].id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 12),
+                  color: AppColors.danger,
+                  child: const Icon(
+                    Icons.delete,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+                onDismissed: (_) => onDeleteTx(txs[i]),
+                child: Pressable(
+                  onTap: () => onTapTx(txs[i]),
+                  onLongPress: onLongPressTx != null
+                      ? () => onLongPressTx!(txs[i])
+                      : null,
+                  child: TransactionTile(
+                    tx: txs[i],
+                    embedded: true,
+                    embeddedInDayBlock: true,
+                    showDivider: i < txs.length - 1,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -358,7 +378,7 @@ class _MonthTable extends StatelessWidget {
   final DateTime month;
   final int leading;
   final int daysInMonth;
-  final Map<int, ({double income, double expense})> byDay;
+  final Map<int, ({double income, double expense, int count})> byDay;
   final ValueChanged<DateTime> onTapDay;
 
   @override
@@ -399,6 +419,7 @@ class _MonthTable extends StatelessWidget {
         weekday: cellDate.weekday,
         income: sums?.income ?? 0,
         expense: sums?.expense ?? 0,
+        txCount: sums?.count ?? 0,
         onTap: inMonth ? () => onTapDay(cellDate) : null,
       );
     }
@@ -450,6 +471,7 @@ class _DayCell extends StatelessWidget {
     required this.weekday,
     required this.income,
     required this.expense,
+    required this.txCount,
     required this.onTap,
   });
 
@@ -459,6 +481,7 @@ class _DayCell extends StatelessWidget {
   final int weekday;
   final double income;
   final double expense;
+  final int txCount;
   final VoidCallback? onTap;
 
   @override
@@ -472,9 +495,11 @@ class _DayCell extends StatelessWidget {
                 ? context.accent
                 : context.primaryText;
     final net = income - expense;
-    final showIncome = inMonth && income > 0;
-    final showExpense = inMonth && expense > 0;
-    final showNet = inMonth && (showIncome || showExpense);
+    // 1 op → blue net only; 2+ → income / expense / blue.
+    final multi = txCount > 1;
+    final showIncome = inMonth && multi && income > 0;
+    final showExpense = inMonth && multi && expense > 0;
+    final showNet = inMonth && txCount > 0;
 
     return Pressable(
       onTap: onTap,
@@ -571,19 +596,71 @@ class _DayCell extends StatelessWidget {
   }
 }
 
-/// Year overview — one row per month with income / expense / net.
-class _YearMonthsList extends StatelessWidget {
+String _padDayMonth(DateTime d) =>
+    '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
+
+/// Monday-start weeks that overlap [month] (newest first).
+List<({DateTime start, DateTime end})> _weeksOverlappingMonth(DateTime month) {
+  final first = DateTime(month.year, month.month, 1);
+  final last = DateTime(month.year, month.month + 1, 0);
+  var cursor = first.subtract(Duration(days: first.weekday - DateTime.monday));
+  final weeks = <({DateTime start, DateTime end})>[];
+  while (!cursor.isAfter(last)) {
+    final end = cursor.add(const Duration(days: 6));
+    if (!end.isBefore(first) && !cursor.isAfter(last)) {
+      weeks.add((start: cursor, end: end));
+    }
+    cursor = cursor.add(const Duration(days: 7));
+  }
+  return weeks.reversed.toList();
+}
+
+/// Year overview — tap a month to expand weekly income/expense (in-month only).
+class _YearMonthsList extends StatefulWidget {
   const _YearMonthsList({
     required this.year,
     required this.byMonth,
+    required this.yearTxs,
     required this.currency,
-    required this.onTapMonth,
+    required this.onTapWeek,
   });
 
   final int year;
   final Map<int, ({double income, double expense})> byMonth;
+  final List<db.Transaction> yearTxs;
   final String currency;
-  final ValueChanged<DateTime> onTapMonth;
+  final ValueChanged<DateTime> onTapWeek;
+
+  @override
+  State<_YearMonthsList> createState() => _YearMonthsListState();
+}
+
+class _YearMonthsListState extends State<_YearMonthsList> {
+  int? _expandedMonth;
+
+  ({double income, double expense}) _sumsInMonthWeek({
+    required DateTime month,
+    required DateTime weekStart,
+    required DateTime weekEnd,
+  }) {
+    // Only days that belong to [month] — cross-month weeks never double-count.
+    final monthStart = DateTime(month.year, month.month, 1);
+    final monthEnd = DateTime(month.year, month.month + 1, 1);
+    var income = 0.0;
+    var expense = 0.0;
+    for (final t in widget.yearTxs) {
+      final d = DateTime(t.date.year, t.date.month, t.date.day);
+      if (d.isBefore(weekStart) || d.isAfter(weekEnd)) continue;
+      if (d.isBefore(monthStart) || !d.isBefore(monthEnd)) continue;
+      final type = TxType.values[t.type];
+      if (type == TxType.income) {
+        income += t.amount;
+      } else if (type == TxType.expense) {
+        expense += t.amount;
+      }
+    }
+    return (income: income, expense: expense);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -591,7 +668,7 @@ class _YearMonthsList extends StatelessWidget {
     final locale = Localizations.localeOf(context).toString();
     final now = DateTime.now();
     // Newest month first; hide future months of the current year.
-    final lastMonth = year == now.year ? now.month : 12;
+    final lastMonth = widget.year == now.year ? now.month : 12;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -600,14 +677,33 @@ class _YearMonthsList extends StatelessWidget {
           if (m < lastMonth)
             Divider(height: 1, thickness: 1, color: context.divider),
           _YearMonthRow(
-            month: DateTime(year, m, 1),
-            income: byMonth[m]?.income ?? 0,
-            expense: byMonth[m]?.expense ?? 0,
-            currency: currency,
+            month: DateTime(widget.year, m, 1),
+            income: widget.byMonth[m]?.income ?? 0,
+            expense: widget.byMonth[m]?.expense ?? 0,
+            currency: widget.currency,
             locale: locale,
             netLabel: tr.monthNet,
-            onTap: () => onTapMonth(DateTime(year, m, 1)),
+            expanded: _expandedMonth == m,
+            onTap: () => setState(() {
+              _expandedMonth = _expandedMonth == m ? null : m;
+            }),
           ),
+          if (_expandedMonth == m)
+            for (final week in _weeksOverlappingMonth(
+              DateTime(widget.year, m, 1),
+            ))
+              _YearWeekRow(
+                weekStart: week.start,
+                weekEnd: week.end,
+                sums: _sumsInMonthWeek(
+                  month: DateTime(widget.year, m, 1),
+                  weekStart: week.start,
+                  weekEnd: week.end,
+                ),
+                currency: widget.currency,
+                onTap: () =>
+                    widget.onTapWeek(DateTime(widget.year, m, 1)),
+              ),
         ],
       ],
     );
@@ -622,6 +718,7 @@ class _YearMonthRow extends StatelessWidget {
     required this.currency,
     required this.locale,
     required this.netLabel,
+    required this.expanded,
     required this.onTap,
   });
 
@@ -631,6 +728,7 @@ class _YearMonthRow extends StatelessWidget {
   final String currency;
   final String locale;
   final String netLabel;
+  final bool expanded;
   final VoidCallback onTap;
 
   @override
@@ -640,7 +738,8 @@ class _YearMonthRow extends StatelessWidget {
     final name = DateFormat('LLL', locale).format(month);
     final nameCap =
         name.isEmpty ? name : '${name[0].toUpperCase()}${name.substring(1)}';
-    final range = '1/${month.month} ~ $lastDay/${month.month}';
+    final mm = month.month.toString().padLeft(2, '0');
+    final range = '01/$mm ~ ${lastDay.toString().padLeft(2, '0')}/$mm';
 
     return Pressable(
       onTap: onTap,
@@ -650,18 +749,31 @@ class _YearMonthRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              width: 78,
+              width: 86,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    nameCap,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: context.primaryText,
-                      height: 1.1,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          nameCap,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: context.primaryText,
+                            height: 1.1,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        expanded
+                            ? LucideIcons.chevronUp
+                            : LucideIcons.chevronDown,
+                        size: 16,
+                        color: context.faintText,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -721,6 +833,76 @@ class _YearMonthRow extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _YearWeekRow extends StatelessWidget {
+  const _YearWeekRow({
+    required this.weekStart,
+    required this.weekEnd,
+    required this.sums,
+    required this.currency,
+    required this.onTap,
+  });
+
+  final DateTime weekStart;
+  final DateTime weekEnd;
+  final ({double income, double expense}) sums;
+  final String currency;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final range = '${_padDayMonth(weekStart)} ~ ${_padDayMonth(weekEnd)}';
+    return Pressable(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 8, 2, 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                range,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: context.mutedText,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 100,
+              child: Text(
+                formatMoney(sums.income, currency),
+                textAlign: TextAlign.right,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: context.accent,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            SizedBox(
+              width: 100,
+              child: Text(
+                formatMoney(sums.expense, currency),
+                textAlign: TextAlign.right,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.danger,
+                ),
               ),
             ),
           ],

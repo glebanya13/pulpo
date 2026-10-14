@@ -81,17 +81,25 @@ class _DaySheet extends ConsumerWidget {
     // scrolls inside the leftover space (many txs used to clip the buttons).
     final maxSheet = MediaQuery.sizeOf(context).height * 0.78;
 
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxSheet),
-        child: Container(
-          decoration: BoxDecoration(
-            color: context.scaffoldBg,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: AppSpacing.sheetOnTabScreen(context),
-          child: Column(
+    // Transparent + isScrollControlled makes this route full-height, so
+    // barrier taps never hit — dismiss explicitly on the empty area.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => Navigator.of(context).pop(),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: GestureDetector(
+          onTap: () {},
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxSheet),
+            child: Container(
+              decoration: BoxDecoration(
+                color: context.scaffoldBg,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              padding: AppSpacing.sheetOnTabScreen(context),
+              child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
@@ -183,6 +191,8 @@ class _DaySheet extends ConsumerWidget {
                 ],
               ),
             ],
+          ),
+            ),
           ),
         ),
       ),

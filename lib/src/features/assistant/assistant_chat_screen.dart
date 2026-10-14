@@ -1263,9 +1263,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               onTap: _clearMessageSelection,
               child: Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
                 AppSpacing.xs,
-                AppSpacing.lg,
+                AppSpacing.xs,
+                AppSpacing.xs,
                 0,
               ),
               child: Column(
@@ -1277,10 +1277,10 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             final narrow = constraints.maxWidth < 360;
-                            final sideReserve = narrow ? 96.0 : 120.0;
+                            final sideReserve = narrow ? 88.0 : 108.0;
                             final titleMax = (constraints.maxWidth -
                                     sideReserve * 2)
-                                .clamp(72.0, 200.0);
+                                .clamp(72.0, 240.0);
                             return SizedBox(
                               height: PageHeader.controlSize,
                               child: Stack(
@@ -1323,10 +1323,11 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                           RoundIconButton(
                                             icon: LucideIcons.arrowLeft,
                                             onTap: () => context.pop(),
-                                            size: 42,
                                           )
                                         else
-                                          const SizedBox(width: 42),
+                                          const SizedBox(
+                                            width: PageHeader.controlSize,
+                                          ),
                                         if (!isPro) ...[
                                           const SizedBox(width: 6),
                                           AssistantEnergyChip(
@@ -1354,7 +1355,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                             child: RoundIconButton(
                                               icon: LucideIcons.trash2,
                                               onTap: _confirmClearChat,
-                                              size: 42,
                                             ),
                                           ),
                                         ),
@@ -1362,7 +1362,6 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                         RoundIconButton(
                                           icon: LucideIcons.x,
                                           onTap: _closeChat,
-                                          size: 42,
                                         ),
                                       ],
                                     ),
@@ -1481,7 +1480,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                 ),
                                 SliverPadding(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.lg,
+                                    horizontal: AppSpacing.xs,
                                   ),
                                   sliver: SliverList(
                                     delegate: SliverChildBuilderDelegate(
@@ -1595,8 +1594,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                                     blocks: blocks,
                                                     categories: categories,
                                                     style: TextStyle(
-                                                      fontSize: 14,
-                                                      height: 1.38,
+                                                      fontSize: 13,
+                                                      height: 1.35,
                                                       color: m.isFromUser
                                                           ? AppColors.ink
                                                           : context
@@ -1633,7 +1632,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             ),
             if (_pendingRetryText != null && !_busy)
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                 child: Pressable(
                   onTap: _retryPending,
                   child: Container(
@@ -1685,9 +1684,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             if (_listening)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
+                  AppSpacing.xs,
                   0,
-                  AppSpacing.lg,
+                  AppSpacing.xs,
                   8,
                 ),
                 child: Container(
@@ -1763,9 +1762,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               onTap: _clearMessageSelection,
               child: Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
+                AppSpacing.xs,
                 8,
-                AppSpacing.lg,
+                AppSpacing.xs,
                 12,
               ),
               child: Row(
@@ -1776,13 +1775,15 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                     child: LiquidGlass(
                       compact: true,
                       light: true,
-                      borderRadius: BorderRadius.circular(21),
+                      borderRadius: BorderRadius.circular(
+                        PageHeader.controlSize / 2,
+                      ),
                       child: SizedBox(
-                        width: 42,
-                        height: 42,
+                        width: PageHeader.controlSize,
+                        height: PageHeader.controlSize,
                         child: Icon(
                           LucideIcons.camera,
-                          size: 18,
+                          size: 17,
                           color: context.primaryText,
                         ),
                       ),
@@ -1808,7 +1809,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                         onTap: _clearMessageSelection,
                         style: TextStyle(
                           color: context.primaryText,
-                          fontSize: 15,
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
                         textInputAction: TextInputAction.send,
@@ -1818,12 +1819,12 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                           filled: true,
                           fillColor: context.surface,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide.none,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
+                            horizontal: 12,
+                            vertical: 10,
                           ),
                         ),
                       ),
@@ -1848,8 +1849,8 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                               },
                         child: _listening || hasText
                             ? Container(
-                                width: 46,
-                                height: 46,
+                                width: PageHeader.controlSize + 4,
+                                height: PageHeader.controlSize + 4,
                                 decoration: BoxDecoration(
                                   color: AppColors.lime,
                                   shape: BoxShape.circle,
@@ -1871,13 +1872,15 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                             : LiquidGlass(
                                 compact: true,
                                 light: true,
-                                borderRadius: BorderRadius.circular(23),
+                                borderRadius: BorderRadius.circular(
+                                  (PageHeader.controlSize + 4) / 2,
+                                ),
                                 child: SizedBox(
-                                  width: 46,
-                                  height: 46,
+                                  width: PageHeader.controlSize + 4,
+                                  height: PageHeader.controlSize + 4,
                                   child: Icon(
                                     LucideIcons.mic,
-                                    size: 18,
+                                    size: 17,
                                     color: context.primaryText,
                                   ),
                                 ),

@@ -20,6 +20,7 @@ class TransactionTile extends ConsumerWidget {
     this.embedded = false,
     this.embeddedInDayBlock = false,
     this.showChevron = false,
+    this.showDivider = true,
   });
 
   final db.Transaction tx;
@@ -32,6 +33,9 @@ class TransactionTile extends ConsumerWidget {
 
   /// Trailing chevron like the home mockup.
   final bool showChevron;
+
+  /// Hairline under dense day-list rows (off for the last op in a day card).
+  final bool showDivider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -62,11 +66,13 @@ class TransactionTile extends ConsumerWidget {
       final title = tx.note?.isNotEmpty == true ? tx.note! : catLabel;
       final accountLabel = account?.name.trim();
       return Container(
-        padding: const EdgeInsets.fromLTRB(2, 5, 2, 5),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: context.divider, width: 0.5),
-          ),
+          border: showDivider
+              ? Border(
+                  bottom: BorderSide(color: context.divider, width: 0.5),
+                )
+              : null,
         ),
         child: Row(
           children: [

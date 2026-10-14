@@ -152,7 +152,7 @@ class _ViewTabs extends StatelessWidget {
 }
 
 /// Three outlined summary cards — income / expense / total.
-class _MonthTotals extends StatefulWidget {
+class _MonthTotals extends ConsumerWidget {
   const _MonthTotals({
     required this.income,
     required this.expense,
@@ -165,49 +165,47 @@ class _MonthTotals extends StatefulWidget {
   final String currency;
 
   @override
-  State<_MonthTotals> createState() => _MonthTotalsState();
-}
-
-class _MonthTotalsState extends State<_MonthTotals> {
-  bool _hideIncome = false;
-  bool _hideExpense = false;
-  bool _hideNet = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
+    final settings = ref.watch(settingsControllerProvider);
+    final notifier = ref.read(settingsControllerProvider.notifier);
     return Row(
       children: [
         Expanded(
           child: _SummaryCard(
             label: tr.income,
-            value: formatMoney(widget.income, widget.currency),
+            value: formatMoney(income, currency),
             color: context.accent,
             icon: LucideIcons.arrowUpRight,
-            hidden: _hideIncome,
-            onToggleHide: () => setState(() => _hideIncome = !_hideIncome),
+            hidden: settings.hideSummaryIncome,
+            onToggleHide: () => notifier.setHideSummaryIncome(
+              !settings.hideSummaryIncome,
+            ),
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: _SummaryCard(
             label: tr.expense,
-            value: formatMoney(widget.expense, widget.currency),
+            value: formatMoney(expense, currency),
             color: AppColors.danger,
             icon: LucideIcons.arrowDownRight,
-            hidden: _hideExpense,
-            onToggleHide: () => setState(() => _hideExpense = !_hideExpense),
+            hidden: settings.hideSummaryExpense,
+            onToggleHide: () => notifier.setHideSummaryExpense(
+              !settings.hideSummaryExpense,
+            ),
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: _SummaryCard(
             label: tr.monthNet,
-            value: formatMoney(widget.net, widget.currency, showSign: true),
+            value: formatMoney(net, currency, showSign: true),
             color: AppColors.totalBlue,
             icon: LucideIcons.equal,
-            hidden: _hideNet,
-            onToggleHide: () => setState(() => _hideNet = !_hideNet),
+            hidden: settings.hideSummaryNet,
+            onToggleHide: () =>
+                notifier.setHideSummaryNet(!settings.hideSummaryNet),
           ),
         ),
       ],
