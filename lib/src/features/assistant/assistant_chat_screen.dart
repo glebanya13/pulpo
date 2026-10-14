@@ -1523,36 +1523,37 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                         final botHandle = context.isDark
                                             ? AppColors.selectionHandle
                                             : AppColors.limeAccent;
+                                        final handle = m.isFromUser
+                                            ? userHandle
+                                            : botHandle;
                                         return CupertinoTheme(
                                           data: CupertinoTheme.of(context)
                                               .copyWith(
-                                            primaryColor: m.isFromUser
-                                                ? userHandle
-                                                : botHandle,
+                                            // iOS SelectionArea paints handles
+                                            // from selectionHandleColor, not
+                                            // primaryColor alone.
+                                            primaryColor: handle,
+                                            selectionHandleColor: handle,
                                           ),
                                           child: Theme(
                                             data: Theme.of(context).copyWith(
+                                              colorScheme: Theme.of(context)
+                                                  .colorScheme
+                                                  .copyWith(primary: handle),
                                               textSelectionTheme:
                                                   TextSelectionThemeData(
                                                 selectionColor: m.isFromUser
                                                     ? userSel
                                                     : botSel,
-                                                selectionHandleColor:
-                                                    m.isFromUser
-                                                        ? userHandle
-                                                        : botHandle,
-                                                cursorColor: m.isFromUser
-                                                    ? userHandle
-                                                    : botHandle,
+                                                selectionHandleColor: handle,
+                                                cursorColor: handle,
                                               ),
                                             ),
                                             child: DefaultSelectionStyle(
                                               selectionColor: m.isFromUser
                                                   ? userSel
                                                   : botSel,
-                                              cursorColor: m.isFromUser
-                                                  ? userHandle
-                                                  : botHandle,
+                                              cursorColor: handle,
                                               child: SelectionArea(
                                                 key: ValueKey(
                                                   'sel-$_selectionEpoch-${m.id}',

@@ -580,7 +580,7 @@ class PageHeader extends StatelessWidget {
   final VoidCallback? onBack;
 
   /// Canonical name for pushed-screen chrome (back · title pill · action).
-  static const double controlSize = 44;
+  static const double controlSize = 36;
   static const _side = controlSize;
 
   @override
@@ -793,14 +793,14 @@ class SectTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 18, bottom: 10),
+      padding: const EdgeInsets.only(top: 10, bottom: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               color: context.primaryText,
             ),
@@ -1199,9 +1199,9 @@ class SoftCard extends StatelessWidget {
   const SoftCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.all(12),
     this.color,
-    this.radius = 20,
+    this.radius = 14,
   });
   final Widget child;
   final EdgeInsets padding;

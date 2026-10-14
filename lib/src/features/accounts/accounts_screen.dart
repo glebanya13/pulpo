@@ -47,7 +47,7 @@ class AccountsScreen extends ConsumerWidget {
                   onTap: () => _openAddAccount(context, ref),
                 ),
               ),
-            headerGap: 16,
+            headerGap: 10,
             children: [
               AsyncValuesGate(
                 values: [accountsAsync],
@@ -73,7 +73,7 @@ class AccountsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _NetWorthCard(value: total, currency: currency),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 10),
                         if (bankLike.isNotEmpty) ...[
                           SectTitle(title: tr.bankAccounts),
                           for (final a in bankLike)
@@ -124,10 +124,10 @@ class _NetWorthCard extends ConsumerWidget {
       settingsControllerProvider.select((s) => s.hideBalances),
     );
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: context.emphasized,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: context.emphasizedBorder, width: 1),
       ),
       child: Column(
@@ -139,25 +139,25 @@ class _NetWorthCard extends ConsumerWidget {
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 11,
-              letterSpacing: 1,
+              letterSpacing: 0.6,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             hidden ? kMaskedMoney : formatMoney(value, currency),
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 34,
+              fontSize: 24,
               fontWeight: FontWeight.w800,
-              letterSpacing: -1.5,
+              letterSpacing: -0.8,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Container(
             padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
               color: AppColors.lime.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
@@ -166,7 +166,7 @@ class _NetWorthCard extends ConsumerWidget {
               Tr.of(context).inRealtime,
               style: const TextStyle(
                 color: AppColors.lime,
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -188,25 +188,25 @@ class _AccountCard extends ConsumerWidget {
       settingsControllerProvider.select((s) => s.hideBalances),
     );
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Pressable(
         onTap: () => context.push('/accounts/${account.id}'),
         child: Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: context.surface,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
             children: [
               ColorWellIcon(
                 color: Color(account.color),
                 icon: lucideByKey(account.icon),
-                size: 48,
-                iconSize: 22,
-                radius: 16,
+                size: 34,
+                iconSize: 16,
+                radius: 10,
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,11 +214,11 @@ class _AccountCard extends ConsumerWidget {
                     Text(
                       account.name,
                       style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: context.primaryText),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 1),
                     Text(
                       '${Tr.of(context).accountTypeLabel(account.type)} · ${account.currency}',
                       style: TextStyle(
@@ -235,7 +235,7 @@ class _AccountCard extends ConsumerWidget {
                         ? kMaskedMoney
                         : formatMoney(balance, account.currency),
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.w800,
                       color: !hidden && balance < 0
                           ? AppColors.danger
@@ -245,11 +245,11 @@ class _AccountCard extends ConsumerWidget {
                   ),
                   if (account.creditLimit != null && !hidden)
                     Padding(
-                      padding: const EdgeInsets.only(top: 2),
+                      padding: const EdgeInsets.only(top: 1),
                       child: Text(
                         '${Tr.of(context).creditLimitPrefix}${formatMoney(account.creditLimit!, account.currency)}',
                         style: TextStyle(
-                            fontSize: 11, color: context.faintText),
+                            fontSize: 10, color: context.faintText),
                       ),
                     ),
                 ],
@@ -277,26 +277,26 @@ class _AddCard extends StatelessWidget {
             width: 1.5,
             style: BorderStyle.solid,
           ),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: context.scaffoldBg,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(LucideIcons.plus, color: context.faintText),
+                child: Icon(LucideIcons.plus, size: 18, color: context.faintText),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 10),
               Text(
                 Tr.of(context).addAccount,
                 style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: context.faintText),
               ),

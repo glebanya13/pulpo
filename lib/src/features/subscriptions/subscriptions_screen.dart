@@ -173,7 +173,7 @@ class _TotalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final accentColor = context.accent;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: accent
             ? accentColor.withValues(alpha: 0.1)
@@ -181,7 +181,7 @@ class _TotalCard extends StatelessWidget {
         border: accent
             ? Border.all(color: accentColor.withValues(alpha: 0.25))
             : null,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         children: [
@@ -189,11 +189,11 @@ class _TotalCard extends StatelessWidget {
             label,
             style: TextStyle(color: context.mutedText, fontSize: 11),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             formatMoney(value, currency),
             style: TextStyle(
-              fontSize: 22,
+              fontSize: 16,
               fontWeight: FontWeight.w800,
               color: accent ? accentColor : context.primaryText,
             ),
@@ -219,8 +219,8 @@ class _SubCard extends ConsumerWidget {
     return Pressable(
       onTap: () => context.push('/subscriptions/${sub.id}/edit'),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: highlighted
             ? accentColor.withValues(alpha: 0.08)
@@ -228,16 +228,16 @@ class _SubCard extends ConsumerWidget {
         border: highlighted
             ? Border.all(color: accentColor.withValues(alpha: 0.25))
             : null,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: Color(sub.logoColor),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(10),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -247,11 +247,11 @@ class _SubCard extends ConsumerWidget {
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
-                fontSize: 18,
+                fontSize: 14,
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

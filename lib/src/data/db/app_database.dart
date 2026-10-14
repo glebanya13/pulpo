@@ -9,7 +9,8 @@ import 'package:sqlite3/sqlite3.dart';
 import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 import '../../core/theme/color_well.dart' show pastelColorRemap;
-import '../seed/seed_categories.dart' show legacyRuNameToSlug, normalizeCategorySortOrder;
+import '../seed/seed_categories.dart'
+    show legacyRuNameToSlug, normalizeCategorySortOrder, seedCategoriesIfEmpty;
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -39,6 +40,7 @@ class AppDatabase extends _$AppDatabase {
   int get schemaVersion => 8;
 
   /// Wipes every user-facing table. Keeps schema and settings intact.
+  /// Default system categories are always re-seeded so the app is usable.
   Future<void> resetAllData() async {
     await transaction(() async {
       await delete(transactions).go();
@@ -52,6 +54,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(accounts).go();
       await delete(assistantMessages).go();
     });
+    await seedCategoriesIfEmpty(this);
   }
 
   @override

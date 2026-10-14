@@ -218,6 +218,8 @@ class Tr {
   String get viewHistory => _get('view_history');
   String get calendarViewCalendar => _get('calendar_view_calendar');
   String get calendarViewDaily => _get('calendar_view_daily');
+  String get calendarViewDay => _get('calendar_view_day');
+  String get calendarViewMonth => _get('calendar_view_month');
   String get calendarPickDate => _get('calendar_pick_date');
   String get noTxThisDay => _get('no_tx_this_day');
   String get enterAmount => _get('enter_amount');
@@ -999,7 +1001,7 @@ class Tr {
       'other': 'Otro',
       // tx types
       'income': 'Ingreso',
-      'expense': 'Gasto',
+      'expense': 'Gastos',
       'transfer': 'Transferencia',
       // nav
       'home': 'Inicio',
@@ -1022,6 +1024,8 @@ class Tr {
       'view_history': 'Ver historial →',
       'calendar_view_calendar': 'Calendario',
       'calendar_view_daily': 'Diario',
+      'calendar_view_day': 'Diario',
+      'calendar_view_month': 'Mensual',
       'calendar_pick_date': 'Elegir fecha',
       'no_tx_this_day': 'Sin transacciones este día',
       'enter_amount': 'Introduce un importe',
@@ -1458,7 +1462,7 @@ class Tr {
       'quick_transfer': 'Transferencia',
       'quick_external': 'Enviar',
       'month_balance': 'Balance del mes',
-      'month_net': 'Resultado',
+      'month_net': 'Balance',
       'sign_in': 'Iniciar sesión',
       'sign_in_apple': 'Continuar con Apple',
       'sign_in_google': 'Continuar con Google',
@@ -1789,6 +1793,8 @@ class Tr {
       'view_history': 'История →',
       'calendar_view_calendar': 'Календарь',
       'calendar_view_daily': 'По дням',
+      'calendar_view_day': 'День',
+      'calendar_view_month': 'Месяц',
       'calendar_pick_date': 'Выбрать дату',
       'no_tx_this_day': 'Транзакций за этот день нет',
       'enter_amount': 'Введите сумму',
@@ -2555,6 +2561,8 @@ class Tr {
       'view_history': 'View history →',
       'calendar_view_calendar': 'Calendar',
       'calendar_view_daily': 'Daily',
+      'calendar_view_day': 'Day',
+      'calendar_view_month': 'Month',
       'calendar_pick_date': 'Pick date',
       'no_tx_this_day': 'No transactions on this day',
       'enter_amount': 'Enter an amount',
@@ -3316,6 +3324,8 @@ class Tr {
       'view_history': 'Історія →',
       'calendar_view_calendar': 'Календар',
       'calendar_view_daily': 'По днях',
+      'calendar_view_day': 'День',
+      'calendar_view_month': 'Місяць',
       'calendar_pick_date': 'Вибрати дату',
       'no_tx_this_day': 'Немає транзакцій за цей день',
       'enter_amount': 'Введіть суму',

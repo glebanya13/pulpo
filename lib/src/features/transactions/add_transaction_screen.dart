@@ -448,15 +448,18 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         ? '−'
         : (_type == TxType.income ? '+' : '');
 
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Padding(
         padding: EdgeInsets.fromLTRB(
-          20,
+          8,
           MediaQuery.viewPaddingOf(context).top + 6,
-          20,
-          // Keep clear air above the keyboard / home indicator.
-          20 + MediaQuery.viewPaddingOf(context).bottom,
+          8,
+          // No home-indicator “дырка” while the keyboard is up.
+          keyboardOpen
+              ? 8
+              : 8 + MediaQuery.viewPaddingOf(context).bottom,
         ),
         child: Column(
           children: [
@@ -493,25 +496,29 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               child: IndexedStack(
                 index: _type == TxType.transfer ? 1 : 0,
                 children: [
-                  _txForm(
-                    tr: tr,
-                    currency: currency,
-                    sign: sign,
+                  Column(
+                    children: [
+                      Expanded(
+                        child: _txForm(
+                          tr: tr,
+                          currency: currency,
+                          sign: sign,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ScaledElevatedButton(
+                          onPressed: _amount > 0 ? _save : null,
+                          child: Text(tr.save),
+                        ),
+                      ),
+                    ],
                   ),
                   const TransferScreen(embedded: true),
                 ],
               ),
             ),
-            if (_type != TxType.transfer) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ScaledElevatedButton(
-                  onPressed: _amount > 0 ? _save : null,
-                  child: Text(tr.save),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -848,21 +855,15 @@ class _FormBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        children: [
-          for (var i = 0; i < rows.length; i++) ...[
-            rows[i],
-            if (i != rows.length - 1)
-              Divider(height: 1, color: context.divider),
-          ],
+    // Flat on scaffold — no nested surface card so rows use full width.
+    return Column(
+      children: [
+        for (var i = 0; i < rows.length; i++) ...[
+          rows[i],
+          if (i != rows.length - 1)
+            Divider(height: 1, color: context.divider),
         ],
-      ),
+      ],
     );
   }
 }
@@ -1159,31 +1160,24 @@ class _ReceiptSection extends StatelessWidget {
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _ReceiptBtn(
-              icon: LucideIcons.camera,
-              label: tr.receiptCamera,
-              onTap: () => onPick(ImageSource.camera),
-            ),
+    return Row(
+      children: [
+        Expanded(
+          child: _ReceiptBtn(
+            icon: LucideIcons.camera,
+            label: tr.receiptCamera,
+            onTap: () => onPick(ImageSource.camera),
           ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: _ReceiptBtn(
-              icon: LucideIcons.image,
-              label: tr.receiptGallery,
-              onTap: () => onPick(ImageSource.gallery),
-            ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: _ReceiptBtn(
+            icon: LucideIcons.image,
+            label: tr.receiptGallery,
+            onTap: () => onPick(ImageSource.gallery),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

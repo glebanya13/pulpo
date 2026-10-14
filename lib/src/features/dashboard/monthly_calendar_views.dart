@@ -3,10 +3,10 @@ part of 'monthly_calendar.dart';
 class _CalendarChrome extends StatelessWidget {
   const _CalendarChrome({
     required this.month,
+    required this.viewIndex,
     required this.onShift,
     required this.onTitleTap,
-    required this.calendarView,
-    required this.onToggleCalendar,
+    required this.onViewChanged,
     required this.income,
     required this.expense,
     required this.net,
@@ -31,10 +31,10 @@ class _CalendarChrome extends StatelessWidget {
   });
 
   final DateTime month;
+  final int viewIndex;
   final ValueChanged<int> onShift;
   final VoidCallback onTitleTap;
-  final bool calendarView;
-  final VoidCallback onToggleCalendar;
+  final ValueChanged<int> onViewChanged;
   final double income;
   final double expense;
   final double net;
@@ -60,71 +60,63 @@ class _CalendarChrome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bodyWidget = body;
-    return Container(
-      decoration: BoxDecoration(
-        color: context.surface,
-        borderRadius: BorderRadius.vertical(
-          top: const Radius.circular(18),
-          bottom: roundBottom ? const Radius.circular(18) : Radius.zero,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(6, 6, 6, roundBottom ? 6 : 0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _Header(
-              month: month,
-              onShift: onShift,
-              onTitleTap: onTitleTap,
-              calendarView: calendarView,
-              onToggleCalendar: onToggleCalendar,
-            ),
+    // Flat on scaffold — no nested surface “подфон” so content is wider.
+    return Padding(
+      padding: EdgeInsets.fromLTRB(4, 4, 4, roundBottom ? 4 : 0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Header(
+            month: month,
+            viewIndex: viewIndex,
+            onShift: onShift,
+            onTitleTap: onTitleTap,
+          ),
+          const SizedBox(height: 6),
+          _ViewTabs(index: viewIndex, onChanged: onViewChanged),
+          const SizedBox(height: 6),
+          _MonthTotals(
+            income: income,
+            expense: expense,
+            net: net,
+            currency: currency,
+          ),
+          if (showFilters) ...[
             const SizedBox(height: 6),
-            _MonthTotals(
-              income: income,
-              expense: expense,
-              net: net,
-              currency: currency,
+            TransactionFiltersBar(
+              searchController: searchController,
+              query: query,
+              filterType: filterType,
+              accountId: accountId,
+              categoryId: categoryId,
+              accounts: accounts,
+              categories: categories,
+              onQueryChanged: onQueryChanged,
+              onFilterTypeChanged: onFilterTypeChanged,
+              onAccountChanged: onAccountChanged,
+              onCategoryChanged: onCategoryChanged,
             ),
-            if (showFilters) ...[
-              const SizedBox(height: 6),
-              TransactionFiltersBar(
-                searchController: searchController,
-                query: query,
-                filterType: filterType,
-                accountId: accountId,
-                categoryId: categoryId,
-                accounts: accounts,
-                categories: categories,
-                onQueryChanged: onQueryChanged,
-                onFilterTypeChanged: onFilterTypeChanged,
-                onAccountChanged: onAccountChanged,
-                onCategoryChanged: onCategoryChanged,
-              ),
-            ],
-            SizedBox(height: showFilters ? 6 : 10),
-            ...switch ((errorMessage, loading, bodyWidget)) {
-              (final msg?, _, _) => [
-                  ErrorView(message: msg, onRetry: onRetry),
-                ],
-              // Prefer real body over a spinner — month switches must not
-              // tear down the calendar grid for a loading flash.
-              (_, _, final b?) => [b],
-              (_, true, _) => const [
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 28),
-                    child: Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                ],
-              _ => const <Widget>[],
-            },
           ],
-        ),
+          SizedBox(height: showFilters ? 6 : 8),
+          ...switch ((errorMessage, loading, bodyWidget)) {
+            (final msg?, _, _) => [
+                ErrorView(message: msg, onRetry: onRetry),
+              ],
+            // Prefer real body over a spinner — month switches must not
+            // tear down the calendar grid for a loading flash.
+            (_, _, final b?) => [b],
+            (_, true, _) => const [
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 28),
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ],
+            _ => const <Widget>[],
+          },
+        ],
       ),
     );
   }
@@ -212,181 +204,144 @@ class _DayBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.scaffoldBg,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Pressable(
-              onTap: onTapDay,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      day.day.toString().padLeft(2, '0'),
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: context.primaryText,
-                        height: 1,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: context.surface,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          DateFormat.E(locale).format(day),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: context.mutedText,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    _DayHeaderTotals(dayTxs: txs, currency: currency),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              child: Column(
-                children: [
-                  for (var i = 0; i < txs.length; i++)
-                    Dismissible(
-                      key: ValueKey(txs[i].id),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20),
-                        margin: EdgeInsets.only(bottom: i < txs.length - 1 ? 6 : 0),
-                        decoration: BoxDecoration(
-                          color: AppColors.danger,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.delete,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      onDismissed: (_) => onDeleteTx(txs[i]),
-                      child: Pressable(
-                        onTap: () => onTapTx(txs[i]),
-                        onLongPress: onLongPressTx != null
-                            ? () => onLongPressTx!(txs[i])
-                            : null,
-                        child: TransactionTile(
-                          tx: txs[i],
-                          embedded: true,
-                          embeddedInDayBlock: true,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DayHeaderTotals extends StatelessWidget {
-  const _DayHeaderTotals({required this.dayTxs, required this.currency});
-
-  final List<db.Transaction> dayTxs;
-  final String currency;
-
-  @override
-  Widget build(BuildContext context) {
-    final tr = Tr.of(context);
+    var weekday = DateFormat.E(locale).format(day);
+    if (weekday.isNotEmpty) {
+      weekday = weekday[0].toUpperCase() + weekday.substring(1);
+    }
+    // Day net only when 2+ txs — a single income/expense would just
+    // duplicate the amount already shown on the row.
+    final multi = txs.length > 1;
     var income = 0.0;
     var expense = 0.0;
-    for (final t in dayTxs) {
-      final type = TxType.values[t.type];
-      if (type == TxType.income) {
-        income += t.amount;
-      } else if (type == TxType.expense) {
-        expense += t.amount;
+    if (multi) {
+      for (final t in txs) {
+        final type = TxType.values[t.type];
+        if (type == TxType.income) {
+          income += t.amount;
+        } else if (type == TxType.expense) {
+          expense += t.amount;
+        }
       }
     }
     final net = income - expense;
-    final netColor = net > 0
-        ? context.accent
-        : net < 0
-            ? AppColors.danger
-            : context.mutedText;
-    final showBreakdown = income > 0 && expense > 0;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        if (showBreakdown)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                formatMoney(income, currency, showSign: true),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: context.accent,
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Pressable(
+            onTap: onTapDay,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(2, 4, 2, 2),
+              child: Row(
+                children: [
+                  Text(
+                    '${day.day}',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: context.primaryText,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: context.surface,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      weekday,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: context.mutedText,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                  if (multi) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (income > 0)
+                              Text(
+                                formatMoney(income, currency, showSign: true),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.accent,
+                                ),
+                              ),
+                            if (income > 0 && expense > 0)
+                              const SizedBox(width: 8),
+                            if (expense > 0)
+                              Text(
+                                formatMoney(-expense, currency, showSign: true),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.danger,
+                                ),
+                              ),
+                            if (income > 0 || expense > 0)
+                              const SizedBox(width: 8),
+                            Text(
+                              formatMoney(net, currency, showSign: true),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.totalBlue,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ] else
+                    const Spacer(),
+                ],
+              ),
+            ),
+          ),
+          for (var i = 0; i < txs.length; i++)
+            Dismissible(
+              key: ValueKey(txs[i].id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 12),
+                color: AppColors.danger,
+                child: const Icon(
+                  Icons.delete,
+                  color: Colors.white,
+                  size: 16,
                 ),
               ),
-              const SizedBox(width: 6),
-              Text(
-                formatMoney(-expense, currency, showSign: true),
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.danger,
+              onDismissed: (_) => onDeleteTx(txs[i]),
+              child: Pressable(
+                onTap: () => onTapTx(txs[i]),
+                onLongPress: onLongPressTx != null
+                    ? () => onLongPressTx!(txs[i])
+                    : null,
+                child: TransactionTile(
+                  tx: txs[i],
+                  embedded: true,
+                  embeddedInDayBlock: true,
                 ),
               ),
-            ],
-          ),
-        if (showBreakdown) const SizedBox(height: 2),
-        Text(
-          formatMoney(net, currency, showSign: true),
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            color: netColor,
-            letterSpacing: -0.2,
-          ),
-        ),
-        Text(
-          tr.monthNet,
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
-            color: context.faintText,
-            letterSpacing: 0.2,
-          ),
-        ),
-      ],
+            ),
+        ],
+      ),
     );
   }
 }
@@ -397,7 +352,6 @@ class _MonthTable extends StatelessWidget {
     required this.leading,
     required this.daysInMonth,
     required this.byDay,
-    required this.currency,
     required this.onTapDay,
   });
 
@@ -405,7 +359,6 @@ class _MonthTable extends StatelessWidget {
   final int leading;
   final int daysInMonth;
   final Map<int, ({double income, double expense})> byDay;
-  final String currency;
   final ValueChanged<DateTime> onTapDay;
 
   @override
@@ -443,30 +396,34 @@ class _MonthTable extends StatelessWidget {
         day: displayDay,
         inMonth: inMonth,
         isToday: isToday,
+        weekday: cellDate.weekday,
         income: sums?.income ?? 0,
         expense: sums?.expense ?? 0,
-        currency: currency,
         onTap: inMonth ? () => onTapDay(cellDate) : null,
       );
     }
 
     return Table(
+      border: TableBorder.symmetric(
+        inside: BorderSide(color: context.divider, width: 0.5),
+      ),
       defaultColumnWidth: const FlexColumnWidth(),
       defaultVerticalAlignment: TableCellVerticalAlignment.top,
       children: [
         TableRow(
           children: [
-            for (final l in labels)
+            for (var i = 0; i < labels.length; i++)
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
+                padding: const EdgeInsets.only(bottom: 6, top: 2),
                 child: Center(
                   child: Text(
-                    l,
+                    labels[i],
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: context.faintText,
+                      // Mon–Sun labels: weekend tinted with our palette.
+                      color: i >= 5 ? context.accent : context.faintText,
                       height: 1,
                     ),
                   ),
@@ -490,86 +447,121 @@ class _DayCell extends StatelessWidget {
     required this.day,
     required this.inMonth,
     required this.isToday,
+    required this.weekday,
     required this.income,
     required this.expense,
-    required this.currency,
     required this.onTap,
   });
 
   final int day;
   final bool inMonth;
   final bool isToday;
+  final int weekday;
   final double income;
   final double expense;
-  final String currency;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final weekend = weekday == DateTime.saturday || weekday == DateTime.sunday;
     final numberColor = !inMonth
         ? context.faintText
-        : (isToday ? AppColors.ink : context.primaryText);
+        : isToday
+            ? AppColors.ink
+            : weekend
+                ? context.accent
+                : context.primaryText;
+    final net = income - expense;
     final showIncome = inMonth && income > 0;
     final showExpense = inMonth && expense > 0;
-    final both = showIncome && showExpense;
+    final showNet = inMonth && (showIncome || showExpense);
 
     return Pressable(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.fromLTRB(2, 4, 2, 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(
-              width: 44,
-              height: 44,
-              child: Center(
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isToday
-                        ? AppColors.lime.withValues(alpha: 0.45)
-                        : Colors.transparent,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '$day',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: numberColor,
-                      height: 1,
-                    ),
+            Align(
+              alignment: Alignment.topCenter,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isToday ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '$day',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: numberColor,
+                    height: 1,
                   ),
                 ),
               ),
             ),
-            // Fixed slot for up to 2 pills — keeps every row the same height.
+            const SizedBox(height: 2),
             SizedBox(
-              height: 28,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 1),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (showIncome)
-                      _Pill(
-                        text: _shortMoney(income),
-                        color: context.accent,
-                        compact: both,
+              height: 40,
+              width: double.infinity,
+              child: Column(
+                children: [
+                  if (showIncome)
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _shortMoney(income),
+                          maxLines: 1,
+                          softWrap: false,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: context.accent,
+                            height: 1.1,
+                          ),
+                        ),
                       ),
-                    if (both) const SizedBox(height: 2),
-                    if (showExpense)
-                      _Pill(
-                        text: _shortMoney(expense),
-                        color: AppColors.danger,
-                        compact: both,
+                    ),
+                  if (showExpense)
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _shortMoney(expense),
+                          maxLines: 1,
+                          softWrap: false,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.danger,
+                            height: 1.1,
+                          ),
+                        ),
                       ),
-                  ],
-                ),
+                    ),
+                  if (showNet)
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _shortMoney(net),
+                          maxLines: 1,
+                          softWrap: false,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.totalBlue,
+                            height: 1.1,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
@@ -579,37 +571,159 @@ class _DayCell extends StatelessWidget {
   }
 }
 
-class _Pill extends StatelessWidget {
-  const _Pill({
-    required this.text,
-    required this.color,
-    this.compact = false,
+/// Year overview — one row per month with income / expense / net.
+class _YearMonthsList extends StatelessWidget {
+  const _YearMonthsList({
+    required this.year,
+    required this.byMonth,
+    required this.currency,
+    required this.onTapMonth,
   });
-  final String text;
-  final Color color;
-  final bool compact;
+
+  final int year;
+  final Map<int, ({double income, double expense})> byMonth;
+  final String currency;
+  final ValueChanged<DateTime> onTapMonth;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 3 : 4,
-        vertical: compact ? 0.5 : 1,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: compact ? 8 : 9,
-          fontWeight: FontWeight.w700,
-          color: color,
-          height: 1.1,
+    final tr = Tr.of(context);
+    final locale = Localizations.localeOf(context).toString();
+    final now = DateTime.now();
+    // Newest month first; hide future months of the current year.
+    final lastMonth = year == now.year ? now.month : 12;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var m = lastMonth; m >= 1; m--) ...[
+          if (m < lastMonth)
+            Divider(height: 1, thickness: 1, color: context.divider),
+          _YearMonthRow(
+            month: DateTime(year, m, 1),
+            income: byMonth[m]?.income ?? 0,
+            expense: byMonth[m]?.expense ?? 0,
+            currency: currency,
+            locale: locale,
+            netLabel: tr.monthNet,
+            onTap: () => onTapMonth(DateTime(year, m, 1)),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _YearMonthRow extends StatelessWidget {
+  const _YearMonthRow({
+    required this.month,
+    required this.income,
+    required this.expense,
+    required this.currency,
+    required this.locale,
+    required this.netLabel,
+    required this.onTap,
+  });
+
+  final DateTime month;
+  final double income;
+  final double expense;
+  final String currency;
+  final String locale;
+  final String netLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final net = income - expense;
+    final lastDay = DateTime(month.year, month.month + 1, 0).day;
+    final name = DateFormat('LLL', locale).format(month);
+    final nameCap =
+        name.isEmpty ? name : '${name[0].toUpperCase()}${name.substring(1)}';
+    final range = '1/${month.month} ~ $lastDay/${month.month}';
+
+    return Pressable(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 78,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nameCap,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: context.primaryText,
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    range,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.faintText,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          formatMoney(income, currency),
+                          textAlign: TextAlign.right,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: context.accent,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          formatMoney(expense, currency),
+                          textAlign: TextAlign.right,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.danger,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '$netLabel ${formatMoney(net, currency)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.faintText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

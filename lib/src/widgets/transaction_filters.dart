@@ -92,16 +92,16 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
             Flexible(
               flex: 5,
               child: Container(
-                height: 38,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                height: 34,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
-                  color: context.scaffoldBg,
+                  color: context.surface,
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Row(
                   children: [
-                    Icon(LucideIcons.search, size: 17, color: context.faintText),
-                    const SizedBox(width: 8),
+                    Icon(LucideIcons.search, size: 15, color: context.faintText),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: TextField(
                         controller: widget.searchController,
@@ -109,11 +109,11 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                           hintText: tr.search,
                           border: InputBorder.none,
                           isCollapsed: true,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
                           filled: false,
                         ),
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           color: context.primaryText,
                         ),
                         onChanged: widget.onQueryChanged,
@@ -123,17 +123,17 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Pressable(
               onTap: () => setState(() => _expanded = !_expanded),
               child: Container(
-                height: 38,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                height: 34,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   color: _expanded || _hasActiveFilters
                       ? AppColors.lime.withValues(alpha: 0.2)
-                      : context.scaffoldBg,
-                  borderRadius: BorderRadius.circular(12),
+                      : context.surface,
+                  borderRadius: BorderRadius.circular(10),
                   border: _hasActiveFilters
                       ? Border.all(
                           color: AppColors.lime.withValues(alpha: 0.5),
@@ -145,16 +145,16 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                   children: [
                     Icon(
                       LucideIcons.slidersHorizontal,
-                      size: 17,
+                      size: 15,
                       color: _expanded || _hasActiveFilters
                           ? context.accent
                           : context.mutedText,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 5),
                     Text(
                       tr.filter,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: _expanded || _hasActiveFilters
                             ? context.accent
@@ -269,7 +269,7 @@ class FilterPickChip extends StatelessWidget {
         height: 34,
         padding: const EdgeInsets.only(left: 12, right: 6),
         decoration: BoxDecoration(
-          color: context.scaffoldBg,
+          color: context.surface,
           borderRadius: BorderRadius.circular(100),
         ),
         child: Row(

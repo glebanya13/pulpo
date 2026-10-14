@@ -74,25 +74,25 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        16,
         12,
-        16,
-        16 + MediaQuery.paddingOf(context).bottom,
+        8,
+        12,
+        10 + MediaQuery.paddingOf(context).bottom,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
             decoration: BoxDecoration(
               color: context.surface,
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
@@ -104,17 +104,17 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                   tr.calendarPickDate,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: context.mutedText,
                     letterSpacing: 0.04,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Center(
                   child: Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
                       color: context.scaffoldBg,
                       borderRadius: BorderRadius.circular(999),
@@ -125,14 +125,14 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                     child: Text(
                       cloudLabel,
                       style: TextStyle(
-                        fontSize: 17,
+                        fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: context.primaryText,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     _RoundIconBtn(
@@ -144,7 +144,7 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                         '$_year',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 17,
                           fontWeight: FontWeight.w800,
                           color: context.primaryText,
                         ),
@@ -156,16 +156,16 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 8),
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: 12,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 1.55,
+                    mainAxisSpacing: 4,
+                    crossAxisSpacing: 4,
+                    childAspectRatio: 2.1,
                   ),
                   itemBuilder: (context, i) {
                     final m = i + 1;
@@ -184,14 +184,14 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                               : (isCurrent
                                   ? AppColors.lime.withValues(alpha: 0.25)
                                   : context.scaffoldBg),
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           monthNames[i],
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: active ? AppColors.ink : context.primaryText,
                           ),
@@ -200,7 +200,7 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                     );
                   },
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     for (final l in labels)
@@ -209,7 +209,7 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                           child: Text(
                             l,
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: context.faintText,
                             ),
@@ -218,16 +218,16 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                       ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 2),
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: 42,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 7,
-                    mainAxisSpacing: 4,
-                    crossAxisSpacing: 4,
-                    childAspectRatio: 1.1,
+                    mainAxisSpacing: 2,
+                    crossAxisSpacing: 2,
+                    childAspectRatio: 1.25,
                   ),
                   itemBuilder: (context, i) {
                     final dayIndex = i - leading + 1;
@@ -248,12 +248,12 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                               : (isToday
                                   ? AppColors.lime.withValues(alpha: 0.25)
                                   : Colors.transparent),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           '$dayIndex',
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: isSelected
                                 ? AppColors.ink
@@ -264,14 +264,14 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                     );
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
                       child: Pressable(
                         onTap: () => Navigator.pop(context),
                         child: Container(
-                          height: 48,
+                          height: 38,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: context.scaffoldBg,
@@ -280,6 +280,7 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                           child: Text(
                             tr.cancel,
                             style: TextStyle(
+                              fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: context.primaryText,
                             ),
@@ -287,12 +288,12 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Pressable(
                         onTap: () => Navigator.pop(context, _selected),
                         child: Container(
-                          height: 48,
+                          height: 38,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: AppColors.lime,
@@ -301,6 +302,7 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                           child: Text(
                             tr.ok,
                             style: const TextStyle(
+                              fontSize: 13,
                               fontWeight: FontWeight.w800,
                               color: AppColors.ink,
                             ),
@@ -330,18 +332,18 @@ class _RoundIconBtn extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: SizedBox(
-        width: 40,
-        height: 40,
+        width: 32,
+        height: 32,
         child: Center(
           child: Container(
-            width: 28,
-            height: 28,
+            width: 26,
+            height: 26,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: context.scaffoldBg,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(7),
             ),
-            child: Icon(icon, size: 15, color: context.primaryText),
+            child: Icon(icon, size: 14, color: context.primaryText),
           ),
         ),
       ),

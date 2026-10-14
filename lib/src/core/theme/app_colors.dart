@@ -13,11 +13,12 @@ class AppColors {
   static const selectionLight = Color(0x4D7A9E1F); // ~30% limeAccent
   static const selectionHandle = lime;
 
-  /// Selection on lime (user) bubbles — darker brand green wash (not system
-  /// mint and not charcoal). System primary green-on-lime reads muddy olive.
-  static const selectionOnLime = Color(0x997A9E1F); // limeAccent @ ~60%
-  /// Handles on lime — ink so they read against neon without neon smear.
-  static const selectionHandleOnLime = ink;
+  /// Selection on lime (user) bubbles — frosted white wash so black text stays
+  /// readable (dark olive/green overlays kill contrast on neon lime).
+  static const selectionOnLime = Color(0xD6FFFFFF); // white @ ~84%
+  /// Handles on lime — white like the fill (ink vanishes on dark chat bg
+  /// outside the bubble; lime vanishes on the bubble).
+  static const selectionHandleOnLime = Color(0xFFFFFFFF);
 
   /// Legacy brand purple (UI accents / wells — not the launcher plate).
   static const brandPurple = Color(0xFF8C52FF);
@@ -40,6 +41,8 @@ class AppColors {
   static const danger = Color(0xFFFF6B6B);
   static const warning = Color(0xFFFFB84E);
   static const info = Color(0xFF4ECDC4);
+  /// Net / «Итого» accent on home summary cards (mockup blue).
+  static const totalBlue = Color(0xFF5B9EFF);
   static const violet = Color(0xFFA78BFA);
 
   static const bgFood = Color(0x40CDFF3A); // lime tint

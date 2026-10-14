@@ -182,10 +182,10 @@ class _Summary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: context.emphasized,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: context.emphasizedBorder, width: 1),
       ),
       child: Column(
@@ -193,42 +193,47 @@ class _Summary extends StatelessWidget {
         children: [
           Text(
             Tr.of(context).spentThisMonth,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             formatMoney(spent, currency),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 30,
+              fontSize: 22,
               fontWeight: FontWeight.w800,
-              letterSpacing: -1,
+              letterSpacing: -0.6,
             ),
           ),
           Text(
             Tr.of(context)
                 .outOfBudgetTemplate
                 .replaceFirst('{}', formatMoney(budget, currency)),
-            style: const TextStyle(color: Colors.white54, fontSize: 14),
+            style: const TextStyle(color: Colors.white54, fontSize: 12),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           AppProgressBar(
             value: progress,
-            height: 10,
+            height: 7,
             trackColor: Colors.white.withValues(alpha: 0.12),
             color: AppColors.lime,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 Tr.of(context).percentUsed((progress * 100).round()),
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
-              Text(
-                '${formatMoney(leftAmount, currency)} · ${Tr.of(context).daysLeftLabel(daysLeft)}',
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              Flexible(
+                child: Text(
+                  '${formatMoney(leftAmount, currency)} · ${Tr.of(context).daysLeftLabel(daysLeft)}',
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                ),
               ),
             ],
           ),
@@ -261,12 +266,12 @@ class _BudgetItem extends ConsumerWidget {
         : (progress > 0.7 ? AppColors.warning : AppColors.lime);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Pressable(
         onTap: () => context.push('/budgets/${budget.id}/edit'),
         child: SoftCard(
-          padding: const EdgeInsets.all(16),
-          radius: 20,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          radius: 14,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -275,11 +280,11 @@ class _BudgetItem extends ConsumerWidget {
                   ColorWellIcon(
                     color: Color(budget.color),
                     icon: LucideIcons.pieChart,
-                    size: 42,
-                    iconSize: 18,
-                    radius: 14,
+                    size: 32,
+                    iconSize: 15,
+                    radius: 10,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,16 +294,16 @@ class _BudgetItem extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: context.primaryText,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 1),
                         Text(
                           '${formatMoney(spent, budget.currency)} / ${formatMoney(limit, budget.currency)}',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: context.mutedText,
                           ),
@@ -309,7 +314,7 @@ class _BudgetItem extends ConsumerWidget {
                   Text(
                     '${(progress * 100).round()}%',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
                       color: barColor,
@@ -317,10 +322,10 @@ class _BudgetItem extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 8),
               AppProgressBar(
                 value: progress.toDouble(),
-                height: 8,
+                height: 6,
                 color: barColor,
               ),
             ],

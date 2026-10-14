@@ -185,8 +185,21 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     );
   }
 
-  void _shiftMonth(int delta) {
-    setState(() => _month = DateTime(_month.year, _month.month + delta, 1));
+  void _shiftPeriod(int delta) {
+    setState(() {
+      if (_viewIndex == _kViewMonths) {
+        _month = DateTime(_month.year + delta, _month.month, 1);
+      } else {
+        _month = DateTime(_month.year, _month.month + delta, 1);
+      }
+    });
+  }
+
+  void _openMonthFromYear(DateTime month) {
+    setState(() {
+      _month = DateTime(month.year, month.month, 1);
+      _viewIndex = _kViewDay;
+    });
   }
 
   Future<void> _openDatePicker(BuildContext context) async {
@@ -220,6 +233,8 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     final tr = Tr.of(context);
     final monthStart = _month;
     final monthEnd = DateTime(_month.year, _month.month + 1, 1);
+    final yearStart = DateTime(_month.year, 1, 1);
+    final yearEnd = DateTime(_month.year + 1, 1, 1);
     // Filter the already-watched full list — switching months must not flash a
     // loading spinner while a new range StreamProvider starts from empty.
     final allTxsAsync = ref.watch(allTransactionsProvider);
@@ -227,17 +242,23 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     final accounts = ref.watch(accountsProvider).valueOrNull ?? const [];
     final allRaw = allTxsAsync.valueOrNull;
     final loading = allRaw == null && allTxsAsync.isLoading;
-    final monthRaw = allRaw == null
+    final monthsView = _viewIndex == _kViewMonths;
+    final calendarView = _viewIndex == _kViewCalendar;
+    final listView = _viewIndex == _kViewDay;
+
+    final rangeStart = monthsView ? yearStart : monthStart;
+    final rangeEnd = monthsView ? yearEnd : monthEnd;
+    final rangeRaw = allRaw == null
         ? null
         : [
             for (final t in allRaw)
-              if (!t.date.isBefore(monthStart) && t.date.isBefore(monthEnd)) t,
+              if (!t.date.isBefore(rangeStart) && t.date.isBefore(rangeEnd)) t,
           ];
 
-    final monthTxs = monthRaw == null
+    final rangeTxs = rangeRaw == null
         ? const <db.Transaction>[]
         : applyTransactionFilters(
-            txs: monthRaw,
+            txs: rangeRaw,
             query: _query,
             filterType: _filterType,
             accountId: _accountId,
@@ -248,16 +269,30 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     var income = 0.0;
     var expense = 0.0;
     final byDay = <int, ({double income, double expense})>{};
-    for (final t in monthTxs) {
-      final key = t.date.day;
-      final prev = byDay[key] ?? (income: 0.0, expense: 0.0);
+    final byMonth = <int, ({double income, double expense})>{};
+    for (final t in rangeTxs) {
       final type = TxType.values[t.type];
-      if (type == TxType.income) {
-        income += t.amount;
-        byDay[key] = (income: prev.income + t.amount, expense: prev.expense);
-      } else if (type == TxType.expense) {
-        expense += t.amount;
-        byDay[key] = (income: prev.income, expense: prev.expense + t.amount);
+      if (type != TxType.income && type != TxType.expense) continue;
+      if (monthsView) {
+        final key = t.date.month;
+        final prev = byMonth[key] ?? (income: 0.0, expense: 0.0);
+        if (type == TxType.income) {
+          income += t.amount;
+          byMonth[key] = (income: prev.income + t.amount, expense: prev.expense);
+        } else {
+          expense += t.amount;
+          byMonth[key] = (income: prev.income, expense: prev.expense + t.amount);
+        }
+      } else {
+        final key = t.date.day;
+        final prev = byDay[key] ?? (income: 0.0, expense: 0.0);
+        if (type == TxType.income) {
+          income += t.amount;
+          byDay[key] = (income: prev.income + t.amount, expense: prev.expense);
+        } else {
+          expense += t.amount;
+          byDay[key] = (income: prev.income, expense: prev.expense + t.amount);
+        }
       }
     }
     final net = income - expense;
@@ -266,22 +301,51 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     final daysInMonth = DateTime(_month.year, _month.month + 1, 0).day;
 
     final locale = Localizations.localeOf(context).toString();
+    final monthTxs = monthsView
+        ? const <db.Transaction>[]
+        : rangeTxs;
     final grouped = groupBy<db.Transaction, DateTime>(
       monthTxs,
       (t) => DateTime(t.date.year, t.date.month, t.date.day),
     );
     final days = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
-    final listView = _viewIndex == 0;
-    final monthHasTxs = monthRaw != null && monthRaw.isNotEmpty;
+    final monthHasTxs = rangeRaw != null && rangeRaw.isNotEmpty;
+
+    final Widget? chromeBody;
+    if (calendarView) {
+      chromeBody = _MonthTable(
+        month: _month,
+        leading: leadingDays,
+        daysInMonth: daysInMonth,
+        byDay: byDay,
+        onTapDay: (day) => _openDaySheet(context, day, monthTxs),
+      );
+    } else if (monthsView) {
+      chromeBody = _YearMonthsList(
+        year: _month.year,
+        byMonth: byMonth,
+        currency: currency,
+        onTapMonth: _openMonthFromYear,
+      );
+    } else if (days.isEmpty && !loading) {
+      chromeBody = _DailyEmptyState(
+        hasFilters: _hasActiveFilters,
+        monthHasTxs: monthHasTxs,
+        onClearFilters: _clearFilters,
+      );
+    } else {
+      chromeBody = null;
+    }
 
     final chrome = _CalendarChrome(
       month: _month,
-      onShift: _shiftMonth,
-      onTitleTap: () => _openDatePicker(context),
-      calendarView: !listView,
-      onToggleCalendar: () => setState(
-        () => _viewIndex = _viewIndex == 0 ? 1 : 0,
-      ),
+      viewIndex: _viewIndex,
+      onShift: _shiftPeriod,
+      onTitleTap: () {
+        if (monthsView) return;
+        _openDatePicker(context);
+      },
+      onViewChanged: (i) => setState(() => _viewIndex = i),
       income: income,
       expense: expense,
       net: net,
@@ -303,23 +367,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
           ? dataLoadErrorMessage(tr, allTxsAsync.error!)
           : null,
       onRetry: () => ref.invalidate(allTransactionsProvider),
-      // Table / empty states live inside chrome; lazy days are scroll items.
-      body: !listView
-          ? _MonthTable(
-              month: _month,
-              leading: leadingDays,
-              daysInMonth: daysInMonth,
-              byDay: byDay,
-              currency: currency,
-              onTapDay: (day) => _openDaySheet(context, day, monthTxs),
-            )
-          : (days.isEmpty && !loading
-              ? _DailyEmptyState(
-                  hasFilters: _hasActiveFilters,
-                  monthHasTxs: monthHasTxs,
-                  onClearFilters: _clearFilters,
-                )
-              : null),
+      body: chromeBody,
       roundBottom: !listView || days.isEmpty || loading,
     );
 
@@ -342,29 +390,18 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
               // Bottom radius lives on the last day row (tall enough to show
               // the full 18px curve). A 6px footer strip made corners look
               // sharper than the chrome top.
-              return Container(
-                decoration: BoxDecoration(
-                  color: context.surface,
-                  borderRadius: isLast
-                      ? const BorderRadius.vertical(
-                          bottom: Radius.circular(18),
-                        )
-                      : BorderRadius.zero,
-                ),
-                clipBehavior: isLast ? Clip.antiAlias : Clip.none,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(6, 0, 6, isLast ? 6 : 0),
-                  child: _DayBlock(
-                    day: day,
-                    txs: grouped[day]!,
-                    currency: currency,
-                    locale: locale,
-                    isLast: isLast,
-                    onTapDay: () => _openDaySheet(context, day, monthTxs),
-                    onTapTx: (tx) => context.push('/tx/${tx.id}'),
-                    onDeleteTx: _deleteWithUndo,
-                    onLongPressTx: _longPressTx,
-                  ),
+              return Padding(
+                padding: EdgeInsets.fromLTRB(4, 0, 4, isLast ? 4 : 0),
+                child: _DayBlock(
+                  day: day,
+                  txs: grouped[day]!,
+                  currency: currency,
+                  locale: locale,
+                  isLast: isLast,
+                  onTapDay: () => _openDaySheet(context, day, monthTxs),
+                  onTapTx: (tx) => context.push('/tx/${tx.id}'),
+                  onDeleteTx: _deleteWithUndo,
+                  onLongPressTx: _longPressTx,
                 ),
               );
             },

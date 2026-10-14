@@ -143,12 +143,12 @@ class _GoalCard extends StatelessWidget {
     final locale = Localizations.localeOf(context).languageCode;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: context.surface,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,7 +159,7 @@ class _GoalCard extends StatelessWidget {
                   child: Text(
                     goal.name,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.w800,
                       color: context.primaryText,
                     ),
@@ -168,17 +168,17 @@ class _GoalCard extends StatelessWidget {
                 Pressable(
                   onTap: onEdit,
                   child: Padding(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(6),
                     child: Icon(LucideIcons.pencil,
-                        size: 16, color: context.mutedText),
+                        size: 15, color: context.mutedText),
                   ),
                 ),
                 Pressable(
                   onTap: onDelete,
                   child: Padding(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(6),
                     child: Icon(LucideIcons.trash2,
-                        size: 16, color: AppColors.danger),
+                        size: 15, color: AppColors.danger),
                   ),
                 ),
               ],

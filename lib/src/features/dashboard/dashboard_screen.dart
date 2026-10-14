@@ -1,21 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:lucide_flutter/lucide_flutter.dart';
 
 import '../../core/app_info.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/promo/home_ad.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/theme/app_theme.dart';
-import '../../widgets/async_value_view.dart';
 import '../../widgets/home_ad_card.dart';
-import '../../widgets/pressable.dart';
 import '../../widgets/common.dart';
-import '../../core/utils/money_format.dart';
-import '../../data/repositories/providers.dart';
-import '../../data/repositories/settings_service.dart';
 import '../../widgets/reset_scroll_when_obscured.dart';
 import 'monthly_calendar.dart';
 
@@ -25,19 +16,7 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = Tr.of(context);
-    final settings = ref.watch(settingsControllerProvider);
-    final total = ref.watch(totalBalanceProvider);
-    final currency = settings.baseCurrency;
-    final fxApprox = ref.watch(fxApproximateProvider);
-    final accountsAsync = ref.watch(accountsProvider);
-
-    Future<void> retryBalance() async {
-      ref.invalidate(accountsProvider);
-      ref.invalidate(allTransactionsProvider);
-    }
-
     final pad = AppSpacing.tabPagePadding(context);
-
     final ad = ref.watch(visibleHomeAdProvider);
 
     return ResetScrollWhenObscured(
@@ -56,212 +35,16 @@ class DashboardScreen extends ConsumerWidget {
             expand: true,
             trailing: const HeaderSupportActions(dense: true),
           ),
+          // Month chrome (Day / Calendar / Month) is the home basis —
+          // no total-balance card. Add flows stay on the FAB.
           leading: [
-            AsyncValuesGate(
-              values: [accountsAsync],
-              onRetry: retryBalance,
-              child: _BalanceActionCard(
-                total: total,
-                currency: currency,
-                fxApproximate: fxApprox.isNotEmpty,
-              ),
-            ),
             if (ad != null) ...[
-              const SizedBox(height: 10),
               HomeAdCard(ad: ad),
+              const SizedBox(height: 8),
             ],
-            const SizedBox(height: 12),
           ],
         );
       },
-    );
-  }
-}
-
-class _QuickChip extends StatelessWidget {
-  const _QuickChip({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.onDark = false,
-  });
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool onDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final chipBg = onDark
-        ? Colors.white.withValues(alpha: 0.12)
-        : context.surface;
-    final iconColor = onDark ? Colors.white : context.primaryText;
-    final labelColor = onDark ? Colors.white70 : context.mutedText;
-
-    return Expanded(
-      child: Semantics(
-        label: label,
-        button: true,
-        child: Pressable(
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            onTap();
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            decoration: BoxDecoration(
-              color: chipBg,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 20, color: iconColor),
-                const SizedBox(height: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      height: 1.1,
-                      color: labelColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BalanceActionCard extends ConsumerWidget {
-  const _BalanceActionCard({
-    required this.total,
-    required this.currency,
-    this.fxApproximate = false,
-  });
-
-  final double total;
-  final String currency;
-  final bool fxApproximate;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tr = Tr.of(context);
-    final hidden = ref.watch(
-      settingsControllerProvider.select((s) => s.hideBalances),
-    );
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-      decoration: BoxDecoration(
-        color: context.emphasized,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: context.emphasizedBorder, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                tr.totalBalance,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  letterSpacing: 0.8,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Semantics(
-                button: true,
-                label: hidden ? tr.showBalance : tr.hideBalance,
-                child: Pressable(
-                  onTap: () {
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .setHideBalances(!hidden);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      hidden ? LucideIcons.eyeOff : LucideIcons.eye,
-                      size: 16,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            hidden ? kMaskedMoney : formatMoney(total, currency),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              height: 1.1,
-              letterSpacing: -1,
-            ),
-          ),
-          if (fxApproximate && !hidden) ...[
-            const SizedBox(height: 6),
-            Text(
-              tr.fxApproximateBalance,
-              style: const TextStyle(
-                color: Colors.white54,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _QuickChip(
-                icon: LucideIcons.plus,
-                label: tr.income,
-                onDark: true,
-                onTap: () => context.push('/add?type=income'),
-              ),
-              const SizedBox(width: 6),
-              _QuickChip(
-                icon: LucideIcons.minus,
-                label: tr.expense,
-                onDark: true,
-                onTap: () => context.push('/add?type=expense'),
-              ),
-              const SizedBox(width: 6),
-              _QuickChip(
-                icon: LucideIcons.arrowLeftRight,
-                label: tr.quickTransfer,
-                onDark: true,
-                onTap: () => context.push('/add?type=transfer'),
-              ),
-              const SizedBox(width: 6),
-              _QuickChip(
-                icon: LucideIcons.send,
-                label: tr.quickExternal,
-                onDark: true,
-                onTap: () => context.push('/add?type=expense&mode=external'),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

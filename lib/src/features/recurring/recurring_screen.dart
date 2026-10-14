@@ -115,20 +115,20 @@ class _RuleCard extends ConsumerWidget {
     return Pressable(
       onTap: () => context.push('/recurring/${rule.id}/edit'),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: context.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         children: [
           Row(
             children: [
               ColorWellIcon(
-                size: 40,
-                iconSize: 18,
-                radius: 14,
+                size: 32,
+                iconSize: 15,
+                radius: 10,
                 color: template.type == TxType.income
                     ? AppColors.bgFood
                     : const Color(0xFFE8E4FF),

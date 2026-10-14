@@ -41,8 +41,8 @@ class ManagementScreen extends ConsumerWidget {
           useSafeArea: false,
           controller: scroll,
           padding: AppSpacing.tabPagePadding(context),
-          headerGap: 16,
-          headerContentHeight: 70,
+          headerGap: 10,
+          headerContentHeight: 64,
           header: ScreenTitlePill(
             title: tr.management,
             subtitle: tr.managementSubtitle,
@@ -56,10 +56,10 @@ class ManagementScreen extends ConsumerWidget {
               subtitle: isPro ? tr.proActive : tr.proCtaSubtitle,
               onTap: () => openPaywall(context, ProGate.generic),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
 
             _SectionLabel(tr.accountSection.toUpperCase()),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             SoftCard(
               padding: EdgeInsets.zero,
               child: Column(
@@ -85,9 +85,9 @@ class ManagementScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             _SectionLabel(tr.sectionFinance),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             SoftCard(
               padding: EdgeInsets.zero,
               child: Column(
@@ -159,9 +159,9 @@ class ManagementScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             _SectionLabel(tr.sectionAppSettings),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             SoftCard(
               padding: EdgeInsets.zero,
               child: Column(
@@ -304,25 +304,25 @@ class _MenuTile extends StatelessWidget {
     final iconWell = ColorWellIcon(
       color: color,
       icon: icon,
-      size: 36,
-      iconSize: 18,
-      radius: 12,
+      size: 30,
+      iconSize: 15,
+      radius: 9,
     );
     return Pressable(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         child: Row(
           children: [
-            if (showPro) ProIconMark(size: 36, child: iconWell) else iconWell,
-            const SizedBox(width: 14),
+            if (showPro) ProIconMark(size: 30, child: iconWell) else iconWell,
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: showPro
                       ? proLockedTextColor(context)
@@ -333,11 +333,11 @@ class _MenuTile extends StatelessWidget {
             if (trailing != null) ...[
               Text(
                 trailing!,
-                style: TextStyle(fontSize: 13, color: context.mutedText),
+                style: TextStyle(fontSize: 12, color: context.mutedText),
               ),
               const SizedBox(width: 4),
             ],
-            Icon(LucideIcons.chevronRight, size: 16, color: context.faintText),
+            Icon(LucideIcons.chevronRight, size: 15, color: context.faintText),
           ],
         ),
       ),

@@ -59,11 +59,14 @@ class AppSpacing {
     return md + MediaQuery.viewPaddingOf(context).bottom;
   }
 
+  /// Side inset for tab/pushed pages — keep tight so content uses the width.
+  static const double pageSide = xxs;
+
   static EdgeInsets tabPagePadding(BuildContext context) {
     return EdgeInsets.fromLTRB(
-      lg,
+      pageSide,
       MediaQuery.viewPaddingOf(context).top + xs,
-      lg,
+      pageSide,
       tabBodyBottom(context),
     );
   }
@@ -72,16 +75,21 @@ class AppSpacing {
   /// but only clear the home indicator (no floating pill).
   static EdgeInsets pushedPagePadding(BuildContext context) {
     return EdgeInsets.fromLTRB(
-      lg,
+      pageSide,
       MediaQuery.viewPaddingOf(context).top + xs,
-      lg,
+      pageSide,
       pushedScrollBottomInset(context),
     );
   }
 
   /// Floating snackbars on tab screens sit above the pill.
   static EdgeInsets snackBarMargin(BuildContext context) {
-    return EdgeInsets.fromLTRB(16, 0, 16, tabScrollBottomInset(context));
+    return EdgeInsets.fromLTRB(
+      pageSide,
+      0,
+      pageSide,
+      tabScrollBottomInset(context),
+    );
   }
 
   /// Root modal sheets (`useRootNavigator`) cover the floating nav —

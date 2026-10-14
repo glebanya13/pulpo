@@ -11,6 +11,7 @@ import '../../core/utils/lucide_icon_map.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
+import '../../data/seed/seed_categories.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
@@ -24,6 +25,16 @@ class CategoriesScreen extends ConsumerStatefulWidget {
 
 class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
   int _tab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Heal empty DB (e.g. after cloud wipe without reseed on older builds).
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final db = ref.read(databaseProvider);
+      await seedCategoriesIfEmpty(db);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,9 +150,9 @@ class _CatRow extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Padding(
-      padding: EdgeInsets.only(left: indent ? 30 : 16, right: 16),
+      padding: EdgeInsets.only(left: indent ? 24 : 10, right: 10),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: context.divider)),
         ),
@@ -150,11 +161,11 @@ class _CatRow extends StatelessWidget {
             ColorWellIcon(
               color: Color(category.color),
               icon: lucideByKey(category.icon),
-              size: indent ? 30 : 36,
-              iconSize: indent ? 14 : 16,
-              radius: indent ? 10 : 12,
+              size: indent ? 26 : 30,
+              iconSize: indent ? 12 : 14,
+              radius: indent ? 8 : 9,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 Tr.of(context).categoryName(category.name),
@@ -173,7 +184,7 @@ class _CatRow extends StatelessWidget {
                   color: context.faintText,
                   fontWeight: FontWeight.w500),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Icon(LucideIcons.chevronRight,
                 size: 14, color: context.faintText),
           ],

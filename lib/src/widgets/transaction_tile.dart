@@ -19,6 +19,7 @@ class TransactionTile extends ConsumerWidget {
     required this.tx,
     this.embedded = false,
     this.embeddedInDayBlock = false,
+    this.showChevron = false,
   });
 
   final db.Transaction tx;
@@ -26,12 +27,16 @@ class TransactionTile extends ConsumerWidget {
   /// Inside a parent card (e.g. home calendar) — darker tile on scaffold bg.
   final bool embedded;
 
-  /// Nested inside a day group card (surface tile on scaffold group).
+  /// Nested inside a day group — dense single-line row like competitor lists.
   final bool embeddedInDayBlock;
+
+  /// Trailing chevron like the home mockup.
+  final bool showChevron;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final category = ref.watch(categoryByIdProvider(tx.categoryId));
+    final account = ref.watch(accountByIdProvider(tx.accountId));
     final type = TxType.values[tx.type];
     final isIncome = type == TxType.income;
     final amountStr = formatMoney(
@@ -44,6 +49,79 @@ class TransactionTile extends ConsumerWidget {
         ? Color(category.color)
         : (isIncome ? const Color(0xFF8BD44A) : const Color(0xFFFF5C5C));
 
+    final amountColor = isIncome
+        ? context.accent
+        : type == TxType.expense
+            ? AppColors.danger
+            : context.primaryText;
+
+    if (embeddedInDayBlock) {
+      final catLabel = category != null
+          ? Tr.of(context).categoryName(category.name)
+          : Tr.of(context).transactionSingular;
+      final title = tx.note?.isNotEmpty == true ? tx.note! : catLabel;
+      final accountLabel = account?.name.trim();
+      return Container(
+        padding: const EdgeInsets.fromLTRB(2, 5, 2, 5),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: context.divider, width: 0.5),
+          ),
+        ),
+        child: Row(
+          children: [
+            ColorWellIcon(
+              color: wellColor,
+              icon: icon,
+              size: 26,
+              iconSize: 13,
+              radius: 8,
+              solid: true,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: title,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: context.primaryText,
+                        height: 1.15,
+                      ),
+                    ),
+                    if (accountLabel != null && accountLabel.isNotEmpty)
+                      TextSpan(
+                        text: '  $accountLabel',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: context.faintText,
+                          height: 1.15,
+                        ),
+                      ),
+                  ],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              amountStr,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: amountColor,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final title = tx.note?.isNotEmpty == true
         ? tx.note!
         : (category != null
@@ -54,28 +132,26 @@ class TransactionTile extends ConsumerWidget {
     final subtitle =
         '${category != null ? Tr.of(context).categoryName(category.name) : _typeLabel(type, context)} · $dateStr';
 
-    final tileBg = embedded
-        ? (embeddedInDayBlock ? context.surface : context.scaffoldBg)
-        : context.surface;
+    final tileBg = embedded ? context.scaffoldBg : context.surface;
 
     return Container(
-      margin: EdgeInsets.only(bottom: embedded ? 6 : 8),
-      padding: EdgeInsets.all(embedded ? 12 : 14),
+      margin: EdgeInsets.only(bottom: embedded ? 4 : 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: tileBg,
-        borderRadius: BorderRadius.circular(embedded ? 16 : 18),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
           ColorWellIcon(
             color: wellColor,
             icon: icon,
-            size: embedded ? 38 : 42,
-            iconSize: embedded ? 18 : 20,
-            radius: embedded ? 12 : 14,
+            size: 30,
+            iconSize: 14,
+            radius: 9,
             solid: true,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,12 +161,13 @@ class TransactionTile extends ConsumerWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: embedded ? 13 : 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: context.primaryText,
+                    height: 1.15,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
                   subtitle,
                   maxLines: 1,
@@ -98,6 +175,7 @@ class TransactionTile extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 11,
                     color: context.faintText,
+                    height: 1.15,
                   ),
                 ),
               ],
@@ -107,15 +185,19 @@ class TransactionTile extends ConsumerWidget {
           Text(
             amountStr,
             style: TextStyle(
-              fontSize: embedded ? 14 : 15,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: isIncome
-                  ? context.accent
-                  : type == TxType.expense
-                      ? AppColors.danger
-                      : context.primaryText,
+              color: amountColor,
             ),
           ),
+          if (showChevron) ...[
+            const SizedBox(width: 2),
+            Icon(
+              LucideIcons.chevronRight,
+              size: 15,
+              color: context.faintText,
+            ),
+          ],
         ],
       ),
     );

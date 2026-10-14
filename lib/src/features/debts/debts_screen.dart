@@ -229,19 +229,19 @@ class _DebtCard extends ConsumerWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Pressable(
         onTap: () => _openDebtActions(context, ref),
         child: SoftCard(
-          padding: const EdgeInsets.all(18),
-          radius: 22,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          radius: 14,
           child: Column(
             children: [
               Row(
                 children: [
                   Container(
-                    width: 42,
-                    height: 42,
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
                       color: _avatarColor(debt.counterparty),
                       shape: BoxShape.circle,
@@ -254,10 +254,10 @@ class _DebtCard extends ConsumerWidget {
                       style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
-                          fontSize: 16),
+                          fontSize: 14),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,7 +265,7 @@ class _DebtCard extends ConsumerWidget {
                         Text(
                           debt.counterparty,
                           style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: context.primaryText),
                         ),

@@ -1200,7 +1200,7 @@ class _CategoryDonut extends StatelessWidget {
           PieChart(
             PieChartData(
               sectionsSpace: 2,
-              centerSpaceRadius: 58,
+              centerSpaceRadius: 72,
               startDegreeOffset: -90,
               sections: [
                 for (final seg in segments)
@@ -1208,7 +1208,7 @@ class _CategoryDonut extends StatelessWidget {
                     PieChartSectionData(
                       value: seg.value,
                       color: seg.color,
-                      radius: 34,
+                      radius: 16,
                       showTitle: false,
                     ),
               ],
@@ -1589,10 +1589,10 @@ class _ChartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
         color: context.surface,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1601,22 +1601,22 @@ class _ChartCard extends StatelessWidget {
             title,
             style: TextStyle(
                 color: context.mutedText,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w600),
           ),
           if (value.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               value,
               style: TextStyle(
                 color: context.primaryText,
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
+                letterSpacing: -0.4,
               ),
             ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           child,
         ],
       ),
@@ -1726,10 +1726,10 @@ class _TrendStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: context.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1737,14 +1737,14 @@ class _TrendStat extends StatelessWidget {
           Text(label,
               style: TextStyle(
                   color: context.mutedText, fontSize: 11)),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             value,
             style: TextStyle(
               color: accent,
-              fontSize: 18,
+              fontSize: 15,
               fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
+              letterSpacing: -0.4,
             ),
           ),
         ],
