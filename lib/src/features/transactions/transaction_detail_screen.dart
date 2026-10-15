@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../../core/utils/lucide_icon_map.dart';
@@ -47,7 +48,12 @@ class TransactionDetailScreen extends ConsumerWidget {
 
         return Scaffold(
       body: StickyScrollPage(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.pageSide,
+          12,
+          AppSpacing.pageSide,
+          32,
+        ),
         header: PageHeader(
               first: tr.transactionSingular,
               onBack: () => context.pop(),

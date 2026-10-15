@@ -149,7 +149,7 @@ class _DebtEditorScreenState extends ConsumerState<DebtEditorScreen> {
                         controller: _nameCtrl,
                         autofocus: !widget.isEdit,
                         textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(labelText: tr.toFromWhom),
+                        decoration: InputDecoration(hintText: tr.toFromWhom),
                       ),
                       const SizedBox(height: 12),
                       TextField(
@@ -159,7 +159,7 @@ class _DebtEditorScreenState extends ConsumerState<DebtEditorScreen> {
                         ),
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                        decoration: InputDecoration(labelText: tr.amount),
+                        decoration: InputDecoration(hintText: tr.amount),
                       ),
                       const SizedBox(height: 12),
                       Pressable(

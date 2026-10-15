@@ -92,31 +92,31 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         children: [
           ListView(
             padding: EdgeInsets.fromLTRB(
-              24,
+              AppSpacing.pageSide,
               topInset + 56,
-              24,
+              AppSpacing.pageSide,
               bottomInset + (showPinnedCta ? 100 : 32),
             ),
             children: [
-            const Center(child: _PaywallProHero()),
-            const SizedBox(height: 18),
+            Center(child: _PaywallProHero(compact: pro.isPro)),
+            SizedBox(height: pro.isPro ? 10 : 12),
             Text(
               tr.proTitle,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 26,
+                fontSize: pro.isPro ? 20 : 22,
                 fontWeight: FontWeight.w800,
-                letterSpacing: -0.8,
+                letterSpacing: -0.6,
                 color: context.primaryText,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Text(
               tr.proSubtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 15,
-                height: 1.4,
+                fontSize: 13,
+                height: 1.35,
                 fontWeight: FontWeight.w500,
                 color: context.isDark
                     ? context.mutedText
@@ -124,21 +124,26 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               ),
             ),
             if (pro.isPro) ...[
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
               _ProActiveSection(pro: pro),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               ScaledOutlinedButton(
                 onPressed: () => openManageSubscriptions(context),
-                child: Text(tr.proManageSubscription),
+                child: Text(
+                  tr.proManageSubscription,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ] else ...[
               if (!signedIn) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: context.surface,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -146,12 +151,12 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       Text(
                         tr.proSignInRequired,
                         style: TextStyle(
-                          fontSize: 14,
-                          height: 1.4,
+                          fontSize: 13,
+                          height: 1.35,
                           color: context.mutedText,
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
                       ScaledElevatedButton(
                         onPressed: () => context.push('/settings/account'),
                         child: Text(tr.signIn),
@@ -160,7 +165,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 280),
                 switchInCurve: Curves.easeOutCubic,
@@ -192,7 +197,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                               onTap: () => setState(() => _selected = monthly),
                             ),
                           if (semiAnnual != null) ...[
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 8),
                             _PaywallPlanCard(
                               title: tr.proSemiAnnual,
                               price: ProductOfferInfo.paywallPrice(
@@ -232,7 +237,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                             ),
                           ],
                           if (yearly != null) ...[
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 8),
                             _PaywallPlanCard(
                               title: tr.proYearly,
                               price: ProductOfferInfo.paywallPrice(
@@ -273,24 +278,24 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         ],
                       ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   tr.proFeaturesHeading,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1,
+                    letterSpacing: 0.9,
                     color: context.isDark
                         ? context.mutedText
                         : AppColors.textSecondary,
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               _ProFeaturesCard(features: tr.proFeatureBullets),
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
               if (!showPinnedCta) paywallCta(),
               if (!showPinnedCta) const SizedBox(height: 8),
               ScaledTextButton(
@@ -380,8 +385,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             ),
             Positioned(
               top: topInset + 8,
-              left: 16,
-              right: 16,
+              left: AppSpacing.pageSide,
+              right: AppSpacing.pageSide,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -398,8 +403,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             ),
             if (showPinnedCta)
               Positioned(
-                left: 24,
-                right: 24,
+                left: AppSpacing.pageSide,
+                right: AppSpacing.pageSide,
                 bottom: bottomInset + 8,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

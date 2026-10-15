@@ -59,8 +59,8 @@ class AppSpacing {
     return md + MediaQuery.viewPaddingOf(context).bottom;
   }
 
-  /// Side inset for tab/pushed pages — keep tight so content uses the width.
-  static const double pageSide = xxs;
+  /// Side inset for tab/pushed pages — keep in sync across home and stacks.
+  static const double pageSide = md;
 
   static EdgeInsets tabPagePadding(BuildContext context) {
     return EdgeInsets.fromLTRB(
@@ -96,9 +96,9 @@ class AppSpacing {
   /// only clear the home-indicator / system inset, not the tab pill height.
   static EdgeInsets sheetOnTabScreen(BuildContext context) {
     return EdgeInsets.fromLTRB(
-      8,
+      pageSide,
       10,
-      8,
+      pageSide,
       md + MediaQuery.viewPaddingOf(context).bottom,
     );
   }

@@ -102,6 +102,7 @@ class Tr {
   String get quickTransfer => _get('quick_transfer');
   String get quickExternal => _get('quick_external');
   String get monthBalance => _get('month_balance');
+  String get balanceAllTime => _get('balance_all_time');
   String get monthNet => _get('month_net');
   String get signIn => _get('sign_in');
   String get signInApple => _get('sign_in_apple');
@@ -1462,6 +1463,7 @@ class Tr {
       'quick_transfer': 'Transferencia',
       'quick_external': 'Enviar',
       'month_balance': 'Balance del mes',
+      'balance_all_time': 'Balance de todo el tiempo',
       'month_net': 'Balance',
       'sign_in': 'Iniciar sesión',
       'sign_in_apple': 'Continuar con Apple',
@@ -2231,6 +2233,7 @@ class Tr {
       'quick_transfer': 'Перевод',
       'quick_external': 'Отправить',
       'month_balance': 'Баланс за месяц',
+      'balance_all_time': 'Баланс за всё время',
       'month_net': 'Итого',
       'sign_in': 'Войти',
       'sign_in_apple': 'Продолжить с Apple',
@@ -2998,6 +3001,7 @@ class Tr {
       'quick_transfer': 'Move',
       'quick_external': 'Send',
       'month_balance': 'This month',
+      'balance_all_time': 'All-time balance',
       'month_net': 'Net',
       'sign_in': 'Sign in',
       'sign_in_apple': 'Continue with Apple',
@@ -3730,6 +3734,7 @@ class Tr {
       'quick_transfer': 'Переказ',
       'quick_external': 'Надіслати',
       'month_balance': 'Баланс за місяць',
+      'balance_all_time': 'Баланс за весь час',
       'month_net': 'Разом',
       'sign_in': 'Увійти',
       'sign_in_apple': 'Продовжити з Apple',

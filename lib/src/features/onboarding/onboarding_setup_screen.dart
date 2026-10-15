@@ -681,10 +681,8 @@ class _DarkField extends StatelessWidget {
         decoration: InputDecoration(
           border: InputBorder.none,
           filled: false,
-          labelText: label,
-          hintText: hint,
+          hintText: hint ?? label,
           hintStyle: const TextStyle(color: Colors.white38, fontSize: 14),
-          labelStyle: const TextStyle(color: Colors.white54, fontSize: 12),
         ),
       ),
     );

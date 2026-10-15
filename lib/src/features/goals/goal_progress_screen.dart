@@ -76,14 +76,14 @@ class _GoalProgressScreenState extends ConsumerState<GoalProgressScreen> {
                 const TextInputType.numberWithOptions(decimal: true),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(labelText: tr.amount),
+            decoration: InputDecoration(hintText: tr.amount),
           ),
           if (accounts.isNotEmpty) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
               key: ValueKey(_accountId),
               initialValue: _accountId,
-              decoration: InputDecoration(labelText: tr.transferFrom),
+              decoration: InputDecoration(hintText: tr.transferFrom),
               items: [
                 for (final a in accounts)
                   DropdownMenuItem(value: a.id, child: Text(a.name)),

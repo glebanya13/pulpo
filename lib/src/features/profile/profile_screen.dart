@@ -212,31 +212,17 @@ Future<void> _editLastName(
   Tr tr,
   String? current,
 ) async {
-  final controller = TextEditingController(text: current ?? '');
   final result = await showDialog<String>(
     context: context,
-    builder: (dctx) => AlertDialog(
-      title: Text(tr.lastName),
-      content: TextField(
-        controller: controller,
-        autofocus: true,
-        textCapitalization: TextCapitalization.words,
-        decoration: InputDecoration(labelText: tr.lastName),
-        onSubmitted: (v) => Navigator.pop(dctx, v.trim()),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dctx),
-          child: Text(tr.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(dctx, controller.text.trim()),
-          child: Text(tr.save),
-        ),
-      ],
+    builder: (dctx) => _TextFieldDialog(
+      title: tr.lastName,
+      label: tr.lastName,
+      initial: current ?? '',
+      cancelLabel: tr.cancel,
+      saveLabel: tr.save,
+      textCapitalization: TextCapitalization.words,
     ),
   );
-  controller.dispose();
   if (result == null || !context.mounted) return;
   await ref.read(settingsControllerProvider.notifier).setLastName(
         result.isEmpty ? null : result,
@@ -656,39 +642,98 @@ String _deleteAccountError(Tr tr, FirebaseAuthException e) {
 }
 
 Future<String?> _askDeletePassword(BuildContext context, Tr tr) async {
-  final controller = TextEditingController();
   final result = await showDialog<String>(
     context: context,
-    builder: (dctx) => AlertDialog(
-      title: Text(tr.deleteCloudAccountTitle),
+    builder: (dctx) => _TextFieldDialog(
+      title: tr.deleteCloudAccountTitle,
+      label: tr.password,
+      initial: '',
+      cancelLabel: tr.cancel,
+      saveLabel: tr.confirm,
+      obscureText: true,
+      preamble: tr.deleteCloudEnterPassword,
+    ),
+  );
+  if (result == null || result.isEmpty) return null;
+  return result;
+}
+
+/// Owns its [TextEditingController] so it is not disposed while the route
+/// is still animating out (avoids used-after-dispose / _dependents crash).
+class _TextFieldDialog extends StatefulWidget {
+  const _TextFieldDialog({
+    required this.title,
+    required this.label,
+    required this.initial,
+    required this.cancelLabel,
+    required this.saveLabel,
+    this.obscureText = false,
+    this.preamble,
+    this.textCapitalization = TextCapitalization.none,
+  });
+
+  final String title;
+  final String label;
+  final String initial;
+  final String cancelLabel;
+  final String saveLabel;
+  final bool obscureText;
+  final String? preamble;
+  final TextCapitalization textCapitalization;
+
+  @override
+  State<_TextFieldDialog> createState() => _TextFieldDialogState();
+}
+
+class _TextFieldDialogState extends State<_TextFieldDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initial);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.pop(context, _controller.text.trim());
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(tr.deleteCloudEnterPassword),
-          const SizedBox(height: 12),
+          if (widget.preamble != null) ...[
+            Text(widget.preamble!),
+            const SizedBox(height: 12),
+          ],
           TextField(
-            controller: controller,
-            obscureText: true,
+            controller: _controller,
             autofocus: true,
-            decoration: InputDecoration(labelText: tr.password),
-            onSubmitted: (v) => Navigator.pop(dctx, v.trim()),
+            obscureText: widget.obscureText,
+            textCapitalization: widget.textCapitalization,
+            decoration: InputDecoration(hintText: widget.label),
+            onSubmitted: (_) => _submit(),
           ),
         ],
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(dctx),
-          child: Text(tr.cancel),
+          onPressed: () => Navigator.pop(context),
+          child: Text(widget.cancelLabel),
         ),
         FilledButton(
-          onPressed: () => Navigator.pop(dctx, controller.text.trim()),
-          child: Text(tr.confirm),
+          onPressed: _submit,
+          child: Text(widget.saveLabel),
         ),
       ],
-    ),
-  );
-  controller.dispose();
-  if (result == null || result.isEmpty) return null;
-  return result;
+    );
+  }
 }

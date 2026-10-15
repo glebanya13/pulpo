@@ -114,7 +114,7 @@ class _AccountAddScreenState extends ConsumerState<AccountAddScreen> {
             controller: _nameCtrl,
             autofocus: true,
             textInputAction: TextInputAction.next,
-            decoration: InputDecoration(labelText: tr.titleLabel),
+            decoration: InputDecoration(hintText: tr.titleLabel),
           ),
           const SizedBox(height: 12),
           Row(
@@ -128,8 +128,7 @@ class _AccountAddScreenState extends ConsumerState<AccountAddScreen> {
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => FocusScope.of(context).unfocus(),
                   decoration: InputDecoration(
-                    labelText: tr.initialBalance,
-                    hintText: '0',
+                    hintText: tr.initialBalance,
                   ),
                 ),
               ),
@@ -156,7 +155,7 @@ class _AccountAddScreenState extends ConsumerState<AccountAddScreen> {
                         ),
                       ),
                   ],
-                  decoration: InputDecoration(labelText: tr.currency),
+                  decoration: InputDecoration(hintText: tr.currency),
                   onChanged: (v) async {
                     final next = v ?? _currency;
                     if (next != base &&
@@ -182,7 +181,7 @@ class _AccountAddScreenState extends ConsumerState<AccountAddScreen> {
                   child: Text(tr.accountTypeLabel(t.index)),
                 ),
             ],
-            decoration: InputDecoration(labelText: tr.accountType),
+            decoration: InputDecoration(hintText: tr.accountType),
             onChanged: (v) => setState(() => _type = v ?? AccountType.cash),
           ),
           const SizedBox(height: 28),

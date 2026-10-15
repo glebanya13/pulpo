@@ -181,7 +181,7 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
                         controller: _nameCtrl,
                         autofocus: !widget.isEdit,
                         textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(labelText: tr.budgetName),
+                        decoration: InputDecoration(hintText: tr.budgetName),
                       ),
                       const SizedBox(height: 12),
                       TextField(
@@ -191,7 +191,7 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
                         ),
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                        decoration: InputDecoration(labelText: tr.amount),
+                        decoration: InputDecoration(hintText: tr.amount),
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -218,7 +218,7 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
                         onTap: _pickCategories,
                         child: InputDecorator(
                           decoration: InputDecoration(
-                            labelText: tr.budgetCategories,
+                            hintText: tr.budgetCategories,
                             suffixIcon: Icon(
                               LucideIcons.chevronDown,
                               size: 18,

@@ -12,6 +12,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/currencies.dart';
 import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
@@ -403,7 +404,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
               // the full 18px curve). A 6px footer strip made corners look
               // sharper than the chrome top.
               return Padding(
-                padding: EdgeInsets.fromLTRB(4, 0, 4, isLast ? 4 : 0),
+                padding: EdgeInsets.fromLTRB(0, 0, 0, isLast ? 4 : 0),
                 child: _DayBlock(
                   day: day,
                   txs: grouped[day]!,

@@ -5,6 +5,89 @@ const _kViewDay = 0;
 const _kViewCalendar = 1;
 const _kViewMonths = 2;
 
+/// Lifetime net worth — same density as summary chips, neutral (no accent).
+class _AllTimeBalanceRow extends ConsumerWidget {
+  const _AllTimeBalanceRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tr = Tr.of(context);
+    final total = ref.watch(totalBalanceProvider);
+    final settings = ref.watch(settingsControllerProvider);
+    final hidden = settings.hideBalances;
+    final currency = settings.baseCurrency;
+    final amount = hidden
+        ? '$kMaskedMoney ${symbolForCode(currency)}'
+        : formatMoney(total, currency);
+    final fg = context.primaryText;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.wallet, size: 15, color: context.mutedText),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  tr.balanceAllTime,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: context.mutedText,
+                  ),
+                ),
+              ),
+              Pressable(
+                onTap: () => ref
+                    .read(settingsControllerProvider.notifier)
+                    .setHideBalances(!hidden),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Icon(
+                    hidden ? LucideIcons.eye : LucideIcons.eyeOff,
+                    size: 15,
+                    color: context.mutedText,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                amount,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: fg,
+                  letterSpacing: -0.4,
+                  height: 1.1,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   const _Header({
     required this.month,

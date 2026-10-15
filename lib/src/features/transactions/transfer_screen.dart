@@ -6,6 +6,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../core/fx_rate_service.dart';
 import '../../core/l10n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../../core/theme/liquid_glass.dart';
@@ -181,7 +182,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
       children: [
         _Label(tr.transferFrom),
         _AccountRow(account: _from, onTap: () => _pickAccount(from: true)),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         _Label(tr.transferTo),
         Stack(
           clipBehavior: Clip.none,
@@ -194,21 +195,21 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
               ],
             ),
             Positioned(
-              top: -24,
+              top: -18,
               left: 0,
               right: 0,
               child: Center(
                 child: Container(
-                  width: 36,
-                  height: 36,
+                  width: 28,
+                  height: 28,
                   decoration: BoxDecoration(
                     color: context.emphasized,
                     shape: BoxShape.circle,
-                    border: Border.all(color: context.scaffoldBg, width: 3),
+                    border: Border.all(color: context.scaffoldBg, width: 2),
                   ),
                   child: const Icon(
                     LucideIcons.arrowDown,
-                    size: 16,
+                    size: 14,
                     color: AppColors.lime,
                   ),
                 ),
@@ -216,12 +217,12 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         Center(
           child: Text(tr.transferSending,
-              style: TextStyle(fontSize: 13, color: context.faintText)),
+              style: TextStyle(fontSize: 11, color: context.faintText)),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 2),
         TextField(
           controller: _amountCtrl,
           textAlign: TextAlign.center,
@@ -230,16 +231,18 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => FocusScope.of(context).unfocus(),
           style: TextStyle(
-            fontSize: 44,
+            fontSize: 32,
             fontWeight: FontWeight.w800,
-            letterSpacing: -2,
+            letterSpacing: -1.5,
+            height: 1.1,
             color: context.primaryText,
           ),
           decoration: InputDecoration(
             hintText: '0.00',
             border: InputBorder.none,
             filled: false,
-            contentPadding: EdgeInsets.zero,
+            isCollapsed: true,
+            contentPadding: const EdgeInsets.symmetric(vertical: 4),
             hintStyle: TextStyle(
               color: context.primaryText.withValues(alpha: 0.4),
             ),
@@ -248,7 +251,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
               setState(() => _amount = double.tryParse(v) ?? 0),
         ),
         if (!sameCurrency && _from != null && _to != null) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _RateCard(
             from: _from!.currency,
             to: _to!.currency,
@@ -287,18 +290,18 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
               }
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Center(
             child: Column(
               children: [
                 Text(tr.transferRecipientGets,
                     style: TextStyle(
-                        fontSize: 12, color: context.faintText)),
-                const SizedBox(height: 4),
+                        fontSize: 11, color: context.faintText)),
+                const SizedBox(height: 2),
                 Text(
                   formatMoney(_received, _to!.currency),
                   style: TextStyle(
-                    fontSize: 26,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: context.accent,
                   ),
@@ -307,12 +310,11 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
             ),
           ),
         ],
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         Container(
-          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: context.surface,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Pressable(
             onTap: () async {
@@ -346,24 +348,24 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
             },
             child: Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
               child: Row(
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 28,
+                    height: 28,
                     decoration: BoxDecoration(
                       color: context.scaffoldBg,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(9),
                     ),
                     child: Icon(LucideIcons.percent,
-                        size: 14, color: context.primaryText),
+                        size: 13, color: context.primaryText),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(tr.fee,
                         style: TextStyle(
-                            fontSize: 13, color: context.mutedText)),
+                            fontSize: 12, color: context.mutedText)),
                   ),
                   Text(
                     _to != null
@@ -371,7 +373,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                         : _fee.toStringAsFixed(2),
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: 13,
                         color: context.primaryText),
                   ),
                 ],
@@ -379,7 +381,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         ScaledElevatedButton(
           onPressed: _submit,
           child: Text(tr.confirm),
@@ -389,8 +391,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
 
     if (widget.embedded) {
       return SingleChildScrollView(
-        keyboardDismissBehavior:
-            ScrollViewKeyboardDismissBehavior.onDrag,padding: const EdgeInsets.only(top: 12, bottom: 12),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.only(top: 6, bottom: 8),
         child: form,
       );
     }
@@ -398,9 +400,9 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     return Scaffold(
       body: Padding(
         padding: EdgeInsets.fromLTRB(
-          20,
+          AppSpacing.pageSide,
           MediaQuery.viewPaddingOf(context).top + 12,
-          20,
+          AppSpacing.pageSide,
           40 + MediaQuery.viewPaddingOf(context).bottom,
         ),
         child: SingleChildScrollView(
@@ -460,13 +462,13 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8, left: 4),
+      padding: const EdgeInsets.only(bottom: 4, left: 2),
       child: Text(
         text.toUpperCase(),
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+          letterSpacing: 0.4,
           color: context.faintText,
         ),
       ),
@@ -485,10 +487,10 @@ class _AccountRow extends ConsumerWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         decoration: BoxDecoration(
           color: context.surface,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           children: [
@@ -499,19 +501,21 @@ class _AccountRow extends ConsumerWidget {
               icon: account != null
                   ? lucideByKey(account!.icon)
                   : LucideIcons.wallet,
-              size: 42,
-              iconSize: 18,
-              radius: 14,
+              size: 32,
+              iconSize: 14,
+              radius: 10,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     account?.name ?? Tr.of(context).selectAccount,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: account == null
                           ? context.faintText
@@ -519,18 +523,20 @@ class _AccountRow extends ConsumerWidget {
                     ),
                   ),
                   if (account != null) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 1),
                     Text(
                       '${Tr.of(context).balancePrefix}${formatMoney(balances[account!.id] ?? 0, account!.currency)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                          fontSize: 11, color: context.faintText),
+                          fontSize: 10, color: context.faintText),
                     ),
                   ],
                 ],
               ),
             ),
             Icon(LucideIcons.chevronRight,
-                size: 16, color: context.faintText),
+                size: 15, color: context.faintText),
           ],
         ),
       ),
@@ -555,28 +561,28 @@ class _RateCard extends StatelessWidget {
     return Pressable(
       onTap: onEdit,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         decoration: BoxDecoration(
           color: AppColors.lime.withValues(alpha: 0.1),
           border:
               Border.all(color: AppColors.lime.withValues(alpha: 0.4), width: 1),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            Icon(LucideIcons.repeat, color: context.primaryText),
-            const SizedBox(width: 12),
+            Icon(LucideIcons.repeat, size: 16, color: context.primaryText),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(Tr.of(context).exchangeRate,
                       style: TextStyle(
-                          fontSize: 11, color: context.mutedText)),
+                          fontSize: 10, color: context.mutedText)),
                   Text(
                     '1 $from = ${rate.toStringAsFixed(4)} $to',
                     style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: context.primaryText),
                   ),
@@ -584,7 +590,7 @@ class _RateCard extends StatelessWidget {
               ),
             ),
             Icon(LucideIcons.pencil,
-                size: 14, color: context.faintText),
+                size: 13, color: context.faintText),
           ],
         ),
       ),

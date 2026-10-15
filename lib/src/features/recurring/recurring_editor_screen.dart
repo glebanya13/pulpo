@@ -174,7 +174,7 @@ class _RecurringEditorScreenState
                         controller: _nameCtrl,
                         autofocus: !widget.isEdit,
                         textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(labelText: tr.titleLabel),
+                        decoration: InputDecoration(hintText: tr.titleLabel),
                       ),
                       const SizedBox(height: 12),
                       TextField(
@@ -184,7 +184,7 @@ class _RecurringEditorScreenState
                         ),
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                        decoration: InputDecoration(labelText: tr.amount),
+                        decoration: InputDecoration(hintText: tr.amount),
                       ),
                       const SizedBox(height: 12),
                       Text(

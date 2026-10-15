@@ -165,7 +165,7 @@ class _CategoryEditorScreenState extends ConsumerState<CategoryEditorScreen> {
                         autofocus: !widget.isEdit,
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                        decoration: InputDecoration(labelText: tr.titleLabel),
+                        decoration: InputDecoration(hintText: tr.titleLabel),
                       ),
                       const SizedBox(height: 28),
 

@@ -145,7 +145,7 @@ class _SubscriptionEditorScreenState
                         controller: _nameCtrl,
                         autofocus: !widget.isEdit,
                         textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(labelText: tr.serviceName),
+                        decoration: InputDecoration(hintText: tr.serviceName),
                       ),
                       const SizedBox(height: 12),
                       TextField(
@@ -155,7 +155,7 @@ class _SubscriptionEditorScreenState
                         ),
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                        decoration: InputDecoration(labelText: tr.amount),
+                        decoration: InputDecoration(hintText: tr.amount),
                       ),
                       const SizedBox(height: 12),
                       Text(

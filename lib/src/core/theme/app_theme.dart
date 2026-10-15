@@ -146,6 +146,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
+        // Borderless fills clip Material floating labels — use hints instead.
+        floatingLabelBehavior: FloatingLabelBehavior.never,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.rMd),
           borderSide: BorderSide.none,
@@ -367,6 +369,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,
+        // Borderless fills clip Material floating labels — use hints instead.
+        floatingLabelBehavior: FloatingLabelBehavior.never,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.rMd),
           borderSide: BorderSide.none,
@@ -375,7 +379,7 @@ class AppTheme {
           horizontal: AppSpacing.md,
           vertical: AppSpacing.md,
         ),
-        labelStyle: const TextStyle(color: Colors.white70),
+        hintStyle: const TextStyle(color: Colors.white54),
       ),
       dividerTheme: DividerThemeData(
         color: Colors.white.withValues(alpha: 0.08),

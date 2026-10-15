@@ -53,7 +53,8 @@ class KeyboardFormSheet extends StatelessWidget {
                   top: Radius.circular(AppSpacing.rXxl),
                 ),
               ),
-              clipBehavior: Clip.antiAlias,
+              // Don't clip — floating/hint chrome above fields must stay visible.
+              clipBehavior: Clip.none,
               child: Theme(
                 data: Theme.of(context).copyWith(
                   inputDecorationTheme:

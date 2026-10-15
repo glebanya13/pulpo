@@ -81,9 +81,9 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
       widget.accountId != null ||
       widget.categoryId != null;
 
-  /// Keep type / account / category controls visible while a filter is on,
-  /// so empty results (e.g. no Gastos) don't force tapping Filter again.
-  bool get _showPanel => _expanded || _hasActiveFilters;
+  /// Panel stays open until the Filter chip is tapped again — selecting
+  /// "All" clears the type filter but must not collapse the controls.
+  bool get _showPanel => _expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +134,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                 height: 34,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
-                  color: _showPanel
+                  color: (_showPanel || _hasActiveFilters)
                       ? AppColors.lime.withValues(alpha: 0.2)
                       : context.surface,
                   borderRadius: BorderRadius.circular(10),
@@ -150,7 +150,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                     Icon(
                       LucideIcons.slidersHorizontal,
                       size: 15,
-                      color: _showPanel
+                      color: (_showPanel || _hasActiveFilters)
                           ? context.accent
                           : context.mutedText,
                     ),
@@ -160,7 +160,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: _showPanel
+                        color: (_showPanel || _hasActiveFilters)
                             ? context.accent
                             : context.mutedText,
                       ),

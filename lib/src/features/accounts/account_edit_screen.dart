@@ -112,7 +112,7 @@ class _AccountEditScreenState extends ConsumerState<AccountEditScreen> {
             autofocus: true,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(labelText: tr.accountName),
+            decoration: InputDecoration(hintText: tr.accountName),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
@@ -129,7 +129,6 @@ class _AccountEditScreenState extends ConsumerState<AccountEditScreen> {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusScope.of(context).unfocus(),
               decoration: InputDecoration(
-                labelText: tr.creditLimit,
                 hintText: tr.creditLimitHint,
               ),
             ),

@@ -19,7 +19,6 @@ class _AssistantBubble extends StatelessWidget {
   // SoftCard-like chat discs — separate floats on scaffold, not a panel.
   static const double _rL = 16;
   static const double _rS = 6;
-  static const double _minMetaWidth = 76;
 
   @override
   Widget build(BuildContext context) {
@@ -29,22 +28,19 @@ class _AssistantBubble extends StatelessWidget {
         : '${time!.hour.toString().padLeft(2, '0')}:${time!.minute.toString().padLeft(2, '0')}';
     final hasImage =
         imagePath != null && File(imagePath!).existsSync();
-    // Wider bubbles — match denser home chrome side insets.
-    final widthFactor = wide ? 0.96 : 0.88;
+    final widthFactor = wide ? 0.96 : 0.92;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final maxBubbleWidth = (constraints.maxWidth * widthFactor)
-              .clamp(0.0, constraints.maxWidth);
-          final margin = (constraints.maxWidth - maxBubbleWidth)
-              .clamp(0.0, constraints.maxWidth);
           // Must match AiAssistantMark + right padding below (26 + 6).
           const avatarGap = 32.0;
-          final maxW = inbound
-              ? (maxBubbleWidth - avatarGap).clamp(0.0, maxBubbleWidth)
-              : maxBubbleWidth;
+          final usable = inbound
+              ? (constraints.maxWidth - avatarGap)
+                  .clamp(0.0, constraints.maxWidth)
+              : constraints.maxWidth;
+          final maxW = (usable * widthFactor).clamp(0.0, usable);
 
           final bubbleColor = fromUser
               ? AppColors.lime
@@ -54,12 +50,7 @@ class _AssistantBubble extends StatelessWidget {
 
           final bubble = Container(
             clipBehavior: Clip.antiAlias,
-            constraints: BoxConstraints(
-              maxWidth: maxW,
-              minWidth: timeLabel != null
-                  ? (maxW < _minMetaWidth ? maxW : _minMetaWidth)
-                  : 0,
-            ),
+            constraints: BoxConstraints(maxWidth: maxW),
             decoration: BoxDecoration(
               color: bubbleColor,
               borderRadius: BorderRadius.only(
@@ -100,28 +91,19 @@ class _AssistantBubble extends StatelessWidget {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if (!inbound) SizedBox(width: margin),
-              if (!inbound) const Spacer(),
               if (inbound)
                 const Padding(
                   padding: EdgeInsets.only(right: 6, bottom: 2),
                   child: AiAssistantMark(size: 26, iconSize: 12),
                 ),
-              Flexible(
+              Expanded(
                 child: Align(
                   alignment: inbound
                       ? Alignment.centerLeft
                       : Alignment.centerRight,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: inbound
-                        ? CrossAxisAlignment.start
-                        : CrossAxisAlignment.end,
-                    children: [bubbleWithSelection],
-                  ),
+                  child: bubbleWithSelection,
                 ),
               ),
-              if (inbound) SizedBox(width: margin),
             ],
           );
         },
@@ -135,28 +117,28 @@ class _AssistantBubble extends StatelessWidget {
     required String? timeLabel,
     required bool stretch,
   }) {
+    // IntrinsicWidth shrink-wraps short messages. Do NOT put an unconstrained
+    // Align around the timestamp — it expands to maxW and forces full-width bubbles.
     final column = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-          child: child,
+          child: stretch ? SizedBox(width: maxW - 24, child: child) : child,
         ),
         if (timeLabel != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                timeLabel,
-                style: TextStyle(
-                  fontSize: 11,
-                  height: 1.2,
-                  color: fromUser
-                      ? AppColors.ink.withValues(alpha: 0.5)
-                      : context.faintText,
-                ),
+            child: Text(
+              timeLabel,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 11,
+                height: 1.2,
+                color: fromUser
+                    ? AppColors.ink.withValues(alpha: 0.5)
+                    : context.faintText,
               ),
             ),
           ),
@@ -198,17 +180,15 @@ class _AssistantBubble extends StatelessWidget {
         if (timeLabel != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                timeLabel,
-                style: TextStyle(
-                  fontSize: 11,
-                  height: 1.2,
-                  color: fromUser
-                      ? AppColors.ink.withValues(alpha: 0.5)
-                      : context.faintText,
-                ),
+            child: Text(
+              timeLabel,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 11,
+                height: 1.2,
+                color: fromUser
+                    ? AppColors.ink.withValues(alpha: 0.5)
+                    : context.faintText,
               ),
             ),
           ),

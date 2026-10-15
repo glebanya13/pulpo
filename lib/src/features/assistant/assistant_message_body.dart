@@ -19,16 +19,28 @@ class _AssistantMessageBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (fromUser) {
-      return Text(text, style: style);
+      return Text(
+        text,
+        style: style,
+        textWidthBasis: TextWidthBasis.longestLine,
+      );
     }
 
     final resolved =
         blocks.isNotEmpty ? blocks : parseChatBody(text);
     if (resolved.isEmpty) {
-      return Text(text, style: style);
+      return Text(
+        text,
+        style: style,
+        textWidthBasis: TextWidthBasis.longestLine,
+      );
     }
     if (resolved.length == 1 && resolved.first is ChatProseBlock) {
-      return Text((resolved.first as ChatProseBlock).text, style: style);
+      return Text(
+        (resolved.first as ChatProseBlock).text,
+        style: style,
+        textWidthBasis: TextWidthBasis.longestLine,
+      );
     }
 
     final catByName = <String, db.Category>{
@@ -41,7 +53,11 @@ class _AssistantMessageBody extends StatelessWidget {
         for (var i = 0; i < resolved.length; i++) ...[
           if (i > 0) const SizedBox(height: 10),
           switch (resolved[i]) {
-            ChatProseBlock(:final text) => Text(text, style: style),
+            ChatProseBlock(:final text) => Text(
+                  text,
+                  style: style,
+                  textWidthBasis: TextWidthBasis.longestLine,
+                ),
             ChatTableBlock(:final table) => _ChatDataTable(
                 table: table,
                 categoriesByName: catByName,

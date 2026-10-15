@@ -1263,9 +1263,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               onTap: _clearMessageSelection,
               child: Padding(
               padding: const EdgeInsets.fromLTRB(
+                AppSpacing.pageSide,
                 AppSpacing.xs,
-                AppSpacing.xs,
-                AppSpacing.xs,
+                AppSpacing.pageSide,
                 0,
               ),
               child: Column(
@@ -1480,7 +1480,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                                 ),
                                 SliverPadding(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.xs,
+                                    horizontal: AppSpacing.pageSide,
                                   ),
                                   sliver: SliverList(
                                     delegate: SliverChildBuilderDelegate(
@@ -1632,7 +1632,12 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             ),
             if (_pendingRetryText != null && !_busy)
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.pageSide,
+                  0,
+                  AppSpacing.pageSide,
+                  8,
+                ),
                 child: Pressable(
                   onTap: _retryPending,
                   child: Container(
@@ -1684,9 +1689,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
             if (_listening)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.xs,
+                  AppSpacing.pageSide,
                   0,
-                  AppSpacing.xs,
+                  AppSpacing.pageSide,
                   8,
                 ),
                 child: Container(
@@ -1762,9 +1767,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               onTap: _clearMessageSelection,
               child: Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xs,
+                AppSpacing.pageSide,
                 8,
-                AppSpacing.xs,
+                AppSpacing.pageSide,
                 12,
               ),
               child: Row(

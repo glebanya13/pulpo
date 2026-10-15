@@ -62,11 +62,13 @@ class _CalendarChrome extends StatelessWidget {
     final bodyWidget = body;
     // Flat on scaffold — no nested surface “подфон” so content is wider.
     return Padding(
-      padding: EdgeInsets.fromLTRB(4, 4, 4, roundBottom ? 4 : 0),
+      padding: EdgeInsets.fromLTRB(0, 4, 0, roundBottom ? 4 : 0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const _AllTimeBalanceRow(),
+          const SizedBox(height: 8),
           _Header(
             month: month,
             viewIndex: viewIndex,

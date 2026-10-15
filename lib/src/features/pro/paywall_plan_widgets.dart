@@ -8,7 +8,7 @@ class _PaywallPlansSkeleton extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < 3; i++) ...[
-          if (i > 0) const SizedBox(height: 10),
+          if (i > 0) const SizedBox(height: 8),
           _PaywallPlanSkeleton(hasBadge: i > 0),
         ],
       ],
@@ -27,11 +27,11 @@ class _PaywallPlanSkeleton extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.06)
         : const Color(0xFFF0F0F0);
     return Container(
-      height: hasBadge ? 98 : 88,
-      padding: EdgeInsets.fromLTRB(16, hasBadge ? 22 : 16, 16, 16),
+      height: hasBadge ? 78 : 68,
+      padding: EdgeInsets.fromLTRB(12, hasBadge ? 16 : 12, 12, 12),
       decoration: BoxDecoration(
         color: context.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: context.divider),
       ),
       child: Row(
@@ -41,17 +41,17 @@ class _PaywallPlanSkeleton extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 88,
-                  height: 14,
+                  width: 72,
+                  height: 12,
                   decoration: BoxDecoration(
                     color: fill,
                     borderRadius: BorderRadius.circular(6),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Container(
-                  width: 120,
-                  height: 10,
+                  width: 100,
+                  height: 9,
                   decoration: BoxDecoration(
                     color: fill,
                     borderRadius: BorderRadius.circular(6),
@@ -61,8 +61,8 @@ class _PaywallPlanSkeleton extends StatelessWidget {
             ),
           ),
           Container(
-            width: 64,
-            height: 18,
+            width: 52,
+            height: 14,
             decoration: BoxDecoration(
               color: fill,
               borderRadius: BorderRadius.circular(6),
@@ -120,13 +120,13 @@ class _PaywallPlanCard extends StatelessWidget {
       scale: 0.98,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: EdgeInsets.fromLTRB(16, badge != null ? 22 : 16, 16, 16),
+        padding: EdgeInsets.fromLTRB(12, badge != null ? 16 : 10, 12, 10),
         decoration: BoxDecoration(
           color: cardFill,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: cardBorder,
-            width: selected ? 2 : 1,
+            width: selected ? 1.5 : 1,
           ),
         ),
         child: Stack(
@@ -134,13 +134,13 @@ class _PaywallPlanCard extends StatelessWidget {
           children: [
             if (badge != null)
               Positioned(
-                top: -30,
+                top: -24,
                 left: 0,
                 right: 0,
                 child: Center(
                   child: Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: selected
                           ? (isDark ? AppColors.lime : AppColors.limeAccent)
@@ -150,9 +150,9 @@ class _PaywallPlanCard extends StatelessWidget {
                     child: Text(
                       badge!,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 9,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 0.4,
+                        letterSpacing: 0.3,
                         color: selected ? AppColors.ink : Colors.white,
                       ),
                     ),
@@ -169,36 +169,40 @@ class _PaywallPlanCard extends StatelessWidget {
                       Text(
                         title,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: context.primaryText,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Row(
                         children: [
                           Icon(
                             LucideIcons.zap,
-                            size: 12,
+                            size: 11,
                             color: secondaryText,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            allFeaturesLabel,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: secondaryText,
+                          const SizedBox(width: 3),
+                          Flexible(
+                            child: Text(
+                              allFeaturesLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: secondaryText,
+                              ),
                             ),
                           ),
                         ],
                       ),
                       if (trialLabel != null && trialLabel!.isNotEmpty) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(
                           trialLabel!,
                           style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
                             color: trialColor,
                           ),
                         ),
@@ -206,23 +210,25 @@ class _PaywallPlanCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
                       price,
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
                         color: context.primaryText,
                       ),
                     ),
                     if (comparePrice != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 1),
                       Text(
                         comparePrice!,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           decoration: TextDecoration.lineThrough,
                           color: isDark
                               ? context.faintText

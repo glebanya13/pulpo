@@ -260,8 +260,7 @@ class _SetupCard extends StatelessWidget {
           controller: codeCtrl,
           textCapitalization: TextCapitalization.characters,
           decoration: InputDecoration(
-            labelText: tr.sharedBudgetInviteCode,
-            hintText: 'ABC123',
+            hintText: tr.sharedBudgetInviteCode,
           ),
         ),
         const SizedBox(height: 12),

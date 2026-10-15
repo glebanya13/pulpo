@@ -1,9 +1,10 @@
 part of 'paywall_screen.dart';
 
 class _PaywallProHero extends StatelessWidget {
-  const _PaywallProHero();
+  const _PaywallProHero({this.compact = false});
 
-  static const _size = 104.0;
+  final bool compact;
+  double get _size => compact ? 56.0 : 64.0;
 
   @override
   Widget build(BuildContext context) {
@@ -23,15 +24,15 @@ class _PaywallProHero extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.lime.withValues(alpha: 0.45),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+            color: AppColors.lime.withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: const Icon(
+      child: Icon(
         LucideIcons.rocket,
-        size: 48,
+        size: compact ? 26 : 30,
         color: AppColors.ink,
       ),
     );
@@ -47,21 +48,21 @@ class _ProFeaturesCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
         color: context.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         children: [
           for (var i = 0; i < features.length; i++) ...[
-            if (i > 0) const SizedBox(height: 8),
+            if (i > 0) const SizedBox(height: 6),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 20,
-                  height: 20,
+                  width: 18,
+                  height: 18,
                   margin: const EdgeInsets.only(top: 1),
                   decoration: BoxDecoration(
                     color: AppColors.lime.withValues(alpha: 0.35),
@@ -69,16 +70,16 @@ class _ProFeaturesCard extends StatelessWidget {
                   ),
                   child: const Icon(
                     LucideIcons.check,
-                    size: 12,
+                    size: 11,
                     color: AppColors.ink,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     features[i],
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       height: 1.3,
                       fontWeight: FontWeight.w600,
                       color: context.primaryText,
@@ -122,7 +123,7 @@ class _ProActiveSectionState extends ConsumerState<_ProActiveSection> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
       decoration: BoxDecoration(
         color: AppColors.lime.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(20),
@@ -132,29 +133,43 @@ class _ProActiveSectionState extends ConsumerState<_ProActiveSection> {
         children: [
           Icon(
             LucideIcons.badgeCheck,
-            size: 28,
+            size: 26,
             color: context.isDark ? AppColors.lime : AppColors.ink,
           ),
           const SizedBox(height: 10),
-          Text(
-            tr.proActive,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: context.primaryText,
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                tr.proActive,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: context.primaryText,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 8),
           if (expiresAt != null) ...[
-            Text(
-              tr.proValidUntil(formatProExpiryDate(context, expiresAt)),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                height: 1.35,
-                fontWeight: FontWeight.w600,
-                color: context.primaryText,
+            SizedBox(
+              width: double.infinity,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  tr.proValidUntil(formatProExpiryDate(context, expiresAt)),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                    color: context.primaryText,
+                  ),
+                ),
               ),
             ),
             if (pro.daysUntilExpiry != null && pro.daysUntilExpiry! <= 14) ...[

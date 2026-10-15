@@ -20,6 +20,7 @@ import '../../core/l10n/tr.dart';
 import '../../core/pro/pro_controller.dart';
 import '../../core/pro/pro_guard.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_well.dart';
 import '../../features/auth/cloud_auth.dart';
@@ -453,13 +454,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       resizeToAvoidBottomInset: true,
       body: Padding(
         padding: EdgeInsets.fromLTRB(
-          8,
+          AppSpacing.pageSide,
           MediaQuery.viewPaddingOf(context).top + 6,
-          8,
+          AppSpacing.pageSide,
           // No home-indicator “дырка” while the keyboard is up.
           keyboardOpen
-              ? 8
-              : 8 + MediaQuery.viewPaddingOf(context).bottom,
+              ? AppSpacing.pageSide
+              : AppSpacing.pageSide + MediaQuery.viewPaddingOf(context).bottom,
         ),
         child: Column(
           children: [
@@ -496,24 +497,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               child: IndexedStack(
                 index: _type == TxType.transfer ? 1 : 0,
                 children: [
-                  Column(
-                    children: [
-                      Expanded(
-                        child: _txForm(
-                          tr: tr,
-                          currency: currency,
-                          sign: sign,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ScaledElevatedButton(
-                          onPressed: _amount > 0 ? _save : null,
-                          child: Text(tr.save),
-                        ),
-                      ),
-                    ],
+                  _txForm(
+                    tr: tr,
+                    currency: currency,
+                    sign: sign,
                   ),
                   const TransferScreen(embedded: true),
                 ],
@@ -530,6 +517,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     required String currency,
     required String sign,
   }) {
+    // Save lives in the scroll view so the note row + CTA stay above the
+    // amount keyboard instead of being clipped against it.
     return SingleChildScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.only(top: 8, bottom: 8),
@@ -542,9 +531,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             autofocus: false,
           ),
           const SizedBox(height: 8),
-          _AiQuickActions(
+          _QuickCaptureRow(
             busy: _aiBusy,
             onVoice: _voiceEntry,
+            onCamera: () => _pickReceipt(ImageSource.camera),
+            onGallery: () => _pickReceipt(ImageSource.gallery),
           ),
           if (_aiCategorySuggestion != null) ...[
             const SizedBox(height: 8),
@@ -594,31 +585,41 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 icon: LucideIcons.pencil,
                 label: tr.note,
                 value: _noteCtrl.text.isEmpty ? tr.add : _noteCtrl.text,
+                valueMaxLines: 3,
                 onTap: _openNote,
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          _ReceiptSection(
-            receiptPath: _receiptPath,
-            aiBusy: _aiBusy,
-            showPro: !ref.watch(proControllerProvider).isPro,
-            onPick: _pickReceipt,
-            onAnalyzeAi: _analyzeReceiptAi,
-            onRemove: () {
-              final toDelete = _receiptPath ?? _originalReceiptPath;
-              if (toDelete != null && File(toDelete).existsSync()) {
-                try {
-                  File(toDelete).deleteSync();
-                } catch (_) {
-                  // ignore
+          if (_receiptPath != null) ...[
+            const SizedBox(height: 10),
+            _ReceiptSection(
+              receiptPath: _receiptPath,
+              aiBusy: _aiBusy,
+              showPro: !ref.watch(proControllerProvider).isPro,
+              onAnalyzeAi: _analyzeReceiptAi,
+              onRemove: () {
+                final toDelete = _receiptPath ?? _originalReceiptPath;
+                if (toDelete != null && File(toDelete).existsSync()) {
+                  try {
+                    File(toDelete).deleteSync();
+                  } catch (_) {
+                    // ignore
+                  }
                 }
-              }
-              setState(() {
-                _receiptPath = null;
-                _originalReceiptPath = null;
-              });
-            },
+                setState(() {
+                  _receiptPath = null;
+                  _originalReceiptPath = null;
+                });
+              },
+            ),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ScaledElevatedButton(
+              onPressed: _amount > 0 ? _save : null,
+              child: Text(tr.save),
+            ),
           ),
         ],
       ),
@@ -627,30 +628,17 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
   Future<void> _openNote() async {
     final tr = Tr.of(context);
-    final result = await showDialog<String>(
+    final result = await showModalBottomSheet<String>(
       context: context,
-      builder: (context) {
-        final controller = TextEditingController(text: _noteCtrl.text);
-        return AlertDialog(
-          title: Text(tr.note),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            maxLines: 3,
-            decoration: InputDecoration(hintText: tr.enterNoteHint),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(tr.cancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, controller.text),
-              child: Text(tr.save),
-            ),
-          ],
-        );
-      },
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _NoteSheet(
+        initial: _noteCtrl.text,
+        title: tr.note,
+        hint: tr.enterNoteHint,
+        cancelLabel: tr.cancel,
+        saveLabel: tr.save,
+      ),
     );
     if (result != null) {
       setState(() => _noteCtrl.text = result);
@@ -875,6 +863,7 @@ class _FormRow extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onTap,
+    this.valueMaxLines = 1,
   });
 
   final IconData icon;
@@ -882,6 +871,7 @@ class _FormRow extends StatelessWidget {
   final String label;
   final String value;
   final VoidCallback onTap;
+  final int valueMaxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -891,6 +881,9 @@ class _FormRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         child: Row(
+          crossAxisAlignment: valueMaxLines > 1
+              ? CrossAxisAlignment.start
+              : CrossAxisAlignment.center,
           children: [
             if (well != null)
               ColorWellIcon(
@@ -910,7 +903,7 @@ class _FormRow extends StatelessWidget {
               child: Text(
                 value,
                 textAlign: TextAlign.right,
-                maxLines: 1,
+                maxLines: valueMaxLines,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 13,
@@ -920,7 +913,14 @@ class _FormRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            Icon(LucideIcons.chevronRight, size: 15, color: context.faintText),
+            Padding(
+              padding: EdgeInsets.only(top: valueMaxLines > 1 ? 2 : 0),
+              child: Icon(
+                LucideIcons.chevronRight,
+                size: 15,
+                color: context.faintText,
+              ),
+            ),
           ],
         ),
       ),
@@ -928,14 +928,19 @@ class _FormRow extends StatelessWidget {
   }
 }
 
-class _AiQuickActions extends ConsumerWidget {
-  const _AiQuickActions({
+/// Assistant + camera + gallery in one row (stays above the keyboard).
+class _QuickCaptureRow extends ConsumerWidget {
+  const _QuickCaptureRow({
     required this.busy,
     required this.onVoice,
+    required this.onCamera,
+    required this.onGallery,
   });
 
   final bool busy;
   final VoidCallback onVoice;
+  final VoidCallback onCamera;
+  final VoidCallback onGallery;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -945,84 +950,107 @@ class _AiQuickActions extends ConsumerWidget {
     final energy = ref.watch(assistantEnergyProvider);
     final showEnergy = !isPro;
 
-    return Pressable(
-      onTap: busy ? null : onVoice,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          gradient: const LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Color(0xFF8B7CFF),
-              AppColors.violet,
-              Color(0xFFC4B5FD),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.violet.withValues(alpha: 0.35),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const AiAssistantMark(size: 24),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
-                  color: Colors.white,
+    return Row(
+      children: [
+        Expanded(
+          flex: 5,
+          child: Pressable(
+            onTap: busy ? null : onVoice,
+            child: Container(
+              height: 52,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Color(0xFF8B7CFF),
+                    AppColors.violet,
+                    Color(0xFFC4B5FD),
+                  ],
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.violet.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const AiAssistantMark(size: 22),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  if (showEnergy)
+                    energy.hasEnergy
+                        ? Container(
+                            height: 22,
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.22),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  LucideIcons.zap,
+                                  size: 11,
+                                  color: AppColors.lime,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${energy.units}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : const ProBadge(dense: true),
+                ],
               ),
             ),
-            if (showEnergy)
-              energy.hasEnergy
-                  ? Container(
-                      height: 24,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            LucideIcons.zap,
-                            size: 12,
-                            color: AppColors.lime,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${energy.units}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : const ProBadge(dense: true)
-            else
-              Icon(
-                LucideIcons.chevronRight,
-                size: 16,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(width: 6),
+        Expanded(
+          flex: 3,
+          child: _ReceiptBtn(
+            icon: LucideIcons.camera,
+            label: tr.receiptCamera,
+            onTap: onCamera,
+            compact: true,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          flex: 3,
+          child: _ReceiptBtn(
+            icon: LucideIcons.image,
+            label: tr.receiptGallery,
+            onTap: onGallery,
+            compact: true,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1080,7 +1108,6 @@ class _AiCategoryChip extends StatelessWidget {
 class _ReceiptSection extends StatelessWidget {
   const _ReceiptSection({
     required this.receiptPath,
-    required this.onPick,
     required this.onRemove,
     required this.onAnalyzeAi,
     required this.aiBusy,
@@ -1088,7 +1115,6 @@ class _ReceiptSection extends StatelessWidget {
   });
 
   final String? receiptPath;
-  final void Function(ImageSource source) onPick;
   final VoidCallback onRemove;
   final VoidCallback onAnalyzeAi;
   final bool aiBusy;
@@ -1097,87 +1123,68 @@ class _ReceiptSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tr = Tr.of(context);
-
-    if (receiptPath != null && File(receiptPath!).existsSync()) {
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: context.surface,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                NeutralWellIcon(icon: LucideIcons.receipt),
-                const SizedBox(width: 10),
-                Text(tr.receipt,
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: context.primaryText)),
-                const Spacer(),
-                Pressable(
-                  onTap: onRemove,
-                  child: Icon(LucideIcons.x,
-                      size: 18, color: context.mutedText),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Image.file(
-                File(receiptPath!),
-                width: double.infinity,
-                height: 180,
-                fit: BoxFit.cover,
-                cacheWidth: (MediaQuery.devicePixelRatioOf(context) * 400)
-                    .round(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: ScaledOutlinedButton(
-                onPressed: aiBusy ? null : onAnalyzeAi,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(aiBusy ? tr.aiBusy : tr.aiRecognizeReceipt),
-                    if (showPro && !aiBusy) ...[
-                      const SizedBox(width: 8),
-                      const ProBadge(dense: true),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+    if (receiptPath == null || !File(receiptPath!).existsSync()) {
+      return const SizedBox.shrink();
     }
 
-    return Row(
-      children: [
-        Expanded(
-          child: _ReceiptBtn(
-            icon: LucideIcons.camera,
-            label: tr.receiptCamera,
-            onTap: () => onPick(ImageSource.camera),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              NeutralWellIcon(icon: LucideIcons.receipt),
+              const SizedBox(width: 10),
+              Text(tr.receipt,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: context.primaryText)),
+              const Spacer(),
+              Pressable(
+                onTap: onRemove,
+                child: Icon(LucideIcons.x,
+                    size: 18, color: context.mutedText),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: _ReceiptBtn(
-            icon: LucideIcons.image,
-            label: tr.receiptGallery,
-            onTap: () => onPick(ImageSource.gallery),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.file(
+              File(receiptPath!),
+              width: double.infinity,
+              height: 180,
+              fit: BoxFit.cover,
+              cacheWidth: (MediaQuery.devicePixelRatioOf(context) * 400)
+                  .round(),
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ScaledOutlinedButton(
+              onPressed: aiBusy ? null : onAnalyzeAi,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(aiBusy ? tr.aiBusy : tr.aiRecognizeReceipt),
+                  if (showPro && !aiBusy) ...[
+                    const SizedBox(width: 8),
+                    const ProBadge(dense: true),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1187,29 +1194,37 @@ class _ReceiptBtn extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.compact = false,
   });
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        height: compact ? 52 : null,
+        padding: EdgeInsets.symmetric(vertical: compact ? 0 : 10),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: context.isDark ? AppColors.ink3 : const Color(0xFFF5F5F5),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: context.mutedText),
-            const SizedBox(height: 3),
+            Icon(icon, size: compact ? 16 : 18, color: context.mutedText),
+            SizedBox(height: compact ? 2 : 3),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: compact ? 10 : 11,
                 fontWeight: FontWeight.w600,
                 color: context.mutedText,
               ),
@@ -1459,6 +1474,120 @@ class _ThousandsFormatter extends TextInputFormatter {
       text: formatted,
       selection: TextSelection.collapsed(
         offset: fCursor.clamp(0, formatted.length),
+      ),
+    );
+  }
+}
+
+class _NoteSheet extends StatefulWidget {
+  const _NoteSheet({
+    required this.initial,
+    required this.title,
+    required this.hint,
+    required this.cancelLabel,
+    required this.saveLabel,
+  });
+
+  final String initial;
+  final String title;
+  final String hint;
+  final String cancelLabel;
+  final String saveLabel;
+
+  @override
+  State<_NoteSheet> createState() => _NoteSheetState();
+}
+
+class _NoteSheetState extends State<_NoteSheet> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initial);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottom),
+      child: Material(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: context.divider,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  widget.title,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: context.primaryText,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _controller,
+                  autofocus: true,
+                  maxLines: 5,
+                  minLines: 3,
+                  textInputAction: TextInputAction.newline,
+                  decoration: InputDecoration(
+                    hintText: widget.hint,
+                    filled: true,
+                    fillColor: context.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ScaledOutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(widget.cancelLabel),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ScaledElevatedButton(
+                        onPressed: () =>
+                            Navigator.pop(context, _controller.text),
+                        child: Text(widget.saveLabel),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
