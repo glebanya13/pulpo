@@ -70,7 +70,7 @@ class BudgetsScreen extends ConsumerWidget {
                 },
               ),
             ),
-        headerGap: 16,
+        headerGap: 10,
         children: [
             Text(
               formatMonthYear(
@@ -78,13 +78,13 @@ class BudgetsScreen extends ConsumerWidget {
                 locale: Localizations.localeOf(context).languageCode,
               ),
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
                 color: context.mutedText,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             AsyncValuesGate(
               values: [budgetsAsync, txsAsync],
               onRetry: retryLoad,
@@ -131,18 +131,21 @@ class BudgetsScreen extends ConsumerWidget {
                         leftAmount: leftAmount.toDouble(),
                         daysLeft: daysLeft,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
                       if (loadedBudgets.isEmpty)
                         Container(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: context.surface,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: Center(
                             child: Text(
                               tr.emptyBudgetsTitle,
-                              style: TextStyle(color: context.mutedText),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: context.mutedText,
+                              ),
                             ),
                           ),
                         )
@@ -200,21 +203,21 @@ class _Summary extends StatelessWidget {
             formatMoney(spent, currency),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: FontWeight.w800,
-              letterSpacing: -0.6,
+              letterSpacing: -0.5,
             ),
           ),
           Text(
             Tr.of(context)
                 .outOfBudgetTemplate
                 .replaceFirst('{}', formatMoney(budget, currency)),
-            style: const TextStyle(color: Colors.white54, fontSize: 12),
+            style: const TextStyle(color: Colors.white54, fontSize: 11),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           AppProgressBar(
             value: progress,
-            height: 7,
+            height: 6,
             trackColor: Colors.white.withValues(alpha: 0.12),
             color: AppColors.lime,
           ),
@@ -270,8 +273,8 @@ class _BudgetItem extends ConsumerWidget {
       child: Pressable(
         onTap: () => context.push('/budgets/${budget.id}/edit'),
         child: SoftCard(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          radius: 14,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          radius: 12,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -280,9 +283,9 @@ class _BudgetItem extends ConsumerWidget {
                   ColorWellIcon(
                     color: Color(budget.color),
                     icon: LucideIcons.pieChart,
-                    size: 32,
-                    iconSize: 15,
-                    radius: 10,
+                    size: 28,
+                    iconSize: 13,
+                    radius: 8,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -294,7 +297,7 @@ class _BudgetItem extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: context.primaryText,
                           ),
@@ -303,7 +306,7 @@ class _BudgetItem extends ConsumerWidget {
                         Text(
                           '${formatMoney(spent, budget.currency)} / ${formatMoney(limit, budget.currency)}',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: context.mutedText,
                           ),

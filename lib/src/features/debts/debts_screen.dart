@@ -60,7 +60,7 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                 onTap: () => _openAdd(context),
               ),
             ),
-        headerGap: 16,
+        headerGap: 10,
         children: [
             AsyncValuesGate(
               values: [debtsAsync],
@@ -114,13 +114,13 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
                       TabsPill(
                         tabs: [tr.all, tr.iOwe, tr.owedToMe],
                         index: _tab,
                         onChanged: (i) => setState(() => _tab = i),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       if (filtered.isEmpty)
                         EmptyState(
                           icon: LucideIcons.users,
@@ -169,30 +169,32 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SoftCard(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      radius: 12,
       child: Column(
         children: [
           Text(
             label.toUpperCase(),
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 10,
               color: context.mutedText,
               letterSpacing: 0.5,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             value,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 15,
               fontWeight: FontWeight.w800,
               color: color,
-              letterSpacing: -0.5,
+              letterSpacing: -0.4,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(subtitle,
-              style: TextStyle(fontSize: 11, color: context.faintText)),
+              style: TextStyle(fontSize: 10, color: context.faintText)),
         ],
       ),
     );
@@ -233,15 +235,15 @@ class _DebtCard extends ConsumerWidget {
       child: Pressable(
         onTap: () => _openDebtActions(context, ref),
         child: SoftCard(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          radius: 14,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          radius: 12,
           child: Column(
             children: [
               Row(
                 children: [
                   Container(
-                    width: 34,
-                    height: 34,
+                    width: 30,
+                    height: 30,
                     decoration: BoxDecoration(
                       color: _avatarColor(debt.counterparty),
                       shape: BoxShape.circle,
@@ -254,7 +256,7 @@ class _DebtCard extends ConsumerWidget {
                       style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
-                          fontSize: 14),
+                          fontSize: 12),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -265,11 +267,11 @@ class _DebtCard extends ConsumerWidget {
                         Text(
                           debt.counterparty,
                           style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: context.primaryText),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 1),
                         RichText(
                           text: TextSpan(
                             style: TextStyle(
@@ -289,20 +291,20 @@ class _DebtCard extends ConsumerWidget {
                     (isIOwe ? '−' : '+') +
                         formatMoney(remaining, debt.currency),
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 14,
                       fontWeight: FontWeight.w800,
                       color: isIOwe
                           ? AppColors.danger
                           : context.accent,
-                      letterSpacing: -0.5,
+                      letterSpacing: -0.4,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 8),
               AppProgressBar(
                 value: progress.toDouble(),
-                height: 8,
+                height: 6,
                 color: isIOwe ? AppColors.danger : AppColors.lime,
               ),
               const SizedBox(height: 8),

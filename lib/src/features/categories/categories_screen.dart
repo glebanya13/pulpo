@@ -57,14 +57,14 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                 onTap: () => _openAdd(context),
               ),
             ),
-        headerGap: 16,
+        headerGap: 10,
         children: [
             TabsPill(
               tabs: [tr.expense, tr.income],
               index: _tab,
               onChanged: (i) => setState(() => _tab = i),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             AsyncValuesGate(
               values: [catsAsync, txsAsync],
               onRetry: retryLoad,
@@ -150,9 +150,9 @@ class _CatRow extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Padding(
-      padding: EdgeInsets.only(left: indent ? 24 : 10, right: 10),
+      padding: EdgeInsets.only(left: indent ? 20 : 10, right: 10),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 7),
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: context.divider)),
         ),
@@ -161,16 +161,16 @@ class _CatRow extends StatelessWidget {
             ColorWellIcon(
               color: Color(category.color),
               icon: lucideByKey(category.icon),
-              size: indent ? 26 : 30,
-              iconSize: indent ? 12 : 14,
-              radius: indent ? 8 : 9,
+              size: indent ? 24 : 28,
+              iconSize: indent ? 11 : 13,
+              radius: indent ? 7 : 8,
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 Tr.of(context).categoryName(category.name),
                 style: TextStyle(
-                    fontSize: indent ? 13 : 14,
+                    fontSize: indent ? 12 : 13,
                     fontWeight: FontWeight.w600,
                     color: category.isHidden
                         ? context.faintText

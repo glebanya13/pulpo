@@ -16,69 +16,61 @@ class _AllTimeBalanceRow extends ConsumerWidget {
     final settings = ref.watch(settingsControllerProvider);
     final hidden = settings.hideBalances;
     final currency = settings.baseCurrency;
-    final amount = hidden
-        ? '$kMaskedMoney ${symbolForCode(currency)}'
-        : formatMoney(total, currency);
+    // Masked: no currency symbol (€) — same as summary chips.
+    final amount = hidden ? kMaskedMoney : formatMoney(total, currency);
     final fg = context.primaryText;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: context.surface,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Icon(LucideIcons.wallet, size: 15, color: context.mutedText),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  tr.balanceAllTime,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: context.mutedText,
-                  ),
-                ),
-              ),
-              Pressable(
-                onTap: () => ref
-                    .read(settingsControllerProvider.notifier)
-                    .setHideBalances(!hidden),
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 2),
-                  child: Icon(
-                    hidden ? LucideIcons.eye : LucideIcons.eyeOff,
-                    size: 15,
-                    color: context.mutedText,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          SizedBox(
-            width: double.infinity,
+          Icon(LucideIcons.wallet, size: 15, color: context.mutedText),
+          const SizedBox(width: 6),
+          // Scale label down instead of ellipsizing; keep smaller than amount.
+          Expanded(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Text(
-                amount,
+                tr.balanceAllTime,
                 maxLines: 1,
                 softWrap: false,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: fg,
-                  letterSpacing: -0.4,
-                  height: 1.1,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: context.mutedText,
                 ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            amount,
+            maxLines: 1,
+            softWrap: false,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: fg,
+              letterSpacing: -0.4,
+              height: 1.1,
+            ),
+          ),
+          Pressable(
+            onTap: () => ref
+                .read(settingsControllerProvider.notifier)
+                .setHideBalances(!hidden),
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Icon(
+                hidden ? LucideIcons.eye : LucideIcons.eyeOff,
+                size: 15,
+                color: context.mutedText,
               ),
             ),
           ),

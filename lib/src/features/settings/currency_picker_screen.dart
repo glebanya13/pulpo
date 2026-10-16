@@ -53,16 +53,16 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(LucideIcons.search,
-                      size: 18, color: context.faintText),
-                  const SizedBox(width: 10),
+                      Icon(LucideIcons.search,
+                      size: 15, color: context.faintText),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
                       decoration: InputDecoration(
                         hintText: tr.searchCurrency,
                         border: InputBorder.none,
                         contentPadding:
-                            const EdgeInsets.symmetric(vertical: 14),
+                            const EdgeInsets.symmetric(vertical: 10),
                       ),
                       onChanged: (v) => setState(() => _query = v),
                     ),
@@ -70,7 +70,7 @@ class _CurrencyPickerScreenState extends ConsumerState<CurrencyPickerScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Container(
@@ -119,7 +119,7 @@ class _Row extends StatelessWidget {
       onTap: onTap,
       scale: 0.99,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: selected
               ? AppColors.lime.withValues(alpha: 0.08)
@@ -133,20 +133,20 @@ class _Row extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(item.flag, style: const TextStyle(fontSize: 22)),
-            const SizedBox(width: 14),
+            Text(item.flag, style: const TextStyle(fontSize: 18)),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 item.localizedTitle(lang),
                 style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: context.primaryText),
               ),
             ),
             if (selected)
               Icon(LucideIcons.check,
-                  color: context.accent, size: 20),
+                  color: context.accent, size: 16),
           ],
         ),
       ),

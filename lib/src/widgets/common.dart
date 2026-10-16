@@ -358,22 +358,22 @@ class _StickyScrollPageState extends State<StickyScrollPage> {
                   pad.right,
                   pad.bottom,
                 ),
+                // Always use a builder delegate — switching List↔Builder when
+                // the lazy tail goes empty (e.g. filter with no matches)
+                // recreates leading children and drops their Element state.
                 sliver: SliverList(
-                  delegate: widget.itemCount > 0
-                      ? SliverChildBuilderDelegate(
-                          (context, index) {
-                            final lead = widget.children.length;
-                            if (index < lead) return widget.children[index];
-                            return widget.itemBuilder!(
-                              context,
-                              index - lead,
-                            );
-                          },
-                          childCount:
-                              widget.children.length + widget.itemCount,
-                          addAutomaticKeepAlives: false,
-                        )
-                      : SliverChildListDelegate(widget.children),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final lead = widget.children.length;
+                      if (index < lead) return widget.children[index];
+                      return widget.itemBuilder!(
+                        context,
+                        index - lead,
+                      );
+                    },
+                    childCount: widget.children.length + widget.itemCount,
+                    addAutomaticKeepAlives: false,
+                  ),
                 ),
               ),
             ],
@@ -867,7 +867,7 @@ class TabsPill extends StatelessWidget {
                   duration: const Duration(milliseconds: 180),
                   curve: Curves.easeOutCubic,
                   padding: const EdgeInsets.symmetric(
-                    vertical: 10,
+                    vertical: 7,
                     horizontal: 6,
                   ),
                   decoration: BoxDecoration(
@@ -960,48 +960,48 @@ class EmptyState extends StatelessWidget {
         : background;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 140,
-              height: 140,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
               child: Icon(
                 icon,
-                size: 56,
+                size: 28,
                 color: context.isDark ? Colors.white : AppColors.ink,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             Text(
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 15,
                 fontWeight: FontWeight.w800,
                 color: context.primaryText,
-                letterSpacing: -0.5,
+                letterSpacing: -0.3,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               description,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 color: context.mutedText,
-                height: 1.4,
+                height: 1.35,
               ),
             ),
             if (action != null && onAction != null) ...[
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
               Pressable(
                 onTap: onAction!,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 22, vertical: 14),
+                      horizontal: 18, vertical: 10),
                   decoration: BoxDecoration(
                     color: AppColors.lime,
                     borderRadius: BorderRadius.circular(100),
@@ -1009,6 +1009,7 @@ class EmptyState extends StatelessWidget {
                   child: Text(action!,
                       style: const TextStyle(
                         color: AppColors.ink,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                       )),
                 ),
@@ -1199,7 +1200,7 @@ class SoftCard extends StatelessWidget {
   const SoftCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(12),
+    this.padding = const EdgeInsets.all(10),
     this.color,
     this.radius = 14,
   });

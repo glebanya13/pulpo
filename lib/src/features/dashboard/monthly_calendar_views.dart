@@ -22,6 +22,8 @@ class _CalendarChrome extends StatelessWidget {
     required this.onFilterTypeChanged,
     required this.onAccountChanged,
     required this.onCategoryChanged,
+    required this.filtersExpanded,
+    required this.onFiltersExpandedChanged,
     required this.showFilters,
     required this.loading,
     required this.errorMessage,
@@ -50,6 +52,8 @@ class _CalendarChrome extends StatelessWidget {
   final ValueChanged<TxType?> onFilterTypeChanged;
   final ValueChanged<int?> onAccountChanged;
   final ValueChanged<int?> onCategoryChanged;
+  final bool filtersExpanded;
+  final ValueChanged<bool> onFiltersExpandedChanged;
   final bool showFilters;
   final bool loading;
   final String? errorMessage;
@@ -94,6 +98,8 @@ class _CalendarChrome extends StatelessWidget {
               categoryId: categoryId,
               accounts: accounts,
               categories: categories,
+              expanded: filtersExpanded,
+              onExpandedChanged: onFiltersExpandedChanged,
               onQueryChanged: onQueryChanged,
               onFilterTypeChanged: onFilterTypeChanged,
               onAccountChanged: onAccountChanged,
@@ -437,7 +443,7 @@ class _MonthTable extends StatelessWidget {
           children: [
             for (var i = 0; i < labels.length; i++)
               Padding(
-                padding: const EdgeInsets.only(bottom: 6, top: 2),
+                padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
                 child: Center(
                   child: Text(
                     labels[i],
@@ -506,7 +512,7 @@ class _DayCell extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(2, 4, 2, 6),
+        padding: const EdgeInsets.fromLTRB(5, 8, 5, 10),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -514,7 +520,7 @@ class _DayCell extends StatelessWidget {
             Align(
               alignment: Alignment.topCenter,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
                   color: isToday ? Colors.white : Colors.transparent,
                   borderRadius: BorderRadius.circular(4),
@@ -531,7 +537,7 @@ class _DayCell extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             SizedBox(
               height: 40,
               width: double.infinity,

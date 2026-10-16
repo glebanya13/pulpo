@@ -51,7 +51,7 @@ class GoalsScreen extends ConsumerWidget {
                 },
               ),
             ),
-        headerGap: 16,
+        headerGap: 10,
         children: [
             AsyncValuesGate(
               values: [goalsAsync],
@@ -145,10 +145,10 @@ class _GoalCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: context.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,7 +159,7 @@ class _GoalCard extends StatelessWidget {
                   child: Text(
                     goal.name,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: context.primaryText,
                     ),
@@ -168,17 +168,17 @@ class _GoalCard extends StatelessWidget {
                 Pressable(
                   onTap: onEdit,
                   child: Padding(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(4),
                     child: Icon(LucideIcons.pencil,
-                        size: 15, color: context.mutedText),
+                        size: 14, color: context.mutedText),
                   ),
                 ),
                 Pressable(
                   onTap: onDelete,
                   child: Padding(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(4),
                     child: Icon(LucideIcons.trash2,
-                        size: 15, color: AppColors.danger),
+                        size: 14, color: AppColors.danger),
                   ),
                 ),
               ],
@@ -186,29 +186,29 @@ class _GoalCard extends StatelessWidget {
             Text(
               '${formatMoney(goal.currentAmount, currency)} / ${formatMoney(goal.targetAmount, currency)}',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: context.mutedText,
               ),
             ),
             if (goal.targetDate != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 DateFormat('d MMM yyyy', locale).format(goal.targetDate!),
-                style: TextStyle(fontSize: 12, color: context.faintText),
+                style: TextStyle(fontSize: 11, color: context.faintText),
               ),
             ],
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
               child: LinearProgressIndicator(
                 value: p,
-                minHeight: 8,
+                minHeight: 6,
                 backgroundColor: context.progressTrack,
                 color: Color(goal.color),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerRight,
               child: ScaledTextButton(

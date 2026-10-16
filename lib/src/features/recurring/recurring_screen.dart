@@ -51,7 +51,7 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
                 onTap: () => _openAdd(context),
               ),
             ),
-        headerGap: 16,
+        headerGap: 10,
         children: [
             AsyncValuesGate(
               values: [rulesAsync],
@@ -116,19 +116,19 @@ class _RuleCard extends ConsumerWidget {
       onTap: () => context.push('/recurring/${rule.id}/edit'),
       child: Container(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: context.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
           Row(
             children: [
               ColorWellIcon(
-                size: 32,
-                iconSize: 15,
-                radius: 10,
+                size: 28,
+                iconSize: 13,
+                radius: 8,
                 color: template.type == TxType.income
                     ? AppColors.bgFood
                     : const Color(0xFFE8E4FF),
@@ -136,17 +136,17 @@ class _RuleCard extends ConsumerWidget {
                     ? LucideIcons.trendingUp
                     : LucideIcons.repeat,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(template.name,
                         style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: context.primaryText)),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 1),
                     Text(
                       _freqLabel(rule.frequency, tr),
                       style: TextStyle(
@@ -159,7 +159,7 @@ class _RuleCard extends ConsumerWidget {
                 (template.type == TxType.expense ? '−' : '+') +
                     formatMoney(template.amount, template.currency),
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 13,
                   fontWeight: FontWeight.w800,
                   color: template.type == TxType.income
                       ? context.accent
@@ -168,7 +168,7 @@ class _RuleCard extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

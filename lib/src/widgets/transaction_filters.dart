@@ -41,7 +41,7 @@ List<db.Transaction> applyTransactionFilters({
   ];
 }
 
-class TransactionFiltersBar extends StatefulWidget {
+class TransactionFiltersBar extends StatelessWidget {
   const TransactionFiltersBar({
     super.key,
     required this.searchController,
@@ -51,6 +51,8 @@ class TransactionFiltersBar extends StatefulWidget {
     required this.categoryId,
     required this.accounts,
     required this.categories,
+    required this.expanded,
+    required this.onExpandedChanged,
     required this.onQueryChanged,
     required this.onFilterTypeChanged,
     required this.onAccountChanged,
@@ -64,26 +66,17 @@ class TransactionFiltersBar extends StatefulWidget {
   final int? categoryId;
   final List<db.Account> accounts;
   final List<db.Category> categories;
+  /// Owned by the parent — survives list empty/non-empty rebuilds so type
+  /// tabs (All / Income / …) stay visible while switching filters.
+  final bool expanded;
+  final ValueChanged<bool> onExpandedChanged;
   final ValueChanged<String> onQueryChanged;
   final ValueChanged<TxType?> onFilterTypeChanged;
   final ValueChanged<int?> onAccountChanged;
   final ValueChanged<int?> onCategoryChanged;
 
-  @override
-  State<TransactionFiltersBar> createState() => _TransactionFiltersBarState();
-}
-
-class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
-  bool _expanded = false;
-
   bool get _hasActiveFilters =>
-      widget.filterType != null ||
-      widget.accountId != null ||
-      widget.categoryId != null;
-
-  /// Panel stays open until the Filter chip is tapped again — selecting
-  /// "All" clears the type filter but must not collapse the controls.
-  bool get _showPanel => _expanded;
+      filterType != null || accountId != null || categoryId != null;
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +101,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                     const SizedBox(width: 6),
                     Expanded(
                       child: TextField(
-                        controller: widget.searchController,
+                        controller: searchController,
                         decoration: InputDecoration(
                           hintText: tr.search,
                           border: InputBorder.none,
@@ -120,7 +113,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                           fontSize: 13,
                           color: context.primaryText,
                         ),
-                        onChanged: widget.onQueryChanged,
+                        onChanged: onQueryChanged,
                       ),
                     ),
                   ],
@@ -129,12 +122,12 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
             ),
             const SizedBox(width: 6),
             Pressable(
-              onTap: () => setState(() => _expanded = !_expanded),
+              onTap: () => onExpandedChanged(!expanded),
               child: Container(
                 height: 34,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
-                  color: (_showPanel || _hasActiveFilters)
+                  color: (expanded || _hasActiveFilters)
                       ? AppColors.lime.withValues(alpha: 0.2)
                       : context.surface,
                   borderRadius: BorderRadius.circular(10),
@@ -150,7 +143,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                     Icon(
                       LucideIcons.slidersHorizontal,
                       size: 15,
-                      color: (_showPanel || _hasActiveFilters)
+                      color: (expanded || _hasActiveFilters)
                           ? context.accent
                           : context.mutedText,
                     ),
@@ -160,7 +153,7 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: (_showPanel || _hasActiveFilters)
+                        color: (expanded || _hasActiveFilters)
                             ? context.accent
                             : context.mutedText,
                       ),
@@ -171,18 +164,18 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
             ),
           ],
         ),
-        if (_showPanel) ...[
+        if (expanded) ...[
           const SizedBox(height: 8),
           TabsPill(
             tabs: [tr.all, tr.income, tr.expense, tr.transfer],
-            index: widget.filterType == null
+            index: filterType == null
                 ? 0
-                : widget.filterType == TxType.income
+                : filterType == TxType.income
                     ? 1
-                    : widget.filterType == TxType.expense
+                    : filterType == TxType.expense
                         ? 2
                         : 3,
-            onChanged: (i) => widget.onFilterTypeChanged(switch (i) {
+            onChanged: (i) => onFilterTypeChanged(switch (i) {
                   1 => TxType.income,
                   2 => TxType.expense,
                   3 => TxType.transfer,
@@ -195,8 +188,8 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
               Expanded(
                 child: FilterPickChip(
                   label: tr.filterAccount,
-                  value: widget.accounts
-                      .where((a) => a.id == widget.accountId)
+                  value: accounts
+                      .where((a) => a.id == accountId)
                       .map((a) => a.name)
                       .firstOrNull,
                   onTap: () async {
@@ -205,23 +198,23 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                       title: tr.filterAccount,
                       items: [
                         (null, tr.all),
-                        for (final a in widget.accounts) (a.id, a.name),
+                        for (final a in accounts) (a.id, a.name),
                       ],
-                      selected: widget.accountId,
+                      selected: accountId,
                     );
-                    if (picked.didPick) widget.onAccountChanged(picked.value);
+                    if (picked.didPick) onAccountChanged(picked.value);
                   },
-                  onClear: widget.accountId == null
+                  onClear: accountId == null
                       ? null
-                      : () => widget.onAccountChanged(null),
+                      : () => onAccountChanged(null),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: FilterPickChip(
                   label: tr.filterCategory,
-                  value: widget.categories
-                      .where((c) => c.id == widget.categoryId)
+                  value: categories
+                      .where((c) => c.id == categoryId)
                       .map((c) => tr.categoryName(c.name))
                       .firstOrNull,
                   onTap: () async {
@@ -230,16 +223,16 @@ class _TransactionFiltersBarState extends State<TransactionFiltersBar> {
                       title: tr.filterCategory,
                       items: [
                         (null, tr.all),
-                        for (final c in widget.categories)
+                        for (final c in categories)
                           (c.id, tr.categoryName(c.name)),
                       ],
-                      selected: widget.categoryId,
+                      selected: categoryId,
                     );
-                    if (picked.didPick) widget.onCategoryChanged(picked.value);
+                    if (picked.didPick) onCategoryChanged(picked.value);
                   },
-                  onClear: widget.categoryId == null
+                  onClear: categoryId == null
                       ? null
-                      : () => widget.onCategoryChanged(null),
+                      : () => onCategoryChanged(null),
                 ),
               ),
             ],

@@ -20,6 +20,18 @@ Future<DateTime?> showCalendarDatePicker(
   );
 }
 
+/// Bottom sheet — выбор года для вкладки Mensual.
+Future<int?> showCalendarYearPicker(
+  BuildContext context, {
+  required int initialYear,
+}) {
+  return showAppBottomSheet<int>(
+    context: context,
+    transparent: true,
+    builder: (ctx) => _CalendarYearPickerSheet(initialYear: initialYear),
+  );
+}
+
 class _CalendarDatePickerSheet extends StatefulWidget {
   const _CalendarDatePickerSheet({required this.initial});
 
@@ -311,6 +323,143 @@ class _CalendarDatePickerSheetState extends State<_CalendarDatePickerSheet> {
                       ),
                     ),
                   ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CalendarYearPickerSheet extends StatefulWidget {
+  const _CalendarYearPickerSheet({required this.initialYear});
+
+  final int initialYear;
+
+  @override
+  State<_CalendarYearPickerSheet> createState() =>
+      _CalendarYearPickerSheetState();
+}
+
+class _CalendarYearPickerSheetState extends State<_CalendarYearPickerSheet> {
+  late int _year;
+
+  /// Inclusive range around today — enough for history without a long scroll.
+  static const _spanBefore = 15;
+  static const _spanAfter = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _year = widget.initialYear;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = Tr.of(context);
+    final nowYear = DateTime.now().year;
+    final first = nowYear - _spanBefore;
+    final last = nowYear + _spanAfter;
+    final years = [for (var y = last; y >= first; y--) y];
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        12,
+        8,
+        12,
+        10 + MediaQuery.paddingOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+            decoration: BoxDecoration(
+              color: context.surface,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  tr.calendarPickYear,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: context.mutedText,
+                    letterSpacing: 0.04,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: years.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    mainAxisSpacing: 4,
+                    crossAxisSpacing: 4,
+                    childAspectRatio: 2.1,
+                  ),
+                  itemBuilder: (context, i) {
+                    final y = years[i];
+                    final active = y == _year;
+                    final isCurrent = y == nowYear;
+                    return Pressable(
+                      onTap: () => Navigator.pop(context, y),
+                      child: Container(
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: active
+                              ? AppColors.lime
+                              : (isCurrent
+                                  ? AppColors.lime.withValues(alpha: 0.25)
+                                  : context.scaffoldBg),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '$y',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: active ? AppColors.ink : context.primaryText,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                Pressable(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    height: 38,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: context.scaffoldBg,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      tr.cancel,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: context.primaryText,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),

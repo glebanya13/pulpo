@@ -222,6 +222,7 @@ class Tr {
   String get calendarViewDay => _get('calendar_view_day');
   String get calendarViewMonth => _get('calendar_view_month');
   String get calendarPickDate => _get('calendar_pick_date');
+  String get calendarPickYear => _get('calendar_pick_year');
   String get noTxThisDay => _get('no_tx_this_day');
   String get enterAmount => _get('enter_amount');
   String get emptyFilterResults => _get('empty_filter_results');
@@ -1028,6 +1029,7 @@ class Tr {
       'calendar_view_day': 'Diario',
       'calendar_view_month': 'Mensual',
       'calendar_pick_date': 'Elegir fecha',
+      'calendar_pick_year': 'Elegir año',
       'no_tx_this_day': 'Sin transacciones este día',
       'enter_amount': 'Introduce un importe',
       'empty_filter_results': 'Sin resultados',
@@ -1798,6 +1800,7 @@ class Tr {
       'calendar_view_day': 'День',
       'calendar_view_month': 'Месяц',
       'calendar_pick_date': 'Выбрать дату',
+      'calendar_pick_year': 'Выбрать год',
       'no_tx_this_day': 'Транзакций за этот день нет',
       'enter_amount': 'Введите сумму',
       'empty_filter_results': 'Ничего не найдено',
@@ -2567,6 +2570,7 @@ class Tr {
       'calendar_view_day': 'Day',
       'calendar_view_month': 'Month',
       'calendar_pick_date': 'Pick date',
+      'calendar_pick_year': 'Pick year',
       'no_tx_this_day': 'No transactions on this day',
       'enter_amount': 'Enter an amount',
       'empty_filter_results': 'No matches',
@@ -3331,6 +3335,7 @@ class Tr {
       'calendar_view_day': 'День',
       'calendar_view_month': 'Місяць',
       'calendar_pick_date': 'Вибрати дату',
+      'calendar_pick_year': 'Вибрати рік',
       'no_tx_this_day': 'Немає транзакцій за цей день',
       'enter_amount': 'Введіть суму',
       'empty_filter_results': 'Нічого не знайдено',

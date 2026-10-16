@@ -58,6 +58,7 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
   TxType? _filterType;
   int? _accountId;
   int? _categoryId;
+  bool _filtersExpanded = false;
   final _searchCtrl = TextEditingController();
   Timer? _queryDebounce;
 
@@ -229,6 +230,15 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
     await _openDaySheet(context, picked, monthTxs);
   }
 
+  Future<void> _openYearPicker(BuildContext context) async {
+    final picked = await showCalendarYearPicker(
+      context,
+      initialYear: _month.year,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _month = DateTime(picked, _month.month, 1));
+  }
+
   @override
   Widget build(BuildContext context) {
     final currency = ref.watch(settingsControllerProvider).baseCurrency;
@@ -355,8 +365,11 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
       viewIndex: _viewIndex,
       onShift: _shiftPeriod,
       onTitleTap: () {
-        if (monthsView) return;
-        _openDatePicker(context);
+        if (monthsView) {
+          _openYearPicker(context);
+        } else {
+          _openDatePicker(context);
+        }
       },
       onViewChanged: (i) => setState(() => _viewIndex = i),
       income: income,
@@ -374,6 +387,8 @@ class _MonthlyCalendarState extends ConsumerState<MonthlyCalendar> {
       onFilterTypeChanged: (t) => setState(() => _filterType = t),
       onAccountChanged: (id) => setState(() => _accountId = id),
       onCategoryChanged: (id) => setState(() => _categoryId = id),
+      filtersExpanded: _filtersExpanded,
+      onFiltersExpandedChanged: (v) => setState(() => _filtersExpanded = v),
       showFilters: listView,
       loading: loading,
       errorMessage: allTxsAsync.hasError && allRaw == null

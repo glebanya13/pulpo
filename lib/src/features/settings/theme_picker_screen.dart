@@ -43,7 +43,7 @@ class ThemePickerScreen extends ConsumerWidget {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 14),
+                              horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
                             color: current == options[i].$1
                                 ? AppColors.lime.withValues(alpha: 0.12)
@@ -60,13 +60,13 @@ class ThemePickerScreen extends ConsumerWidget {
                           child: Row(
                             children: [
                               Icon(options[i].$3,
-                                  size: 20, color: context.primaryText),
-                              const SizedBox(width: 14),
+                                  size: 16, color: context.primaryText),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   options[i].$2,
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                     color: context.primaryText,
                                   ),
@@ -74,7 +74,7 @@ class ThemePickerScreen extends ConsumerWidget {
                               ),
                               if (current == options[i].$1)
                                 Icon(LucideIcons.check,
-                                    color: context.accent, size: 20),
+                                    color: context.accent, size: 16),
                             ],
                           ),
                         ),

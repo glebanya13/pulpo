@@ -193,7 +193,7 @@ class _TotalCard extends StatelessWidget {
           Text(
             formatMoney(value, currency),
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w800,
               color: accent ? accentColor : context.primaryText,
             ),
@@ -220,7 +220,7 @@ class _SubCard extends ConsumerWidget {
       onTap: () => context.push('/subscriptions/${sub.id}/edit'),
       child: Container(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: highlighted
             ? accentColor.withValues(alpha: 0.08)
@@ -228,16 +228,16 @@ class _SubCard extends ConsumerWidget {
         border: highlighted
             ? Border.all(color: accentColor.withValues(alpha: 0.25))
             : null,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               color: Color(sub.logoColor),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(9),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -247,7 +247,7 @@ class _SubCard extends ConsumerWidget {
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
-                fontSize: 14,
+                fontSize: 12,
               ),
             ),
           ),
@@ -260,10 +260,10 @@ class _SubCard extends ConsumerWidget {
                   sub.name,
                   style: TextStyle(
                       color: context.primaryText,
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 RichText(
                   text: TextSpan(
                     style: TextStyle(
@@ -291,7 +291,7 @@ class _SubCard extends ConsumerWidget {
             formatMoney(sub.amount, sub.currency),
             style: TextStyle(
               color: context.primaryText,
-              fontSize: 16,
+              fontSize: 13,
               fontWeight: FontWeight.w800,
             ),
           ),

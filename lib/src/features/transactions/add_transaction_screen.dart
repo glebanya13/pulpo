@@ -60,7 +60,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   late TxType _type;
   bool _external = false;
   final _amountCtrl = TextEditingController();
+  final _amountFocus = FocusNode();
   bool _hydrated = false;
+  Animation<double>? _routeAnim;
+  AnimationStatusListener? _routeFocusListener;
 
   @override
   void initState() {
@@ -83,6 +86,29 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       _date = DateTime(seed.year, seed.month, seed.day);
     }
     _amountCtrl.addListener(_onAmountChanged);
+    // Focus after the route transition so keyboard + push don't fight.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focusAmountWhenReady());
+  }
+
+  void _focusAmountWhenReady() {
+    if (!mounted || widget.editId != null || _type == TxType.transfer) return;
+    final anim = ModalRoute.of(context)?.animation;
+    if (anim == null || anim.isCompleted) {
+      _amountFocus.requestFocus();
+      return;
+    }
+    void listener(AnimationStatus status) {
+      if (status != AnimationStatus.completed) return;
+      anim.removeStatusListener(listener);
+      _routeAnim = null;
+      _routeFocusListener = null;
+      if (mounted && _type != TxType.transfer) {
+        _amountFocus.requestFocus();
+      }
+    }
+    _routeAnim = anim;
+    _routeFocusListener = listener;
+    anim.addStatusListener(listener);
   }
 
   void _onAmountChanged() {
@@ -100,9 +126,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
   @override
   void dispose() {
+    if (_routeAnim != null && _routeFocusListener != null) {
+      _routeAnim!.removeStatusListener(_routeFocusListener!);
+    }
     _categoryDebounce?.cancel();
     _noteCtrl.dispose();
     _amountCtrl.dispose();
+    _amountFocus.dispose();
     super.dispose();
   }
 
@@ -449,7 +479,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         ? '−'
         : (_type == TxType.income ? '+' : '');
 
-    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    // Use MediaQuery.padding (shrinks with the keyboard) instead of a binary
+    // viewInsets check — avoids a one-frame bottom jump when the IME opens.
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Padding(
@@ -457,10 +488,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           AppSpacing.pageSide,
           MediaQuery.viewPaddingOf(context).top + 6,
           AppSpacing.pageSide,
-          // No home-indicator “дырка” while the keyboard is up.
-          keyboardOpen
-              ? AppSpacing.pageSide
-              : AppSpacing.pageSide + MediaQuery.viewPaddingOf(context).bottom,
+          AppSpacing.pageSide + MediaQuery.paddingOf(context).bottom,
         ),
         child: Column(
           children: [
@@ -526,9 +554,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         children: [
           _AmountInput(
             controller: _amountCtrl,
+            focusNode: _amountFocus,
             sign: sign,
             currency: currency,
-            autofocus: false,
           ),
           const SizedBox(height: 8),
           _QuickCaptureRow(
@@ -536,6 +564,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             onVoice: _voiceEntry,
             onCamera: () => _pickReceipt(ImageSource.camera),
             onGallery: () => _pickReceipt(ImageSource.gallery),
+            onNote: _openNote,
           ),
           if (_aiCategorySuggestion != null) ...[
             const SizedBox(height: 8),
@@ -768,13 +797,13 @@ class _AmountInput extends StatelessWidget {
     required this.controller,
     required this.sign,
     required this.currency,
-    this.autofocus = false,
+    this.focusNode,
   });
 
   final TextEditingController controller;
   final String sign;
   final String currency;
-  final bool autofocus;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -809,7 +838,7 @@ class _AmountInput extends StatelessWidget {
               child: IntrinsicWidth(
                 child: TextField(
                   controller: controller,
-                  autofocus: autofocus,
+                  focusNode: focusNode,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [_ThousandsFormatter()],
@@ -928,19 +957,21 @@ class _FormRow extends StatelessWidget {
   }
 }
 
-/// Assistant + camera + gallery in one row (stays above the keyboard).
+/// Assistant + note + camera + gallery in one row (stays above the keyboard).
 class _QuickCaptureRow extends ConsumerWidget {
   const _QuickCaptureRow({
     required this.busy,
     required this.onVoice,
     required this.onCamera,
     required this.onGallery,
+    required this.onNote,
   });
 
   final bool busy;
   final VoidCallback onVoice;
   final VoidCallback onCamera;
   final VoidCallback onGallery;
+  final VoidCallback onNote;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -958,7 +989,7 @@ class _QuickCaptureRow extends ConsumerWidget {
             onTap: busy ? null : onVoice,
             child: Container(
               height: 52,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 gradient: const LinearGradient(
@@ -981,14 +1012,14 @@ class _QuickCaptureRow extends ConsumerWidget {
               child: Row(
                 children: [
                   const AiAssistantMark(size: 22),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 5),
                   Expanded(
                     child: Text(
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.2,
                         color: Colors.white,
@@ -999,7 +1030,7 @@ class _QuickCaptureRow extends ConsumerWidget {
                     energy.hasEnergy
                         ? Container(
                             height: 22,
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.22),
                               borderRadius: BorderRadius.circular(999),
@@ -1030,9 +1061,19 @@ class _QuickCaptureRow extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 5),
         Expanded(
-          flex: 3,
+          flex: 2,
+          child: _ReceiptBtn(
+            icon: LucideIcons.pencil,
+            label: tr.note,
+            onTap: onNote,
+            compact: true,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Expanded(
+          flex: 2,
           child: _ReceiptBtn(
             icon: LucideIcons.camera,
             label: tr.receiptCamera,
@@ -1040,9 +1081,9 @@ class _QuickCaptureRow extends ConsumerWidget {
             compact: true,
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 5),
         Expanded(
-          flex: 3,
+          flex: 2,
           child: _ReceiptBtn(
             icon: LucideIcons.image,
             label: tr.receiptGallery,
