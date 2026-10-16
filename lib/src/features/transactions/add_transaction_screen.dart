@@ -86,8 +86,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       _date = DateTime(seed.year, seed.month, seed.day);
     }
     _amountCtrl.addListener(_onAmountChanged);
+    _amountFocus.addListener(_onAmountFocus);
     // Focus after the route transition so keyboard + push don't fight.
     WidgetsBinding.instance.addPostFrameCallback((_) => _focusAmountWhenReady());
+  }
+
+  void _onAmountFocus() {
+    if (!_amountFocus.hasFocus) return;
+    final len = _amountCtrl.text.length;
+    _amountCtrl.selection = TextSelection.collapsed(offset: len);
   }
 
   void _focusAmountWhenReady() {
@@ -130,6 +137,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       _routeAnim!.removeStatusListener(_routeFocusListener!);
     }
     _categoryDebounce?.cancel();
+    _amountFocus.removeListener(_onAmountFocus);
     _noteCtrl.dispose();
     _amountCtrl.dispose();
     _amountFocus.dispose();
@@ -505,7 +513,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     )
                   : null,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 12),
             if (widget.editId == null)
               _TypeTabs(
                 type: _type,
@@ -806,17 +814,18 @@ class _AmountInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lime = context.isDark ? AppColors.lime : AppColors.limeAccent;
     final amountStyle = TextStyle(
       fontSize: 40,
       fontWeight: FontWeight.w800,
-      color: context.isDark ? AppColors.lime : AppColors.limeAccent,
+      color: lime,
       letterSpacing: -2,
       height: 1,
     );
     final signStyle = TextStyle(
       fontSize: 40,
       fontWeight: FontWeight.w800,
-      color: context.primaryText,
+      color: lime,
       letterSpacing: -2,
       height: 1,
     );
@@ -838,6 +847,7 @@ class _AmountInput extends StatelessWidget {
                 child: TextField(
                   controller: controller,
                   focusNode: focusNode,
+                  cursorColor: lime,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [_ThousandsFormatter()],
@@ -848,7 +858,7 @@ class _AmountInput extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: '0.00',
                     hintStyle: amountStyle.copyWith(
-                      color: context.primaryText.withValues(alpha: 0.25),
+                      color: lime.withValues(alpha: 0.35),
                     ),
                     border: InputBorder.none,
                     isCollapsed: true,

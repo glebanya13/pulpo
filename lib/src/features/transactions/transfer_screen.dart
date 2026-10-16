@@ -47,10 +47,18 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
   @override
   void initState() {
     super.initState();
+    _amountFocus.addListener(_onAmountFocus);
     if (!widget.embedded || widget.requestFocus) {
       WidgetsBinding.instance
           .addPostFrameCallback((_) => _focusAmountWhenReady());
     }
+  }
+
+  void _onAmountFocus() {
+    if (!_amountFocus.hasFocus) return;
+    // Caret at end — not mid-hint (center-aligned full-width field).
+    final len = _amountCtrl.text.length;
+    _amountCtrl.selection = TextSelection.collapsed(offset: len);
   }
 
   @override
@@ -89,6 +97,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     if (_routeAnim != null && _routeFocusListener != null) {
       _routeAnim!.removeStatusListener(_routeFocusListener!);
     }
+    _amountFocus.removeListener(_onAmountFocus);
     _amountCtrl.dispose();
     _amountFocus.dispose();
     super.dispose();
@@ -276,33 +285,48 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
               style: TextStyle(fontSize: 11, color: context.faintText)),
         ),
         const SizedBox(height: 2),
-        TextField(
-          controller: _amountCtrl,
-          focusNode: _amountFocus,
-          textAlign: TextAlign.center,
-          keyboardType:
-              const TextInputType.numberWithOptions(decimal: true),
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => FocusScope.of(context).unfocus(),
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -1.5,
-            height: 1.1,
-            color: context.primaryText,
-          ),
-          decoration: InputDecoration(
-            hintText: '0.00',
-            border: InputBorder.none,
-            filled: false,
-            isCollapsed: true,
-            contentPadding: const EdgeInsets.symmetric(vertical: 4),
-            hintStyle: TextStyle(
-              color: context.primaryText.withValues(alpha: 0.4),
+        // Same as expense/income: intrinsic width + end align so the caret
+        // sits at the end of "0.00", and lime digits like everywhere else.
+        Center(
+          child: IntrinsicWidth(
+            child: TextField(
+              controller: _amountCtrl,
+              focusNode: _amountFocus,
+              textAlign: TextAlign.end,
+              cursorColor: AppColors.lime,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusScope.of(context).unfocus(),
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1.5,
+                height: 1.1,
+                color: context.isDark ? AppColors.lime : AppColors.limeAccent,
+              ),
+              decoration: InputDecoration(
+                hintText: '0.00',
+                border: InputBorder.none,
+                filled: false,
+                isCollapsed: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                hintStyle: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1.5,
+                  height: 1.1,
+                  color: context.primaryText.withValues(alpha: 0.25),
+                ),
+              ),
+              onChanged: (v) => setState(
+                () => _amount = double.tryParse(
+                      v.replaceAll(',', '.'),
+                    ) ??
+                    0,
+              ),
             ),
           ),
-          onChanged: (v) =>
-              setState(() => _amount = double.tryParse(v) ?? 0),
         ),
         if (!sameCurrency && _from != null && _to != null) ...[
           const SizedBox(height: 8),
