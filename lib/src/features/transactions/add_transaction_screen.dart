@@ -511,14 +511,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 type: _type,
                 external: _external,
                 onSelect: (t, {required bool external}) {
-                  if (t == TxType.transfer) {
-                    FocusManager.instance.primaryFocus?.unfocus();
-                  }
                   setState(() {
                     _type = t;
                     _external = external;
                     if (t != TxType.transfer) _category = null;
                   });
+                  if (t != TxType.transfer) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) _amountFocus.requestFocus();
+                    });
+                  }
                 },
               ),
             Expanded(
@@ -530,7 +532,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     currency: currency,
                     sign: sign,
                   ),
-                  const TransferScreen(embedded: true),
+                  TransferScreen(
+                    embedded: true,
+                    requestFocus:
+                        _type == TxType.transfer && widget.editId == null,
+                  ),
                 ],
               ),
             ),
@@ -609,13 +615,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   Localizations.localeOf(context).languageCode,
                 ).format(_date),
                 onTap: _pickDate,
-              ),
-              _FormRow(
-                icon: LucideIcons.pencil,
-                label: tr.note,
-                value: _noteCtrl.text.isEmpty ? tr.add : _noteCtrl.text,
-                valueMaxLines: 3,
-                onTap: _openNote,
               ),
             ],
           ),

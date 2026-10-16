@@ -114,7 +114,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           controller: scroll,
           padding: pad,
           headerGap: 16,
-          headerContentHeight: 70,
+          // Same as Management — large ScreenTitlePill + dense support chips.
+          headerContentHeight: 64,
           header: ScreenTitlePill(
             title: tr.analytics,
             subtitle: tr.analyticsSubtitle,

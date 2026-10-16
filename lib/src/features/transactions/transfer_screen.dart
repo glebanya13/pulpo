@@ -19,9 +19,15 @@ import '../../data/repositories/settings_service.dart';
 import '../../data/repositories/transaction_repository.dart';
 
 class TransferScreen extends ConsumerStatefulWidget {
-  const TransferScreen({super.key, this.embedded = false});
+  const TransferScreen({
+    super.key,
+    this.embedded = false,
+    this.requestFocus = false,
+  });
 
   final bool embedded;
+  /// When true (e.g. transfer tab selected), focus the amount field.
+  final bool requestFocus;
 
   @override
   ConsumerState<TransferScreen> createState() => _TransferScreenState();
@@ -34,10 +40,57 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
   double _rate = 1;
   double _fee = 0;
   final _amountCtrl = TextEditingController();
+  final _amountFocus = FocusNode();
+  Animation<double>? _routeAnim;
+  AnimationStatusListener? _routeFocusListener;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.embedded || widget.requestFocus) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _focusAmountWhenReady());
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant TransferScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.requestFocus && !oldWidget.requestFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _amountFocus.requestFocus();
+      });
+    }
+  }
+
+  void _focusAmountWhenReady() {
+    if (!mounted) return;
+    if (widget.embedded && !widget.requestFocus) return;
+    final anim = ModalRoute.of(context)?.animation;
+    if (anim == null || anim.isCompleted) {
+      _amountFocus.requestFocus();
+      return;
+    }
+    void listener(AnimationStatus status) {
+      if (status != AnimationStatus.completed) return;
+      anim.removeStatusListener(listener);
+      _routeAnim = null;
+      _routeFocusListener = null;
+      if (mounted) _amountFocus.requestFocus();
+    }
+
+    _routeAnim = anim;
+    _routeFocusListener = listener;
+    anim.addStatusListener(listener);
+  }
 
   @override
   void dispose() {
+    if (_routeAnim != null && _routeFocusListener != null) {
+      _routeAnim!.removeStatusListener(_routeFocusListener!);
+    }
     _amountCtrl.dispose();
+    _amountFocus.dispose();
     super.dispose();
   }
 
@@ -225,6 +278,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
         const SizedBox(height: 2),
         TextField(
           controller: _amountCtrl,
+          focusNode: _amountFocus,
           textAlign: TextAlign.center,
           keyboardType:
               const TextInputType.numberWithOptions(decimal: true),
