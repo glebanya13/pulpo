@@ -100,7 +100,7 @@ class RemindersScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      Switch.adaptive(
+                      AppSwitch(
                         value: settings.dailyReminderEnabled,
                         onChanged: (v) =>
                             toggleDailyReminder(context, ref, tr, v),
@@ -304,7 +304,7 @@ class _SmartRemindersCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Switch.adaptive(
+              AppSwitch(
                 value: enabled && isPro,
                 activeThumbColor: AppColors.ink,
                 activeTrackColor: AppColors.ink.withValues(alpha: 0.35),

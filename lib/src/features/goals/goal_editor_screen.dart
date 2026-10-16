@@ -124,7 +124,7 @@ class _GoalEditorScreenState extends ConsumerState<GoalEditorScreen> {
                         onSubmitted: (_) => _targetFocus.requestFocus(),
                         decoration: InputDecoration(hintText: tr.goalName),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       TextField(
                         controller: _targetCtrl,
                         focusNode: _targetFocus,
@@ -135,7 +135,7 @@ class _GoalEditorScreenState extends ConsumerState<GoalEditorScreen> {
                         onSubmitted: (_) => _currentFocus.requestFocus(),
                         decoration: InputDecoration(hintText: tr.goalTarget),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       TextField(
                         controller: _currentCtrl,
                         focusNode: _currentFocus,
@@ -146,13 +146,13 @@ class _GoalEditorScreenState extends ConsumerState<GoalEditorScreen> {
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
                         decoration: InputDecoration(hintText: tr.goalSaved),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 12),
                       ScaledElevatedButton(
                         expand: true,
                         onPressed: _saving ? null : _save,
                         child: Text(_saving ? '...' : tr.save),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),

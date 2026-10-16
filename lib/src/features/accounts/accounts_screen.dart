@@ -144,15 +144,34 @@ class _NetWorthCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            hidden ? kMaskedMoney : formatMoney(value, currency),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.6,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                hidden ? kMaskedMoney : formatMoney(value, currency),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              Pressable(
+                onTap: () => ref
+                    .read(settingsControllerProvider.notifier)
+                    .setHideBalances(!hidden),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Icon(
+                    hidden ? LucideIcons.eye : LucideIcons.eyeOff,
+                    size: 16,
+                    color: Colors.white70,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Container(

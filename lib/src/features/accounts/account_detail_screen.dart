@@ -13,6 +13,7 @@ import '../../core/utils/money_format.dart';
 import '../../data/db/app_database.dart' as db;
 import '../../data/db/enums.dart';
 import '../../data/repositories/providers.dart';
+import '../../data/repositories/settings_service.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/common.dart';
 import '../../widgets/pressable.dart';
@@ -86,6 +87,9 @@ class _AccountDetailBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final hidden = ref.watch(
+      settingsControllerProvider.select((s) => s.hideBalances),
+    );
     final now = DateTime.now();
     final weeks = <double>[];
     var running = account.initialBalance;
@@ -144,50 +148,79 @@ class _AccountDetailBody extends ConsumerWidget {
                         context.push('/accounts/${account.id}/edit')),
               ],
             ),
-        headerGap: 24,
+        headerGap: 16,
         children: [
             Center(
               child: ColorWellIcon(
                 color: Color(account.color),
                 icon: lucideByKey(account.icon),
-                size: 64,
-                iconSize: 28,
-                radius: 20,
+                size: 48,
+                iconSize: 22,
+                radius: 14,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Center(
               child: Text(account.name,
                   style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700)),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Center(
               child: Text(
                 '${tr.accountTypeLabel(account.type)} · ${account.currency}',
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
+                style: const TextStyle(color: Colors.white54, fontSize: 11),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Center(
-              child: Text(
-                formatMoney(balances[account.id] ?? 0, account.currency),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 40,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -2,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        hidden
+                            ? kMaskedMoney
+                            : formatMoney(
+                                balances[account.id] ?? 0,
+                                account.currency,
+                              ),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Pressable(
+                    onTap: () => ref
+                        .read(settingsControllerProvider.notifier)
+                        .setHideBalances(!hidden),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Icon(
+                        hidden ? LucideIcons.eye : LucideIcons.eyeOff,
+                        size: 18,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,12 +230,12 @@ class _AccountDetailBody extends ConsumerWidget {
                     children: [
                       Text(tr.history12Weeks,
                           style: const TextStyle(
-                              color: Colors.white54, fontSize: 12)),
+                              color: Colors.white54, fontSize: 11)),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   SizedBox(
-                    height: 70,
+                    height: 56,
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -232,7 +265,7 @@ class _AccountDetailBody extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
@@ -242,7 +275,7 @@ class _AccountDetailBody extends ConsumerWidget {
                     color: AppColors.lime,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _MiniStat(
                     label: tr.expense,
@@ -252,29 +285,34 @@ class _AccountDetailBody extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(tr.recentTransactions,
                     style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700)),
-                Text(tr.seeAll,
-                    style: const TextStyle(
-                        color: AppColors.lime,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600)),
+                Pressable(
+                  onTap: () => context.push(
+                    '/accounts/$accountId/transactions',
+                  ),
+                  child: Text(tr.seeAll,
+                      style: const TextStyle(
+                          color: AppColors.lime,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600)),
+                ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             if (recent.isEmpty)
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Center(
                   child: Text(tr.emptyTransactionsList,
@@ -283,13 +321,11 @@ class _AccountDetailBody extends ConsumerWidget {
               )
             else
               for (final t in recent)
-                Theme(
-                  data: Theme.of(context).copyWith(
-                    cardTheme: const CardThemeData(color: Color(0xFF1A1A1A)),
-                  ),
+                Pressable(
+                  onTap: () => context.push('/tx/${t.id}'),
                   child: _DarkTxRow(tx: t),
                 ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
@@ -297,7 +333,7 @@ class _AccountDetailBody extends ConsumerWidget {
                     onTap: () =>
                         context.push('/accounts/${account.id}/edit'),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(100),
@@ -306,6 +342,7 @@ class _AccountDetailBody extends ConsumerWidget {
                       child: Text(tr.edit,
                           style: const TextStyle(
                               color: Colors.white,
+                              fontSize: 13,
                               fontWeight: FontWeight.w600)),
                     ),
                   ),
@@ -344,7 +381,7 @@ class _CircleBtn extends StatelessWidget {
   }
 }
 
-class _MiniStat extends StatelessWidget {
+class _MiniStat extends ConsumerWidget {
   const _MiniStat({
     required this.label,
     required this.value,
@@ -355,23 +392,63 @@ class _MiniStat extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hidden = ref.watch(
+      settingsControllerProvider.select((s) => s.hideBalances),
+    );
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(color: Colors.white54, fontSize: 11)),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                ),
+              ),
+              Pressable(
+                onTap: () => ref
+                    .read(settingsControllerProvider.notifier)
+                    .setHideBalances(!hidden),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Icon(
+                    hidden ? LucideIcons.eye : LucideIcons.eyeOff,
+                    size: 14,
+                    color: color.withValues(alpha: 0.85),
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-                fontSize: 18, fontWeight: FontWeight.w800, color: color),
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                hidden ? kMaskedMoney : value,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                  letterSpacing: -0.3,
+                  height: 1.1,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -390,29 +467,32 @@ class _DarkTxRow extends ConsumerWidget {
     final cat = ref.watch(categoryByIdProvider(tx.categoryId));
     final type = TxType.values[tx.type];
     final isIncome = type == TxType.income;
+    final hidden = ref.watch(
+      settingsControllerProvider.select((s) => s.hideBalances),
+    );
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               cat != null ? lucideByKey(cat.icon) : LucideIcons.circle,
-              size: 16,
+              size: 14,
               color: Colors.white,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,27 +503,30 @@ class _DarkTxRow extends ConsumerWidget {
                       : (cat?.name ?? Tr.of(context).transactionSingular),
                   style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600),
                 ),
                 Text(
                   DateFormat('d MMM',
                           Localizations.localeOf(context).languageCode)
                       .format(tx.date),
-                  style: const TextStyle(color: Colors.white38, fontSize: 11),
+                  style: const TextStyle(color: Colors.white38, fontSize: 10),
                 ),
               ],
             ),
           ),
           Text(
-            (isIncome ? '+' : '−') + formatMoney(tx.amount, tx.currency),
+            hidden
+                ? kMaskedMoney
+                : (isIncome ? '+' : '−') +
+                    formatMoney(tx.amount, tx.currency),
             style: TextStyle(
               color: isIncome
                   ? AppColors.lime
                   : type == TxType.expense
                       ? AppColors.danger
                       : Colors.white,
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
           ),

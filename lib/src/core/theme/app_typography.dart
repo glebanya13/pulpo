@@ -93,7 +93,7 @@ class AppTypography {
 
   static const button = TextStyle(
     fontFamily: _family,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: FontWeight.w700,
     color: AppColors.ink,
   );

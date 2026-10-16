@@ -88,7 +88,7 @@ class ScaledElevatedButton extends StatelessWidget {
     final base = Theme.of(context).elevatedButtonTheme.style;
     final style = expand
         ? base?.copyWith(
-            minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)),
+            minimumSize: const WidgetStatePropertyAll(Size.fromHeight(40)),
           )
         : base;
 

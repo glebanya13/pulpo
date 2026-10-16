@@ -182,10 +182,9 @@ class _LockRow extends StatelessWidget {
               ],
             ),
           ),
-          Switch.adaptive(
+          AppSwitch(
             value: value,
             onChanged: onChanged,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
       ),

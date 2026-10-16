@@ -133,9 +133,7 @@ class _SubscriptionEditorScreenState
               const SizedBox(height: 12),
               Expanded(
                 child: SingleChildScrollView(
-                  // Room above the first field so the floating label isn't
-                  // clipped by the scroll view when focused/autofocus.
-                  padding: const EdgeInsets.only(top: 16),
+                  padding: const EdgeInsets.only(top: 4),
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Column(
@@ -161,12 +159,12 @@ class _SubscriptionEditorScreenState
                       Text(
                         tr.periodicity,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: context.faintText,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       SegmentedPill<String>(
                         value: _cycle,
                         onChanged: (v) => setState(() => _cycle = v),
@@ -182,7 +180,7 @@ class _SubscriptionEditorScreenState
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       Pressable(
                         onTap: () async {
                           final picked = await showDatePicker(
@@ -197,36 +195,37 @@ class _SubscriptionEditorScreenState
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
+                            horizontal: 12,
+                            vertical: 8,
                           ),
                           decoration: BoxDecoration(
                             color: context.scaffoldBg,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 LucideIcons.calendar,
-                                size: 18,
+                                size: 16,
                                 color: context.primaryText,
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
                               Text(
                                 '${tr.nextPaymentPrefix}${DateFormat('d MMM y', locale).format(_next)}',
+                                style: const TextStyle(fontSize: 14),
                               ),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 12),
                       ScaledElevatedButton(
                         expand: true,
                         onPressed: _saving ? null : _save,
                         child: Text(_saving ? '...' : tr.save),
                       ),
                       if (widget.isEdit) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Center(
                           child: TextButton(
                             onPressed: _delete,
@@ -237,7 +236,7 @@ class _SubscriptionEditorScreenState
                           ),
                         ),
                       ],
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),

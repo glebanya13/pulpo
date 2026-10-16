@@ -171,7 +171,7 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
                 child: SingleChildScrollView(
                   // Room above the first field so the floating label isn't
                   // clipped by the scroll view when focused/autofocus.
-                  padding: const EdgeInsets.only(top: 16),
+                  padding: const EdgeInsets.only(top: 8),
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Column(
@@ -183,7 +183,7 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
                         textInputAction: TextInputAction.next,
                         decoration: InputDecoration(hintText: tr.budgetName),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       TextField(
                         controller: _amountCtrl,
                         keyboardType: const TextInputType.numberWithOptions(
@@ -193,16 +193,16 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
                         decoration: InputDecoration(hintText: tr.amount),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       Text(
                         tr.periodicity,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: context.faintText,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       SegmentedPill<int>(
                         value: _period,
                         onChanged: (v) => setState(() => _period = v),
@@ -213,7 +213,7 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
                           SegmentedPillOption(value: 3, label: tr.yearlyLabel),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       Pressable(
                         onTap: _pickCategories,
                         child: InputDecorator(
@@ -221,7 +221,7 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
                             hintText: tr.budgetCategories,
                             suffixIcon: Icon(
                               LucideIcons.chevronDown,
-                              size: 18,
+                              size: 16,
                               color: context.faintText,
                             ),
                           ),
@@ -230,18 +230,45 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               color: context.primaryText,
                             ),
                           ),
                         ),
                       ),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        value: _rollover,
-                        onChanged: (v) => setState(() => _rollover = v),
-                        title: Text(tr.budgetRollover),
-                        subtitle: Text(tr.budgetRolloverDesc),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  tr.budgetRollover,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: context.primaryText,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  tr.budgetRolloverDesc,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: context.mutedText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          AppSwitch(
+                            value: _rollover,
+                            onChanged: (v) =>
+                                setState(() => _rollover = v),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                       ScaledElevatedButton(
@@ -250,7 +277,7 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
                         child: Text(_saving ? '...' : tr.save),
                       ),
                       if (widget.isEdit) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Center(
                           child: TextButton(
                             onPressed: _delete,
@@ -261,7 +288,7 @@ class _BudgetEditorScreenState extends ConsumerState<BudgetEditorScreen> {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),

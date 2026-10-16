@@ -372,13 +372,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             ],
             if (kDebugMode) ...[
               const SizedBox(height: 16),
-              SwitchListTile.adaptive(
-                contentPadding: EdgeInsets.zero,
-                title: Text(tr.proDebugUnlock),
-                value: pro.debugUnlock,
-                onChanged: (v) => ref
-                    .read(proControllerProvider.notifier)
-                    .setDebugUnlock(v),
+              Row(
+                children: [
+                  Expanded(child: Text(tr.proDebugUnlock)),
+                  AppSwitch(
+                    value: pro.debugUnlock,
+                    onChanged: (v) => ref
+                        .read(proControllerProvider.notifier)
+                        .setDebugUnlock(v),
+                  ),
+                ],
               ),
             ],
               ],

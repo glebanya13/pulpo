@@ -162,7 +162,7 @@ class _RecurringEditorScreenState
                 ),
                 limeActive: true,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               Expanded(
                 child: SingleChildScrollView(
                   keyboardDismissBehavior:
@@ -176,7 +176,7 @@ class _RecurringEditorScreenState
                         textInputAction: TextInputAction.next,
                         decoration: InputDecoration(hintText: tr.titleLabel),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       TextField(
                         controller: _amountCtrl,
                         keyboardType: const TextInputType.numberWithOptions(
@@ -186,20 +186,20 @@ class _RecurringEditorScreenState
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
                         decoration: InputDecoration(hintText: tr.amount),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       Text(
                         tr.frequencyLabel,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: context.faintText,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       SegmentedPill<String>(
                         value: _frequency,
                         onChanged: (v) => setState(() => _frequency = v),
-                        columns: 2,
+                        scrollable: true,
                         options: [
                           SegmentedPillOption(
                             value: 'daily',
@@ -219,21 +219,21 @@ class _RecurringEditorScreenState
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       _DateRow(
                         date: _next,
                         prefix: tr.nextRunPrefix,
                         locale: locale,
                         onPick: (d) => setState(() => _next = d),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 12),
                       ScaledElevatedButton(
                         expand: true,
                         onPressed: _saving ? null : _save,
                         child: Text(_saving ? '...' : tr.save),
                       ),
                       if (widget.isEdit) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Center(
                           child: TextButton(
                             onPressed: _delete,
@@ -244,7 +244,7 @@ class _RecurringEditorScreenState
                           ),
                         ),
                       ],
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
@@ -282,17 +282,20 @@ class _DateRow extends StatelessWidget {
       },
       child: Container(
         padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: context.scaffoldBg,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           children: [
             Icon(LucideIcons.calendar,
-                size: 18, color: context.primaryText),
-            const SizedBox(width: 10),
-            Text('$prefix${DateFormat('d MMM y', locale).format(date)}'),
+                size: 16, color: context.primaryText),
+            const SizedBox(width: 8),
+            Text(
+              '$prefix${DateFormat('d MMM y', locale).format(date)}',
+              style: const TextStyle(fontSize: 14),
+            ),
           ],
         ),
       ),

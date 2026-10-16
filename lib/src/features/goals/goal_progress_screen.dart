@@ -91,13 +91,13 @@ class _GoalProgressScreenState extends ConsumerState<GoalProgressScreen> {
               onChanged: (v) => setState(() => _accountId = v),
             ),
           ],
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
           ScaledElevatedButton(
             expand: true,
             onPressed: _saving ? null : _save,
             child: Text(_saving ? '...' : tr.save),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
         ],
       ),
     );

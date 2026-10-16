@@ -184,13 +184,13 @@ class _AccountAddScreenState extends ConsumerState<AccountAddScreen> {
             decoration: InputDecoration(hintText: tr.accountType),
             onChanged: (v) => setState(() => _type = v ?? AccountType.cash),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
           ScaledElevatedButton(
             expand: true,
             onPressed: _saving ? null : _save,
             child: Text(_saving ? '...' : tr.save),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
         ],
       ),
     );

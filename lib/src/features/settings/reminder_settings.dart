@@ -9,6 +9,7 @@ import '../../core/pro/pro_limits.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/settings_service.dart';
+import '../../widgets/common.dart';
 import '../../widgets/simple_picker_sheet.dart';
 import '../../widgets/pressable.dart';
 
@@ -69,7 +70,7 @@ Future<void> openReminderSheet(
                             ),
                           ),
                         ),
-                        Switch.adaptive(
+                        AppSwitch(
                           value: settings.dailyReminderEnabled,
                           onChanged: (v) =>
                               toggleDailyReminder(context, ref, tr, v),

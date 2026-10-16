@@ -152,12 +152,12 @@ class _CategoryEditorScreenState extends ConsumerState<CategoryEditorScreen> {
                         child: ColorWellIcon(
                           color: Color(_color),
                           icon: lucideByKey(_icon),
-                          size: 72,
-                          iconSize: 32,
-                          radius: 22,
+                          size: 40,
+                          iconSize: 18,
+                          radius: 12,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 12),
 
                       // Name
                       TextField(
@@ -167,7 +167,7 @@ class _CategoryEditorScreenState extends ConsumerState<CategoryEditorScreen> {
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
                         decoration: InputDecoration(hintText: tr.titleLabel),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 12),
 
                       // Color
                       Text(
@@ -178,17 +178,17 @@ class _CategoryEditorScreenState extends ConsumerState<CategoryEditorScreen> {
                           color: context.mutedText,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 6),
                       Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
+                        spacing: 6,
+                        runSpacing: 6,
                         children: _palette
                             .map(
                               (c) => Pressable(
                                 onTap: () => setState(() => _color = c),
                                 child: Container(
-                                  width: 40,
-                                  height: 40,
+                                  width: 28,
+                                  height: 28,
                                   decoration: BoxDecoration(
                                     color: Color(c),
                                     shape: BoxShape.circle,
@@ -197,7 +197,7 @@ class _CategoryEditorScreenState extends ConsumerState<CategoryEditorScreen> {
                                             color: context.isDark
                                                 ? Colors.white
                                                 : AppColors.ink,
-                                            width: 2.5,
+                                            width: 2,
                                           )
                                         : null,
                                   ),
@@ -206,7 +206,7 @@ class _CategoryEditorScreenState extends ConsumerState<CategoryEditorScreen> {
                             )
                             .toList(),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 12),
 
                       // Icon
                       Text(
@@ -217,12 +217,12 @@ class _CategoryEditorScreenState extends ConsumerState<CategoryEditorScreen> {
                           color: context.mutedText,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 6),
                       GridView.count(
                         shrinkWrap: true,
                         crossAxisCount: 6,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 6,
+                        crossAxisSpacing: 6,
                         childAspectRatio: 1,
                         physics: const NeverScrollableScrollPhysics(),
                         children: [
@@ -234,23 +234,24 @@ class _CategoryEditorScreenState extends ConsumerState<CategoryEditorScreen> {
                                   color: _icon == key
                                       ? AppColors.lime.withValues(alpha: 0.3)
                                       : context.scaffoldBg,
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(8),
                                   border: _icon == key
                                       ? Border.all(
                                           color: AppColors.lime,
-                                          width: 2,
+                                          width: 1.5,
                                         )
                                       : null,
                                 ),
                                 child: Icon(
                                   lucideByKey(key),
+                                  size: 16,
                                   color: context.primaryText,
                                 ),
                               ),
                             ),
                         ],
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 12),
 
                       ScaledElevatedButton(
                         expand: true,
@@ -259,7 +260,7 @@ class _CategoryEditorScreenState extends ConsumerState<CategoryEditorScreen> {
                       ),
 
                       if (widget.isEdit) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Center(
                           child: TextButton(
                             onPressed: _delete,
@@ -271,7 +272,7 @@ class _CategoryEditorScreenState extends ConsumerState<CategoryEditorScreen> {
                         ),
                       ],
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),

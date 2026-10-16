@@ -128,7 +128,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.lime,
           foregroundColor: AppColors.ink,
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           textStyle: AppTypography.button,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(AppSpacing.rPill)),
@@ -154,7 +154,7 @@ class AppTheme {
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
-          vertical: AppSpacing.md,
+          vertical: 10,
         ),
       ),
       dividerTheme: const DividerThemeData(
@@ -348,9 +348,9 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.lime,
           foregroundColor: AppColors.ink,
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           textStyle: const TextStyle(
-            fontFamily: 'Inter', fontSize: 15,
+            fontFamily: 'Inter', fontSize: 14,
             fontWeight: FontWeight.w700, color: AppColors.ink,
           ),
           shape: const RoundedRectangleBorder(
@@ -377,7 +377,7 @@ class AppTheme {
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
-          vertical: AppSpacing.md,
+          vertical: 10,
         ),
         hintStyle: const TextStyle(color: Colors.white54),
       ),

@@ -13,7 +13,7 @@ class SegmentedPill<T> extends StatelessWidget {
     required this.options,
     required this.value,
     required this.onChanged,
-    this.spacing = 8,
+    this.spacing = 6,
     /// When true, pills size to their label and scroll horizontally instead of
     /// sharing equal width (avoids ellipsis on long localized strings).
     this.scrollable = false,
@@ -81,12 +81,12 @@ class SegmentedPill<T> extends StatelessWidget {
       onTap: () => onChanged(option.value),
       child: Container(
         padding: EdgeInsets.symmetric(
-          vertical: 14,
-          horizontal: expand ? 8 : 16,
+          vertical: 6,
+          horizontal: expand ? 6 : 10,
         ),
         decoration: BoxDecoration(
           color: active ? AppColors.lime : context.scaffoldBg,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(8),
         ),
         alignment: Alignment.center,
         child: Text(
@@ -95,7 +95,7 @@ class SegmentedPill<T> extends StatelessWidget {
           softWrap: false,
           overflow: expand ? TextOverflow.ellipsis : TextOverflow.visible,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
             color: active ? AppColors.ink : context.primaryText,
           ),

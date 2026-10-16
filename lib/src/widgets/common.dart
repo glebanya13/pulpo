@@ -895,7 +895,7 @@ class TabsPill extends StatelessWidget {
   }
 }
 
-/// Тумблер.
+/// Compact custom toggle (lime track when on).
 class BudgetToggle extends StatelessWidget {
   const BudgetToggle({super.key, required this.value, required this.onChanged});
   final bool value;
@@ -908,11 +908,15 @@ class BudgetToggle extends StatelessWidget {
       scale: 0.94,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        width: 46,
-        height: 26,
+        width: 40,
+        height: 22,
         decoration: BoxDecoration(
-          color: value ? AppColors.lime : (context.isDark ? const Color(0xFF444444) : const Color(0xFFDDDDDD)),
-          borderRadius: BorderRadius.circular(13),
+          color: value
+              ? AppColors.lime
+              : (context.isDark
+                  ? const Color(0xFF444444)
+                  : const Color(0xFFDDDDDD)),
+          borderRadius: BorderRadius.circular(11),
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 180),
@@ -920,8 +924,8 @@ class BudgetToggle extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(2),
             child: Container(
-              width: 22,
-              height: 22,
+              width: 18,
+              height: 18,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
@@ -929,6 +933,39 @@ class BudgetToggle extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Platform switch scaled down so rows stay dense.
+class AppSwitch extends StatelessWidget {
+  const AppSwitch({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.activeThumbColor,
+    this.activeTrackColor,
+  });
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final Color? activeThumbColor;
+  final Color? activeTrackColor;
+
+  static const double scale = 0.78;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.scale(
+      scale: scale,
+      alignment: Alignment.centerRight,
+      child: Switch.adaptive(
+        value: value,
+        onChanged: onChanged,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        activeThumbColor: activeThumbColor,
+        activeTrackColor: activeTrackColor,
       ),
     );
   }

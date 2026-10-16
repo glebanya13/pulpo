@@ -7,6 +7,7 @@ import 'data/repositories/settings_service.dart';
 import 'features/accounts/account_add_screen.dart';
 import 'features/accounts/account_detail_screen.dart';
 import 'features/accounts/account_edit_screen.dart';
+import 'features/accounts/account_transactions_screen.dart';
 import 'features/accounts/accounts_screen.dart';
 import 'features/budgets/budget_editor_screen.dart';
 import 'features/budgets/budgets_screen.dart';
@@ -209,6 +210,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ),
             routes: [
+              GoRoute(
+                path: 'transactions',
+                pageBuilder: (context, state) => _fadePage(
+                  state,
+                  AccountTransactionsScreen(
+                    accountId: int.parse(state.pathParameters['id']!),
+                  ),
+                ),
+              ),
               GoRoute(
                 path: 'edit',
                 pageBuilder: (context, state) => _fadePage(

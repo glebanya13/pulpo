@@ -137,7 +137,7 @@ class _DebtEditorScreenState extends ConsumerState<DebtEditorScreen> {
                     setState(() => _direction = DebtDirection.values[i]),
                 limeActive: true,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               Expanded(
                 child: SingleChildScrollView(
                   keyboardDismissBehavior:
@@ -151,7 +151,7 @@ class _DebtEditorScreenState extends ConsumerState<DebtEditorScreen> {
                         textInputAction: TextInputAction.next,
                         decoration: InputDecoration(hintText: tr.toFromWhom),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       TextField(
                         controller: _amountCtrl,
                         keyboardType: const TextInputType.numberWithOptions(
@@ -161,7 +161,7 @@ class _DebtEditorScreenState extends ConsumerState<DebtEditorScreen> {
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
                         decoration: InputDecoration(hintText: tr.amount),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       Pressable(
                         onTap: () async {
                           final picked = await showDatePicker(
@@ -177,27 +177,28 @@ class _DebtEditorScreenState extends ConsumerState<DebtEditorScreen> {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
+                            horizontal: 12,
+                            vertical: 8,
                           ),
                           decoration: BoxDecoration(
                             color: context.scaffoldBg,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 LucideIcons.calendar,
-                                size: 18,
+                                size: 16,
                                 color: context.primaryText,
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _dueDate == null
                                       ? tr.dueDateLabel
                                       : DateFormat('d MMMM y', locale)
                                           .format(_dueDate!),
+                                  style: const TextStyle(fontSize: 14),
                                 ),
                               ),
                               if (_dueDate != null)
@@ -205,7 +206,7 @@ class _DebtEditorScreenState extends ConsumerState<DebtEditorScreen> {
                                   onTap: () => setState(() => _dueDate = null),
                                   child: Icon(
                                     LucideIcons.x,
-                                    size: 16,
+                                    size: 15,
                                     color: context.faintText,
                                   ),
                                 ),
@@ -213,14 +214,14 @@ class _DebtEditorScreenState extends ConsumerState<DebtEditorScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 12),
                       ScaledElevatedButton(
                         expand: true,
                         onPressed: _saving ? null : _save,
                         child: Text(_saving ? '...' : tr.save),
                       ),
                       if (widget.isEdit) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Center(
                           child: TextButton(
                             onPressed: _delete,
@@ -231,7 +232,7 @@ class _DebtEditorScreenState extends ConsumerState<DebtEditorScreen> {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),

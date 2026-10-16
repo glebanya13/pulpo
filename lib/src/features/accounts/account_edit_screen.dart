@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/tr.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/db/enums.dart';
 import '../../data/repositories/account_repository.dart';
 import '../../data/repositories/providers.dart';
@@ -114,11 +115,23 @@ class _AccountEditScreenState extends ConsumerState<AccountEditScreen> {
             onSubmitted: (_) => FocusScope.of(context).unfocus(),
             decoration: InputDecoration(hintText: tr.accountName),
           ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _includeInTotal,
-            onChanged: (v) => setState(() => _includeInTotal = v),
-            title: Text(tr.includeInTotal),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  tr.includeInTotal,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: context.primaryText,
+                  ),
+                ),
+              ),
+              AppSwitch(
+                value: _includeInTotal,
+                onChanged: (v) => setState(() => _includeInTotal = v),
+              ),
+            ],
           ),
           if (_isCredit) ...[
             const SizedBox(height: 8),
@@ -133,13 +146,13 @@ class _AccountEditScreenState extends ConsumerState<AccountEditScreen> {
               ),
             ),
           ],
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
           ScaledElevatedButton(
             expand: true,
             onPressed: _saving ? null : _save,
             child: Text(_saving ? '...' : tr.save),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Center(
             child: TextButton(
               onPressed: _delete,
@@ -148,7 +161,7 @@ class _AccountEditScreenState extends ConsumerState<AccountEditScreen> {
               child: Text(tr.delete),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
         ],
       ),
     );
